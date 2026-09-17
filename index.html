@@ -218,11 +218,7 @@
     padding:10px 14px; border-radius:10px; font-size:13px; margin-bottom:16px;
   }
   .prof-layout{display:flex; gap:16px; align-items:flex-start;}
-  .prof-main{flex:1; min-width:0;}
-  .prof-sidebar{
-    width:230px; flex-shrink:0; background:var(--panel); border:1px solid var(--border);
-    border-radius:var(--radius); padding:10px; position:sticky; top:76px;
-  }
+  .prof-main{flex:1; min-width:0; width:100%;}
   .sidebar-title{font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); padding:6px 10px;}
   .side-item{
     padding:10px 10px; border-radius:8px; cursor:pointer; font-size:14px; font-weight:600;
@@ -230,11 +226,33 @@
   }
   .side-item:hover{background:var(--panel2);}
   .side-item.active{background:var(--accent); color:#1a1000;}
-  @media (max-width:800px){
-    .prof-layout{flex-direction:column;}
-    .prof-sidebar{width:100%; position:static; display:flex; gap:8px;}
-    .side-item{margin-bottom:0; flex:1; text-align:center;}
+
+  /* ---- Menú lateral tipo drawer (cerrado por default, botón para abrirlo) ---- */
+  .menu-drawer-btn{
+    display:inline-flex; align-items:center; gap:8px; background:var(--panel);
+    border:1px solid var(--border); color:var(--text); padding:10px 16px;
+    border-radius:10px; font-weight:700; cursor:pointer; font-size:14px; margin-bottom:14px;
   }
+  .menu-drawer-btn:hover{border-color:var(--accent);}
+  .menu-drawer-overlay{
+    position:fixed; inset:0; background:rgba(0,0,0,.55); z-index:150; display:none;
+  }
+  .menu-drawer-overlay.show{display:block;}
+  .menu-drawer{
+    position:fixed; top:0; left:0; height:100%; width:280px; max-width:82vw;
+    background:var(--panel); border-right:1px solid var(--border); z-index:151;
+    padding:14px 10px; overflow-y:auto; transform:translateX(-100%);
+    transition:transform .25s ease; box-shadow:8px 0 28px rgba(0,0,0,.45);
+  }
+  .menu-drawer.open{transform:translateX(0);}
+  .menu-drawer-header{
+    display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;
+    padding:0 6px;
+  }
+  .menu-drawer-header button{
+    background:none; border:none; color:var(--muted); font-size:22px; cursor:pointer; padding:2px 8px;
+  }
+  .menu-drawer-header button:hover{color:var(--text);}
   .crono-fab{
     position:fixed; bottom:20px; right:20px; width:56px; height:56px; border-radius:50%;
     background:var(--accent); color:#1a1000; font-size:22px; border:none; cursor:pointer;
@@ -359,25 +377,82 @@
     </div>
   </div>
 
-  <div class="prof-layout">
-    <div class="prof-sidebar">
-      <div class="sidebar-title">Menú</div>
-      <div class="side-item active" id="menuArmador" onclick="cambiarSubvista('armador')">🏋️ Armador de Rutina</div>
-      <div class="side-item" id="menuRutinas" onclick="cambiarSubvista('rutinas')">🗂️ Rutinas</div>
-      <div class="side-item" id="menuAgenda" onclick="cambiarSubvista('agenda')">📋 Agenda</div>
-      <div class="side-item" id="menuEspeciales" onclick="cambiarSubvista('especiales')">⭐ Rutinas especiales por alumno</div>
-      <div class="side-item" id="menuAlumnos" onclick="cambiarSubvista('alumnos')">👤 Alumnos</div>
-      <div class="side-item" id="menuEvaluaciones" onclick="cambiarSubvista('evaluaciones')">📏 Evaluaciones</div>
-      <div class="side-item" id="menuLogros" onclick="cambiarSubvista('logros')">🏆 Logros</div>
-      <div class="side-item" id="menuProfesores" onclick="cambiarSubvista('profesores')">🧑‍🏫 Profesores</div>
-      <div class="side-item" id="menuHorarios" onclick="cambiarSubvista('horarios')">🕒 Horarios</div>
-      <div class="side-item" id="menuPlanes" onclick="cambiarSubvista('planes')">💳 Planes</div>
-      <div class="side-item" id="menuCobranzas" onclick="cambiarSubvista('cobranzas')">🧾 Cobranzas</div>
-      <div class="side-item" id="menuEjercicios" onclick="cambiarSubvista('ejercicios')">🆕 Ejercicios</div>
-      <div class="side-item" id="menuGimnasio" onclick="cambiarSubvista('gimnasio')">🏢 Mi gimnasio</div>
-    </div>
+  <button class="menu-drawer-btn" onclick="abrirMenuProf()">☰ Menú</button>
 
+  <div class="menu-drawer-overlay" id="menuProfOverlay" onclick="cerrarMenuProf()"></div>
+  <div class="menu-drawer" id="menuProfDrawer">
+    <div class="menu-drawer-header">
+      <span class="sidebar-title" style="padding:0;">Menú</span>
+      <button onclick="cerrarMenuProf()">✕</button>
+    </div>
+    <div class="side-item" id="menuDashboard" onclick="cambiarSubvista('dashboard')" style="display:none;">📊 Dashboard</div>
+    <div class="side-item active" id="menuArmador" onclick="cambiarSubvista('armador')">🏋️ Armador de Rutina</div>
+    <div class="side-item" id="menuRutinas" onclick="cambiarSubvista('rutinas')">🗂️ Rutinas</div>
+    <div class="side-item" id="menuAgenda" onclick="cambiarSubvista('agenda')">📋 Agenda</div>
+    <div class="side-item" id="menuEspeciales" onclick="cambiarSubvista('especiales')">⭐ Rutinas especiales por alumno</div>
+    <div class="side-item" id="menuAlumnos" onclick="cambiarSubvista('alumnos')">👤 Alumnos</div>
+    <div class="side-item" id="menuEvaluaciones" onclick="cambiarSubvista('evaluaciones')">📏 Evaluaciones</div>
+    <div class="side-item" id="menuLogros" onclick="cambiarSubvista('logros')">🏆 Logros</div>
+    <div class="side-item" id="menuProfesores" onclick="cambiarSubvista('profesores')">🧑‍🏫 Profesores</div>
+    <div class="side-item" id="menuHorarios" onclick="cambiarSubvista('horarios')">🕒 Horarios</div>
+    <div class="side-item" id="menuPlanes" onclick="cambiarSubvista('planes')">💳 Planes</div>
+    <div class="side-item" id="menuCobranzas" onclick="cambiarSubvista('cobranzas')">🧾 Cobranzas</div>
+    <div class="side-item" id="menuEjercicios" onclick="cambiarSubvista('ejercicios')">🆕 Ejercicios</div>
+    <div class="side-item" id="menuGimnasio" onclick="cambiarSubvista('gimnasio')">🏢 Mi gimnasio</div>
+  </div>
+
+  <div class="prof-layout">
     <div class="prof-main">
+
+      <!-- ---- SUBVISTA: DASHBOARD (solo admin) ---- -->
+      <div id="subvistaDashboard" style="display:none;">
+        <div class="card">
+          <div class="row" style="justify-content:space-between; align-items:center;">
+            <h2 style="margin-top:0; margin-bottom:0;">📊 Dashboard</h2>
+            <button class="ghost" onclick="cargarDashboardAdmin()">🔄 Actualizar</button>
+          </div>
+          <div class="muted" id="dashboardEstado" style="margin-top:10px;">Cargando métricas...</div>
+
+          <div id="dashboardKpis" style="display:none; margin-top:14px;">
+            <div class="row" style="flex-wrap:wrap; gap:12px;">
+              <div class="card" style="flex:1; min-width:150px; text-align:center; margin:0;">
+                <div class="muted" style="font-size:12px;">Socios activos</div>
+                <div style="font-size:30px; font-weight:800; color:var(--accent2);" id="kpiActivos">-</div>
+              </div>
+              <div class="card" style="flex:1; min-width:150px; text-align:center; margin:0;">
+                <div class="muted" style="font-size:12px;">Socios inactivos</div>
+                <div style="font-size:30px; font-weight:800;" id="kpiInactivos">-</div>
+              </div>
+              <div class="card" style="flex:1; min-width:150px; text-align:center; margin:0;">
+                <div class="muted" style="font-size:12px;">Altas este mes</div>
+                <div style="font-size:30px; font-weight:800; color:var(--accent2);" id="kpiNuevos">-</div>
+              </div>
+            </div>
+
+            <div class="row" style="flex-wrap:wrap; gap:12px; margin-top:12px;">
+              <div class="card" style="flex:1; min-width:210px; margin:0;">
+                <div class="muted" style="font-size:12px;">Facturación cobrada este mes</div>
+                <div style="font-size:26px; font-weight:800; color:var(--accent2);" id="kpiFacturado">-</div>
+                <div class="muted" style="font-size:12px; margin-top:4px;" id="kpiFacturadoDesglose"></div>
+              </div>
+              <div class="card" style="flex:1; min-width:210px; margin:0;">
+                <div class="muted" style="font-size:12px;">Pendiente por cobrar (vencidos)</div>
+                <div style="font-size:26px; font-weight:800; color:var(--accent);" id="kpiPendiente">-</div>
+                <div class="muted" style="font-size:12px; margin-top:4px;" id="kpiPendienteCount"></div>
+              </div>
+              <div class="card" style="flex:1; min-width:210px; margin:0;">
+                <div class="muted" style="font-size:12px;">Por vencer en los próximos 7 días</div>
+                <div style="font-size:26px; font-weight:800;" id="kpiPorVencer">-</div>
+                <div class="muted" style="font-size:12px; margin-top:4px;">Conviene avisarles antes de que venzan.</div>
+              </div>
+            </div>
+
+            <div class="muted" style="margin-top:14px; font-size:12px;">
+              El monto pendiente por cobrar es estimado: toma el precio del plan de cada socio vencido, no una factura real.
+            </div>
+          </div>
+        </div>
+      </div>
 
       <!-- ---- SUBVISTA: ARMADOR DE RUTINA (estándar, planificación quincenal) ---- -->
       <div id="subvistaArmador">
@@ -862,56 +937,81 @@
 
     <div id="bannerCuotaAlu"></div>
 
-    <div class="card">
-      <h2 style="margin-top:0">Reservar turno</h2>
-      <div class="row">
-        <div class="field" style="flex:1; min-width:200px;">
-          <label>Profesor</label>
-          <select id="aluFiltroProfesor" onchange="renderTurnosDisponibles()">
-            <option value="">Todos los profesores</option>
-          </select>
+    <button class="menu-drawer-btn" onclick="abrirMenuAlu()">☰ Menú</button>
+
+    <div class="menu-drawer-overlay" id="menuAluOverlay" onclick="cerrarMenuAlu()"></div>
+    <div class="menu-drawer" id="menuAluDrawer">
+      <div class="menu-drawer-header">
+        <span class="sidebar-title" style="padding:0;">Menú</span>
+        <button onclick="cerrarMenuAlu()">✕</button>
+      </div>
+      <div class="side-item active" id="menuAluTurnos" onclick="cambiarSubvistaAlu('turnos')">📅 Turnos</div>
+      <div class="side-item" id="menuAluRutinas" onclick="cambiarSubvistaAlu('rutinas')">🗂️ Mis rutinas</div>
+      <div class="side-item" id="menuAluHistorial" onclick="cambiarSubvistaAlu('historial')">📜 Historial</div>
+      <div class="side-item" id="menuAluEvolucion" onclick="cambiarSubvistaAlu('evolucion')">📈 Evolución</div>
+      <div class="side-item" id="menuAluLogros" onclick="cambiarSubvistaAlu('logros')">🏆 Logros</div>
+    </div>
+
+    <div id="subvistaAluTurnos">
+      <div class="card">
+        <h2 style="margin-top:0">Reservar turno</h2>
+        <div class="row">
+          <div class="field" style="flex:1; min-width:200px;">
+            <label>Profesor</label>
+            <select id="aluFiltroProfesor" onchange="renderTurnosDisponibles()">
+              <option value="">Todos los profesores</option>
+            </select>
+          </div>
+        </div>
+        <label style="margin-top:14px; display:block;">Elegí el día</label>
+        <div class="dias-scroll" id="aluDiasScroll"></div>
+        <div id="aluHorasWrap" style="margin-top:12px;">Elegí tu nombre arriba.</div>
+        <div class="leyenda">
+          <span><span class="dot" style="background:rgba(61,220,132,.6);"></span> Disponible</span>
+          <span><span class="dot" style="background:rgba(255,210,61,.7);"></span> Quedan pocos</span>
+          <span><span class="dot" style="background:#3a3f4a;"></span> Agotado</span>
         </div>
       </div>
-      <label style="margin-top:14px; display:block;">Elegí el día</label>
-      <div class="dias-scroll" id="aluDiasScroll"></div>
-      <div id="aluHorasWrap" style="margin-top:12px;">Elegí tu nombre arriba.</div>
-      <div class="leyenda">
-        <span><span class="dot" style="background:rgba(61,220,132,.6);"></span> Disponible</span>
-        <span><span class="dot" style="background:rgba(255,210,61,.7);"></span> Quedan pocos</span>
-        <span><span class="dot" style="background:#3a3f4a;"></span> Agotado</span>
+
+      <div class="card">
+        <h2 style="margin-top:0">Mis turnos</h2>
+        <div id="listaTurnosAlu" class="muted">Elegí tu nombre arriba.</div>
       </div>
     </div>
 
-    <div class="card">
-      <h2 style="margin-top:0">Mis turnos</h2>
-      <div id="listaTurnosAlu" class="muted">Elegí tu nombre arriba.</div>
-    </div>
-
-    <div class="card">
-      <h2 style="margin-top:0">Mis rutinas (referencia)</h2>
-      <div id="listaRutinasAlu" class="muted">Elegí tu nombre arriba.</div>
-    </div>
-
-    <div class="card">
-      <h2 style="margin-top:0">Historial de entrenamientos</h2>
-      <div id="historialAlu" class="muted">Elegí tu nombre arriba.</div>
-    </div>
-
-    <div class="card">
-      <h2 style="margin-top:0">Mi evolución física</h2>
-      <div class="field" style="max-width:280px;">
-        <label>Métrica</label>
-        <select id="aluEvalMetricaChart" onchange="renderAluEvalChart()"></select>
+    <div id="subvistaAluRutinas" style="display:none;">
+      <div class="card">
+        <h2 style="margin-top:0">Mis rutinas (referencia)</h2>
+        <div id="listaRutinasAlu" class="muted">Elegí tu nombre arriba.</div>
       </div>
-      <div id="aluEvalChartCont" class="muted" style="margin-top:10px;">Elegí tu nombre arriba.</div>
     </div>
 
-    <div class="card">
-      <h2 style="margin-top:0">Mis evaluaciones</h2>
-      <div id="aluEvalHistorial" class="muted">Elegí tu nombre arriba.</div>
+    <div id="subvistaAluHistorial" style="display:none;">
+      <div class="card">
+        <h2 style="margin-top:0">Historial de entrenamientos</h2>
+        <div id="historialAlu" class="muted">Elegí tu nombre arriba.</div>
+      </div>
     </div>
 
-    <div id="aluLogrosContenido" class="muted">Elegí tu nombre arriba.</div>
+    <div id="subvistaAluEvolucion" style="display:none;">
+      <div class="card">
+        <h2 style="margin-top:0">Mi evolución física</h2>
+        <div class="field" style="max-width:280px;">
+          <label>Métrica</label>
+          <select id="aluEvalMetricaChart" onchange="renderAluEvalChart()"></select>
+        </div>
+        <div id="aluEvalChartCont" class="muted" style="margin-top:10px;">Elegí tu nombre arriba.</div>
+      </div>
+
+      <div class="card">
+        <h2 style="margin-top:0">Mis evaluaciones</h2>
+        <div id="aluEvalHistorial" class="muted">Elegí tu nombre arriba.</div>
+      </div>
+    </div>
+
+    <div id="subvistaAluLogros" style="display:none;">
+      <div id="aluLogrosContenido" class="muted">Elegí tu nombre arriba.</div>
+    </div>
   </div>
 
   <!-- Pantalla dedicada de ejecución: reemplaza todo lo de arriba mientras se entrena -->
@@ -1336,6 +1436,7 @@ function cambiarVista(v){
 }
 
 function cambiarSubvista(v){
+  document.getElementById('subvistaDashboard').style.display = v==='dashboard' ? '' : 'none';
   document.getElementById('subvistaArmador').style.display = v==='armador' ? '' : 'none';
   document.getElementById('subvistaRutinas').style.display = v==='rutinas' ? '' : 'none';
   document.getElementById('subvistaEspeciales').style.display = v==='especiales' ? '' : 'none';
@@ -1349,6 +1450,7 @@ function cambiarSubvista(v){
   document.getElementById('subvistaCobranzas').style.display = v==='cobranzas' ? '' : 'none';
   document.getElementById('subvistaEjercicios').style.display = v==='ejercicios' ? '' : 'none';
   document.getElementById('subvistaGimnasio').style.display = v==='gimnasio' ? '' : 'none';
+  document.getElementById('menuDashboard').classList.toggle('active', v==='dashboard');
   document.getElementById('menuArmador').classList.toggle('active', v==='armador');
   document.getElementById('menuRutinas').classList.toggle('active', v==='rutinas');
   document.getElementById('menuEspeciales').classList.toggle('active', v==='especiales');
@@ -1362,6 +1464,7 @@ function cambiarSubvista(v){
   document.getElementById('menuCobranzas').classList.toggle('active', v==='cobranzas');
   document.getElementById('menuEjercicios').classList.toggle('active', v==='ejercicios');
   document.getElementById('menuGimnasio').classList.toggle('active', v==='gimnasio');
+  if (v==='dashboard') cargarDashboardAdmin();
   if (v==='rutinas') cargarGrillaRutinas();
   if (v==='alumnos') cargarListaAlumnos();
   if (v==='evaluaciones') iniciarEvaluaciones();
@@ -1378,6 +1481,74 @@ function cambiarSubvista(v){
     document.getElementById('gimDescuentoEfectivo').value = GIMNASIO_ACTUAL?.descuento_efectivo_pct ?? 10;
     actualizarPreviewLogo();
   }
+  cerrarMenuProf();
+}
+
+function abrirMenuProf(){
+  document.getElementById('menuProfDrawer').classList.add('open');
+  document.getElementById('menuProfOverlay').classList.add('show');
+}
+function cerrarMenuProf(){
+  document.getElementById('menuProfDrawer').classList.remove('open');
+  document.getElementById('menuProfOverlay').classList.remove('show');
+}
+
+async function cargarDashboardAdmin(){
+  const estado = document.getElementById('dashboardEstado');
+  const kpis = document.getElementById('dashboardKpis');
+  const gimId = GIMNASIO_ACTUAL?.id;
+  if (!gimId){ estado.textContent = 'No se pudo identificar el gimnasio.'; estado.style.display=''; kpis.style.display='none'; return; }
+  estado.textContent = 'Cargando métricas...'; estado.style.display=''; kpis.style.display='none';
+  try{
+    const d = await sb('rpc/obtener_dashboard_admin', {
+      method: 'POST',
+      body: JSON.stringify({ p_gimnasio_id: gimId })
+    });
+    document.getElementById('kpiActivos').textContent = d.activos ?? 0;
+    document.getElementById('kpiInactivos').textContent = d.inactivos ?? 0;
+    document.getElementById('kpiNuevos').textContent = d.nuevos_mes ?? 0;
+    document.getElementById('kpiFacturado').textContent = formatearMonto(d.facturado_mes);
+    document.getElementById('kpiFacturadoDesglose').textContent =
+      `Efectivo: ${formatearMonto(d.facturado_efectivo)} · Transferencia: ${formatearMonto(d.facturado_transferencia)}`;
+    document.getElementById('kpiPendiente').textContent = formatearMonto(d.vencidos_monto_estimado);
+    document.getElementById('kpiPendienteCount').textContent =
+      `${d.vencidos_count ?? 0} socio(s) con la cuota vencida`;
+    document.getElementById('kpiPorVencer').textContent = d.por_vencer_7d ?? 0;
+    estado.style.display = 'none';
+    kpis.style.display = '';
+  }catch(e){
+    estado.textContent = 'Error cargando el dashboard: ' + e.message;
+    estado.style.display = '';
+    kpis.style.display = 'none';
+  }
+}
+
+function formatearMonto(n){
+  const v = Number(n || 0);
+  return '$' + v.toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+}
+
+// ---------- Menú del Alumno (drawer, igual mecánica que el del Profesor) ----------
+function abrirMenuAlu(){
+  document.getElementById('menuAluDrawer').classList.add('open');
+  document.getElementById('menuAluOverlay').classList.add('show');
+}
+function cerrarMenuAlu(){
+  document.getElementById('menuAluDrawer').classList.remove('open');
+  document.getElementById('menuAluOverlay').classList.remove('show');
+}
+function cambiarSubvistaAlu(v){
+  document.getElementById('subvistaAluTurnos').style.display = v==='turnos' ? '' : 'none';
+  document.getElementById('subvistaAluRutinas').style.display = v==='rutinas' ? '' : 'none';
+  document.getElementById('subvistaAluHistorial').style.display = v==='historial' ? '' : 'none';
+  document.getElementById('subvistaAluEvolucion').style.display = v==='evolucion' ? '' : 'none';
+  document.getElementById('subvistaAluLogros').style.display = v==='logros' ? '' : 'none';
+  document.getElementById('menuAluTurnos').classList.toggle('active', v==='turnos');
+  document.getElementById('menuAluRutinas').classList.toggle('active', v==='rutinas');
+  document.getElementById('menuAluHistorial').classList.toggle('active', v==='historial');
+  document.getElementById('menuAluEvolucion').classList.toggle('active', v==='evolucion');
+  document.getElementById('menuAluLogros').classList.toggle('active', v==='logros');
+  cerrarMenuAlu();
 }
 
 function actualizarPreviewLogo(){
@@ -1531,6 +1702,10 @@ function renderMarcaGimnasio(){
     logo.style.display = 'none';
     dot.style.display = '';
   }
+  // El Dashboard de KPIs es solo para el rol admin (dueño/administrador del gym),
+  // sin importar si el gimnasio es de tipo "gimnasio" o "independiente".
+  const menuDash = document.getElementById('menuDashboard');
+  if (menuDash) menuDash.style.display = (PERFIL_ACTUAL?.rol === 'admin') ? '' : 'none';
 }
 function idAleatorio(){
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
