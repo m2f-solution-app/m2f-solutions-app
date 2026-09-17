@@ -902,38 +902,30 @@
 <!-- ===================== VISTA ALUMNO ===================== -->
 <div id="vistaAlumno" style="display:none;">
 
-  <!-- ---- GATE: login de alumno (HU17, DNI + contraseña; la cuenta la genera el profesor desde la ficha) ---- -->
-  <div id="alumnoAuthGate" style="display:none;">
+  <!-- ---- GATE: login de alumno (HU17, DNI + contraseña; la cuenta la genera el profesor desde la ficha) ----
+       Obligatorio: por seguridad (RLS real en la base) ya no existe la opción de elegirse
+       de una lista sin loguearse. Todo alumno necesita su cuenta (el profesor se la genera
+       con "🔑 Generar acceso" desde la ficha si todavía no la tiene). ---- -->
+  <div id="alumnoAuthGate">
     <div class="card" style="max-width:420px; margin:20px auto;">
       <div class="row" style="justify-content:space-between; align-items:center; margin-bottom:14px;">
-        <button class="ghost" onclick="cerrarAlumnoAuthGate()">← Volver</button>
+        <button class="ghost" onclick="volverALanding()">← Volver</button>
         <span class="muted">Ingresar</span>
       </div>
       <div class="field" style="margin-bottom:10px;"><label>DNI</label><input id="alumnoLoginDni" placeholder="Tu DNI" /></div>
       <div class="field" style="margin-bottom:14px;"><label>Contraseña</label><input type="password" id="alumnoLoginPassword" placeholder="Tu DNI, salvo que ya la hayas cambiado" /></div>
       <button onclick="hacerLoginAlumno()" id="btnAlumnoLogin" style="width:100%;">Ingresar</button>
       <div id="alumnoAuthMsg" class="muted" style="margin-top:12px; text-align:center;"></div>
+      <div class="muted" style="margin-top:14px; text-align:center; font-size:12px;">¿Todavía no tenés acceso? Pedíselo a tu profe — te lo genera desde tu ficha.</div>
     </div>
   </div>
 
-  <div id="alumnoHome">
-    <div id="alumnoAuthEntrada" class="card">
-      <div class="row" style="justify-content:space-between; align-items:center;">
-        <div class="muted">¿Tenés cuenta? Iniciá sesión con tu DNI para no tener que elegirte cada vez.</div>
-        <button class="ghost" onclick="abrirAlumnoAuthGate()">Ingresar</button>
-      </div>
-    </div>
+  <!-- Data holder invisible: el resto del código lee este <select> para saber "qué alumno está activo".
+       Ya no se muestra ni se edita a mano — lo completa entrarComoAlumnoLogueado() al loguearse. -->
+  <select id="aluAlumno" onchange="onCambiarAluAlumno()" style="display:none;"></select>
 
+  <div id="alumnoHome" style="display:none;">
     <div id="alumnoSesionInfo" class="card" style="display:none;"></div>
-
-    <div class="card" id="aluSoyCard">
-      <div class="row">
-        <div class="field">
-          <label>Soy</label>
-          <select id="aluAlumno" onchange="onCambiarAluAlumno()"></select>
-        </div>
-      </div>
-    </div>
 
     <div id="bannerCuotaAlu"></div>
 
@@ -1305,17 +1297,6 @@ function alumnoEmailDesdeDni(dni){
   return `alu-${dni}@m2fsolutions.local`;
 }
 
-function abrirAlumnoAuthGate(){
-  document.getElementById('alumnoAuthEntrada').style.display = 'none';
-  document.getElementById('aluSoyCard').style.display = 'none';
-  document.getElementById('alumnoAuthGate').style.display = '';
-  document.getElementById('alumnoAuthMsg').textContent = '';
-}
-function cerrarAlumnoAuthGate(){
-  document.getElementById('alumnoAuthGate').style.display = 'none';
-  document.getElementById('alumnoAuthEntrada').style.display = '';
-  document.getElementById('aluSoyCard').style.display = '';
-}
 
 async function hacerLoginAlumno(){
   const dni = document.getElementById('alumnoLoginDni').value.trim();
@@ -1381,14 +1362,13 @@ async function entrarComoAlumnoLogueado(){
       return;
     }
     document.getElementById('alumnoAuthGate').style.display = 'none';
+    document.getElementById('alumnoHome').style.display = '';
     await cargarPersonas(); // re-scopea ALUMNOS_CACHE/PROFESORES_CACHE al gimnasio de esta sesión
     mostrarModoAlumnoLogueado(ficha);
   }catch(e){ msg.textContent = 'Error entrando: ' + e.message; }
 }
 
 function mostrarModoAlumnoLogueado(ficha){
-  document.getElementById('alumnoAuthEntrada').style.display = 'none';
-  document.getElementById('aluSoyCard').style.display = 'none';
   const info = document.getElementById('alumnoSesionInfo');
   info.style.display = '';
   info.innerHTML = `<div class="row" style="justify-content:space-between; align-items:center;">
@@ -1419,13 +1399,16 @@ async function hacerLogoutAlumno(){
   SESION_ACTUAL = null;
   PERFIL_ACTUAL = null;
   document.getElementById('alumnoSesionInfo').style.display = 'none';
-  document.getElementById('aluSoyCard').style.display = '';
-  document.getElementById('alumnoAuthEntrada').style.display = '';
+  document.getElementById('alumnoHome').style.display = 'none';
+  document.getElementById('alumnoAuthGate').style.display = '';
+  document.getElementById('alumnoLoginDni').value = '';
+  document.getElementById('alumnoLoginPassword').value = '';
+  document.getElementById('alumnoAuthMsg').textContent = '';
   const sel = document.getElementById('aluAlumno');
   sel.disabled = false;
+  sel.innerHTML = '';
   sel.value = '';
   onCambiarAluAlumno();
-  await cargarPersonas(); // vuelve a ver todos los gimnasios, como antes de loguearse
 }
 
 function cambiarVista(v){
@@ -1763,8 +1746,8 @@ async function guardarGimnasio(){
 let ALUMNOS_CACHE = [];
 let PROFESORES_CACHE = [];
 async function cargarPersonas(){
-  // Sin sesión (vista Alumno anónima) siguen viéndose todos los alumnos/profesores,
-  // como hasta ahora. Con sesión de staff, se filtra por su propio gimnasio.
+  // Requiere sesión real (staff o alumno logueado): con RLS estricta, sin sesión
+  // esto devuelve listas vacías directamente desde la base (ya no hay acceso anónimo).
   const filtroGym = PERFIL_ACTUAL ? `&gimnasio_id=eq.${PERFIL_ACTUAL.gimnasio_id}` : '';
   const [alumnos, profesores] = await Promise.all([
     sb(`alumnos?select=id,nombre,tipo,gimnasio_id,plan_id,altura_cm,peso_kg,objetivo,telefono,email,direccion,dni,perfil_id&activo=eq.true${filtroGym}&order=nombre.asc`),
@@ -1786,18 +1769,6 @@ async function cargarPersonas(){
     if (propio) document.getElementById('profActual').value = propio.id;
   }
   onCambiarProfesorActual();
-
-  // Fallback para quien todavía no se creó una cuenta de alumno (HU17): "recordamos"
-  // quién eligió en "Soy" en este mismo navegador. Si hay una sesión real de alumno
-  // activa, ese vínculo lo resuelve entrarComoAlumnoLogueado() -> no tocar acá.
-  if (!PERFIL_ACTUAL || PERFIL_ACTUAL.rol !== 'alumno'){
-    let alumnoGuardado = null;
-    try{ alumnoGuardado = localStorage.getItem('m2f_alumno_id'); }catch(e){}
-    if (alumnoGuardado && alumnos.some(a => a.id === alumnoGuardado)){
-      document.getElementById('aluAlumno').value = alumnoGuardado;
-      onCambiarAluAlumno();
-    }
-  }
 }
 
 // ---------- Alta de profesores: cuenta de login real para tu staff ----------
@@ -3514,10 +3485,6 @@ async function cargarRutinasDeAlumno(selectId, contenedorId, esVistaAlumno){
 function onCambiarAluAlumno(){
   salirEjecucion(); // si estaba entrenando como otro alumno, vuelve al panel antes de cambiar
   const alumnoId = document.getElementById('aluAlumno').value;
-  try{
-    if (alumnoId) localStorage.setItem('m2f_alumno_id', alumnoId);
-    else localStorage.removeItem('m2f_alumno_id');
-  }catch(e){}
   cargarRutinasDeAlumno('aluAlumno','listaRutinasAlu', true);
   if (alumnoId){
     cargarTurnos(alumnoId);
@@ -3748,7 +3715,13 @@ async function intentarAsignarRutina(turnoId, alumnoId, fecha){
     if (tipo === 'especial') return false;
 
     // 2) Estándar: rutinas sin ninguna asignación directa a nadie.
-    const todasAsignaciones = await sb('rutina_asignaciones?select=rutina_id');
+    // Con RLS estricta, un alumno solo puede leer sus PROPIAS filas de rutina_asignaciones
+    // (no las de otros), así que para saber "cuáles ya tienen dueño" en todo el gimnasio
+    // se usa esta vista, que expone solo rutina_id+gimnasio_id (sin alumno_id).
+    const gimnasioIdAlumno = alumno?.gimnasio_id;
+    const todasAsignaciones = gimnasioIdAlumno
+      ? await sb(`v_rutinas_asignadas_gimnasio?select=rutina_id&gimnasio_id=eq.${gimnasioIdAlumno}`)
+      : [];
     const idsConAsignacion = [...new Set(todasAsignaciones.map(a => a.rutina_id))];
     const filtroSinAsignar = idsConAsignacion.length ? `&rutina_id=not.in.(${idsConAsignacion.join(',')})` : '';
     const diasEstandar = await sb(`rutina_dias?select=id,fecha,rutina_id&fecha=eq.${fecha}${filtroSinAsignar}`);
