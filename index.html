@@ -6,6 +6,13 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png" />
+<link rel="apple-touch-icon" href="icon-180.png" />
+<link rel="manifest" href="manifest.json" />
+<meta name="theme-color" content="#0f1115" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="M2F Solutions" />
 <title>M2F Solutions</title>
 <style>
   :root{
@@ -306,6 +313,10 @@
   @media (max-width:720px){
     .crono-fab{ bottom:calc(84px + env(safe-area-inset-bottom)); }
     .crono-panel{ bottom:calc(152px + env(safe-area-inset-bottom)); }
+    /* El toast (avisos de error/éxito de TODA la app) es fixed e independiente del
+       scroll, así que el padding-bottom de los contenedores no lo salva — hay que
+       subirlo a mano igual que al cronómetro para que la barra de abajo no lo tape. */
+    .toast{ bottom:calc(84px + env(safe-area-inset-bottom)); }
   }
   .bottom-nav-inner{display:flex; align-items:flex-end; justify-content:space-around; max-width:520px; margin:0 auto;}
   .bottom-nav-item{
@@ -1181,7 +1192,7 @@ const BUCKET = "Ejercicios";
 // un cambio, se incrementa este número — el chequeo de actualización (más abajo) lo compara
 // contra lo que hay publicado y avisa si están desactualizados, sin que nadie tenga que
 // cambiar ningún link a mano.
-const APP_VERSION = 13;
+const APP_VERSION = 15;
 
 function imgUrl(providerRefId){
   return `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${encodeURI(providerRefId)}`;
