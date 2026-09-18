@@ -323,6 +323,17 @@
     .search-item .meta{font-size:9.5px;}
   }
 
+  /* ---- Combobox buscable (reemplaza selects largos de alumno/profesor) ---- */
+  .combo-wrap{position:relative;}
+  .combo-dropdown{
+    position:absolute; top:100%; left:0; right:0; z-index:40; max-height:240px; overflow-y:auto;
+    background:var(--panel); border:1px solid var(--border); border-radius:8px; margin-top:4px;
+    display:none; box-shadow:0 8px 20px rgba(0,0,0,.4);
+  }
+  .combo-opcion{padding:10px 12px; cursor:pointer; font-size:14px;}
+  .combo-opcion:hover, .combo-opcion.resaltada{background:var(--panel2);}
+  .combo-vacio{padding:10px 12px; color:var(--muted); font-size:13px;}
+
   /* ---- Campos de series/reps/peso/etc. del ejercicio: más compactos en celu ---- */
   @media (max-width:520px){
     .grid-exercise .row{gap:6px;}
@@ -1795,6 +1806,69 @@ async function guardarGimnasio(){
 // ---------- Carga inicial: selects de alumnos/profesores ----------
 let ALUMNOS_CACHE = [];
 let PROFESORES_CACHE = [];
+// ---------- Combobox buscable genérico ----------
+// Convierte un <select> (que puede tener muchas opciones: alumnos, profesores)
+// en un buscador: input de texto + lista desplegable que se filtra en vivo por
+// cualquier parte del nombre (no solo desde el principio). El <select> original
+// queda oculto pero sigue siendo la fuente de la verdad — todo el código que ya
+// lee/escribe su .value (onCambiarX, etc.) sigue funcionando sin tocarlo.
+// Se puede llamar de nuevo cada vez que se repueblan las opciones: si ya existe,
+// solo resincroniza el texto visible con el valor actual del select.
+const COMBOS_BUSCABLES = {};
+function armarComboBuscable(selectId, placeholder){
+  const sel = document.getElementById(selectId);
+  if (!sel) return;
+  if (COMBOS_BUSCABLES[selectId]){ sincronizarComboBuscable(selectId); return; }
+
+  sel.style.display = 'none';
+  const wrap = document.createElement('div');
+  wrap.className = 'combo-wrap';
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.placeholder = placeholder || 'Escribí para buscar...';
+  input.autocomplete = 'off';
+  input.style.width = '100%';
+  const drop = document.createElement('div');
+  drop.className = 'combo-dropdown';
+  wrap.appendChild(input);
+  wrap.appendChild(drop);
+  sel.parentNode.insertBefore(wrap, sel.nextSibling);
+
+  function opcionesFiltradas(filtro){
+    const q = (filtro || '').trim().toLowerCase();
+    const opciones = Array.from(sel.options).filter(o => o.value);
+    return q ? opciones.filter(o => o.textContent.toLowerCase().includes(q)) : opciones;
+  }
+  function abrir(filtro){
+    const filtradas = opcionesFiltradas(filtro);
+    drop.innerHTML = filtradas.length
+      ? filtradas.slice(0, 50).map(o => `<div class="combo-opcion" data-value="${o.value.replace(/"/g,'&quot;')}">${o.textContent}</div>`).join('')
+      : `<div class="combo-vacio">Sin resultados.</div>`;
+    drop.style.display = 'block';
+  }
+  input.addEventListener('focus', () => abrir(input.value));
+  input.addEventListener('input', () => abrir(input.value));
+  input.addEventListener('blur', () => setTimeout(() => { drop.style.display = 'none'; }, 150));
+  drop.addEventListener('mousedown', (e) => {
+    const item = e.target.closest('.combo-opcion');
+    if (!item) return;
+    e.preventDefault();
+    sel.value = item.dataset.value;
+    sel.dispatchEvent(new Event('change'));
+    input.value = item.textContent;
+    drop.style.display = 'none';
+  });
+
+  COMBOS_BUSCABLES[selectId] = { input, drop, sel };
+  sincronizarComboBuscable(selectId);
+}
+function sincronizarComboBuscable(selectId){
+  const c = COMBOS_BUSCABLES[selectId];
+  if (!c) return;
+  const opt = c.sel.options[c.sel.selectedIndex];
+  c.input.value = (opt && opt.value) ? opt.textContent : '';
+}
+
 async function cargarPersonas(){
   // Requiere sesión real (staff o alumno logueado): con RLS estricta, sin sesión
   // esto devuelve listas vacías directamente desde la base (ya no hay acceso anónimo).
@@ -1818,6 +1892,10 @@ async function cargarPersonas(){
     const propio = profesores.find(p => p.perfil_id === PERFIL_ACTUAL.id);
     if (propio) document.getElementById('profActual').value = propio.id;
   }
+  armarComboBuscable('profActual', 'Buscar profesor...');
+  armarComboBuscable('profProfesor', 'Buscar profesor...');
+  armarComboBuscable('espProfesor', 'Buscar profesor...');
+  armarComboBuscable('espAlumno', 'Buscar alumno por nombre...');
   onCambiarProfesorActual();
 }
 
@@ -1880,62 +1958,104 @@ let HORARIOS_CACHE = [];
 async function cargarHorarioProfesorActual(){
   const profesorId = document.getElementById('profActual').value;
   const cont = document.getElementById('listaHorarios');
-  const profesor = PROFESORES_CACHE.find(p => p.id === profesorId);
-  document.getElementById('horarioNombreProfesor').textContent = profesor ? profesor.nombre : '-';
   if (!profesorId){ cont.innerHTML = 'Elegí un profesor arriba de todo.'; return; }
   cont.innerHTML = 'Cargando...';
   try{
-    HORARIOS_CACHE = await sb(`horarios_trabajo?profesor_id=eq.${profesorId}`);
-    renderHorarios(profesorId);
+    HORARIOS_CACHE = await sb(`horarios_trabajo?profesor_id=eq.${profesorId}&order=dia_semana.asc,hora_inicio.asc`);
+    renderHorarios();
   }catch(e){ cont.innerHTML = 'Error: ' + e.message; }
 }
 
-function renderHorarios(profesorId){
+// Cada día puede tener VARIOS rangos horarios (ej: 08-12 y 15-20) — ya no es
+// un único rango fijo por día. Cada rango es su propia fila con su propio id;
+// "+ Agregar rango horario" suma una fila nueva (todavía sin guardar, con un
+// id temporal "nuevo-...") que se graba recién al tocar/cambiar algo en ella.
+function renderHorarios(){
   const cont = document.getElementById('listaHorarios');
   cont.innerHTML = DIAS_SEMANA.map((nombreDia, dia) => {
-    const h = HORARIOS_CACHE.find(x => x.dia_semana === dia);
-    const activo = h ? h.activo : false;
-    const horaIni = h ? h.hora_inicio.slice(0,5) : '08:00';
-    const horaFin = h ? h.hora_fin.slice(0,5) : '20:00';
-    const cupo = h ? h.cupo_por_turno : 1;
+    const rangos = HORARIOS_CACHE.filter(h => h.dia_semana === dia);
+    const filasHtml = rangos.length
+      ? rangos.map(h => filaRangoHorarioHtml(dia, h)).join('')
+      : '<div class="muted" style="font-size:12px; padding:2px 0 8px;">Sin horario cargado este día.</div>';
     return `
-      <div class="row" style="align-items:end; padding:8px 0; border-bottom:1px solid var(--border);" id="filaHorario${dia}">
-        <div class="field" style="min-width:70px;">
-          <label><input type="checkbox" id="horActivo${dia}" ${activo?'checked':''} onchange="guardarHorarioDia(${dia})"> ${nombreDia}</label>
-        </div>
-        <div class="field" style="min-width:110px;">
-          <label>Desde</label>
-          <input type="time" id="horDesde${dia}" value="${horaIni}" onchange="guardarHorarioDia(${dia})">
-        </div>
-        <div class="field" style="min-width:110px;">
-          <label>Hasta</label>
-          <input type="time" id="horHasta${dia}" value="${horaFin}" onchange="guardarHorarioDia(${dia})">
-        </div>
-        <div class="field" style="min-width:90px;">
-          <label>Cupo x turno</label>
-          <input type="number" min="1" id="horCupo${dia}" value="${cupo}" onchange="guardarHorarioDia(${dia})">
-        </div>
+      <div style="padding:10px 0; border-bottom:1px solid var(--border);">
+        <div style="font-weight:700; margin-bottom:6px;">${nombreDia}</div>
+        <div id="rangosDia${dia}">${filasHtml}</div>
+        <button class="ghost" style="margin-top:2px;" onclick="agregarRangoHorario(${dia})">+ Agregar rango horario</button>
       </div>
     `;
   }).join('');
 }
 
-async function guardarHorarioDia(dia){
+function filaRangoHorarioHtml(dia, h){
+  const rid = h.id;
+  return `
+    <div class="row" style="align-items:end; padding:6px 0;" id="filaRango-${rid}">
+      <div class="field" style="min-width:70px;">
+        <label><input type="checkbox" id="horActivo-${rid}" ${h.activo?'checked':''} onchange="guardarRangoHorario(${dia},'${rid}')"> Activo</label>
+      </div>
+      <div class="field" style="min-width:100px;">
+        <label>Desde</label>
+        <input type="time" id="horDesde-${rid}" value="${(h.hora_inicio||'08:00:00').slice(0,5)}" onchange="guardarRangoHorario(${dia},'${rid}')">
+      </div>
+      <div class="field" style="min-width:100px;">
+        <label>Hasta</label>
+        <input type="time" id="horHasta-${rid}" value="${(h.hora_fin||'12:00:00').slice(0,5)}" onchange="guardarRangoHorario(${dia},'${rid}')">
+      </div>
+      <div class="field" style="min-width:80px;">
+        <label>Cupo x turno</label>
+        <input type="number" min="1" id="horCupo-${rid}" value="${h.cupo_por_turno ?? 1}" onchange="guardarRangoHorario(${dia},'${rid}')">
+      </div>
+      <button class="danger" onclick="eliminarRangoHorario('${rid}')">Quitar</button>
+    </div>
+  `;
+}
+
+function agregarRangoHorario(dia){
+  const profesorId = document.getElementById('profActual').value;
+  const tempId = 'nuevo-' + Math.random().toString(36).slice(2);
+  HORARIOS_CACHE.push({ id: tempId, profesor_id: profesorId, dia_semana: dia, hora_inicio: '08:00:00', hora_fin: '12:00:00', cupo_por_turno: 1, activo: true });
+  renderHorarios();
+}
+
+async function guardarRangoHorario(dia, rowId){
   const profesorId = document.getElementById('profActual').value;
   if (!profesorId){ toast('Elegí un profesor primero.', true); return; }
-  const activo = document.getElementById(`horActivo${dia}`).checked;
-  const hora_inicio = document.getElementById(`horDesde${dia}`).value;
-  const hora_fin = document.getElementById(`horHasta${dia}`).value;
-  const cupo_por_turno = parseInt(document.getElementById(`horCupo${dia}`).value, 10) || 1;
+  const activo = document.getElementById(`horActivo-${rowId}`).checked;
+  const hora_inicio = document.getElementById(`horDesde-${rowId}`).value;
+  const hora_fin = document.getElementById(`horHasta-${rowId}`).value;
+  const cupo_por_turno = parseInt(document.getElementById(`horCupo-${rowId}`).value, 10) || 1;
   if (hora_fin <= hora_inicio){ toast('El horario "Hasta" tiene que ser mayor que "Desde".', true); return; }
   try{
-    await sb('horarios_trabajo?on_conflict=profesor_id,dia_semana', {
-      method: 'POST',
-      headers: { Prefer: 'resolution=merge-duplicates,return=minimal' },
-      body: JSON.stringify([{ profesor_id: profesorId, dia_semana: dia, hora_inicio, hora_fin, cupo_por_turno, activo }])
-    });
+    const esNuevo = String(rowId).startsWith('nuevo-');
+    if (esNuevo){
+      const [creado] = await sb('horarios_trabajo', {
+        method:'POST', headers:{Prefer:'return=representation'},
+        body: JSON.stringify([{ profesor_id: profesorId, dia_semana: dia, hora_inicio, hora_fin, cupo_por_turno, activo }])
+      });
+      const idx = HORARIOS_CACHE.findIndex(h => h.id === rowId);
+      if (idx >= 0) HORARIOS_CACHE[idx] = creado;
+      renderHorarios();
+    } else {
+      await sb(`horarios_trabajo?id=eq.${rowId}`, {
+        method:'PATCH', headers:{Prefer:'return=minimal'},
+        body: JSON.stringify({ hora_inicio, hora_fin, cupo_por_turno, activo })
+      });
+      const idx = HORARIOS_CACHE.findIndex(h => h.id === rowId);
+      if (idx >= 0) Object.assign(HORARIOS_CACHE[idx], { hora_inicio, hora_fin, cupo_por_turno, activo });
+    }
     toast('Horario guardado ✓');
   }catch(e){ toast('Error guardando horario: ' + e.message, true); }
+}
+
+async function eliminarRangoHorario(rowId){
+  const esNuevo = String(rowId).startsWith('nuevo-');
+  HORARIOS_CACHE = HORARIOS_CACHE.filter(h => h.id !== rowId);
+  renderHorarios();
+  if (!esNuevo){
+    try{ await sb(`horarios_trabajo?id=eq.${rowId}`, { method:'DELETE', headers:{Prefer:'return=minimal'} }); }
+    catch(e){ toast('Error eliminando el rango: ' + e.message, true); }
+  }
 }
 
 // ---------- Agenda (turnos agendados por horario, día a día) ----------
@@ -2527,6 +2647,7 @@ const CATALOGO_METRICAS = {
 function iniciarEvaluaciones(){
   const sel = document.getElementById('evalAlumno');
   sel.innerHTML = '<option value="">-- elegir --</option>' + ALUMNOS_CACHE.map(a=>`<option value="${a.id}">${a.nombre}</option>`).join('');
+  armarComboBuscable('evalAlumno', 'Buscar alumno por nombre...');
   document.getElementById('evalNuevaWrap').style.display = 'none';
   document.getElementById('evalEvolucionWrap').style.display = 'none';
   document.getElementById('evalHistorialWrap').style.display = 'none';
@@ -2852,6 +2973,7 @@ const BADGES_CONSTANCIA = [5, 15, 30, 60, 100];
 function iniciarLogros(){
   const sel = document.getElementById('logrosAlumno');
   sel.innerHTML = '<option value="">-- elegir --</option>' + ALUMNOS_CACHE.map(a=>`<option value="${a.id}">${a.nombre}</option>`).join('');
+  armarComboBuscable('logrosAlumno', 'Buscar alumno por nombre...');
   document.getElementById('logrosContenido').innerHTML = 'Elegí un alumno arriba.';
 }
 
