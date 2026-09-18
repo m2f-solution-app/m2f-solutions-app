@@ -1117,6 +1117,16 @@
   </div>
 </div>
 
+<div class="modal-overlay" id="modalNotificacionesAlu">
+  <div class="modal-box">
+    <h3>Novedades</h3>
+    <div id="modalNotifContenido" style="display:flex; flex-direction:column; gap:8px;"></div>
+    <div class="row" style="justify-content:flex-end; margin-top:12px;">
+      <button class="btn-confirmar" onclick="cerrarModalNotificacionesAlu()">Entendido</button>
+    </div>
+  </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 const SUPABASE_URL = "https://wlgjhqdvpkofglxznvec.supabase.co";
@@ -1417,6 +1427,7 @@ async function entrarComoAlumnoLogueado(){
     document.body.classList.add('tiene-bottom-nav');
     await cargarPersonas(); // re-scopea ALUMNOS_CACHE/PROFESORES_CACHE al gimnasio de esta sesión
     mostrarModoAlumnoLogueado(ficha);
+    revisarNotificacionesAlumno(ficha.id);
   }catch(e){ msg.textContent = 'Error entrando: ' + e.message; }
 }
 
@@ -3711,6 +3722,52 @@ async function cargarBannerCuota(alumnoId){
     const color = esVencido ? 'rgba(255,93,93,.12); border-color:rgba(255,93,93,.4); color:#ff8a8a;' : 'rgba(255,210,61,.12); border-color:rgba(255,210,61,.4); color:var(--warn);';
     cont.innerHTML = `<div class="warn-banner" style="background:${color}">${esVencido?'⚠️':'⏰'} ${texto}</div>`;
   }catch(e){ cont.innerHTML = ''; }
+}
+
+// ---------- Notificaciones al entrar: aviso de cuota (en vivo, no bloquea) +
+// confirmaciones de pago recibido (persistidas, generadas por trigger en la BD
+// cada vez que el profesor carga un pago) ----------
+let NOTIF_PAGOS_PENDIENTES_ALU = [];
+
+async function revisarNotificacionesAlumno(alumnoId){
+  try{
+    const bloques = [];
+
+    const [plan] = await sb(`v_plan_vigente_alumno?alumno_id=eq.${alumnoId}`);
+    if (plan && (plan.estado_pago === 'vencido' || plan.estado_pago === 'por_vencer')){
+      const esVencido = plan.estado_pago === 'vencido';
+      const texto = esVencido
+        ? `Tu cuota está <strong>vencida</strong> desde el ${plan.vigencia_hasta}. Regularizala con tu profesor para poder seguir sacando turnos.`
+        : `Tu cuota vence el <strong>${plan.vigencia_hasta}</strong> (en ${plan.dias_para_vencer} día${plan.dias_para_vencer===1?'':'s'}).`;
+      bloques.push(`<div class="warn-banner" style="${esVencido
+        ? 'background:rgba(255,93,93,.12); border-color:rgba(255,93,93,.4); color:#ff8a8a;'
+        : 'background:rgba(255,210,61,.12); border-color:rgba(255,210,61,.4); color:var(--warn);'}">${esVencido?'⚠️':'⏰'} ${texto}</div>`);
+    }
+
+    const pendientes = await sb(`notificaciones_alumno?alumno_id=eq.${alumnoId}&leida=eq.false&order=creado_en.asc`);
+    NOTIF_PAGOS_PENDIENTES_ALU = pendientes || [];
+    NOTIF_PAGOS_PENDIENTES_ALU.forEach(n => {
+      bloques.push(`<div class="warn-banner" style="background:rgba(61,220,132,.12); border-color:rgba(61,220,132,.4); color:var(--accent2);"><strong>${n.titulo}</strong><br>${n.mensaje}</div>`);
+    });
+
+    if (!bloques.length) return; // nada para avisar, no molestamos al alumno
+    document.getElementById('modalNotifContenido').innerHTML = bloques.join('');
+    document.getElementById('modalNotificacionesAlu').classList.add('show');
+  }catch(e){ /* aviso best-effort: si falla, no corta el ingreso a la app */ }
+}
+
+async function cerrarModalNotificacionesAlu(){
+  document.getElementById('modalNotificacionesAlu').classList.remove('show');
+  if (NOTIF_PAGOS_PENDIENTES_ALU.length){
+    const ids = NOTIF_PAGOS_PENDIENTES_ALU.map(n => n.id);
+    NOTIF_PAGOS_PENDIENTES_ALU = [];
+    try{
+      await sb(`notificaciones_alumno?id=in.(${ids.join(',')})`, {
+        method: 'PATCH', headers: { Prefer: 'return=minimal' },
+        body: JSON.stringify({ leida: true })
+      });
+    }catch(e){ /* si falla el marcado, se vuelve a mostrar en el próximo ingreso */ }
+  }
 }
 
 // El profesor filter solo muestra profesores del mismo gimnasio que el alumno.
