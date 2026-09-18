@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+<meta http-equiv="Pragma" content="no-cache" />
+<meta http-equiv="Expires" content="0" />
 <title>M2F Solutions</title>
 <style>
   :root{
@@ -156,8 +159,11 @@
   .alumnos-chips{display:flex; flex-wrap:wrap; gap:8px;}
   .alumno-chip{
     display:flex; align-items:center; gap:8px; background:var(--panel2); border:1px solid var(--border);
-    border-radius:999px; padding:5px 12px 5px 5px; font-size:13px;
+    border-radius:999px; padding:5px 12px 5px 5px; font-size:13px; cursor:pointer; transition:border-color .12s, background .12s;
   }
+  .alumno-chip:active{transform:scale(0.97);}
+  .alumno-chip.asistencia-presente{background:rgba(61,220,132,.15); border-color:rgba(61,220,132,.5);}
+  .alumno-chip.asistencia-ausente{background:rgba(255,93,93,.15); border-color:rgba(255,93,93,.5);}
   .avatar{
     width:22px; height:22px; border-radius:50%; background:var(--accent); color:#1a1000;
     display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:800; flex:0 0 auto;
@@ -291,6 +297,12 @@
     padding:6px 4px calc(6px + env(safe-area-inset-bottom));
     box-shadow:0 -6px 20px rgba(0,0,0,.35);
   }
+  #avisoActualizacion{
+    display:none; position:fixed; left:12px; right:12px; bottom:12px; z-index:200;
+    background:var(--panel2); border:1px solid var(--accent); border-radius:12px;
+    padding:12px 14px; box-shadow:0 6px 20px rgba(0,0,0,.4); max-width:420px; margin:0 auto;
+  }
+  @media (max-width:720px){ #avisoActualizacion{ bottom:calc(78px + env(safe-area-inset-bottom)); } }
   .bottom-nav-inner{display:flex; align-items:flex-end; justify-content:space-around; max-width:520px; margin:0 auto;}
   .bottom-nav-item{
     background:none; border:none; color:var(--muted); font-size:10.5px; font-weight:600;
@@ -508,6 +520,10 @@
             <div class="muted" style="margin-top:14px; font-size:12px;">
               El monto pendiente por cobrar es estimado: toma el precio del plan de cada socio vencido, no una factura real.
             </div>
+
+            <h2 style="margin-top:22px;">📅 Ocupación por día (últimas 4 semanas)</h2>
+            <div class="muted" style="font-size:12px; margin-bottom:10px;">% de cupos reservados sobre la capacidad total de horarios de trabajo cargados, promediado por día de la semana.</div>
+            <div id="dashboardOcupacion"></div>
           </div>
         </div>
       </div>
@@ -909,6 +925,23 @@
         </div>
 
         <div class="card">
+          <h2 style="margin-top:0">Colores de tu app</h2>
+          <div class="muted" style="margin-bottom:10px;">Elegí los dos colores con los que van a ver la app tus alumnos y profesores (además de tu logo). Se aplican al instante en botones, destacados y avisos.</div>
+          <div class="row">
+            <div class="field">
+              <label>Color principal</label>
+              <input type="color" id="gimColorPrimario" value="#ff7a30" oninput="previsualizarColoresGimnasio()" style="width:70px; height:38px; padding:2px; cursor:pointer;">
+            </div>
+            <div class="field">
+              <label>Color secundario</label>
+              <input type="color" id="gimColorSecundario" value="#3ddc84" oninput="previsualizarColoresGimnasio()" style="width:70px; height:38px; padding:2px; cursor:pointer;">
+            </div>
+            <button class="ghost" onclick="restaurarColoresPorDefecto()" style="align-self:end;">Restaurar por defecto</button>
+            <button onclick="guardarGimnasio()" style="align-self:end;">Guardar</button>
+          </div>
+        </div>
+
+        <div class="card">
           <h2 style="margin-top:0">Facturación</h2>
           <div class="row">
             <div class="field">
@@ -1106,6 +1139,13 @@
 
 <div class="toast" id="toast"></div>
 
+<div id="avisoActualizacion">
+  <div class="row" style="justify-content:space-between; align-items:center; gap:10px;">
+    <div>🔄 Hay una versión nueva de la app.</div>
+    <button onclick="location.reload()" style="flex:0 0 auto;">Actualizar</button>
+  </div>
+</div>
+
 <div class="modal-overlay" id="modalConfirmarTurno">
   <div class="modal-box">
     <h3>Confirmar turno</h3>
@@ -1132,6 +1172,12 @@
 const SUPABASE_URL = "https://wlgjhqdvpkofglxznvec.supabase.co";
 const ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndsZ2pocWR2cGtvZmdseHpudmVjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk0MDI5NDQsImV4cCI6MjEwNDk3ODk0NH0.L_6hpnDoeUGbT-00o-wa3zLtPy5jiyjZmjFXTilc9pU";
 const BUCKET = "Ejercicios";
+// Se sube a GitHub siempre como el mismo index.html (mismo link para todos), así que la
+// "versión" de la app queda marcada acá adentro en vez de en la URL. Cada vez que se entrega
+// un cambio, se incrementa este número — el chequeo de actualización (más abajo) lo compara
+// contra lo que hay publicado y avisa si están desactualizados, sin que nadie tenga que
+// cambiar ningún link a mano.
+const APP_VERSION = 11;
 
 function imgUrl(providerRefId){
   return `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${encodeURI(providerRefId)}`;
@@ -1531,6 +1577,8 @@ function cambiarSubvista(v){
     document.getElementById('gimNombre').value = GIMNASIO_ACTUAL?.nombre || '';
     document.getElementById('gimLogoUrl').value = GIMNASIO_ACTUAL?.logo_url || '';
     document.getElementById('gimDescuentoEfectivo').value = GIMNASIO_ACTUAL?.descuento_efectivo_pct ?? 10;
+    document.getElementById('gimColorPrimario').value = GIMNASIO_ACTUAL?.color_primario || COLORES_DEFECTO_TEMA.primario;
+    document.getElementById('gimColorSecundario').value = GIMNASIO_ACTUAL?.color_secundario || COLORES_DEFECTO_TEMA.secundario;
     actualizarPreviewLogo();
   }
   cerrarMenuProf();
@@ -1568,11 +1616,40 @@ async function cargarDashboardAdmin(){
     document.getElementById('kpiPorVencer').textContent = d.por_vencer_7d ?? 0;
     estado.style.display = 'none';
     kpis.style.display = '';
+    cargarOcupacionSemanalDashboard(gimId);
   }catch(e){
     estado.textContent = 'Error cargando el dashboard: ' + e.message;
     estado.style.display = '';
     kpis.style.display = 'none';
   }
+}
+
+// ---------- HU9: % de ocupación por día de la semana (Dashboard admin) ----------
+async function cargarOcupacionSemanalDashboard(gimId){
+  const cont = document.getElementById('dashboardOcupacion');
+  cont.innerHTML = 'Cargando...';
+  try{
+    const filas = await sb('rpc/obtener_ocupacion_semanal', {
+      method: 'POST',
+      body: JSON.stringify({ p_gimnasio_id: gimId })
+    });
+    if (!filas || !filas.some(f => f.capacidad > 0)){
+      cont.innerHTML = '<div class="empty">Todavía no hay suficientes horarios de trabajo o turnos cargados para calcular esto.</div>';
+      return;
+    }
+    cont.innerHTML = filas.map(f => {
+      const pct = Number(f.pct || 0);
+      const color = pct >= 80 ? 'var(--accent2)' : pct >= 40 ? 'var(--accent)' : 'var(--warn)';
+      return `
+        <div class="franja">
+          <div class="franja-hora">${DIAS_NOMBRE_AGENDA[f.dia_semana]}</div>
+          <div class="franja-cuerpo">
+            <div class="franja-barra-wrap"><div class="franja-barra" style="width:${Math.min(pct,100)}%; background:${color};"></div></div>
+            <div class="franja-cupo-txt">${f.reservados} reservados de ${f.capacidad} cupos disponibles (${pct}%)</div>
+          </div>
+        </div>`;
+    }).join('');
+  }catch(e){ cont.innerHTML = 'Error cargando la ocupación: ' + e.message; }
 }
 
 function formatearMonto(n){
@@ -1729,12 +1806,32 @@ function cargarListaEjerciciosPersonalizados(){
 let GIMNASIO_ACTUAL = null;
 async function cargarGimnasioActual(){
   const query = PERFIL_ACTUAL
-    ? `gimnasios?select=id,nombre,logo_url,tipo,descuento_efectivo_pct&id=eq.${PERFIL_ACTUAL.gimnasio_id}`
-    : 'gimnasios?select=id,nombre,logo_url,tipo,descuento_efectivo_pct&order=creado_en.asc&limit=1';
+    ? `gimnasios?select=id,nombre,logo_url,tipo,descuento_efectivo_pct,color_primario,color_secundario&id=eq.${PERFIL_ACTUAL.gimnasio_id}`
+    : 'gimnasios?select=id,nombre,logo_url,tipo,descuento_efectivo_pct,color_primario,color_secundario&order=creado_en.asc&limit=1';
   const [g] = await sb(query);
   GIMNASIO_ACTUAL = g || null;
   renderMarcaGimnasio();
 }
+
+// ---------- Tema por gimnasio: cada gym puede elegir su color principal y
+// secundario (además del logo), que reemplazan las variables CSS --accent/--accent2
+// usadas en toda la app (botones, destacados, avisos). Sin gimnasio o sin colores
+// propios se usan los valores por defecto (naranja/verde de M2F Solutions). ----------
+const COLORES_DEFECTO_TEMA = { primario: '#ff7a30', secundario: '#3ddc84' };
+function aplicarTemaGimnasio(g){
+  document.documentElement.style.setProperty('--accent', (g && g.color_primario) || COLORES_DEFECTO_TEMA.primario);
+  document.documentElement.style.setProperty('--accent2', (g && g.color_secundario) || COLORES_DEFECTO_TEMA.secundario);
+}
+function previsualizarColoresGimnasio(){
+  document.documentElement.style.setProperty('--accent', document.getElementById('gimColorPrimario').value);
+  document.documentElement.style.setProperty('--accent2', document.getElementById('gimColorSecundario').value);
+}
+function restaurarColoresPorDefecto(){
+  document.getElementById('gimColorPrimario').value = COLORES_DEFECTO_TEMA.primario;
+  document.getElementById('gimColorSecundario').value = COLORES_DEFECTO_TEMA.secundario;
+  previsualizarColoresGimnasio();
+}
+
 function renderMarcaGimnasio(){
   const logo = document.getElementById('brandLogo');
   const nombre = document.getElementById('brandNombre');
@@ -1742,7 +1839,7 @@ function renderMarcaGimnasio(){
   const sub = document.getElementById('brandSub');
   if (GIMNASIO_ACTUAL && GIMNASIO_ACTUAL.nombre){
     nombre.textContent = GIMNASIO_ACTUAL.nombre;
-    sub.textContent = '· con M2F Solutions';
+    sub.textContent = '';
     if (GIMNASIO_ACTUAL.logo_url){
       logo.src = GIMNASIO_ACTUAL.logo_url;
       logo.style.display = '';
@@ -1757,6 +1854,7 @@ function renderMarcaGimnasio(){
     logo.style.display = 'none';
     dot.style.display = '';
   }
+  aplicarTemaGimnasio(GIMNASIO_ACTUAL);
   // El Dashboard de KPIs es solo para el rol admin (dueño/administrador del gym),
   // sin importar si el gimnasio es de tipo "gimnasio" o "independiente".
   const menuDash = document.getElementById('menuDashboard');
@@ -1796,6 +1894,8 @@ async function guardarGimnasio(){
   const nombre = document.getElementById('gimNombre').value.trim();
   const logoUrl = document.getElementById('gimLogoUrl').value.trim();
   const descuentoEfectivo = parseFloat(document.getElementById('gimDescuentoEfectivo').value);
+  const colorPrimario = document.getElementById('gimColorPrimario').value || null;
+  const colorSecundario = document.getElementById('gimColorSecundario').value || null;
   if (!nombre){ toast('Ponele un nombre al gimnasio.', true); return; }
   const btn = document.getElementById('btnGuardarGimnasio');
   btn.disabled = true;
@@ -1803,10 +1903,10 @@ async function guardarGimnasio(){
     if (GIMNASIO_ACTUAL){
       await sb(`gimnasios?id=eq.${GIMNASIO_ACTUAL.id}`, {
         method:'PATCH', headers:{Prefer:'return=minimal'},
-        body: JSON.stringify({ nombre, logo_url: logoUrl || null, descuento_efectivo_pct: isNaN(descuentoEfectivo) ? 10 : descuentoEfectivo })
+        body: JSON.stringify({ nombre, logo_url: logoUrl || null, descuento_efectivo_pct: isNaN(descuentoEfectivo) ? 10 : descuentoEfectivo, color_primario: colorPrimario, color_secundario: colorSecundario })
       });
     } else {
-      await sb('gimnasios', { method:'POST', headers:{Prefer:'return=minimal'}, body: JSON.stringify([{ nombre, logo_url: logoUrl || null, descuento_efectivo_pct: isNaN(descuentoEfectivo) ? 10 : descuentoEfectivo }]) });
+      await sb('gimnasios', { method:'POST', headers:{Prefer:'return=minimal'}, body: JSON.stringify([{ nombre, logo_url: logoUrl || null, descuento_efectivo_pct: isNaN(descuentoEfectivo) ? 10 : descuentoEfectivo, color_primario: colorPrimario, color_secundario: colorSecundario }]) });
     }
     await cargarGimnasioActual();
     toast('Datos del gimnasio guardados ✓');
@@ -2138,21 +2238,21 @@ async function renderAgenda(){
     const idsProf = profesores.map(p => p.id);
     const [horarios, turnosDelDia] = await Promise.all([
       sb(`horarios_trabajo?profesor_id=in.(${idsProf.join(',')})&dia_semana=eq.${dow}&activo=eq.true`),
-      sb(`turnos?select=hora,profesor_id,alumnos(nombre)&fecha=eq.${fecha}&profesor_id=in.(${idsProf.join(',')})&estado=neq.cancelado`),
+      sb(`turnos?select=id,hora,profesor_id,asistio,alumnos(nombre)&fecha=eq.${fecha}&profesor_id=in.(${idsProf.join(',')})&estado=neq.cancelado`),
     ]);
 
     // Agrupa las reservas reales por profesor+hora, para pegárselas a cada franja.
-    const reservasPorSlot = {}; // `${profesor_id}|${hora}` -> [nombres]
+    const reservasPorSlot = {}; // `${profesor_id}|${hora}` -> [{id, nombre, asistio}]
     turnosDelDia.forEach(t => {
       if (!t.hora) return;
       const clave = `${t.profesor_id}|${t.hora}`;
-      (reservasPorSlot[clave] = reservasPorSlot[clave] || []).push(t.alumnos ? t.alumnos.nombre : 'Alumno');
+      (reservasPorSlot[clave] = reservasPorSlot[clave] || []).push({ id: t.id, nombre: t.alumnos ? t.alumnos.nombre : 'Alumno', asistio: t.asistio });
     });
 
     const horariosPorProfesor = {};
     horarios.forEach(h => horariosPorProfesor[h.profesor_id] = h);
 
-    let totalReservados = 0, totalCupos = 0, franjasVacias = 0;
+    let totalReservados = 0, totalCupos = 0, franjasVacias = 0, totalPresentes = 0, totalAusentes = 0;
     const bloquesHtml = [];
 
     profesores.forEach(prof => {
@@ -2168,11 +2268,19 @@ async function renderAgenda(){
         const nombres = reservasPorSlot[`${prof.id}|${horaStr}`] || [];
         totalReservados += nombres.length;
         totalCupos += h.cupo_por_turno;
+        nombres.forEach(r => { if (r.asistio === true) totalPresentes++; else if (r.asistio === false) totalAusentes++; });
         if (nombres.length === 0) franjasVacias++;
         if (agendaSoloLibres && nombres.length > 0) continue;
         huboFranja = true;
         const pct = Math.round((nombres.length / h.cupo_por_turno) * 100);
-        const chips = nombres.map(n => `<div class="alumno-chip"><span class="avatar">${iniciales(n)}</span>${n}</div>`).join('');
+        const chips = nombres.map(r => {
+          const estado = r.asistio === true ? 'presente' : r.asistio === false ? 'ausente' : 'sinmarcar';
+          const icono = estado==='presente' ? ' ✅' : estado==='ausente' ? ' ❌' : '';
+          const asistioArg = r.asistio === true ? 'true' : r.asistio === false ? 'false' : 'null';
+          return `<div class="alumno-chip asistencia-${estado}" onclick="toggleAsistencia('${r.id}', ${asistioArg})" title="Tocá para marcar asistencia">
+            <span class="avatar">${iniciales(r.nombre)}</span>${r.nombre}${icono}
+          </div>`;
+        }).join('');
         franjasHtml += `
           <div class="franja ${nombres.length===0?'sin-reservas':''}">
             <div class="franja-hora">${horaLabel}</div>
@@ -2195,6 +2303,7 @@ async function renderAgenda(){
       <div class="kpi"><div class="num">${totalReservados}</div><div class="label">Turnos reservados</div></div>
       <div class="kpi clickable ${agendaSoloLibres?'activo':''}" onclick="toggleAgendaFiltroLibres()"><div class="num">${franjasVacias}</div><div class="label">Horarios libres</div></div>
       <div class="kpi"><div class="num">${ocupacion}%</div><div class="label">Ocupación del día</div></div>
+      <div class="kpi"><div class="num">${totalPresentes}/${totalReservados}</div><div class="label">Asistencia marcada${totalAusentes?` · ${totalAusentes} ausente${totalAusentes===1?'':'s'}`:''}</div></div>
     `;
 
     if (!bloquesHtml.length){
@@ -2206,6 +2315,19 @@ async function renderAgenda(){
       : '';
     wrap.innerHTML = aviso + bloquesHtml.join('');
   }catch(e){ wrap.innerHTML = 'Error: ' + e.message; }
+}
+
+// ---------- HU10: marcar asistencia directo desde la Agenda ----------
+// Ciclo al tocar el chip del alumno: sin marcar -> presente -> ausente -> sin marcar.
+async function toggleAsistencia(turnoId, asistioActual){
+  const siguiente = asistioActual === true ? false : asistioActual === false ? null : true;
+  try{
+    await sb(`turnos?id=eq.${turnoId}`, {
+      method:'PATCH', headers:{Prefer:'return=minimal'},
+      body: JSON.stringify({ asistio: siguiente, asistencia_marcada_en: siguiente === null ? null : new Date().toISOString() })
+    });
+    renderAgenda();
+  }catch(e){ toast('Error marcando asistencia: ' + e.message, true); }
 }
 
 // ---------- Planes de entrenamiento (precio + vigencia) ----------
@@ -4487,6 +4609,26 @@ function cronoIntervalosReset(){
   Object.assign(CRONO.intervalos, { fase:'listo', ronda:0, totalRondas:0, ejercicio:0, ejerciciosPorVuelta:1, segRestantes:0, trabajo:0, descanso:0 });
   cronoIntervalosRender();
 }
+
+// ---------- Auto-detección de versión nueva publicada ----------
+// Reemplaza el mecanismo anterior de "subir ?v=N a mano cada vez": ahora se sube
+// siempre index.html al mismo link, y esto se encarga de avisar (sin recargar solo,
+// para no interrumpir a nadie a mitad de un entrenamiento) cuando hay una versión
+// más nueva publicada que la que tiene cargada esa pestaña/app instalada.
+async function chequearActualizacion(){
+  try{
+    const resp = await fetch(`${window.location.pathname}?_chk=${Date.now()}`, { cache: 'no-store' });
+    if (!resp.ok) return;
+    const texto = await resp.text();
+    const m = texto.match(/const APP_VERSION = (\d+);/);
+    if (m && parseInt(m[1], 10) > APP_VERSION){
+      document.getElementById('avisoActualizacion').style.display = 'block';
+    }
+  }catch(e){ /* sin conexión o error de red: no molestamos, se reintenta en el próximo chequeo */ }
+}
+setTimeout(chequearActualizacion, 4000);
+setInterval(chequearActualizacion, 5 * 60 * 1000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) chequearActualizacion(); });
 
 // Arranque: primero se fija si ya había una sesión activa (login previo guardado
 // por supabase-js), y recién con eso resuelto carga los datos ya scopeados.
