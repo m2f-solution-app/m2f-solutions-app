@@ -1181,7 +1181,7 @@ const BUCKET = "Ejercicios";
 // un cambio, se incrementa este número — el chequeo de actualización (más abajo) lo compara
 // contra lo que hay publicado y avisa si están desactualizados, sin que nadie tenga que
 // cambiar ningún link a mano.
-const APP_VERSION = 12;
+const APP_VERSION = 13;
 
 function imgUrl(providerRefId){
   return `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${encodeURI(providerRefId)}`;
@@ -3989,7 +3989,7 @@ async function renderHorasAlu(){
         </div>`;
       }).join('');
       return `<div class="prof-grupo">
-        ${profesorIds.length > 1 ? `<div class="prof-titulo">${nombreProf}</div>` : ''}
+        <div class="prof-titulo">${nombreProf}</div>
         <div class="horas-grid">${horasHtml}</div>
       </div>`;
     }).join('');
