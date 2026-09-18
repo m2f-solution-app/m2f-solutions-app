@@ -311,6 +311,8 @@
   @media (max-width:720px){
     .bottom-nav.show{display:block;}
     body.tiene-bottom-nav #alumnoHome{padding-bottom:76px;}
+    #profesorApp .prof-layout{padding-bottom:76px;}
+    #menuDrawerBtnProf, #menuDrawerBtnAlu{display:none;}
   }
 
   /* ---- Buscador de ejercicios: gifs más chicos en pantallas angostas (celu) ---- */
@@ -319,6 +321,15 @@
     .search-item{padding:6px;}
     .search-item .nombre{font-size:11px;}
     .search-item .meta{font-size:9.5px;}
+  }
+
+  /* ---- Campos de series/reps/peso/etc. del ejercicio: más compactos en celu ---- */
+  @media (max-width:520px){
+    .grid-exercise .row{gap:6px;}
+    .grid-exercise .field{min-width:56px !important; flex:1 1 56px;}
+    .grid-exercise .field[style*="flex:1"]{flex-basis:100px !important;}
+    .grid-exercise .field label{font-size:9px; margin-bottom:2px;}
+    .grid-exercise select, .grid-exercise input, .grid-exercise textarea{padding:6px 6px; font-size:12.5px;}
   }
 </style>
 </head>
@@ -413,7 +424,7 @@
     </div>
   </div>
 
-  <button class="menu-drawer-btn" onclick="abrirMenuProf()">☰ Menú</button>
+  <button class="menu-drawer-btn" id="menuDrawerBtnProf" onclick="abrirMenuProf()">☰ Menú</button>
 
   <div class="menu-drawer-overlay" id="menuProfOverlay" onclick="cerrarMenuProf()"></div>
   <div class="menu-drawer" id="menuProfDrawer">
@@ -902,6 +913,17 @@
     </div>
   </div>
 
+  <!-- ---- Barra inferior de navegación (solo mobile) ---- -->
+  <div class="bottom-nav show" id="bottomNavProf">
+    <div class="bottom-nav-inner">
+      <button class="bottom-nav-item" id="bnavProfRutinas" onclick="cambiarSubvista('rutinas')"><span class="ico">🗂️</span>Rutinas</button>
+      <button class="bottom-nav-item" id="bnavProfArmador" onclick="cambiarSubvista('armador')"><span class="ico">🏋️</span>Armador</button>
+      <button class="bottom-nav-item principal" id="bnavProfAgenda" onclick="cambiarSubvista('agenda')"><span class="ico">📋</span>Agenda</button>
+      <button class="bottom-nav-item" id="bnavProfAlumnos" onclick="cambiarSubvista('alumnos')"><span class="ico">👤</span>Alumnos</button>
+      <button class="bottom-nav-item" id="bnavProfMenu" onclick="abrirMenuProf()"><span class="ico">☰</span>Menú</button>
+    </div>
+  </div>
+
   </div>
 </div>
 
@@ -935,7 +957,7 @@
 
     <div id="bannerCuotaAlu"></div>
 
-    <button class="menu-drawer-btn" onclick="abrirMenuAlu()">☰ Menú</button>
+    <button class="menu-drawer-btn" id="menuDrawerBtnAlu" onclick="abrirMenuAlu()">☰ Menú</button>
 
     <div class="menu-drawer-overlay" id="menuAluOverlay" onclick="cerrarMenuAlu()"></div>
     <div class="menu-drawer" id="menuAluDrawer">
@@ -1468,6 +1490,10 @@ function cambiarSubvista(v){
   document.getElementById('menuCobranzas').classList.toggle('active', v==='cobranzas');
   document.getElementById('menuEjercicios').classList.toggle('active', v==='ejercicios');
   document.getElementById('menuGimnasio').classList.toggle('active', v==='gimnasio');
+  document.getElementById('bnavProfRutinas').classList.toggle('active', v==='rutinas');
+  document.getElementById('bnavProfArmador').classList.toggle('active', v==='armador');
+  document.getElementById('bnavProfAgenda').classList.toggle('active', v==='agenda');
+  document.getElementById('bnavProfAlumnos').classList.toggle('active', v==='alumnos');
   if (v==='dashboard') cargarDashboardAdmin();
   if (v==='rutinas') cargarGrillaRutinas();
   if (v==='alumnos') cargarListaAlumnos();
@@ -3818,6 +3844,37 @@ async function cancelarTurno(turnoId, alumnoId){
   }catch(e){ toast('Error cancelando turno: ' + e.message, true); }
 }
 
+// Busca, para cada ejercicio de la rutina de hoy, el último peso/reps/RIR real
+// que el propio alumno registró la vez anterior que hizo ESE ejercicio (en
+// cualquier rutina pasada) — así el campo arranca precargado con lo que el
+// alumno venía haciendo en vez de la sugerencia fija del profesor, y cuando
+// no hay historial todavía cae en esa sugerencia como antes.
+async function cargarUltimosPesos(ejercicioIds){
+  const ids = [...new Set(ejercicioIds)];
+  const resultado = {};
+  if (!ids.length) return resultado;
+  try{
+    const eeHist = await sb(`ejecucion_ejercicios?select=id,ejercicio_efectivo_id,finalizado,ejecuciones(fecha)&ejercicio_efectivo_id=in.(${ids.join(',')})&finalizado=eq.true`);
+    if (!eeHist.length) return resultado;
+    // Nos quedamos con la ejecución MÁS RECIENTE (por fecha) de cada ejercicio.
+    eeHist.sort((a, b) => (b.ejecuciones?.fecha || '').localeCompare(a.ejecuciones?.fecha || ''));
+    const eeIdPorEjercicio = {};
+    eeHist.forEach(e => { if (!(e.ejercicio_efectivo_id in eeIdPorEjercicio)) eeIdPorEjercicio[e.ejercicio_efectivo_id] = e.id; });
+    const eeIds = Object.values(eeIdPorEjercicio);
+    if (!eeIds.length) return resultado;
+    const series = await sb(`series_registradas?select=numero_serie,peso_realizado,repeticiones_realizadas,rir_realizado,ejecucion_ejercicio_id&ejecucion_ejercicio_id=in.(${eeIds.join(',')})`);
+    const ejercicioPorEeId = {};
+    Object.entries(eeIdPorEjercicio).forEach(([ejId, eeId]) => { ejercicioPorEeId[eeId] = ejId; });
+    series.forEach(s => {
+      const ejId = ejercicioPorEeId[s.ejecucion_ejercicio_id];
+      if (!ejId) return;
+      if (!resultado[ejId]) resultado[ejId] = {};
+      resultado[ejId][s.numero_serie] = { peso: s.peso_realizado, reps: s.repeticiones_realizadas, rir: s.rir_realizado };
+    });
+  }catch(e){ console.error('No se pudo cargar el historial de pesos:', e); }
+  return resultado;
+}
+
 // ---------- Ejecución de un día (vista alumno) ----------
 async function comenzarEntrenamiento(rutinaDiaId, alumnoId, nombreDia){
   document.getElementById('alumnoHome').style.display = 'none';
@@ -3836,11 +3893,14 @@ async function comenzarEntrenamiento(rutinaDiaId, alumnoId, nombreDia){
     const eePayload = rows.map(r => ({ ejecucion_id: ejecucion.id, rutina_ejercicio_id: r.id, ejercicio_efectivo_id: r.ejercicios.id }));
     const eeCreados = await sb('ejecucion_ejercicios', { method:'POST', headers:{Prefer:'return=representation'}, body: JSON.stringify(eePayload) });
 
+    const defaultsPorEjercicio = await cargarUltimosPesos(rows.map(r => r.ejercicios.id));
+
     const bloques = rows.map((r, i) => ({
       ejecucionEjercicioId: eeCreados[i].id,
       prescripcion: r,
       ejercicioActual: r.ejercicios,
       finalizado: false,
+      defaults: defaultsPorEjercicio[r.ejercicios.id] || {},
     }));
 
     renderEjecucion(ejecucion.id, nombreDia, bloques);
@@ -3879,15 +3939,25 @@ function renderEjecucion(ejecucionId, nombreDia, bloques){
 
 function bloqueHtml(b, idx){
   const p = b.prescripcion;
-  const filasSets = Array.from({length: p.series}).map((_, s) => `
+  const d = b.defaults || {};
+  const filasSets = Array.from({length: p.series}).map((_, s) => {
+    const numero = s + 1;
+    const prev = d[numero];
+    // Si el alumno ya hizo este ejercicio antes, precarga con lo que dejó registrado
+    // la última vez; si no, cae en la sugerencia del profesor (comportamiento anterior).
+    const pesoDefault = (prev && prev.peso != null) ? prev.peso : (p.peso_sugerido ?? '');
+    const repsDefault = (prev && prev.reps != null) ? prev.reps : '';
+    const rirDefault = (prev && prev.rir != null) ? prev.rir : (p.rir ?? '');
+    return `
     <div class="set-row">
-      <div class="muted">#${s+1}</div>
-      <input type="number" step="0.5" placeholder="Peso (kg)" id="peso-${idx}-${s}" value="${p.peso_sugerido ?? ''}">
-      <input type="number" placeholder="Reps" id="reps-${idx}-${s}" value="">
-      <input type="number" placeholder="RIR" id="rir-${idx}-${s}" value="${p.rir ?? ''}">
+      <div class="muted">#${numero}</div>
+      <input type="number" step="0.5" placeholder="Peso (kg)" id="peso-${idx}-${s}" value="${pesoDefault}">
+      <input type="number" placeholder="Reps" id="reps-${idx}-${s}" value="${repsDefault}">
+      <input type="number" placeholder="RIR" id="rir-${idx}-${s}" value="${rirDefault}">
       <span class="muted">sug: ${p.peso_sugerido ?? '-'}kg × ${p.repeticiones}</span>
     </div>
-  `).join('');
+  `;
+  }).join('');
 
   const esPorTiempo = !!p.tiempo_trabajo_seg;
   const detalleSets = esPorTiempo
@@ -3964,6 +4034,7 @@ async function confirmarSustitucion(idx, ejercicioJson){
       body: JSON.stringify({ ejercicio_efectivo_id: nuevo.id, sustituido:true, motivo_sustitucion: motivo })
     });
     b.ejercicioActual = nuevo;
+    b.defaults = {}; // es otro ejercicio: no corresponde precargar los pesos del anterior
     document.getElementById(`sustitucion-${idx}`).innerHTML = '';
     document.getElementById(`sustitucion-${idx}`).dataset.open='0';
     const wrapper = document.createElement('div');
