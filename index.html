@@ -232,6 +232,8 @@
     display:inline-flex; align-items:center; gap:8px; background:var(--panel);
     border:1px solid var(--border); color:var(--text); padding:10px 16px;
     border-radius:10px; font-weight:700; cursor:pointer; font-size:14px; margin-bottom:14px;
+    position:sticky; top:0; z-index:60; width:100%;
+    box-shadow:0 4px 10px rgba(0,0,0,.25);
   }
   .menu-drawer-btn:hover{border-color:var(--accent);}
   .menu-drawer-overlay{
@@ -281,6 +283,43 @@
   }
   .landing-opt:hover{border-color:var(--accent);}
   .landing-opt .emoji{font-size:28px; display:block;}
+
+  /* ---- Barra inferior de navegación (Alumno, solo mobile) ---- */
+  .bottom-nav{
+    display:none; position:fixed; left:0; right:0; bottom:0; z-index:120;
+    background:var(--panel); border-top:1px solid var(--border);
+    padding:6px 4px calc(6px + env(safe-area-inset-bottom));
+    box-shadow:0 -6px 20px rgba(0,0,0,.35);
+  }
+  .bottom-nav-inner{display:flex; align-items:flex-end; justify-content:space-around; max-width:520px; margin:0 auto;}
+  .bottom-nav-item{
+    background:none; border:none; color:var(--muted); font-size:10.5px; font-weight:600;
+    display:flex; flex-direction:column; align-items:center; gap:2px; padding:6px 4px;
+    cursor:pointer; flex:1; min-width:0;
+  }
+  .bottom-nav-item .ico{font-size:20px; line-height:1;}
+  .bottom-nav-item.active{color:var(--accent);}
+  .bottom-nav-item.principal{
+    color:#1a1000; margin-top:-22px;
+  }
+  .bottom-nav-item.principal .ico{
+    width:50px; height:50px; border-radius:50%; background:var(--accent);
+    display:flex; align-items:center; justify-content:center; font-size:22px;
+    box-shadow:0 6px 16px rgba(255,122,48,.5); border:3px solid var(--bg);
+  }
+  .bottom-nav-item.principal{color:var(--text);}
+  @media (max-width:720px){
+    .bottom-nav.show{display:block;}
+    body.tiene-bottom-nav #alumnoHome{padding-bottom:76px;}
+  }
+
+  /* ---- Buscador de ejercicios: gifs más chicos en pantallas angostas (celu) ---- */
+  @media (max-width:520px){
+    .search-results{grid-template-columns:repeat(auto-fill, minmax(84px,1fr)); gap:6px;}
+    .search-item{padding:6px;}
+    .search-item .nombre{font-size:11px;}
+    .search-item .meta{font-size:9.5px;}
+  }
 </style>
 </head>
 <body>
@@ -316,9 +355,6 @@
   </div>
 </div>
 
-<div class="warn-banner">
-  Prueba funcional conectada a la base real (Supabase). Los datos que cargues acá quedan guardados de verdad. Todavía no hay login: elegís el alumno/profesor de una lista.
-</div>
 
 <!-- ===================== VISTA PROFESOR ===================== -->
 <div id="vistaProfesor">
@@ -456,9 +492,6 @@
 
       <!-- ---- SUBVISTA: ARMADOR DE RUTINA (estándar, planificación quincenal) ---- -->
       <div id="subvistaArmador">
-        <div class="warn-banner" style="margin-bottom:0;">
-          Planificación estándar: elegís una fecha de calendario, armás los bloques de ese día y guardás. Cada rutina queda en la base como referencia. Cuando un alumno reserva un turno para esa fecha, se le engancha sola la rutina de ese día — no hace falta asignarla a mano.
-        </div>
 
         <div class="card">
           <h2 style="margin-top:0">Nueva rutina</h2>
@@ -489,9 +522,6 @@
 
       <!-- ---- SUBVISTA: RUTINAS (grilla nombre×día + edición + búsqueda puntual) ---- -->
       <div id="subvistaRutinas" style="display:none;">
-        <div class="warn-banner" style="margin-bottom:0;">
-          Tocá cualquier día para editarlo: cambiar series, pasarlo a por tiempo, agregar o quitar ejercicios. Para crear una rutina nueva o una especial por alumno, usá "🏋️ Armador de Rutina" o "⭐ Rutinas especiales por alumno".
-        </div>
 
         <div class="card">
           <h2 style="margin-top:0">Todas las rutinas</h2>
@@ -525,9 +555,6 @@
 
       <!-- ---- SUBVISTA: RUTINAS ESPECIALES POR ALUMNO ---- -->
       <div id="subvistaEspeciales" style="display:none;">
-        <div class="warn-banner" style="margin-bottom:0;">
-          Para alumnos con clases especiales: elegís la persona y le armás la rutina para los días puntuales que viene. Queda asignada directamente solo a ella — para esto es este panel (la asignación manual del armador estándar ya no existe).
-        </div>
 
         <div class="card">
           <h2 style="margin-top:0">Rutina especial</h2>
@@ -567,9 +594,6 @@
 
       <!-- ---- SUBVISTA: ALUMNOS (alta + tipo estándar/especial) ---- -->
       <div id="subvistaAlumnos" style="display:none;">
-        <div class="warn-banner" style="margin-bottom:0;">
-          El tipo define cómo recibe rutinas: <strong>Estándar</strong> se engancha solo a la rutina planificada para la fecha que reserve. <strong>Especial</strong> nunca recibe rutinas estándar automáticamente — solo lo que el profesor le arme puntualmente en "Rutinas especiales por alumno".
-        </div>
 
         <div class="card">
           <h2 style="margin-top:0">Nuevo alumno</h2>
@@ -705,9 +729,6 @@
 
       <!-- ---- SUBVISTA: PROFESORES (cuentas de login para tu staff) ---- -->
       <div id="subvistaProfesores" style="display:none;">
-        <div class="warn-banner" style="margin-bottom:0;">
-          Para gimnasios con varios profesores: acá das de alta el login de cada uno, en tu mismo gimnasio. Usuario y contraseña inicial = su DNI (igual que con los alumnos); cada profesor puede cambiar su contraseña después desde "Cambiar contraseña" arriba.
-        </div>
 
         <div class="card">
           <h2 style="margin-top:0">Nuevo profesor</h2>
@@ -752,9 +773,6 @@
 
       <!-- ---- SUBVISTA: HORARIOS DE TRABAJO (genera turnos cada 1h) ---- -->
       <div id="subvistaHorarios" style="display:none;">
-        <div class="warn-banner" style="margin-bottom:0;">
-          Definís el horario de trabajo de <strong id="horarioNombreProfesor">-</strong> (el profesor elegido arriba de todo, en "Profesor (vos)"). Por cada día activo se generan turnos automáticamente cada 1 hora dentro del rango, cada uno con el cupo que definas. No hace falta crear los turnos a mano: se calculan solos cuando el alumno busca disponibilidad.
-        </div>
         <div class="card">
           <h2 style="margin-top:0">Horario semanal</h2>
           <div id="listaHorarios">Elegí un profesor arriba de todo.</div>
@@ -763,9 +781,6 @@
 
       <!-- ---- SUBVISTA: PLANES DE ENTRENAMIENTO (precio + vigencia) ---- -->
       <div id="subvistaPlanes" style="display:none;">
-        <div class="warn-banner" style="margin-bottom:0;">
-          Los planes son del gimnasio (no de un profesor puntual). El precio en efectivo se calcula solo, aplicando el % de descuento definido en "Mi gimnasio". La vigencia de cada asignación a un alumno sale de "Dura (días)" de acá.
-        </div>
         <div class="card">
           <h2 style="margin-top:0" id="tituloFormPlan">Nuevo plan</h2>
           <input type="hidden" id="planEditandoId" value="">
@@ -808,9 +823,6 @@
 
       <!-- ---- SUBVISTA: COBRANZAS (vencimientos de cuota) ---- -->
       <div id="subvistaCobranzas" style="display:none;">
-        <div class="warn-banner" style="margin-bottom:0;">
-          Estado de cuota de cada alumno según su plan vigente. "Por vencer" = vence en 5 días o menos. Esto es informativo — todavía no bloquea nada (ni turnos, ni acceso).
-        </div>
         <div class="card">
           <div id="listaCobranzas" class="muted">Cargando...</div>
         </div>
@@ -818,9 +830,6 @@
 
       <!-- ---- SUBVISTA: EJERCICIOS PERSONALIZADOS ---- -->
       <div id="subvistaEjercicios" style="display:none;">
-        <div class="warn-banner" style="margin-bottom:0;">
-          Para ejercicios propios que no están en el catálogo estándar. Quedan guardados en la base y disponibles para elegir en el buscador de cualquier rutina, igual que los demás. También podés crearlos al vuelo desde el buscador con "+ Crear ejercicio nuevo".
-        </div>
 
         <div class="card">
           <h2 style="margin-top:0">Nuevo ejercicio</h2>
@@ -855,9 +864,6 @@
 
       <!-- ---- SUBVISTA: MI GIMNASIO (nombre + logo propio) ---- -->
       <div id="subvistaGimnasio" style="display:none;">
-        <div class="warn-banner" style="margin-bottom:0;">
-          M2F Solutions es la plataforma. Lo que cargues acá (nombre y logo) es lo que van a ver tus alumnos apenas entren a la app, en vez de la marca de M2F — hoy se aplica al único gimnasio de esta prueba; cuando esté el login de verdad, cada gimnasio va a ver automáticamente el suyo según con quién se loguee.
-        </div>
         <div class="card">
           <h2 style="margin-top:0">Nombre y logo</h2>
           <div class="row">
@@ -1008,6 +1014,17 @@
 
   <!-- Pantalla dedicada de ejecución: reemplaza todo lo de arriba mientras se entrena -->
   <div id="ejecucionContainer" style="display:none;"></div>
+
+  <!-- ---- Barra inferior de navegación (solo mobile, mientras hay sesión de alumno) ---- -->
+  <div class="bottom-nav" id="bottomNavAlu">
+    <div class="bottom-nav-inner">
+      <button class="bottom-nav-item" id="bnavTurnos" onclick="cambiarSubvistaAlu('turnos')"><span class="ico">📅</span>Turnos</button>
+      <button class="bottom-nav-item" id="bnavRutinas" onclick="cambiarSubvistaAlu('rutinas')"><span class="ico">🗂️</span>Rutinas</button>
+      <button class="bottom-nav-item principal" id="bnavHoy" onclick="irEntrenamientoHoy()"><span class="ico">🏋️</span>Hoy</button>
+      <button class="bottom-nav-item" id="bnavEvolucion" onclick="cambiarSubvistaAlu('evolucion')"><span class="ico">📈</span>Evolución</button>
+      <button class="bottom-nav-item" id="bnavMenu" onclick="abrirMenuAlu()"><span class="ico">☰</span>Menú</button>
+    </div>
+  </div>
 </div>
 
 <!-- ===================== CRONÓMETRO FLOTANTE (simple + intervalos) ===================== -->
@@ -1363,6 +1380,8 @@ async function entrarComoAlumnoLogueado(){
     }
     document.getElementById('alumnoAuthGate').style.display = 'none';
     document.getElementById('alumnoHome').style.display = '';
+    document.getElementById('bottomNavAlu').classList.add('show');
+    document.body.classList.add('tiene-bottom-nav');
     await cargarPersonas(); // re-scopea ALUMNOS_CACHE/PROFESORES_CACHE al gimnasio de esta sesión
     mostrarModoAlumnoLogueado(ficha);
   }catch(e){ msg.textContent = 'Error entrando: ' + e.message; }
@@ -1401,6 +1420,8 @@ async function hacerLogoutAlumno(){
   document.getElementById('alumnoSesionInfo').style.display = 'none';
   document.getElementById('alumnoHome').style.display = 'none';
   document.getElementById('alumnoAuthGate').style.display = '';
+  document.getElementById('bottomNavAlu').classList.remove('show');
+  document.body.classList.remove('tiene-bottom-nav');
   document.getElementById('alumnoLoginDni').value = '';
   document.getElementById('alumnoLoginPassword').value = '';
   document.getElementById('alumnoAuthMsg').textContent = '';
@@ -1531,6 +1552,9 @@ function cambiarSubvistaAlu(v){
   document.getElementById('menuAluHistorial').classList.toggle('active', v==='historial');
   document.getElementById('menuAluEvolucion').classList.toggle('active', v==='evolucion');
   document.getElementById('menuAluLogros').classList.toggle('active', v==='logros');
+  document.getElementById('bnavTurnos').classList.toggle('active', v==='turnos');
+  document.getElementById('bnavRutinas').classList.toggle('active', v==='rutinas');
+  document.getElementById('bnavEvolucion').classList.toggle('active', v==='evolucion');
   cerrarMenuAlu();
 }
 
@@ -3682,8 +3706,31 @@ function salirEjecucion(){
   document.getElementById('ejecucionContainer').style.display = 'none';
   document.getElementById('ejecucionContainer').innerHTML = '';
   document.getElementById('alumnoHome').style.display = '';
+  if (document.body.classList.contains('tiene-bottom-nav')) document.getElementById('bottomNavAlu').classList.add('show');
   const alumnoId = document.getElementById('aluAlumno').value;
   if (alumnoId){ cargarTurnos(alumnoId); cargarHistorial(alumnoId); }
+}
+
+// Botón central de la barra inferior: busca el turno de HOY del alumno logueado
+// y si ya tiene rutina enganchada, arranca directo la ejecución (sin pasos de más).
+async function irEntrenamientoHoy(){
+  const alumnoId = document.getElementById('aluAlumno').value;
+  if (!alumnoId){ toast('Iniciá sesión primero.', true); return; }
+  const hoy = new Date().toISOString().slice(0,10);
+  try{
+    const rows = await sb(`turnos?select=id,rutina_dia_id,rutina_dias(nombre_dia)&alumno_id=eq.${alumnoId}&fecha=eq.${hoy}&estado=neq.cancelado&order=hora.asc&limit=1`);
+    const t = rows[0];
+    if (t && t.rutina_dia_id){
+      comenzarEntrenamiento(t.rutina_dia_id, alumnoId, t.rutina_dias?.nombre_dia || 'Hoy');
+      return;
+    }
+    if (t && !t.rutina_dia_id){
+      toast('Tenés turno hoy pero todavía no hay una rutina enganchada. Probá "Reintentar" en Mis turnos.', true);
+    } else {
+      toast('No tenés ningún turno reservado para hoy.', true);
+    }
+    cambiarSubvistaAlu('turnos');
+  }catch(e){ toast('Error buscando el entrenamiento de hoy: ' + e.message, true); }
 }
 
 
@@ -3774,6 +3821,7 @@ async function cancelarTurno(turnoId, alumnoId){
 // ---------- Ejecución de un día (vista alumno) ----------
 async function comenzarEntrenamiento(rutinaDiaId, alumnoId, nombreDia){
   document.getElementById('alumnoHome').style.display = 'none';
+  document.getElementById('bottomNavAlu').classList.remove('show');
   const cont = document.getElementById('ejecucionContainer');
   cont.style.display = '';
   cont.innerHTML = '<div class="card">Iniciando entrenamiento...</div>';
