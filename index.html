@@ -1192,7 +1192,7 @@ const BUCKET = "Ejercicios";
 // un cambio, se incrementa este número — el chequeo de actualización (más abajo) lo compara
 // contra lo que hay publicado y avisa si están desactualizados, sin que nadie tenga que
 // cambiar ningún link a mano.
-const APP_VERSION = 15;
+const APP_VERSION = 16;
 
 function imgUrl(providerRefId){
   return `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${encodeURI(providerRefId)}`;
@@ -1395,6 +1395,12 @@ async function hacerLogout(){
   SESION_ACTUAL = null;
   PERFIL_ACTUAL = null;
   document.getElementById('profesorApp').style.display = 'none';
+  // Bug corregido (19/9): faltaba volver a mostrar el authGate acá. Sin esto,
+  // la próxima vez que alguien tocaba "Soy profesor" se quedaba con authGate Y
+  // profesorApp ambos en display:none — pantalla en negro hasta recargar.
+  document.getElementById('authGate').style.display = '';
+  authCambiarTab('login');
+  document.getElementById('loginEmail').value = '';
   document.getElementById('loginPassword').value = '';
   try{ localStorage.removeItem('m2f_tipo'); }catch(e){}
   volverALanding();
@@ -1542,6 +1548,25 @@ function cambiarVista(v){
   document.getElementById('vistaAlumno').style.display = v==='alumno' ? '' : 'none';
   document.getElementById('tabProf').classList.toggle('active', v==='profesor');
   document.getElementById('tabAlu').classList.toggle('active', v==='alumno');
+
+  // Bug corregido (19/9): SESION_ACTUAL/PERFIL_ACTUAL son globales y se
+  // comparten entre Profesor y Alumno. Si alguien logueado como Profesor tocaba
+  // la pestaña "Alumno" y entraba con su DNI, o al revés, la pantalla vieja
+  // (profesorApp/alumnoHome) quedaba visible con datos de ANTES aunque la
+  // sesión real ya era la del otro rol — y cualquier guardado desde ahí
+  // fallaba con un 403 de RLS ("violates row-level security policy"), porque
+  // el servidor sí valida el rol real y lo rechaza (bien), pero la app no
+  // avisaba nada, solo mostraba la pantalla equivocada. Ahora, al cambiar de
+  // pestaña, si el rol real no coincide con la vista pedida, se fuerza a
+  // pedir login de nuevo en vez de dejar la pantalla vieja puesta.
+  if (v === 'profesor' && (!PERFIL_ACTUAL || PERFIL_ACTUAL.rol === 'alumno')){
+    document.getElementById('authGate').style.display = '';
+    document.getElementById('profesorApp').style.display = 'none';
+  }
+  if (v === 'alumno' && PERFIL_ACTUAL && PERFIL_ACTUAL.rol !== 'alumno'){
+    document.getElementById('alumnoAuthGate').style.display = '';
+    document.getElementById('alumnoHome').style.display = 'none';
+  }
 }
 
 function cambiarSubvista(v){
@@ -3460,6 +3485,13 @@ async function guardarRutinaGenerica({ constructor, nombre, profesorId, alumnosD
   if (!nombre){ toast('Ponele un nombre a la rutina.', true); return; }
   if (!idsDias.length || idsDias.every(d => !constructor.estado.dias[d].ejercicios.length)){ toast('Agregá al menos un ejercicio.', true); return; }
   if (idsDias.some(d => !constructor.estado.dias[d].fecha)){ toast('Todos los días necesitan una fecha.', true); return; }
+  // Chequeo defensivo (19/9): si por haber tocado la pestaña "Alumno" en el medio
+  // la sesión real ya no es de staff, cortar acá con un mensaje claro en vez de
+  // dejar que el POST falle más abajo con un 403 críptico de RLS.
+  if (!PERFIL_ACTUAL || PERFIL_ACTUAL.rol === 'alumno'){
+    toast('Tu sesión de Profesor no está activa (¿entraste como Alumno en el medio?). Cerrá sesión y volvé a entrar como Profesor.', true);
+    return;
+  }
 
   const btn = document.getElementById(btnId);
   btn.disabled = true;
