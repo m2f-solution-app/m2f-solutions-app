@@ -303,6 +303,10 @@
     padding:12px 14px; box-shadow:0 6px 20px rgba(0,0,0,.4); max-width:420px; margin:0 auto;
   }
   @media (max-width:720px){ #avisoActualizacion{ bottom:calc(78px + env(safe-area-inset-bottom)); } }
+  @media (max-width:720px){
+    .crono-fab{ bottom:calc(84px + env(safe-area-inset-bottom)); }
+    .crono-panel{ bottom:calc(152px + env(safe-area-inset-bottom)); }
+  }
   .bottom-nav-inner{display:flex; align-items:flex-end; justify-content:space-around; max-width:520px; margin:0 auto;}
   .bottom-nav-item{
     background:none; border:none; color:var(--muted); font-size:10.5px; font-weight:600;
@@ -1177,7 +1181,7 @@ const BUCKET = "Ejercicios";
 // un cambio, se incrementa este número — el chequeo de actualización (más abajo) lo compara
 // contra lo que hay publicado y avisa si están desactualizados, sin que nadie tenga que
 // cambiar ningún link a mano.
-const APP_VERSION = 11;
+const APP_VERSION = 12;
 
 function imgUrl(providerRefId){
   return `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${encodeURI(providerRefId)}`;
@@ -2249,48 +2253,53 @@ async function renderAgenda(){
       (reservasPorSlot[clave] = reservasPorSlot[clave] || []).push({ id: t.id, nombre: t.alumnos ? t.alumnos.nombre : 'Alumno', asistio: t.asistio });
     });
 
+    // Un profesor puede tener VARIOS rangos horarios el mismo día (ej. 8 a 12 y 15 a
+    // 20) — hay que juntarlos en un array, no quedarnos con uno solo (bug encontrado:
+    // antes se sobreescribía y solo quedaba el último rango cargado).
     const horariosPorProfesor = {};
-    horarios.forEach(h => horariosPorProfesor[h.profesor_id] = h);
+    horarios.forEach(h => (horariosPorProfesor[h.profesor_id] = horariosPorProfesor[h.profesor_id] || []).push(h));
 
     let totalReservados = 0, totalCupos = 0, franjasVacias = 0, totalPresentes = 0, totalAusentes = 0;
     const bloquesHtml = [];
 
     profesores.forEach(prof => {
-      const h = horariosPorProfesor[prof.id];
-      if (!h) return; // este profesor no trabaja ese día
-      const horaIniNum = parseInt(h.hora_inicio.slice(0,2), 10);
-      const horaFinNum = parseInt(h.hora_fin.slice(0,2), 10);
+      const rangos = horariosPorProfesor[prof.id];
+      if (!rangos || !rangos.length) return; // este profesor no trabaja ese día
       let franjasHtml = '';
       let huboFranja = false;
-      for (let hh = horaIniNum; hh < horaFinNum; hh++){
-        const horaStr = String(hh).padStart(2,'0')+':00:00';
-        const horaLabel = String(hh).padStart(2,'0')+':00';
-        const nombres = reservasPorSlot[`${prof.id}|${horaStr}`] || [];
-        totalReservados += nombres.length;
-        totalCupos += h.cupo_por_turno;
-        nombres.forEach(r => { if (r.asistio === true) totalPresentes++; else if (r.asistio === false) totalAusentes++; });
-        if (nombres.length === 0) franjasVacias++;
-        if (agendaSoloLibres && nombres.length > 0) continue;
-        huboFranja = true;
-        const pct = Math.round((nombres.length / h.cupo_por_turno) * 100);
-        const chips = nombres.map(r => {
-          const estado = r.asistio === true ? 'presente' : r.asistio === false ? 'ausente' : 'sinmarcar';
-          const icono = estado==='presente' ? ' ✅' : estado==='ausente' ? ' ❌' : '';
-          const asistioArg = r.asistio === true ? 'true' : r.asistio === false ? 'false' : 'null';
-          return `<div class="alumno-chip asistencia-${estado}" onclick="toggleAsistencia('${r.id}', ${asistioArg})" title="Tocá para marcar asistencia">
-            <span class="avatar">${iniciales(r.nombre)}</span>${r.nombre}${icono}
-          </div>`;
-        }).join('');
-        franjasHtml += `
-          <div class="franja ${nombres.length===0?'sin-reservas':''}">
-            <div class="franja-hora">${horaLabel}</div>
-            <div class="franja-cuerpo">
-              <div class="franja-barra-wrap"><div class="franja-barra" style="width:${pct}%;"></div></div>
-              <div class="franja-cupo-txt">${nombres.length} de ${h.cupo_por_turno} cupos ocupados</div>
-              ${nombres.length ? `<div class="alumnos-chips">${chips}</div>` : '<div class="franja-vacia">Sin reservas en este horario</div>'}
-            </div>
-          </div>`;
-      }
+      rangos.forEach(h => {
+        const horaIniNum = parseInt(h.hora_inicio.slice(0,2), 10);
+        const horaFinNum = parseInt(h.hora_fin.slice(0,2), 10);
+        for (let hh = horaIniNum; hh < horaFinNum; hh++){
+          const horaStr = String(hh).padStart(2,'0')+':00:00';
+          const horaLabel = String(hh).padStart(2,'0')+':00';
+          const nombres = reservasPorSlot[`${prof.id}|${horaStr}`] || [];
+          totalReservados += nombres.length;
+          totalCupos += h.cupo_por_turno;
+          nombres.forEach(r => { if (r.asistio === true) totalPresentes++; else if (r.asistio === false) totalAusentes++; });
+          if (nombres.length === 0) franjasVacias++;
+          if (agendaSoloLibres && nombres.length > 0) continue;
+          huboFranja = true;
+          const pct = Math.round((nombres.length / h.cupo_por_turno) * 100);
+          const chips = nombres.map(r => {
+            const estado = r.asistio === true ? 'presente' : r.asistio === false ? 'ausente' : 'sinmarcar';
+            const icono = estado==='presente' ? ' ✅' : estado==='ausente' ? ' ❌' : '';
+            const asistioArg = r.asistio === true ? 'true' : r.asistio === false ? 'false' : 'null';
+            return `<div class="alumno-chip asistencia-${estado}" onclick="toggleAsistencia('${r.id}', ${asistioArg})" title="Tocá para marcar asistencia">
+              <span class="avatar">${iniciales(r.nombre)}</span>${r.nombre}${icono}
+            </div>`;
+          }).join('');
+          franjasHtml += `
+            <div class="franja ${nombres.length===0?'sin-reservas':''}">
+              <div class="franja-hora">${horaLabel}</div>
+              <div class="franja-cuerpo">
+                <div class="franja-barra-wrap"><div class="franja-barra" style="width:${pct}%;"></div></div>
+                <div class="franja-cupo-txt">${nombres.length} de ${h.cupo_por_turno} cupos ocupados</div>
+                ${nombres.length ? `<div class="alumnos-chips">${chips}</div>` : '<div class="franja-vacia">Sin reservas en este horario</div>'}
+              </div>
+            </div>`;
+        }
+      });
       if (!huboFranja && agendaSoloLibres) return; // nada libre para este profesor con el filtro puesto
       bloquesHtml.push(`
         ${profesores.length > 1 ? `<div class="prof-titulo">${prof.nombre}</div>` : ''}
@@ -4629,6 +4638,17 @@ async function chequearActualizacion(){
 setTimeout(chequearActualizacion, 4000);
 setInterval(chequearActualizacion, 5 * 60 * 1000);
 document.addEventListener('visibilitychange', () => { if (!document.hidden) chequearActualizacion(); });
+
+// Motivo por el que el chequeo de arriba no alcanzaba solo: los navegadores (sobre todo
+// en el celular, con la app agregada a la pantalla de inicio) guardan una copia cacheada
+// del index.html y a veces ni siquiera llegan a pedirle al servidor la versión nueva —
+// se quedan mostrando la vieja de entrada, sin ejecutar ni una línea de este chequeo.
+// Un Service Worker sí puede interceptar esa carga inicial y forzarla a ir siempre a
+// buscar la versión más nueva a internet. Con esto ya no hace falta ningún ?v= ni
+// avisarle a nadie que reinstale nada: alcanza con subir el index.html + sw.js al repo.
+if ('serviceWorker' in navigator){
+  navigator.serviceWorker.register('sw.js').catch(()=>{});
+}
 
 // Arranque: primero se fija si ya había una sesión activa (login previo guardado
 // por supabase-js), y recién con eso resuelto carga los datos ya scopeados.
