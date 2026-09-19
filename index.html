@@ -1273,7 +1273,7 @@ const BUCKET = "Ejercicios";
 // un cambio, se incrementa este número — el chequeo de actualización (más abajo) lo compara
 // contra lo que hay publicado y avisa si están desactualizados, sin que nadie tenga que
 // cambiar ningún link a mano.
-const APP_VERSION = 23;
+const APP_VERSION = 24;
 
 function imgUrl(providerRefId){
   return `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${encodeURI(providerRefId)}`;
@@ -4293,15 +4293,16 @@ async function renderTurnosDisponibles(){
 // de los horarios reales que cada gimnasio ya cargó, así que un gimnasio que
 // sí trabaja el sábado lo sigue viendo normal, sin tocar nada a mano.
 let DIAS_CON_HORARIO_ALU = null; // Set de dia_semana, o null si no se pudo calcular (no filtramos nada en ese caso)
-let DIAS_CON_HORARIO_ALU_KEY = null; // evita recalcular en cada click de día si no cambió alumno/profesor
 
+// Nota: antes esto se memoizaba por alumno+profesor para no repetir la consulta en cada
+// click de día, pero eso causaba que si el profesor cargaba/cambiaba un horario y volvía
+// a la vista del alumno (sin cambiar de alumno ni de filtro), se seguía viendo el horario
+// viejo hasta refrescar la página entera. Se saca la memoización: la consulta es liviana
+// (un solo campo, pocas filas) y así siempre refleja el horario actual.
 async function cargarDiasConHorarioAlu(){
   const alumnoId = document.getElementById('aluAlumno').value;
   const alumno = ALUMNOS_CACHE.find(a => a.id === alumnoId);
   const profesorFiltroId = document.getElementById('aluFiltroProfesor').value;
-  const key = `${alumno?.gimnasio_id || ''}|${profesorFiltroId}`;
-  if (key === DIAS_CON_HORARIO_ALU_KEY) return;
-  DIAS_CON_HORARIO_ALU_KEY = key;
   if (!alumno || !alumno.gimnasio_id){ DIAS_CON_HORARIO_ALU = null; return; }
   const idsProf = profesorFiltroId
     ? [profesorFiltroId]
