@@ -142,6 +142,10 @@
   .dia-btn.activo{background:var(--accent); border-color:var(--accent);}
   .dia-btn.activo .nombre-dia, .dia-btn.activo .num-dia{color:#1a1000;}
   .dia-btn.hoy:not(.activo) .num-dia{color:var(--accent2);}
+  /* Días sin ningún horario de trabajo cargado ese día de la semana (ej: gimnasios que
+     no abren sábado/domingo) — se atenúan y no se pueden tocar, en vez de dejar
+     seleccionar un día que total no va a tener ningún turno para mostrar. */
+  .dia-btn.sin-horario{opacity:.35; cursor:default; pointer-events:none;}
   .kpis{display:flex; gap:10px; flex-wrap:wrap;}
   .kpi{flex:1; min-width:120px; background:var(--panel2); border:1px solid var(--border); border-radius:10px; padding:12px 14px;}
   .kpi .num{font-size:22px; font-weight:800; line-height:1;}
@@ -171,6 +175,16 @@
   .alumno-chip:active{transform:scale(0.97);}
   .alumno-chip.asistencia-presente{background:rgba(61,220,132,.15); border-color:rgba(61,220,132,.5);}
   .alumno-chip.asistencia-ausente{background:rgba(255,93,93,.15); border-color:rgba(255,93,93,.5);}
+  /* Ausente puesto solo porque ya pasó el horario y nadie lo confirmó a mano
+     (ver asistenciaEfectiva) — mismo color pero borde punteado, para diferenciarlo
+     de un ausente que el profesor ya revisó y confirmó. */
+  .alumno-chip.asistencia-auto{border-style:dashed;}
+  /* Flechita para que se note que el chip se puede tocar (antes no había ningún
+     indicio visual de eso — Martin lo marcó como poco intuitivo). */
+  .chip-chevron{margin-left:auto; padding-left:4px; color:var(--muted); font-size:16px;}
+  /* Resalta en el popup de asistencia cuál de las dos opciones es la actual. */
+  #btnMarcarPresente.activo{outline:2px solid var(--accent2);}
+  #btnMarcarAusente.activo{outline:2px solid var(--danger);}
   .avatar{
     width:22px; height:22px; border-radius:50%; background:var(--accent); color:#1a1000;
     display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:800; flex:0 0 auto;
@@ -1182,6 +1196,40 @@
   </div>
 </div>
 
+<!-- HU10 UX (19/9): tocar un alumno en la Agenda ya no cicla el estado directo
+     (nada avisaba que se podía tocar) — ahora abre este popup con opciones
+     explícitas: marcar presente/ausente, o ir directo a su rutina. -->
+<div class="modal-overlay" id="modalAsistencia">
+  <div class="modal-box">
+    <h3 id="modalAsistenciaNombre">Alumno</h3>
+    <p id="modalAsistenciaSub" class="muted" style="margin-top:-8px;"></p>
+    <div class="row" style="gap:8px;">
+      <button id="btnMarcarPresente" class="btn-confirmar" style="flex:1;" onclick="marcarAsistenciaDesdeModal(true)">✅ Presente</button>
+      <button id="btnMarcarAusente" class="btn-cancelar" style="flex:1;" onclick="marcarAsistenciaDesdeModal(false)">❌ Ausente</button>
+    </div>
+    <div id="modalAsistenciaQuitarWrap" style="text-align:center; margin-top:8px;"></div>
+    <div style="border-top:1px solid var(--border); margin:14px 0;"></div>
+    <button style="width:100%;" onclick="verRutinaDelTurno()">📋 Ver rutina de este turno</button>
+    <div class="row" style="justify-content:flex-end; margin-top:12px;">
+      <button class="ghost" onclick="cerrarModalAsistencia()">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Ver rápido, de solo lectura, la rutina puntual enganchada a ESE turno (la
+     misma que ve el alumno al entrenar) — funciona igual para una rutina de
+     biblioteca (estándar) o una especial armada para esa persona, porque toma
+     el rutina_dia_id que ya quedó guardado en el turno al reservarlo. -->
+<div class="modal-overlay" id="modalRutinaDia">
+  <div class="modal-box" style="max-width:520px;">
+    <h3 id="modalRutinaDiaTitulo">Rutina del turno</h3>
+    <div id="modalRutinaDiaContenido" style="max-height:60vh; overflow-y:auto;"></div>
+    <div class="row" style="justify-content:flex-end; margin-top:12px;">
+      <button class="ghost" onclick="cerrarModalRutinaDia()">Cerrar</button>
+    </div>
+  </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 const SUPABASE_URL = "https://wlgjhqdvpkofglxznvec.supabase.co";
@@ -1192,7 +1240,7 @@ const BUCKET = "Ejercicios";
 // un cambio, se incrementa este número — el chequeo de actualización (más abajo) lo compara
 // contra lo que hay publicado y avisa si están desactualizados, sin que nadie tenga que
 // cambiar ningún link a mano.
-const APP_VERSION = 16;
+const APP_VERSION = 22;
 
 function imgUrl(providerRefId){
   return `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${encodeURI(providerRefId)}`;
@@ -1508,6 +1556,7 @@ function mostrarModoAlumnoLogueado(ficha){
       <button class="ghost" onclick="hacerLogoutAlumno()">Cerrar sesión</button>
     </div>
   </div>
+  <div id="vigenciaPlanAlu" style="margin-top:8px;"></div>
   <div id="alumnoCambiarPasswordWrap" style="display:none; margin-top:12px;">
     <div class="row">
       <div class="field" style="flex:1; min-width:180px;"><label>Nueva contraseña</label><input type="password" id="alumnoNuevaPassword" placeholder="Mínimo 4 caracteres"></div>
@@ -1895,10 +1944,27 @@ function renderMarcaGimnasio(){
     dot.style.display = '';
   }
   aplicarTemaGimnasio(GIMNASIO_ACTUAL);
-  // El Dashboard de KPIs es solo para el rol admin (dueño/administrador del gym),
-  // sin importar si el gimnasio es de tipo "gimnasio" o "independiente".
-  const menuDash = document.getElementById('menuDashboard');
-  if (menuDash) menuDash.style.display = (PERFIL_ACTUAL?.rol === 'admin') ? '' : 'none';
+  aplicarPermisosPorRol();
+}
+
+// ---------- RBAC (19/9): admin vs. profesor común ----------
+// Pedido de Martin: poder tener más de un admin (ya se podía a nivel de datos,
+// cualquier perfil puede tener rol='admin'), y que un profesor común quede
+// limitado a Agenda, Rutinas (+ especiales), Evaluaciones y Ejercicios — sin
+// ver ni Dashboard, ni Alumnos, ni Cobranzas/Planes, ni Profesores, ni
+// Horarios, ni la config de Mi Gimnasio. Esto solo oculta los accesos en la
+// UI; el bloqueo real está en las políticas de RLS (ver migración
+// rbac_admin_vs_profesor) — aunque alguien llame a la API directo sin pasar
+// por estos botones, la base igual lo rechaza si no es admin.
+const MENU_SOLO_ADMIN = ['menuDashboard', 'menuAlumnos', 'menuLogros', 'menuProfesores', 'menuHorarios', 'menuPlanes', 'menuCobranzas', 'menuGimnasio'];
+const BNAV_SOLO_ADMIN = ['bnavProfAlumnos'];
+
+function aplicarPermisosPorRol(){
+  const esAdmin = PERFIL_ACTUAL?.rol === 'admin';
+  [...MENU_SOLO_ADMIN, ...BNAV_SOLO_ADMIN].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = esAdmin ? '' : 'none';
+  });
 }
 function idAleatorio(){
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
@@ -2278,15 +2344,18 @@ async function renderAgenda(){
     const idsProf = profesores.map(p => p.id);
     const [horarios, turnosDelDia] = await Promise.all([
       sb(`horarios_trabajo?profesor_id=in.(${idsProf.join(',')})&dia_semana=eq.${dow}&activo=eq.true`),
-      sb(`turnos?select=id,hora,profesor_id,asistio,alumnos(nombre)&fecha=eq.${fecha}&profesor_id=in.(${idsProf.join(',')})&estado=neq.cancelado`),
+      sb(`turnos?select=id,hora,profesor_id,alumno_id,asistio,rutina_dia_id,rutina_dias(nombre_dia),alumnos(nombre)&fecha=eq.${fecha}&profesor_id=in.(${idsProf.join(',')})&estado=neq.cancelado`),
     ]);
 
     // Agrupa las reservas reales por profesor+hora, para pegárselas a cada franja.
-    const reservasPorSlot = {}; // `${profesor_id}|${hora}` -> [{id, nombre, asistio}]
+    const reservasPorSlot = {}; // `${profesor_id}|${hora}` -> [{id, alumnoId, nombre, asistio, rutinaDiaId, nombreDia}]
     turnosDelDia.forEach(t => {
       if (!t.hora) return;
       const clave = `${t.profesor_id}|${t.hora}`;
-      (reservasPorSlot[clave] = reservasPorSlot[clave] || []).push({ id: t.id, nombre: t.alumnos ? t.alumnos.nombre : 'Alumno', asistio: t.asistio });
+      (reservasPorSlot[clave] = reservasPorSlot[clave] || []).push({
+        id: t.id, alumnoId: t.alumno_id, nombre: t.alumnos ? t.alumnos.nombre : 'Alumno', asistio: t.asistio,
+        rutinaDiaId: t.rutina_dia_id, nombreDia: t.rutina_dias?.nombre_dia || null,
+      });
     });
 
     // Un profesor puede tener VARIOS rangos horarios el mismo día (ej. 8 a 12 y 15 a
@@ -2295,7 +2364,7 @@ async function renderAgenda(){
     const horariosPorProfesor = {};
     horarios.forEach(h => (horariosPorProfesor[h.profesor_id] = horariosPorProfesor[h.profesor_id] || []).push(h));
 
-    let totalReservados = 0, totalCupos = 0, franjasVacias = 0, totalPresentes = 0, totalAusentes = 0;
+    let totalReservados = 0, totalCupos = 0, franjasVacias = 0, totalPresentes = 0, totalAusentes = 0, totalAusentesAuto = 0;
     const bloquesHtml = [];
 
     profesores.forEach(prof => {
@@ -2312,17 +2381,27 @@ async function renderAgenda(){
           const nombres = reservasPorSlot[`${prof.id}|${horaStr}`] || [];
           totalReservados += nombres.length;
           totalCupos += h.cupo_por_turno;
-          nombres.forEach(r => { if (r.asistio === true) totalPresentes++; else if (r.asistio === false) totalAusentes++; });
+          nombres.forEach(r => {
+            const efectivo = asistenciaEfectiva(r.asistio, fecha, horaStr);
+            if (efectivo === true) totalPresentes++;
+            else if (efectivo === false){ totalAusentes++; if (r.asistio === null) totalAusentesAuto++; }
+          });
           if (nombres.length === 0) franjasVacias++;
           if (agendaSoloLibres && nombres.length > 0) continue;
           huboFranja = true;
           const pct = Math.round((nombres.length / h.cupo_por_turno) * 100);
           const chips = nombres.map(r => {
-            const estado = r.asistio === true ? 'presente' : r.asistio === false ? 'ausente' : 'sinmarcar';
+            const efectivo = asistenciaEfectiva(r.asistio, fecha, horaStr);
+            const esAuto = r.asistio === null && efectivo === false;
+            const estado = efectivo === true ? 'presente' : efectivo === false ? 'ausente' : 'sinmarcar';
             const icono = estado==='presente' ? ' ✅' : estado==='ausente' ? ' ❌' : '';
             const asistioArg = r.asistio === true ? 'true' : r.asistio === false ? 'false' : 'null';
-            return `<div class="alumno-chip asistencia-${estado}" onclick="toggleAsistencia('${r.id}', ${asistioArg})" title="Tocá para marcar asistencia">
+            const nombreEscapado = r.nombre.replace(/'/g,"&apos;");
+            const rutinaDiaArg = r.rutinaDiaId ? `'${r.rutinaDiaId}'` : 'null';
+            const nombreDiaEscapado = (r.nombreDia || '').replace(/'/g,"&apos;");
+            return `<div class="alumno-chip asistencia-${estado} ${esAuto?'asistencia-auto':''}" onclick="abrirModalAsistencia('${r.id}', ${asistioArg}, '${fecha}', '${horaStr}', '${r.alumnoId}', '${nombreEscapado}', ${rutinaDiaArg}, '${nombreDiaEscapado}')">
               <span class="avatar">${iniciales(r.nombre)}</span>${r.nombre}${icono}
+              <span class="chip-chevron">›</span>
             </div>`;
           }).join('');
           franjasHtml += `
@@ -2348,7 +2427,7 @@ async function renderAgenda(){
       <div class="kpi"><div class="num">${totalReservados}</div><div class="label">Turnos reservados</div></div>
       <div class="kpi clickable ${agendaSoloLibres?'activo':''}" onclick="toggleAgendaFiltroLibres()"><div class="num">${franjasVacias}</div><div class="label">Horarios libres</div></div>
       <div class="kpi"><div class="num">${ocupacion}%</div><div class="label">Ocupación del día</div></div>
-      <div class="kpi"><div class="num">${totalPresentes}/${totalReservados}</div><div class="label">Asistencia marcada${totalAusentes?` · ${totalAusentes} ausente${totalAusentes===1?'':'s'}`:''}</div></div>
+      <div class="kpi"><div class="num">${totalPresentes}/${totalReservados}</div><div class="label">Asistencia marcada${totalAusentes?` · ${totalAusentes} ausente${totalAusentes===1?'':'s'}`:''}${totalAusentesAuto?` (${totalAusentesAuto} sin confirmar)`:''}</div></div>
     `;
 
     if (!bloquesHtml.length){
@@ -2363,16 +2442,125 @@ async function renderAgenda(){
 }
 
 // ---------- HU10: marcar asistencia directo desde la Agenda ----------
-// Ciclo al tocar el chip del alumno: sin marcar -> presente -> ausente -> sin marcar.
-async function toggleAsistencia(turnoId, asistioActual){
-  const siguiente = asistioActual === true ? false : asistioActual === false ? null : true;
+// Inasistencia automática (19/9): si ya pasó el horario del turno y nadie lo
+// marcó a mano, se cuenta como "ausente" solo (sin escribir nada en la base
+// hasta que alguien lo toque) — se calcula en el momento, en base a la hora
+// real, así que se actualiza solo apenas pasa esa hora, sin ningún cron ni
+// job corriendo atrás. Un turno futuro sin marcar sigue mostrándose neutral
+// ("sin marcar"), no se asume nada todavía.
+function asistenciaEfectiva(asistioRaw, fecha, horaStr){
+  if (asistioRaw !== null) return asistioRaw; // ya lo confirmó alguien a mano, eso manda siempre
+  const yaPaso = new Date(`${fecha}T${horaStr}`) <= new Date();
+  return yaPaso ? false : null;
+}
+
+// Popup de asistencia (19/9): antes tocar el chip ciclaba el estado directo,
+// sin ningún indicio de que se podía tocar (Martin: "nada le indica que tiene
+// que tocar en el alumno"). Ahora tocarlo abre un popup explícito con las dos
+// opciones (presente/ausente) y un acceso directo a la rutina de esa persona.
+let ASISTENCIA_MODAL_CTX = null; // {turnoId, asistioRawActual, fecha, horaStr, alumnoId, nombre, rutinaDiaId, nombreDia}
+
+function abrirModalAsistencia(turnoId, asistioRawActual, fecha, horaStr, alumnoId, nombre, rutinaDiaId, nombreDia){
+  ASISTENCIA_MODAL_CTX = { turnoId, asistioRawActual, fecha, horaStr, alumnoId, nombre, rutinaDiaId, nombreDia };
+  const yaPaso = new Date(`${fecha}T${horaStr}`) <= new Date();
+  const efectivo = asistenciaEfectiva(asistioRawActual, fecha, horaStr);
+  document.getElementById('modalAsistenciaNombre').textContent = nombre;
+  document.getElementById('modalAsistenciaSub').textContent = `Turno de las ${horaStr.slice(0,5)} hs`
+    + (efectivo === null ? '' : efectivo ? ' · presente' : asistioRawActual === null ? ' · ausente (sin confirmar)' : ' · ausente');
+  document.getElementById('btnMarcarPresente').classList.toggle('activo', efectivo === true);
+  document.getElementById('btnMarcarAusente').classList.toggle('activo', efectivo === false);
+  // "Quitar marca" solo tiene sentido en un turno FUTURO que alguien ya marcó a
+  // mano — en uno pasado, sin marcar se volvería a ver como ausente igual.
+  const wrapQuitar = document.getElementById('modalAsistenciaQuitarWrap');
+  wrapQuitar.innerHTML = (!yaPaso && asistioRawActual !== null)
+    ? `<span class="muted" style="cursor:pointer; text-decoration:underline;" onclick="quitarMarcaAsistenciaDesdeModal()">Quitar marca (dejar sin marcar)</span>`
+    : '';
+  document.getElementById('modalAsistencia').classList.add('show');
+}
+
+function cerrarModalAsistencia(){
+  document.getElementById('modalAsistencia').classList.remove('show');
+  ASISTENCIA_MODAL_CTX = null;
+}
+
+async function marcarAsistenciaDesdeModal(valor){
+  if (!ASISTENCIA_MODAL_CTX) return;
+  await guardarAsistencia(ASISTENCIA_MODAL_CTX.turnoId, valor);
+}
+
+async function quitarMarcaAsistenciaDesdeModal(){
+  if (!ASISTENCIA_MODAL_CTX) return;
+  await guardarAsistencia(ASISTENCIA_MODAL_CTX.turnoId, null);
+}
+
+async function guardarAsistencia(turnoId, valor){
   try{
     await sb(`turnos?id=eq.${turnoId}`, {
       method:'PATCH', headers:{Prefer:'return=minimal'},
-      body: JSON.stringify({ asistio: siguiente, asistencia_marcada_en: siguiente === null ? null : new Date().toISOString() })
+      body: JSON.stringify({ asistio: valor, asistencia_marcada_en: valor === null ? null : new Date().toISOString() })
     });
+    cerrarModalAsistencia();
     renderAgenda();
   }catch(e){ toast('Error marcando asistencia: ' + e.message, true); }
+}
+
+// Ver rápido, de solo lectura, la rutina de ESE turno puntual (20/9, pedido de
+// Martin tras probar el popup: "y sino como era para ver la rutina del día de
+// manera rápido"). Usa el rutina_dia_id que ya quedó enganchado al turno al
+// reservarlo (intentarAsignarRutina) — funciona igual para una rutina de
+// biblioteca (estándar) que para una especial, porque ambas dejan ese mismo
+// campo cargado en el turno; no depende de buscar nada a mano.
+async function verRutinaDelTurno(){
+  if (!ASISTENCIA_MODAL_CTX) return;
+  const { alumnoId, rutinaDiaId, nombreDia, nombre } = ASISTENCIA_MODAL_CTX;
+  cerrarModalAsistencia();
+  const titulo = document.getElementById('modalRutinaDiaTitulo');
+  const cont = document.getElementById('modalRutinaDiaContenido');
+  titulo.textContent = nombreDia ? `${nombre} · ${nombreDia}` : nombre;
+  document.getElementById('modalRutinaDia').classList.add('show');
+
+  if (!rutinaDiaId){
+    cont.innerHTML = `<div class="empty">Este turno todavía no tiene una rutina enganchada.</div>
+      <button style="width:100%; margin-top:10px;" onclick="irAAsignarEspecialDesdeModal('${alumnoId}')">⭐ Asignarle una rutina especial</button>`;
+    return;
+  }
+  cont.innerHTML = 'Cargando...';
+  try{
+    const items = await sb(`rutina_ejercicios?select=id,orden,bloque,series,repeticiones,peso_sugerido,tiempo_trabajo_seg,descanso_seg,rir,notas,ejercicios(id,nombre,grupo_muscular,provider_ref_id,video_provider,video_url_propio)&rutina_dia_id=eq.${rutinaDiaId}&order=orden.asc`);
+    if (!items.length){ cont.innerHTML = '<div class="empty">Esa rutina no tiene ejercicios cargados.</div>'; return; }
+    let bloqueActual = null;
+    cont.innerHTML = items.map(item => {
+      const encabezadoBloque = item.bloque !== bloqueActual ? (bloqueActual = item.bloque, `<div class="pill" style="margin:10px 0 6px;">${item.bloque || 'General'}</div>`) : '';
+      const detalle = item.tiempo_trabajo_seg
+        ? `${item.series} series × ${item.tiempo_trabajo_seg}s trabajo / ${item.descanso_seg || 0}s pausa`
+        : `${item.series} series × ${item.repeticiones || '-'} reps${item.peso_sugerido ? ` · ${item.peso_sugerido}kg` : ''}${item.rir!=null ? ` · RIR ${item.rir}` : ''}`;
+      return `${encabezadoBloque}
+        <div class="grid-exercise" style="align-items:center;">
+          ${mediaTagHtml(item.ejercicios, '')}
+          <div>
+            <div style="font-weight:600;">${item.ejercicios.nombre}</div>
+            <div class="muted" style="font-size:13px;">${detalle}</div>
+            ${item.notas ? `<div class="muted" style="font-size:12px; margin-top:2px;">📝 ${item.notas}</div>` : ''}
+          </div>
+        </div>`;
+    }).join('');
+  }catch(e){ cont.innerHTML = 'Error: ' + e.message; }
+}
+
+function cerrarModalRutinaDia(){
+  document.getElementById('modalRutinaDia').classList.remove('show');
+}
+
+// Fallback cuando el turno no tiene ninguna rutina enganchada todavía: manda a
+// armarle una especial, con esa persona ya elegida en el buscador.
+function irAAsignarEspecialDesdeModal(alumnoId){
+  cerrarModalRutinaDia();
+  cerrarMenuProf();
+  cambiarSubvista('especiales');
+  const sel = document.getElementById('espAlumno');
+  sel.value = alumnoId;
+  sel.dispatchEvent(new Event('change'));
+  sincronizarComboBuscable('espAlumno');
 }
 
 // ---------- Planes de entrenamiento (precio + vigencia) ----------
@@ -3865,6 +4053,7 @@ function onCambiarAluAlumno(){
     cargarHistorial(alumnoId);
     poblarFiltroProfesorAlumno(alumnoId);
     cargarBannerCuota(alumnoId);
+    cargarVigenciaPlanAlu(alumnoId);
     cargarEvaluacionesAlu(alumnoId);
     renderLogros('aluLogrosContenido', alumnoId);
   } else {
@@ -3874,11 +4063,40 @@ function onCambiarAluAlumno(){
     document.getElementById('aluDiasScroll').innerHTML = '';
     document.getElementById('aluHorasWrap').innerHTML = 'Elegí tu nombre arriba.';
     document.getElementById('bannerCuotaAlu').innerHTML = '';
+    const vigenciaEl = document.getElementById('vigenciaPlanAlu'); if (vigenciaEl) vigenciaEl.innerHTML = '';
     document.getElementById('aluEvalMetricaChart').innerHTML = '';
     document.getElementById('aluEvalChartCont').innerHTML = 'Elegí tu nombre arriba.';
     document.getElementById('aluEvalHistorial').innerHTML = 'Elegí tu nombre arriba.';
     document.getElementById('aluLogrosContenido').innerHTML = 'Elegí tu nombre arriba.';
   }
+}
+
+// Chip fijo arriba con la vigencia del plan (siempre visible, a diferencia del
+// banner de aviso de acá abajo que solo aparece si está por vencer o vencida).
+// Pedido de Martin (19/9): que el alumno vea de entrada hasta cuándo tiene
+// vigente su plan, no solo cuando ya casi se le vence.
+async function cargarVigenciaPlanAlu(alumnoId){
+  const cont = document.getElementById('vigenciaPlanAlu');
+  if (!cont) return;
+  try{
+    const [plan] = await sb(`v_plan_vigente_alumno?alumno_id=eq.${alumnoId}`);
+    if (!plan || !plan.plan_id){
+      cont.innerHTML = `<span class="pill">Sin plan asignado</span>`;
+      return;
+    }
+    const colores = {
+      vencido: 'background:rgba(255,93,93,.15); color:#ff8a8a; border-color:rgba(255,93,93,.4);',
+      por_vencer: 'background:rgba(255,210,61,.15); color:var(--warn); border-color:rgba(255,210,61,.4);',
+      sin_pagos: 'background:rgba(255,210,61,.15); color:var(--warn); border-color:rgba(255,210,61,.4);',
+      al_dia: 'background:rgba(61,220,132,.15); color:var(--accent2); border-color:rgba(61,220,132,.4);',
+    };
+    const etiqueta = plan.estado_pago === 'vencido' ? `Vencido hace ${Math.abs(plan.dias_para_vencer)} día(s)`
+      : plan.estado_pago === 'por_vencer' ? `Vence en ${plan.dias_para_vencer} día(s)`
+      : plan.estado_pago === 'sin_pagos' ? 'Nunca pagó'
+      : `Vence el ${plan.vigencia_hasta}`;
+    cont.innerHTML = `<span class="muted">Plan: <strong style="color:var(--text);">${plan.plan_nombre}</strong></span>
+      <span class="pill" style="${colores[plan.estado_pago] || ''} margin-left:8px;">${etiqueta}</span>`;
+  }catch(e){ cont.innerHTML = ''; }
 }
 
 async function cargarBannerCuota(alumnoId){
@@ -3970,9 +4188,36 @@ function fechaISOAlu(offsetDias){
   return d.toISOString().slice(0,10);
 }
 
-function renderTurnosDisponibles(){
+async function renderTurnosDisponibles(){
+  await cargarDiasConHorarioAlu();
   renderDiasAlu();
   renderHorasAlu();
+}
+
+// Qué días de la semana (0=domingo..6=sábado) tienen AL MENOS un horario de
+// trabajo cargado, para el/los profesor(es) relevantes. Reemplaza a una
+// configuración fija de "no mostrar sábado/domingo": se calcula solo a partir
+// de los horarios reales que cada gimnasio ya cargó, así que un gimnasio que
+// sí trabaja el sábado lo sigue viendo normal, sin tocar nada a mano.
+let DIAS_CON_HORARIO_ALU = null; // Set de dia_semana, o null si no se pudo calcular (no filtramos nada en ese caso)
+let DIAS_CON_HORARIO_ALU_KEY = null; // evita recalcular en cada click de día si no cambió alumno/profesor
+
+async function cargarDiasConHorarioAlu(){
+  const alumnoId = document.getElementById('aluAlumno').value;
+  const alumno = ALUMNOS_CACHE.find(a => a.id === alumnoId);
+  const profesorFiltroId = document.getElementById('aluFiltroProfesor').value;
+  const key = `${alumno?.gimnasio_id || ''}|${profesorFiltroId}`;
+  if (key === DIAS_CON_HORARIO_ALU_KEY) return;
+  DIAS_CON_HORARIO_ALU_KEY = key;
+  if (!alumno || !alumno.gimnasio_id){ DIAS_CON_HORARIO_ALU = null; return; }
+  const idsProf = profesorFiltroId
+    ? [profesorFiltroId]
+    : PROFESORES_CACHE.filter(p => p.gimnasio_id === alumno.gimnasio_id).map(p => p.id);
+  if (!idsProf.length){ DIAS_CON_HORARIO_ALU = new Set(); return; }
+  try{
+    const filas = await sb(`horarios_trabajo?select=dia_semana&profesor_id=in.(${idsProf.join(',')})&activo=eq.true`);
+    DIAS_CON_HORARIO_ALU = new Set(filas.map(f => f.dia_semana));
+  }catch(e){ DIAS_CON_HORARIO_ALU = null; } // ante cualquier error no filtramos nada (fallback seguro)
 }
 
 function renderDiasAlu(){
@@ -3981,12 +4226,16 @@ function renderDiasAlu(){
   for (let i=0; i<15; i++){
     const d = new Date();
     d.setDate(d.getDate() + i);
-    const nombre = DIAS_NOMBRE_ALU[d.getDay()];
+    const dow = d.getDay();
+    const nombre = DIAS_NOMBRE_ALU[dow];
     const num = d.getDate();
+    const sinHorario = DIAS_CON_HORARIO_ALU && !DIAS_CON_HORARIO_ALU.has(dow);
     const clases = ['dia-btn'];
     if (i === DIA_TURNO_ALU) clases.push('activo');
     if (i === 0) clases.push('hoy');
-    html += `<div class="${clases.join(' ')}" onclick="elegirDiaAlu(${i})">
+    if (sinHorario) clases.push('sin-horario');
+    const onclick = sinHorario ? '' : `onclick="elegirDiaAlu(${i})"`;
+    html += `<div class="${clases.join(' ')}" ${onclick}>
       <span class="nombre-dia">${i===0?'Hoy':nombre}</span>
       <span class="num-dia">${num}</span>
     </div>`;
