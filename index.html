@@ -1273,7 +1273,7 @@ const BUCKET = "Ejercicios";
 // un cambio, se incrementa este número — el chequeo de actualización (más abajo) lo compara
 // contra lo que hay publicado y avisa si están desactualizados, sin que nadie tenga que
 // cambiar ningún link a mano.
-const APP_VERSION = 24;
+const APP_VERSION = 25;
 
 function imgUrl(providerRefId){
   return `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${encodeURI(providerRefId)}`;
@@ -2592,8 +2592,14 @@ async function guardarAsistencia(turnoId, valor){
       method:'PATCH', headers:{Prefer:'return=minimal'},
       body: JSON.stringify({ asistio: valor, asistencia_marcada_en: valor === null ? null : new Date().toISOString() })
     });
-    cerrarModalAsistencia();
+    // No cerramos el popup: así se puede marcar presente/ausente y después tocar
+    // "Ver rutina de este turno" sin tener que volver a abrirlo de cero.
+    if (ASISTENCIA_MODAL_CTX && ASISTENCIA_MODAL_CTX.turnoId === turnoId){
+      const ctx = ASISTENCIA_MODAL_CTX;
+      abrirModalAsistencia(ctx.turnoId, valor, ctx.fecha, ctx.horaStr, ctx.alumnoId, ctx.nombre, ctx.rutinaDiaId, ctx.nombreDia);
+    }
     renderAgenda();
+    toast(valor === null ? 'Marca quitada ✓' : valor ? 'Presente ✓' : 'Ausente ✓');
   }catch(e){ toast('Error marcando asistencia: ' + e.message, true); }
 }
 
