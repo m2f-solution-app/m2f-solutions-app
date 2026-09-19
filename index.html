@@ -48,6 +48,27 @@
     border-radius:8px; padding:9px 10px; font-size:14px; font-family:inherit;
   }
   input:focus, select:focus, textarea:focus{outline:2px solid var(--accent); outline-offset:1px;}
+  /* El ícono nativo del selector de fecha es negro por defecto: sobre fondo oscuro queda invisible
+     y el campo parece un cuadro de texto vacío en vez de un selector. Lo invertimos para que se vea. */
+  input[type="date"]{ position:relative; }
+  input[type="date"]::-webkit-calendar-picker-indicator{
+    filter:invert(1) brightness(1.6);
+    cursor:pointer;
+    padding:4px;
+  }
+  input[type="date"]::-webkit-datetime-edit-text,
+  input[type="date"]::-webkit-datetime-edit-month-field,
+  input[type="date"]::-webkit-datetime-edit-day-field,
+  input[type="date"]::-webkit-datetime-edit-year-field{
+    color:var(--text);
+  }
+  input[type="date"]:not([value]), input[type="date"][value=""]{ color:var(--muted); }
+  .password-wrap{position:relative; display:flex;}
+  .password-wrap input{width:100%; padding-right:38px;}
+  .password-wrap .toggle-pass{
+    position:absolute; right:2px; top:50%; transform:translateY(-50%);
+    background:transparent; border:none; padding:6px 8px; font-size:16px; cursor:pointer; color:var(--muted);
+  }
   button{
     background:var(--accent); color:#1a1000; border:none; border-radius:8px;
     padding:10px 16px; font-weight:700; font-size:14px; cursor:pointer;
@@ -436,7 +457,7 @@
 
       <div id="authLogin">
         <div class="field" style="margin-bottom:10px;"><label>Email (admin) o DNI (profesor)</label><input id="loginEmail" /></div>
-        <div class="field" style="margin-bottom:14px;"><label>Contraseña</label><input type="password" id="loginPassword" /></div>
+        <div class="field" style="margin-bottom:14px;"><label>Contraseña</label><div class="password-wrap"><input type="password" id="loginPassword" /><button type="button" class="toggle-pass" onclick="togglePasswordVisibility('loginPassword', this)">👁️</button></div></div>
         <button onclick="hacerLogin()" id="btnLogin" style="width:100%;">Ingresar</button>
       </div>
 
@@ -444,7 +465,7 @@
         <div class="field" style="margin-bottom:10px;"><label id="labelNombreSignup">Tu nombre</label><input id="signupNombre" /></div>
         <div class="field" style="margin-bottom:10px;" id="campoNombreGimnasio"><label>Nombre de tu gimnasio</label><input id="signupGimnasio" placeholder="Ej: PowerZone Fitness" /></div>
         <div class="field" style="margin-bottom:10px;"><label>Email</label><input type="email" id="signupEmail" /></div>
-        <div class="field" style="margin-bottom:14px;"><label>Contraseña</label><input type="password" id="signupPassword" placeholder="Mínimo 6 caracteres" /></div>
+        <div class="field" style="margin-bottom:14px;"><label>Contraseña</label><div class="password-wrap"><input type="password" id="signupPassword" placeholder="Mínimo 6 caracteres" /><button type="button" class="toggle-pass" onclick="togglePasswordVisibility('signupPassword', this)">👁️</button></div></div>
         <button onclick="hacerSignup()" id="btnSignup" style="width:100%;">Crear cuenta</button>
       </div>
 
@@ -469,7 +490,7 @@
     </div>
     <div id="staffCambiarPasswordWrap" style="display:none; margin-top:10px; border-top:1px solid var(--border); padding-top:10px;">
       <div class="row">
-        <div class="field" style="flex:1; min-width:180px;"><label>Nueva contraseña</label><input type="password" id="staffNuevaPassword" placeholder="Mínimo 4 caracteres"></div>
+        <div class="field" style="flex:1; min-width:180px;"><label>Nueva contraseña</label><div class="password-wrap"><input type="password" id="staffNuevaPassword" placeholder="Mínimo 4 caracteres"><button type="button" class="toggle-pass" onclick="togglePasswordVisibility('staffNuevaPassword', this)">👁️</button></div></div>
         <button onclick="cambiarPasswordStaff()" style="align-self:end;">Guardar</button>
       </div>
       <div id="staffPasswordMsg" class="muted" style="margin-top:6px;"></div>
@@ -1014,7 +1035,7 @@
         <span class="muted">Ingresar</span>
       </div>
       <div class="field" style="margin-bottom:10px;"><label>DNI</label><input id="alumnoLoginDni" placeholder="Tu DNI" /></div>
-      <div class="field" style="margin-bottom:14px;"><label>Contraseña</label><input type="password" id="alumnoLoginPassword" placeholder="Tu DNI, salvo que ya la hayas cambiado" /></div>
+      <div class="field" style="margin-bottom:14px;"><label>Contraseña</label><div class="password-wrap"><input type="password" id="alumnoLoginPassword" placeholder="Tu DNI, salvo que ya la hayas cambiado" /><button type="button" class="toggle-pass" onclick="togglePasswordVisibility('alumnoLoginPassword', this)">👁️</button></div></div>
       <button onclick="hacerLoginAlumno()" id="btnAlumnoLogin" style="width:100%;">Ingresar</button>
       <div id="alumnoAuthMsg" class="muted" style="margin-top:12px; text-align:center;"></div>
       <div class="muted" style="margin-top:14px; text-align:center; font-size:12px;">¿Todavía no tenés acceso? Pedíselo a tu profe — te lo genera desde tu ficha.</div>
@@ -1230,6 +1251,18 @@
   </div>
 </div>
 
+<div class="modal-overlay" id="modalCopiarHorario">
+  <div class="modal-box">
+    <h3>Copiar horario de <span id="copiarHorarioOrigenNombre"></span> a otros días</h3>
+    <p class="muted" style="margin-top:-8px;">Se copian todos los rangos activos/inactivos de ese día tal cual están. Después podés ajustar cada día por separado si hace falta.</p>
+    <div id="copiarHorarioDiasDestino" class="row" style="gap:10px;"></div>
+    <div class="row" style="justify-content:flex-end; margin-top:14px;">
+      <button class="ghost" onclick="cerrarModalCopiarHorario()">Cancelar</button>
+      <button onclick="confirmarCopiarHorario()">Copiar</button>
+    </div>
+  </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 const SUPABASE_URL = "https://wlgjhqdvpkofglxznvec.supabase.co";
@@ -1240,7 +1273,7 @@ const BUCKET = "Ejercicios";
 // un cambio, se incrementa este número — el chequeo de actualización (más abajo) lo compara
 // contra lo que hay publicado y avisa si están desactualizados, sin que nadie tenga que
 // cambiar ningún link a mano.
-const APP_VERSION = 22;
+const APP_VERSION = 23;
 
 function imgUrl(providerRefId){
   return `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${encodeURI(providerRefId)}`;
@@ -1559,7 +1592,7 @@ function mostrarModoAlumnoLogueado(ficha){
   <div id="vigenciaPlanAlu" style="margin-top:8px;"></div>
   <div id="alumnoCambiarPasswordWrap" style="display:none; margin-top:12px;">
     <div class="row">
-      <div class="field" style="flex:1; min-width:180px;"><label>Nueva contraseña</label><input type="password" id="alumnoNuevaPassword" placeholder="Mínimo 4 caracteres"></div>
+      <div class="field" style="flex:1; min-width:180px;"><label>Nueva contraseña</label><div class="password-wrap"><input type="password" id="alumnoNuevaPassword" placeholder="Mínimo 4 caracteres"><button type="button" class="toggle-pass" onclick="togglePasswordVisibility('alumnoNuevaPassword', this)">👁️</button></div></div>
       <button onclick="cambiarPasswordAlumno()" style="align-self:end;">Guardar</button>
     </div>
     <div id="alumnoPasswordMsg" class="muted" style="margin-top:6px;"></div>
@@ -1744,6 +1777,26 @@ async function cargarOcupacionSemanalDashboard(gimId){
 function formatearMonto(n){
   const v = Number(n || 0);
   return '$' + v.toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+}
+
+// Muestra/oculta el texto de un campo de contraseña (útil en el celular, donde no hay
+// otra forma de confirmar lo que se escribió antes de enviar el formulario).
+function togglePasswordVisibility(inputId, btn){
+  const input = document.getElementById(inputId);
+  if (!input) return;
+  const oculto = input.type === 'password';
+  input.type = oculto ? 'text' : 'password';
+  btn.textContent = oculto ? '🙈' : '👁️';
+}
+
+// Convierte 'YYYY-MM-DD' (o cualquier fecha ISO) a 'DD/MM/AA'. Si no puede parsearla, devuelve el valor tal cual.
+function formatearFechaCorta(fechaISO){
+  if (!fechaISO) return '';
+  const soloFecha = String(fechaISO).slice(0, 10);
+  const m = soloFecha.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!m) return fechaISO;
+  const [, anio, mes, dia] = m;
+  return `${dia}/${mes}/${anio.slice(2)}`;
 }
 
 // ---------- Menú del Alumno (drawer, igual mecánica que el del Profesor) ----------
@@ -2198,10 +2251,50 @@ function renderHorarios(){
       <div style="padding:10px 0; border-bottom:1px solid var(--border);">
         <div style="font-weight:700; margin-bottom:6px;">${nombreDia}</div>
         <div id="rangosDia${dia}">${filasHtml}</div>
-        <button class="ghost" style="margin-top:2px;" onclick="agregarRangoHorario(${dia})">+ Agregar rango horario</button>
+        <div class="row" style="margin-top:2px;">
+          <button class="ghost" onclick="agregarRangoHorario(${dia})">+ Agregar rango horario</button>
+          ${rangos.length ? `<button class="ghost" onclick="abrirModalCopiarHorario(${dia})">📋 Copiar este horario a otros días</button>` : ''}
+        </div>
       </div>
     `;
   }).join('');
+}
+
+// ---------- Copiar el horario de un día a otros días (evita tener que cargar
+// cada día por separado cuando en realidad se repite, ej: Lunes a Viernes) ----------
+let COPIAR_HORARIO_DIA_ORIGEN = null;
+function abrirModalCopiarHorario(diaOrigen){
+  COPIAR_HORARIO_DIA_ORIGEN = diaOrigen;
+  document.getElementById('copiarHorarioOrigenNombre').textContent = DIAS_SEMANA[diaOrigen];
+  const cont = document.getElementById('copiarHorarioDiasDestino');
+  cont.innerHTML = DIAS_SEMANA.map((nombre, dia) => dia === diaOrigen ? '' : `
+    <label class="row" style="gap:6px; min-width:110px;"><input type="checkbox" value="${dia}" class="chkCopiarHorarioDia"> ${nombre}</label>
+  `).join('');
+  document.getElementById('modalCopiarHorario').classList.add('show');
+}
+function cerrarModalCopiarHorario(){
+  document.getElementById('modalCopiarHorario').classList.remove('show');
+  COPIAR_HORARIO_DIA_ORIGEN = null;
+}
+async function confirmarCopiarHorario(){
+  const profesorId = document.getElementById('profActual').value;
+  const diasDestino = Array.from(document.querySelectorAll('.chkCopiarHorarioDia:checked')).map(el => parseInt(el.value, 10));
+  if (!diasDestino.length){ toast('Elegí al menos un día destino.', true); return; }
+  const rangosOrigen = HORARIOS_CACHE.filter(h => h.dia_semana === COPIAR_HORARIO_DIA_ORIGEN && !String(h.id).startsWith('nuevo-'));
+  if (!rangosOrigen.length){ toast('Guardá primero el horario de este día antes de copiarlo.', true); return; }
+  try{
+    const filas = [];
+    diasDestino.forEach(dia => {
+      rangosOrigen.forEach(r => filas.push({
+        profesor_id: profesorId, dia_semana: dia,
+        hora_inicio: r.hora_inicio, hora_fin: r.hora_fin, cupo_por_turno: r.cupo_por_turno, activo: r.activo,
+      }));
+    });
+    await sb('horarios_trabajo', { method:'POST', headers:{Prefer:'return=minimal'}, body: JSON.stringify(filas) });
+    toast(`Horario copiado a ${diasDestino.length} día(s) ✓`);
+    cerrarModalCopiarHorario();
+    await cargarHorarioProfesorActual();
+  }catch(e){ toast('Error copiando el horario: ' + e.message, true); }
 }
 
 function filaRangoHorarioHtml(dia, h){
@@ -2701,7 +2794,7 @@ async function cargarCobranzas(){
       if (p.estado_pago === 'vencido') return `Vencido hace ${Math.abs(p.dias_para_vencer)} día(s)`;
       if (p.estado_pago === 'por_vencer') return `Vence en ${p.dias_para_vencer} día(s)`;
       if (p.estado_pago === 'sin_pagos') return 'Nunca pagó';
-      return `Vence el ${p.vigencia_hasta}`;
+      return `Vence el ${formatearFechaCorta(p.vigencia_hasta)}`;
     };
     cont.innerHTML = filas.map(({alumno, plan}) => {
       if (!plan || !plan.plan_id){
@@ -3551,7 +3644,7 @@ function crearConstructorDeDias(prefijo, containerId){
           <div class="row" style="justify-content:space-between; align-items:flex-end;">
             <div class="row">
               <div class="field" style="min-width:150px;">
-                <label>Fecha</label>
+                <label>📅 Fecha (tocá para elegir del calendario)</label>
                 <input type="date" value="${dia.fecha}" onchange="CONS['${prefijo}'].setFecha('${diaId}',this.value)">
               </div>
               <div class="field" style="min-width:190px;">
@@ -3559,7 +3652,7 @@ function crearConstructorDeDias(prefijo, containerId){
                 <input value="${dia.nombre_dia}" placeholder="Ej: Tren superior" onchange="CONS['${prefijo}'].estado.dias['${diaId}'].nombre_dia=this.value">
               </div>
             </div>
-            <button class="ghost" onclick="CONS['${prefijo}'].eliminarDia('${diaId}')">Eliminar día</button>
+            <button class="danger" onclick="if(confirm('¿Eliminar este día de la rutina?')) CONS['${prefijo}'].eliminarDia('${diaId}')">🗑️ Eliminar día</button>
           </div>
           <hr>
           ${seccionesHtml || '<div class="muted" style="padding:8px 0;">Sin ejercicios todavía.</div>'}
@@ -4093,7 +4186,7 @@ async function cargarVigenciaPlanAlu(alumnoId){
     const etiqueta = plan.estado_pago === 'vencido' ? `Vencido hace ${Math.abs(plan.dias_para_vencer)} día(s)`
       : plan.estado_pago === 'por_vencer' ? `Vence en ${plan.dias_para_vencer} día(s)`
       : plan.estado_pago === 'sin_pagos' ? 'Nunca pagó'
-      : `Vence el ${plan.vigencia_hasta}`;
+      : `Vence el ${formatearFechaCorta(plan.vigencia_hasta)}`;
     cont.innerHTML = `<span class="muted">Plan: <strong style="color:var(--text);">${plan.plan_nombre}</strong></span>
       <span class="pill" style="${colores[plan.estado_pago] || ''} margin-left:8px;">${etiqueta}</span>`;
   }catch(e){ cont.innerHTML = ''; }
@@ -4107,10 +4200,10 @@ async function cargarBannerCuota(alumnoId){
     const esVencido = plan.estado_pago === 'vencido';
     const esSinPagos = plan.estado_pago === 'sin_pagos';
     const texto = esVencido
-      ? `Tu cuota está vencida desde el ${plan.vigencia_hasta}. Regularizala con tu profesor.`
+      ? `Tu cuota está vencida desde el ${formatearFechaCorta(plan.vigencia_hasta)}. Regularizala con tu profesor.`
       : esSinPagos
         ? `Todavía no registramos ningún pago de tu plan "${plan.plan_nombre}". Coordinalo con tu profesor.`
-        : `Tu cuota vence el ${plan.vigencia_hasta} (en ${plan.dias_para_vencer} día${plan.dias_para_vencer===1?'':'s'}).`;
+        : `Tu cuota vence el ${formatearFechaCorta(plan.vigencia_hasta)} (en ${plan.dias_para_vencer} día${plan.dias_para_vencer===1?'':'s'}).`;
     const color = esVencido ? 'rgba(255,93,93,.12); border-color:rgba(255,93,93,.4); color:#ff8a8a;' : 'rgba(255,210,61,.12); border-color:rgba(255,210,61,.4); color:var(--warn);';
     cont.innerHTML = `<div class="warn-banner" style="background:${color}">${esVencido?'⚠️':'⏰'} ${texto}</div>`;
   }catch(e){ cont.innerHTML = ''; }
@@ -4129,8 +4222,8 @@ async function revisarNotificacionesAlumno(alumnoId){
     if (plan && (plan.estado_pago === 'vencido' || plan.estado_pago === 'por_vencer')){
       const esVencido = plan.estado_pago === 'vencido';
       const texto = esVencido
-        ? `Tu cuota está <strong>vencida</strong> desde el ${plan.vigencia_hasta}. Regularizala con tu profesor para poder seguir sacando turnos.`
-        : `Tu cuota vence el <strong>${plan.vigencia_hasta}</strong> (en ${plan.dias_para_vencer} día${plan.dias_para_vencer===1?'':'s'}).`;
+        ? `Tu cuota está <strong>vencida</strong> desde el ${formatearFechaCorta(plan.vigencia_hasta)}. Regularizala con tu profesor para poder seguir sacando turnos.`
+        : `Tu cuota vence el <strong>${formatearFechaCorta(plan.vigencia_hasta)}</strong> (en ${plan.dias_para_vencer} día${plan.dias_para_vencer===1?'':'s'}).`;
       bloques.push(`<div class="warn-banner" style="${esVencido
         ? 'background:rgba(255,93,93,.12); border-color:rgba(255,93,93,.4); color:#ff8a8a;'
         : 'background:rgba(255,210,61,.12); border-color:rgba(255,210,61,.4); color:var(--warn);'}">${esVencido?'⚠️':'⏰'} ${texto}</div>`);
