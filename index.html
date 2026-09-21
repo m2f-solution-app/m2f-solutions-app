@@ -305,11 +305,15 @@
   }
   .tt-btn{
     background:var(--panel2); border:1px solid var(--border); color:var(--text);
-    width:56px; height:56px; border-radius:11px; font-size:27px; cursor:pointer;
-    display:flex; align-items:center; justify-content:center; flex-shrink:0;
+    width:68px; height:68px; border-radius:11px; cursor:pointer;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:3px; flex-shrink:0; padding:6px 2px;
   }
+  .tt-btn span.tt-ico{font-size:22px; line-height:1;}
+  .tt-btn span.tt-lbl{font-size:9.5px; font-weight:600; color:var(--muted); line-height:1.1; text-align:center; white-space:nowrap;}
   .tt-btn:hover{border-color:var(--accent);}
   .tt-btn.active{background:var(--accent); color:#1a1000; border-color:var(--accent);}
+  .tt-btn.active span.tt-lbl{color:#1a1000;}
   #menuDrawerBtnProf{display:none;}
   @media (max-width:720px){ .top-toolbar{display:none;} }
 
@@ -567,21 +571,21 @@
   <button class="menu-drawer-btn" id="menuDrawerBtnProf" onclick="abrirMenuProf()">☰ Menú</button>
 
   <div class="top-toolbar" id="topToolbarProf">
-    <button class="tt-btn" id="ttDashboard" onclick="cambiarSubvista('dashboard')" style="display:none;" title="Dashboard"><span>📊</span></button>
-    <button class="tt-btn" id="ttArmador" onclick="cambiarSubvista('armador')" title="Armador de Rutina"><span>🏋️</span></button>
-    <button class="tt-btn" id="ttRutinas" onclick="cambiarSubvista('rutinas')" title="Rutinas"><span>🗂️</span></button>
-    <button class="tt-btn active" id="ttAgenda" onclick="cambiarSubvista('agenda')" title="Agenda"><span>📋</span></button>
-    <button class="tt-btn" id="ttEspeciales" onclick="cambiarSubvista('especiales')" title="Rutinas especiales por alumno"><span>⭐</span></button>
-    <button class="tt-btn" id="ttEquipo" onclick="cambiarSubvista('equipo')" title="Equipo"><span>⚽</span></button>
-    <button class="tt-btn" id="ttAlumnos" onclick="cambiarSubvista('alumnos')" style="display:none;" title="Alumnos"><span>👤</span></button>
-    <button class="tt-btn" id="ttEvaluaciones" onclick="cambiarSubvista('evaluaciones')" title="Evaluaciones"><span>📏</span></button>
-    <button class="tt-btn" id="ttLogros" onclick="cambiarSubvista('logros')" style="display:none;" title="Logros"><span>🏆</span></button>
-    <button class="tt-btn" id="ttProfesores" onclick="cambiarSubvista('profesores')" style="display:none;" title="Profesores"><span>🧑‍🏫</span></button>
-    <button class="tt-btn" id="ttHorarios" onclick="cambiarSubvista('horarios')" style="display:none;" title="Horarios"><span>🕒</span></button>
-    <button class="tt-btn" id="ttPlanes" onclick="cambiarSubvista('planes')" style="display:none;" title="Planes"><span>💳</span></button>
-    <button class="tt-btn" id="ttCobranzas" onclick="cambiarSubvista('cobranzas')" style="display:none;" title="Cobranzas"><span>🧾</span></button>
-    <button class="tt-btn" id="ttEjercicios" onclick="cambiarSubvista('ejercicios')" title="Ejercicios"><span>🆕</span></button>
-    <button class="tt-btn" id="ttGimnasio" onclick="cambiarSubvista('gimnasio')" style="display:none;" title="Mi gimnasio"><span>🏢</span></button>
+    <button class="tt-btn" id="ttDashboard" onclick="cambiarSubvista('dashboard')" style="display:none;" title="Dashboard"><span class="tt-ico">📊</span><span class="tt-lbl">Dashboard</span></button>
+    <button class="tt-btn" id="ttArmador" onclick="cambiarSubvista('armador')" title="Armador de Rutina"><span class="tt-ico">🏋️</span><span class="tt-lbl">Armador</span></button>
+    <button class="tt-btn" id="ttRutinas" onclick="cambiarSubvista('rutinas')" title="Rutinas"><span class="tt-ico">🗂️</span><span class="tt-lbl">Rutinas</span></button>
+    <button class="tt-btn active" id="ttAgenda" onclick="cambiarSubvista('agenda')" title="Agenda"><span class="tt-ico">📋</span><span class="tt-lbl">Agenda</span></button>
+    <button class="tt-btn" id="ttEspeciales" onclick="cambiarSubvista('especiales')" title="Rutinas especiales por alumno"><span class="tt-ico">⭐</span><span class="tt-lbl">Especiales</span></button>
+    <button class="tt-btn" id="ttEquipo" onclick="cambiarSubvista('equipo')" title="Equipo"><span class="tt-ico">⚽</span><span class="tt-lbl">Equipo</span></button>
+    <button class="tt-btn" id="ttAlumnos" onclick="cambiarSubvista('alumnos')" style="display:none;" title="Alumnos"><span class="tt-ico">👤</span><span class="tt-lbl">Alumnos</span></button>
+    <button class="tt-btn" id="ttEvaluaciones" onclick="cambiarSubvista('evaluaciones')" title="Evaluaciones"><span class="tt-ico">📏</span><span class="tt-lbl">Evaluaciones</span></button>
+    <button class="tt-btn" id="ttLogros" onclick="cambiarSubvista('logros')" style="display:none;" title="Logros"><span class="tt-ico">🏆</span><span class="tt-lbl">Logros</span></button>
+    <button class="tt-btn" id="ttProfesores" onclick="cambiarSubvista('profesores')" style="display:none;" title="Profesores"><span class="tt-ico">🧑‍🏫</span><span class="tt-lbl">Profesores</span></button>
+    <button class="tt-btn" id="ttHorarios" onclick="cambiarSubvista('horarios')" style="display:none;" title="Horarios"><span class="tt-ico">🕒</span><span class="tt-lbl">Horarios</span></button>
+    <button class="tt-btn" id="ttPlanes" onclick="cambiarSubvista('planes')" style="display:none;" title="Planes"><span class="tt-ico">💳</span><span class="tt-lbl">Planes</span></button>
+    <button class="tt-btn" id="ttCobranzas" onclick="cambiarSubvista('cobranzas')" style="display:none;" title="Cobranzas"><span class="tt-ico">🧾</span><span class="tt-lbl">Cobranzas</span></button>
+    <button class="tt-btn" id="ttEjercicios" onclick="cambiarSubvista('ejercicios')" title="Ejercicios"><span class="tt-ico">🆕</span><span class="tt-lbl">Ejercicios</span></button>
+    <button class="tt-btn" id="ttGimnasio" onclick="cambiarSubvista('gimnasio')" style="display:none;" title="Mi gimnasio"><span class="tt-ico">🏢</span><span class="tt-lbl">Mi gimnasio</span></button>
   </div>
 
   <div class="menu-drawer-overlay" id="menuProfOverlay" onclick="cerrarMenuProf()"></div>
@@ -1472,7 +1476,7 @@ const BUCKET = "Ejercicios";
 // un cambio, se incrementa este número — el chequeo de actualización (más abajo) lo compara
 // contra lo que hay publicado y avisa si están desactualizados, sin que nadie tenga que
 // cambiar ningún link a mano.
-const APP_VERSION = 35;
+const APP_VERSION = 36;
 
 function imgUrl(providerRefId){
   return `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${encodeURI(providerRefId)}`;
