@@ -773,10 +773,22 @@
               </div>
             </div>
           </div>
+          <div id="equipoCrearEquipoWrap" style="margin-top:10px;">
+            <span class="muted" style="cursor:pointer; text-decoration:underline;" onclick="toggleNuevoEquipoVista()" id="toggleNuevoEquipoVista">+ Crear equipo nuevo</span>
+            <div id="nuevoEquipoVistaWrap" style="display:none; margin-top:8px;">
+              <div class="row">
+                <div class="field" style="flex:1; min-width:200px;">
+                  <label>Nombre del equipo</label>
+                  <input id="nuevoEquipoNombreVista" placeholder="Ej: Primera división" onkeydown="if(event.key==='Enter') crearEquipoDesdeVista();">
+                </div>
+                <button onclick="crearEquipoDesdeVista()" style="align-self:end;">Crear equipo</button>
+              </div>
+            </div>
+          </div>
         </div>
 
         <div class="card" id="equipoSinDatos">
-          <div class="empty">Elegí un equipo arriba para ver su semana. Si todavía no cargaste equipos, hacelo desde "🏢 Mi gimnasio".</div>
+          <div class="empty">Elegí un equipo arriba para ver su semana. Si todavía no cargaste equipos, creá uno con "+ Crear equipo nuevo".</div>
         </div>
 
         <div id="equipoContenido" style="display:none;">
@@ -786,6 +798,17 @@
           </div>
           <div class="card">
             <h3 style="margin-top:0;">Jugadores — cumplimiento y evolución</h3>
+            <div id="equipoCrearJugadorWrap" class="row" style="align-items:end; margin-bottom:10px; padding-bottom:10px; border-bottom:1px solid var(--border); flex-wrap:wrap;">
+              <div class="field" style="flex:1; min-width:180px;">
+                <label>Nombre del jugador nuevo</label>
+                <input id="nuevoJugadorNombre" placeholder="Nombre y apellido">
+              </div>
+              <div class="field" style="min-width:130px;">
+                <label>DNI</label>
+                <input id="nuevoJugadorDni" placeholder="Ej: 30123456">
+              </div>
+              <button onclick="crearJugadorEquipo()" id="btnCrearJugadorEquipo">➕ Agregar al equipo</button>
+            </div>
             <div id="equipoJugadores" class="muted">Cargando...</div>
           </div>
         </div>
@@ -1417,7 +1440,7 @@ const BUCKET = "Ejercicios";
 // un cambio, se incrementa este número — el chequeo de actualización (más abajo) lo compara
 // contra lo que hay publicado y avisa si están desactualizados, sin que nadie tenga que
 // cambiar ningún link a mano.
-const APP_VERSION = 32;
+const APP_VERSION = 33;
 
 function imgUrl(providerRefId){
   return `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${encodeURI(providerRefId)}`;
@@ -2323,18 +2346,23 @@ async function eliminarCategoria(id, nombre){
   }catch(e){ toast('Error eliminando la categoría: ' + extraerMensajeError(e), true); }
 }
 
-async function crearEquipo(){
-  const input = document.getElementById('nuevoEquipoNombre');
+// inputId es opcional (por defecto el de "🏢 Mi gimnasio") — la pantalla "⚽
+// Equipo" reusa esta misma función con su propio input (pedido de Martin, 21/9).
+// Devuelve el equipo creado (o null si falló) para poder preseleccionarlo.
+async function crearEquipo(inputId){
+  const input = document.getElementById(inputId || 'nuevoEquipoNombre');
   const nombre = input.value.trim();
-  if (!nombre) return;
+  if (!nombre) return null;
   try{
-    await sb('equipos', { method:'POST', headers:{Prefer:'return=minimal'}, body: JSON.stringify([{ gimnasio_id: PERFIL_ACTUAL.gimnasio_id, nombre }]) });
+    const [creado] = await sb('equipos', { method:'POST', headers:{Prefer:'return=representation'}, body: JSON.stringify([{ gimnasio_id: PERFIL_ACTUAL.gimnasio_id, nombre }]) });
     input.value = '';
     toast('Equipo agregado ✓');
     await cargarCategoriasYEquipos();
+    return creado;
   }catch(e){
     const dup = /duplicate key|unique constraint/i.test(e.message || '');
     toast(dup ? `Ya existe un equipo llamado "${nombre}".` : 'Error agregando el equipo: ' + extraerMensajeError(e), true);
+    return null;
   }
 }
 
@@ -4255,6 +4283,47 @@ function onCambiarEquipoSeleccionado(){
   cargarVistaEquipo();
 }
 
+// ---------- Alta de equipo y de jugador directo desde "⚽ Equipo" (pedido de
+// Martin, 21/9) — solo admin, porque crear equipos/alumnos requiere ese permiso
+// a nivel de base de datos (mismo límite que "🏢 Mi gimnasio" y "👤 Alumnos"). ----------
+function toggleNuevoEquipoVista(){
+  const wrap = document.getElementById('nuevoEquipoVistaWrap');
+  const abierto = wrap.style.display !== 'none';
+  wrap.style.display = abierto ? 'none' : '';
+  document.getElementById('toggleNuevoEquipoVista').textContent = abierto ? '+ Crear equipo nuevo' : '- Ocultar';
+}
+
+async function crearEquipoDesdeVista(){
+  const creado = await crearEquipo('nuevoEquipoNombreVista');
+  if (creado){
+    toggleNuevoEquipoVista();
+    document.getElementById('equipoSeleccionado').value = creado.id;
+    onCambiarEquipoSeleccionado();
+  }
+}
+
+async function crearJugadorEquipo(){
+  const equipoId = document.getElementById('equipoSeleccionado').value;
+  if (!equipoId){ toast('Elegí un equipo primero.', true); return; }
+  const nombre = document.getElementById('nuevoJugadorNombre').value.trim();
+  const dni = document.getElementById('nuevoJugadorDni').value.trim() || null;
+  if (!nombre){ toast('Ponele un nombre al jugador.', true); return; }
+  const btn = document.getElementById('btnCrearJugadorEquipo');
+  btn.disabled = true;
+  try{
+    await sb('alumnos', {
+      method:'POST', headers:{Prefer:'return=minimal'},
+      body: JSON.stringify([{ nombre, dni, tipo:'estandar', gimnasio_id: PERFIL_ACTUAL?.gimnasio_id || null, equipo_id: equipoId }])
+    });
+    document.getElementById('nuevoJugadorNombre').value = '';
+    document.getElementById('nuevoJugadorDni').value = '';
+    toast('Jugador agregado y asignado al equipo ✓');
+    await cargarPersonas();
+    cargarVistaEquipo();
+  }catch(e){ toast('Error agregando el jugador: ' + extraerMensajeError(e), true); }
+  finally{ btn.disabled = false; }
+}
+
 function cambiarSemanaEquipo(delta){
   EQUIPO_SEMANA_OFFSET += delta;
   cargarVistaEquipo();
@@ -4275,6 +4344,9 @@ function limitesSemanaEquipo(offset){
 }
 
 async function cargarVistaEquipo(){
+  const esAdminEquipo = PERFIL_ACTUAL?.rol === 'admin';
+  document.getElementById('equipoCrearEquipoWrap').style.display = esAdminEquipo ? '' : 'none';
+  document.getElementById('equipoCrearJugadorWrap').style.display = esAdminEquipo ? '' : 'none';
   const wrapVacio = document.getElementById('equipoSinDatos');
   const wrapContenido = document.getElementById('equipoContenido');
   const equipoId = document.getElementById('equipoSeleccionado')?.value;
