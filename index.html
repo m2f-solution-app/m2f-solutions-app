@@ -305,7 +305,7 @@
   }
   .tt-btn{
     background:var(--panel2); border:1px solid var(--border); color:var(--text);
-    width:42px; height:42px; border-radius:9px; font-size:19px; cursor:pointer;
+    width:56px; height:56px; border-radius:11px; font-size:27px; cursor:pointer;
     display:flex; align-items:center; justify-content:center; flex-shrink:0;
   }
   .tt-btn:hover{border-color:var(--accent);}
@@ -903,6 +903,15 @@
           </div>
         </div>
 
+        <div class="card" id="wrapHorarioNuevoProf" style="display:none;">
+          <div class="row" style="justify-content:space-between; align-items:center;">
+            <h2 style="margin-top:0; margin-bottom:0;" id="tituloHorarioNuevoProf">Horario semanal</h2>
+            <button class="ghost" onclick="cerrarHorarioNuevoProf()">✕ Listo, cerrar</button>
+          </div>
+          <div class="muted" style="margin:6px 0 10px;">Cargale de una vez el horario de trabajo para que le empiecen a aparecer turnos a los alumnos. Si preferís, lo podés hacer después desde "🕒 Horarios".</div>
+          <div id="listaHorariosNuevoProf"></div>
+        </div>
+
         <div class="card">
           <h2 style="margin-top:0">Profesores de tu gimnasio</h2>
           <div id="listaProfesores" class="muted">Cargando...</div>
@@ -1367,7 +1376,7 @@ const BUCKET = "Ejercicios";
 // un cambio, se incrementa este número — el chequeo de actualización (más abajo) lo compara
 // contra lo que hay publicado y avisa si están desactualizados, sin que nadie tenga que
 // cambiar ningún link a mano.
-const APP_VERSION = 29;
+const APP_VERSION = 31;
 
 function imgUrl(providerRefId){
   return `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${encodeURI(providerRefId)}`;
@@ -2297,6 +2306,11 @@ async function eliminarEquipo(id, nombre){
 // ---------- Carga inicial: selects de alumnos/profesores ----------
 let ALUMNOS_CACHE = [];
 let PROFESORES_CACHE = [];
+// Al crear un profesor nuevo, se le muestra ahí mismo un mini editor de horario
+// (pedido de Martin, 21/9) — usa su propio caché para no interferir con el que
+// esté mirando el admin en la subvista "🕒 Horarios" al mismo tiempo.
+let PROFESOR_RECIEN_CREADO = null;
+let HORARIOS_CACHE_NUEVO = [];
 // ---------- Combobox buscable genérico ----------
 // Convierte un <select> (que puede tener muchas opciones: alumnos, profesores)
 // en un buscador: input de texto + lista desplegable que se filtra en vivo por
@@ -2416,6 +2430,14 @@ async function crearProfesor(){
     document.getElementById('nuevoProfesorDni').value = '';
     await cargarPersonas();
     cargarListaProfesores();
+    const creado = PROFESORES_CACHE.find(p => p.dni === dni);
+    if (creado){
+      PROFESOR_RECIEN_CREADO = creado;
+      HORARIOS_CACHE_NUEVO = [];
+      document.getElementById('tituloHorarioNuevoProf').textContent = `Horario semanal de ${creado.nombre}`;
+      document.getElementById('wrapHorarioNuevoProf').style.display = '';
+      renderHorariosNuevo();
+    }
   }catch(e){ toast('Error creando el profesor: ' + extraerMensajeError(e), true); }
   finally{ btn.disabled = false; }
 }
@@ -2484,8 +2506,12 @@ function renderHorarios(){
 // ---------- Copiar el horario de un día a otros días (evita tener que cargar
 // cada día por separado cuando en realidad se repite, ej: Lunes a Viernes) ----------
 let COPIAR_HORARIO_DIA_ORIGEN = null;
-function abrirModalCopiarHorario(diaOrigen){
+// modo 'actual' = el profesor elegido arriba de todo (subvista Horarios);
+// modo 'nuevo' = el que se acaba de crear en "Nuevo profesor" (pedido de Martin, 21/9).
+let COPIAR_HORARIO_MODO = 'actual';
+function abrirModalCopiarHorario(diaOrigen, modo){
   COPIAR_HORARIO_DIA_ORIGEN = diaOrigen;
+  COPIAR_HORARIO_MODO = modo === 'nuevo' ? 'nuevo' : 'actual';
   document.getElementById('copiarHorarioOrigenNombre').textContent = DIAS_SEMANA[diaOrigen];
   const cont = document.getElementById('copiarHorarioDiasDestino');
   cont.innerHTML = DIAS_SEMANA.map((nombre, dia) => dia === diaOrigen ? '' : `
@@ -2498,10 +2524,13 @@ function cerrarModalCopiarHorario(){
   COPIAR_HORARIO_DIA_ORIGEN = null;
 }
 async function confirmarCopiarHorario(){
-  const profesorId = document.getElementById('profActual').value;
+  const esNuevo = COPIAR_HORARIO_MODO === 'nuevo';
+  const profesorId = esNuevo ? PROFESOR_RECIEN_CREADO?.id : document.getElementById('profActual').value;
+  const cache = esNuevo ? HORARIOS_CACHE_NUEVO : HORARIOS_CACHE;
   const diasDestino = Array.from(document.querySelectorAll('.chkCopiarHorarioDia:checked')).map(el => parseInt(el.value, 10));
+  if (!profesorId){ toast('No se encontró el profesor.', true); return; }
   if (!diasDestino.length){ toast('Elegí al menos un día destino.', true); return; }
-  const rangosOrigen = HORARIOS_CACHE.filter(h => h.dia_semana === COPIAR_HORARIO_DIA_ORIGEN && !String(h.id).startsWith('nuevo-'));
+  const rangosOrigen = cache.filter(h => h.dia_semana === COPIAR_HORARIO_DIA_ORIGEN && !String(h.id).startsWith('nuevo-'));
   if (!rangosOrigen.length){ toast('Guardá primero el horario de este día antes de copiarlo.', true); return; }
   try{
     const filas = [];
@@ -2514,32 +2543,113 @@ async function confirmarCopiarHorario(){
     await sb('horarios_trabajo', { method:'POST', headers:{Prefer:'return=minimal'}, body: JSON.stringify(filas) });
     toast(`Horario copiado a ${diasDestino.length} día(s) ✓`);
     cerrarModalCopiarHorario();
-    await cargarHorarioProfesorActual();
+    if (esNuevo){
+      HORARIOS_CACHE_NUEVO = await sb(`horarios_trabajo?profesor_id=eq.${profesorId}&order=dia_semana.asc,hora_inicio.asc`);
+      renderHorariosNuevo();
+    } else {
+      await cargarHorarioProfesorActual();
+    }
   }catch(e){ toast('Error copiando el horario: ' + e.message, true); }
 }
 
-function filaRangoHorarioHtml(dia, h){
+function filaRangoHorarioHtml(dia, h, modo){
   const rid = h.id;
+  const suf = modo === 'nuevo' ? 'Nuevo' : '';
   return `
-    <div class="row" style="align-items:end; padding:6px 0;" id="filaRango-${rid}">
+    <div class="row" style="align-items:end; padding:6px 0;" id="filaRango${suf}-${rid}">
       <div class="field" style="min-width:70px;">
-        <label><input type="checkbox" id="horActivo-${rid}" ${h.activo?'checked':''} onchange="guardarRangoHorario(${dia},'${rid}')"> Activo</label>
+        <label><input type="checkbox" id="horActivo${suf}-${rid}" ${h.activo?'checked':''} onchange="guardarRangoHorario${suf}(${dia},'${rid}')"> Activo</label>
       </div>
       <div class="field" style="min-width:100px;">
         <label>Desde</label>
-        <input type="time" id="horDesde-${rid}" value="${(h.hora_inicio||'08:00:00').slice(0,5)}" onchange="guardarRangoHorario(${dia},'${rid}')">
+        <input type="time" id="horDesde${suf}-${rid}" value="${(h.hora_inicio||'08:00:00').slice(0,5)}" onchange="guardarRangoHorario${suf}(${dia},'${rid}')">
       </div>
       <div class="field" style="min-width:100px;">
         <label>Hasta</label>
-        <input type="time" id="horHasta-${rid}" value="${(h.hora_fin||'12:00:00').slice(0,5)}" onchange="guardarRangoHorario(${dia},'${rid}')">
+        <input type="time" id="horHasta${suf}-${rid}" value="${(h.hora_fin||'12:00:00').slice(0,5)}" onchange="guardarRangoHorario${suf}(${dia},'${rid}')">
       </div>
       <div class="field" style="min-width:80px;">
         <label>Cupo x turno</label>
-        <input type="number" min="1" id="horCupo-${rid}" value="${h.cupo_por_turno ?? 1}" onchange="guardarRangoHorario(${dia},'${rid}')">
+        <input type="number" min="1" id="horCupo${suf}-${rid}" value="${h.cupo_por_turno ?? 1}" onchange="guardarRangoHorario${suf}(${dia},'${rid}')">
       </div>
-      <button class="danger" onclick="eliminarRangoHorario('${rid}')">Quitar</button>
+      <button class="danger" onclick="eliminarRangoHorario${suf}('${rid}')">Quitar</button>
     </div>
   `;
+}
+
+// ---------- Mismo editor de horario de arriba, pero para el profesor recién
+// creado en el formulario de "Nuevo profesor" (pedido de Martin, 21/9) ----------
+function renderHorariosNuevo(){
+  const cont = document.getElementById('listaHorariosNuevoProf');
+  if (!cont) return;
+  cont.innerHTML = DIAS_SEMANA.map((nombreDia, dia) => {
+    const rangos = HORARIOS_CACHE_NUEVO.filter(h => h.dia_semana === dia);
+    const filasHtml = rangos.length
+      ? rangos.map(h => filaRangoHorarioHtml(dia, h, 'nuevo')).join('')
+      : '<div class="muted" style="font-size:12px; padding:2px 0 8px;">Sin horario cargado este día.</div>';
+    return `
+      <div style="padding:8px 0; border-bottom:1px solid var(--border);">
+        <div style="font-weight:700; margin-bottom:6px;">${nombreDia}</div>
+        <div id="rangosDiaNuevo${dia}">${filasHtml}</div>
+        <div class="row" style="margin-top:2px;">
+          <button class="ghost" onclick="agregarRangoHorarioNuevo(${dia})">+ Agregar rango horario</button>
+          ${rangos.length ? `<button class="ghost" onclick="abrirModalCopiarHorario(${dia}, 'nuevo')">📋 Copiar este horario a otros días</button>` : ''}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function agregarRangoHorarioNuevo(dia){
+  if (!PROFESOR_RECIEN_CREADO) return;
+  const tempId = 'nuevo-' + Math.random().toString(36).slice(2);
+  HORARIOS_CACHE_NUEVO.push({ id: tempId, profesor_id: PROFESOR_RECIEN_CREADO.id, dia_semana: dia, hora_inicio: '08:00:00', hora_fin: '12:00:00', cupo_por_turno: 1, activo: true });
+  renderHorariosNuevo();
+}
+
+async function guardarRangoHorarioNuevo(dia, rowId){
+  if (!PROFESOR_RECIEN_CREADO) return;
+  const activo = document.getElementById(`horActivoNuevo-${rowId}`).checked;
+  const hora_inicio = document.getElementById(`horDesdeNuevo-${rowId}`).value;
+  const hora_fin = document.getElementById(`horHastaNuevo-${rowId}`).value;
+  const cupo_por_turno = parseInt(document.getElementById(`horCupoNuevo-${rowId}`).value, 10) || 1;
+  if (hora_fin <= hora_inicio){ toast('El horario "Hasta" tiene que ser mayor que "Desde".', true); return; }
+  try{
+    const esNuevo = String(rowId).startsWith('nuevo-');
+    if (esNuevo){
+      const [creado] = await sb('horarios_trabajo', {
+        method:'POST', headers:{Prefer:'return=representation'},
+        body: JSON.stringify([{ profesor_id: PROFESOR_RECIEN_CREADO.id, dia_semana: dia, hora_inicio, hora_fin, cupo_por_turno, activo }])
+      });
+      const idx = HORARIOS_CACHE_NUEVO.findIndex(h => h.id === rowId);
+      if (idx >= 0) HORARIOS_CACHE_NUEVO[idx] = creado;
+      renderHorariosNuevo();
+    } else {
+      await sb(`horarios_trabajo?id=eq.${rowId}`, {
+        method:'PATCH', headers:{Prefer:'return=minimal'},
+        body: JSON.stringify({ hora_inicio, hora_fin, cupo_por_turno, activo })
+      });
+      const idx = HORARIOS_CACHE_NUEVO.findIndex(h => h.id === rowId);
+      if (idx >= 0) Object.assign(HORARIOS_CACHE_NUEVO[idx], { hora_inicio, hora_fin, cupo_por_turno, activo });
+    }
+    toast('Horario guardado ✓');
+  }catch(e){ toast('Error guardando horario: ' + e.message, true); }
+}
+
+async function eliminarRangoHorarioNuevo(rowId){
+  const esNuevo = String(rowId).startsWith('nuevo-');
+  HORARIOS_CACHE_NUEVO = HORARIOS_CACHE_NUEVO.filter(h => h.id !== rowId);
+  renderHorariosNuevo();
+  if (!esNuevo){
+    try{ await sb(`horarios_trabajo?id=eq.${rowId}`, { method:'DELETE', headers:{Prefer:'return=minimal'} }); }
+    catch(e){ toast('Error eliminando el rango: ' + e.message, true); }
+  }
+}
+
+function cerrarHorarioNuevoProf(){
+  PROFESOR_RECIEN_CREADO = null;
+  HORARIOS_CACHE_NUEVO = [];
+  document.getElementById('wrapHorarioNuevoProf').style.display = 'none';
 }
 
 function agregarRangoHorario(dia){
