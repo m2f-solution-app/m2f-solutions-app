@@ -313,6 +313,35 @@
   #menuDrawerBtnProf{display:none;}
   @media (max-width:720px){ .top-toolbar{display:none;} }
 
+  /* ---- Ficha / Reporte del alumno (pedido de Martin, 21/9): pantalla completa,
+     con estilo de "hoja blanca" fijo (no sigue el tema oscuro de la app) porque
+     es lo mismo que se exporta a PDF — así lo que se ve en pantalla es igual a
+     lo que se descarga. ---- */
+  #reporteAlumnoContainer{
+    position:fixed; inset:0; background:#f3f4f6; z-index:300; overflow-y:auto;
+    padding:16px; display:none;
+  }
+  .reporte-hoja{
+    max-width:720px; margin:0 auto; background:#ffffff; color:#111827;
+    border-radius:14px; overflow:hidden; box-shadow:0 10px 30px rgba(0,0,0,.35);
+  }
+  .reporte-topbar{
+    max-width:720px; margin:0 auto 12px; display:flex; justify-content:space-between; align-items:center;
+  }
+  .reporte-topbar button{
+    background:#1f2937; color:#fff; border:none; padding:9px 16px; border-radius:9px;
+    font-weight:700; cursor:pointer; font-size:14px;
+  }
+  .reporte-topbar button.pdf{ background:var(--accent, #16a34a); }
+  .reporte-kpi{
+    background:#f9fafb; border:1px solid #e5e7eb; border-radius:10px; padding:10px 12px;
+    text-align:center; flex:1; min-width:110px;
+  }
+  .reporte-kpi .valor{ font-size:20px; font-weight:800; color:#111827; }
+  .reporte-kpi .etiqueta{ font-size:11px; color:#6b7280; margin-top:2px; }
+  .reporte-skill-bar{ background:#e5e7eb; border-radius:6px; height:8px; overflow:hidden; margin-top:4px; }
+  .reporte-skill-bar > div{ height:100%; border-radius:6px; }
+
   /* ---- Menú lateral tipo drawer (cerrado por default, botón para abrirlo) ---- */
   .menu-drawer-btn{
     display:inline-flex; align-items:center; gap:8px; background:var(--panel);
@@ -1297,6 +1326,7 @@
 
   <!-- Pantalla dedicada de ejecución: reemplaza todo lo de arriba mientras se entrena -->
   <div id="ejecucionContainer" style="display:none;"></div>
+  <div id="reporteAlumnoContainer"></div>
 
   <!-- ---- Barra inferior de navegación (solo mobile, mientras hay sesión de alumno) ---- -->
   <div class="bottom-nav" id="bottomNavAlu">
@@ -1431,6 +1461,8 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<!-- Para exportar la ficha/reporte del alumno como PDF (pedido de Martin, 21/9) -->
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
 <script>
 const SUPABASE_URL = "https://wlgjhqdvpkofglxznvec.supabase.co";
 const ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndsZ2pocWR2cGtvZmdseHpudmVjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk0MDI5NDQsImV4cCI6MjEwNDk3ODk0NH0.L_6hpnDoeUGbT-00o-wa3zLtPy5jiyjZmjFXTilc9pU";
@@ -1440,7 +1472,7 @@ const BUCKET = "Ejercicios";
 // un cambio, se incrementa este número — el chequeo de actualización (más abajo) lo compara
 // contra lo que hay publicado y avisa si están desactualizados, sin que nadie tenga que
 // cambiar ningún link a mano.
-const APP_VERSION = 33;
+const APP_VERSION = 35;
 
 function imgUrl(providerRefId){
   return `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${encodeURI(providerRefId)}`;
@@ -2453,8 +2485,8 @@ async function cargarPersonas(){
   // esto devuelve listas vacías directamente desde la base (ya no hay acceso anónimo).
   const filtroGym = PERFIL_ACTUAL ? `&gimnasio_id=eq.${PERFIL_ACTUAL.gimnasio_id}` : '';
   const [alumnos, profesores] = await Promise.all([
-    sb(`alumnos?select=id,nombre,tipo,gimnasio_id,plan_id,altura_cm,peso_kg,objetivo,telefono,email,direccion,dni,perfil_id,equipo_id,equipos(nombre),alumno_categorias(categoria_id,categorias(nombre))&activo=eq.true${filtroGym}&order=nombre.asc`),
-    sb(`profesores?select=id,nombre,perfil_id,gimnasio_id,dni&activo=eq.true${filtroGym}&order=nombre.asc`),
+    sb(`alumnos?select=id,nombre,tipo,gimnasio_id,plan_id,altura_cm,peso_kg,objetivo,telefono,email,direccion,dni,perfil_id,equipo_id,posicion,foto_url,equipos(nombre),alumno_categorias(categoria_id,categorias(nombre))&activo=eq.true${filtroGym}&order=nombre.asc`),
+    sb(`profesores?select=id,nombre,perfil_id,gimnasio_id,dni,perfiles(rol)&activo=eq.true${filtroGym}&order=nombre.asc`),
   ]);
   const optsAlu = alumnos.map(a=>`<option value="${a.id}">${a.nombre}</option>`).join('');
   const optsProf = profesores.map(p=>`<option value="${p.id}">${p.nombre}</option>`).join('');
@@ -2519,12 +2551,47 @@ async function crearProfesor(){
 function cargarListaProfesores(){
   const cont = document.getElementById('listaProfesores');
   if (!PROFESORES_CACHE.length){ cont.innerHTML = '<div class="empty">Todavía no cargaste ningún profesor.</div>'; return; }
-  cont.innerHTML = PROFESORES_CACHE.map(p => `
-    <div class="row" style="justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--border);">
-      <div style="font-weight:600;">${p.nombre}${p.dni ? ` <span class="muted" style="font-weight:400;">· DNI ${p.dni}</span>` : ''}</div>
-      <span class="pill">${p.perfil_id ? '🔑 con cuenta de login' : 'sin cuenta (cargado antes del login)'}</span>
-    </div>
-  `).join('');
+  cont.innerHTML = PROFESORES_CACHE.map(p => {
+    const rol = p.perfiles?.rol;
+    const controlRol = p.perfil_id
+      ? `<select onchange="cambiarRolProfesor('${p.perfil_id}','${(p.nombre||'').replace(/'/g,"&apos;")}',this.value)" style="width:auto;">
+          <option value="profesor" ${rol==='profesor'?'selected':''}>Profesor</option>
+          <option value="admin" ${rol==='admin'?'selected':''}>Administrador</option>
+        </select>`
+      : '<span class="pill">sin cuenta (cargado antes del login)</span>';
+    return `
+      <div class="row" style="justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid var(--border); flex-wrap:wrap; gap:8px;">
+        <div style="font-weight:600;">${p.nombre}${p.dni ? ` <span class="muted" style="font-weight:400;">· DNI ${p.dni}</span>` : ''}</div>
+        ${controlRol}
+      </div>
+    `;
+  }).join('');
+}
+
+// Cambiar entre "Profesor" y "Administrador" (pedido de Martin, 21/9): solo
+// admin puede tocar esto (esta pantalla ya es admin-only). El PATCH pega
+// directo sobre `perfiles.rol` — RLS `perfiles_admin_update` habilita esto.
+async function cambiarRolProfesor(perfilId, nombre, nuevoRol){
+  const etiqueta = nuevoRol === 'admin' ? 'Administrador' : 'Profesor';
+  const advertencia = nuevoRol === 'admin'
+    ? ' Va a tener acceso total a la gestión del gimnasio (finanzas, alumnos, configuración, etc.).'
+    : ' Va a perder el acceso a las secciones exclusivas de administrador.';
+  if (!confirm(`¿Convertir a ${nombre} en "${etiqueta}"?${advertencia}`)){
+    cargarListaProfesores(); // revierte el <select> visualmente a lo que ya estaba guardado
+    return;
+  }
+  try{
+    await sb(`perfiles?id=eq.${perfilId}`, { method:'PATCH', headers:{Prefer:'return=minimal'}, body: JSON.stringify({ rol: nuevoRol }) });
+    toast(`${nombre} ahora es ${etiqueta} ✓`);
+    const p = PROFESORES_CACHE.find(pr => pr.perfil_id === perfilId);
+    if (p) p.perfiles = { rol: nuevoRol };
+    // Si te cambiaste el rol a vos mismo, se refleja al toque en tu propio menú.
+    if (PERFIL_ACTUAL && perfilId === PERFIL_ACTUAL.id){
+      PERFIL_ACTUAL.rol = nuevoRol;
+      aplicarPermisosPorRol();
+    }
+    cargarListaProfesores();
+  }catch(e){ toast('Error cambiando el rol: ' + extraerMensajeError(e), true); cargarListaProfesores(); }
 }
 
 // El profesor "logueado" (elegido arriba de todo) es el que se precarga por
@@ -3377,10 +3444,14 @@ async function cargarListaAlumnos(){
     const idsCategoriasAlumno = (a.alumno_categorias || []).map(ac => ac.categoria_id);
     const chipsCategorias = nombresCategorias.map(n => `<span class="pill">🏷️ ${n}</span>`).join(' ');
     const chipEquipo = a.equipos?.nombre ? `<span class="pill">⚽ ${a.equipos.nombre}</span>` : '';
+    const chipPosicion = a.posicion ? `<span class="pill">🎯 ${a.posicion}</span>` : '';
+    const fotoChica = a.foto_url
+      ? `<img src="${a.foto_url}" style="width:32px; height:32px; border-radius:50%; object-fit:cover; margin-right:8px; vertical-align:middle;">`
+      : '';
     return `
     <div style="padding:8px 0; border-bottom:1px solid var(--border);">
       <div class="row" style="justify-content:space-between;">
-        <div style="font-weight:600;">${a.nombre}${a.dni ? ` <span class="muted" style="font-weight:400;">· DNI ${a.dni}</span>` : ''}</div>
+        <div style="font-weight:600; display:flex; align-items:center;">${fotoChica}${a.nombre}${a.dni ? ` <span class="muted" style="font-weight:400;">· DNI ${a.dni}</span>` : ''}</div>
         <div class="row" style="gap:8px;">
           <select onchange="cambiarTipoAlumno('${a.id}', this.value)">
             <option value="estandar" ${a.tipo==='estandar'?'selected':''}>Estándar</option>
@@ -3391,21 +3462,31 @@ async function cargarListaAlumnos(){
             ${PLANES_CACHE.map(p => `<option value="${p.id}" ${a.plan_id===p.id?'selected':''}>${p.nombre}</option>`).join('')}
           </select>
           ${chipAcceso}
+          <button class="ghost" onclick="abrirReporteAlumno('${a.id}')">📄 Ver ficha</button>
           <button class="ghost" onclick="toggleEditarAlumno('${a.id}')">✏️ Datos</button>
         </div>
       </div>
-      <div class="muted" style="margin-top:4px;">${datos || 'Sin datos de contacto/físicos cargados.'} ${chipPlan} ${chipsCategorias} ${chipEquipo}</div>
+      <div class="muted" style="margin-top:4px;">${datos || 'Sin datos de contacto/físicos cargados.'} ${chipPlan} ${chipsCategorias} ${chipEquipo} ${chipPosicion}</div>
       <div id="editarAlumno${a.id}" style="display:none; margin-top:10px;">
         <div class="row">
           <div class="field"><label>DNI</label><input id="editDni${a.id}" value="${a.dni||''}"></div>
           <div class="field"><label>Altura (cm)</label><input type="number" id="editAltura${a.id}" value="${a.altura_cm||''}"></div>
           <div class="field"><label>Peso (kg)</label><input type="number" step="0.1" id="editPeso${a.id}" value="${a.peso_kg||''}"></div>
           <div class="field" style="flex:1; min-width:180px;"><label>Objetivo</label><input id="editObjetivo${a.id}" value="${(a.objetivo||'').replace(/"/g,'&quot;')}"></div>
+          <div class="field" style="min-width:160px;"><label>Posición (opcional)</label><input id="editPosicion${a.id}" placeholder="Ej: Mediocampo" value="${(a.posicion||'').replace(/"/g,'&quot;')}"></div>
         </div>
         <div class="row" style="margin-top:8px;">
           <div class="field" style="flex:1; min-width:160px;"><label>Teléfono</label><input id="editTelefono${a.id}" value="${a.telefono||''}"></div>
           <div class="field" style="flex:1; min-width:200px;"><label>Email</label><input type="email" id="editEmail${a.id}" value="${a.email||''}"></div>
           <div class="field" style="flex:2; min-width:220px;"><label>Dirección</label><input id="editDireccion${a.id}" value="${(a.direccion||'').replace(/"/g,'&quot;')}"></div>
+        </div>
+        <div class="row" style="margin-top:8px; align-items:flex-end;">
+          <div class="field">
+            <label>Foto de perfil (opcional)</label>
+            <input type="file" accept="image/*" onchange="subirFotoAlumno('${a.id}', this.files[0])">
+          </div>
+          <input type="hidden" id="editFotoUrl${a.id}" value="${a.foto_url||''}">
+          <img id="editFotoPreview${a.id}" src="${a.foto_url||''}" style="width:44px; height:44px; border-radius:50%; object-fit:cover; ${a.foto_url?'':'display:none;'}">
         </div>
         <div class="row" style="margin-top:8px; align-items:flex-start;">
           <div class="field" style="flex:1; min-width:220px;">
@@ -3475,6 +3556,30 @@ function toggleEditarAlumno(alumnoId){
   div.style.display = div.style.display === 'none' ? '' : 'none';
 }
 
+// Sube la foto de perfil del alumno al mismo bucket público "logos" (reusa el
+// patrón de subirLogoGimnasio) bajo el prefijo alumnos/ — pedido de Martin, 21/9,
+// para la ficha/reporte del alumno.
+async function subirFotoAlumno(alumnoId, file){
+  if (!file) return;
+  const ext = (file.name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g,'') || 'jpg';
+  const path = `alumnos/${idAleatorio()}.${ext}`;
+  try{
+    toast('Subiendo foto...');
+    const resp = await fetch(`${SUPABASE_URL}/storage/v1/object/logos/${path}`, {
+      method: 'POST',
+      headers: { apikey: ANON_KEY, Authorization: `Bearer ${ANON_KEY}`, 'Content-Type': file.type || 'application/octet-stream' },
+      body: file,
+    });
+    if (!resp.ok){ const t = await resp.text().catch(()=> ''); throw new Error(`${resp.status}: ${t.slice(0,200)}`); }
+    const url = `${SUPABASE_URL}/storage/v1/object/public/logos/${path}`;
+    document.getElementById(`editFotoUrl${alumnoId}`).value = url;
+    const preview = document.getElementById(`editFotoPreview${alumnoId}`);
+    preview.src = url;
+    preview.style.display = '';
+    toast('Foto subida ✓ Tocá "Guardar datos" para aplicarla.');
+  }catch(e){ toast('Error subiendo la foto: ' + e.message, true); }
+}
+
 async function guardarDatosAlumno(alumnoId){
   const body = {
     dni: document.getElementById(`editDni${alumnoId}`).value.trim() || null,
@@ -3485,6 +3590,8 @@ async function guardarDatosAlumno(alumnoId){
     email: document.getElementById(`editEmail${alumnoId}`).value.trim() || null,
     direccion: document.getElementById(`editDireccion${alumnoId}`).value.trim() || null,
     equipo_id: document.getElementById(`editEquipo${alumnoId}`).value || null,
+    posicion: document.getElementById(`editPosicion${alumnoId}`).value.trim() || null,
+    foto_url: document.getElementById(`editFotoUrl${alumnoId}`).value.trim() || null,
   };
   const idsCategoriasElegidas = Array.from(
     document.querySelectorAll(`#editCategorias${alumnoId} input[type="checkbox"]:checked`)
@@ -4441,6 +4548,7 @@ async function cargarVistaEquipo(){
           </div>
           <div class="row" style="gap:10px; align-items:center;">
             <span class="pill">${totalSesiones ? completadasJugador + ' de ' + totalSesiones : 'sin sesiones'}</span>
+            <button class="ghost" onclick="abrirReporteAlumno('${m.id}')">📄 Ver ficha</button>
             <button class="ghost" onclick="irAEvaluacionAlumnoDesdeEquipo('${m.id}')">📈 Ver evolución</button>
           </div>
         </div>
@@ -4458,6 +4566,369 @@ function irAEvaluacionAlumnoDesdeEquipo(alumnoId){
   sel.value = alumnoId;
   sel.dispatchEvent(new Event('change'));
   sincronizarComboBuscable('evalAlumno');
+}
+
+// ---------- Ficha / Reporte del alumno + export a PDF (pedido de Martin, 21/9)
+// Funciona para CUALQUIER alumno, no solo jugadores de un equipo — se accede
+// desde "👤 Alumnos" y desde "⚽ Equipo". Reusa el historial de "📏 Evaluaciones"
+// (fetchEvaluacionesConMetricas + construirHistorialMetricas, ya existentes)
+// para que "Evolución" muestre lo que ese alumno realmente tenga cargado
+// (pases/remates para un jugador de fútbol, cargas o saltos para cualquier
+// otro, lo que sea) en vez de una lista fija de métricas de fútbol. La hoja
+// se dibuja siempre en modo claro (no sigue el tema oscuro de la app) porque
+// es exactamente lo que se exporta a PDF: lo que se ve en pantalla es lo que
+// se descarga. ----------
+let REPORTE_ALUMNO_ACTUAL = null;
+
+function slugMetrica(nombre){
+  return (nombre || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'') || 'm';
+}
+
+async function abrirReporteAlumno(alumnoId){
+  const alumno = ALUMNOS_CACHE.find(a => a.id === alumnoId);
+  if (!alumno){ toast('No se encontró el alumno.', true); return; }
+  const cont = document.getElementById('reporteAlumnoContainer');
+  cont.style.display = 'block';
+  cont.innerHTML = renderReporteTopbar() + `<div class="reporte-hoja" id="reporteHoja" style="padding:24px;">Cargando ficha de ${alumno.nombre}...</div>`;
+
+  try{
+    const [evaluaciones, turnos, ejecuciones] = await Promise.all([
+      fetchEvaluacionesConMetricas(alumnoId),
+      sb(`turnos?select=id,estado,asistio&alumno_id=eq.${alumnoId}&estado=neq.cancelado`),
+      sb(`ejecuciones?select=id,estado&alumno_id=eq.${alumnoId}`),
+    ]);
+    const porMetrica = construirHistorialMetricas(evaluaciones);
+
+    const turnosMarcados = turnos.filter(t => t.asistio !== null);
+    const presentes = turnosMarcados.filter(t => t.asistio === true).length;
+    const pctAsistencia = turnosMarcados.length ? Math.round((presentes / turnosMarcados.length) * 100) : null;
+    const entrenamientosCompletados = ejecuciones.filter(e => e.estado === 'finalizada').length;
+    const ultimaEvaluacion = evaluaciones[0] || null; // ya viene ordenada fecha.desc
+    const nombresCategorias = (alumno.alumno_categorias || []).map(ac => ac.categorias?.nombre).filter(Boolean);
+
+    REPORTE_ALUMNO_ACTUAL = { alumno, porMetrica, pctAsistencia, entrenamientosCompletados, ultimaEvaluacion, nombresCategorias };
+    document.getElementById('reporteAlumnoContainer').innerHTML = renderReporteTopbar() + renderReporteHoja(REPORTE_ALUMNO_ACTUAL);
+  }catch(e){
+    cont.innerHTML = renderReporteTopbar() + `<div class="reporte-hoja" style="padding:24px; color:#b91c1c;">Error cargando la ficha: ${e.message}</div>`;
+  }
+}
+
+function cerrarReporteAlumno(){
+  const cont = document.getElementById('reporteAlumnoContainer');
+  cont.style.display = 'none';
+  cont.innerHTML = '';
+  REPORTE_ALUMNO_ACTUAL = null;
+}
+
+function renderReporteTopbar(){
+  return `
+    <div class="reporte-topbar">
+      <button onclick="cerrarReporteAlumno()">← Volver</button>
+      <button class="pdf" onclick="descargarReportePdf()">📄 Descargar PDF</button>
+    </div>
+  `;
+}
+
+function renderReporteHoja(datos){
+  const { alumno, porMetrica, pctAsistencia, entrenamientosCompletados, ultimaEvaluacion, nombresCategorias } = datos;
+  const colorMarca = GIMNASIO_ACTUAL?.color_primario || '#16a34a';
+  const fotoHtml = alumno.foto_url
+    ? `<img src="${alumno.foto_url}" style="width:64px; height:64px; border-radius:50%; object-fit:cover; border:3px solid #ffffff; flex-shrink:0;">`
+    : `<div style="width:64px; height:64px; border-radius:50%; background:rgba(255,255,255,.25); display:flex; align-items:center; justify-content:center; font-size:24px; font-weight:800; color:#fff; flex-shrink:0;">${iniciales(alumno.nombre)}</div>`;
+
+  const chipsInfo = [alumno.posicion || null, nombresCategorias.length ? nombresCategorias.join(', ') : null, alumno.equipos?.nombre || null]
+    .filter(Boolean).join('  ·  ');
+
+  const metricasKeys = Object.keys(porMetrica);
+  const kpisHtml = `
+    <div class="row" style="gap:10px; flex-wrap:wrap; padding:16px 20px 4px;">
+      <div class="reporte-kpi"><div class="valor">${pctAsistencia===null ? '-' : pctAsistencia+'%'}</div><div class="etiqueta">Asistencia</div></div>
+      <div class="reporte-kpi"><div class="valor">${entrenamientosCompletados}</div><div class="etiqueta">Entrenamientos</div></div>
+      ${metricasKeys.slice(0,4).map(m => {
+        const puntos = porMetrica[m];
+        const ultimo = puntos[puntos.length-1];
+        return `<div class="reporte-kpi"><div class="valor">${formatoValorChart(ultimo.valor)}${ultimo.unidad?(' '+ultimo.unidad):''}</div><div class="etiqueta">${m}</div></div>`;
+      }).join('')}
+    </div>
+  `;
+
+  const evolucionHtml = metricasKeys.length
+    ? metricasKeys.map(m => `
+        <div style="margin-bottom:18px;">
+          <div style="font-weight:700; font-size:14px; margin-bottom:6px; color:#111827;">${m}</div>
+          <div id="reporteChart-${slugMetrica(m)}">${svgChartReporte(porMetrica[m], colorMarca)}</div>
+        </div>
+      `).join('')
+    : '<div style="color:#6b7280; font-size:13px;">Todavía no hay evaluaciones cargadas para ver la evolución. Cargalas desde "📏 Evaluaciones".</div>';
+
+  // "Desempeño por habilidad" — barras con el último valor de cada métrica
+  // cargada en % (0-100), al estilo del reporte de referencia. Sólo aparecen
+  // métricas con esa unidad, así no se inventa una escala para kg, cm, etc.
+  const habilidades = metricasKeys
+    .filter(m => (porMetrica[m][porMetrica[m].length-1].unidad || '').trim() === '%')
+    .map(m => ({ nombre: m, valor: Math.max(0, Math.min(100, porMetrica[m][porMetrica[m].length-1].valor)) }));
+  const habilidadesHtml = habilidades.length ? `
+    <div style="padding:0 20px 4px;">
+      <div style="font-weight:800; font-size:15px; margin-bottom:10px; color:#111827;">Desempeño por habilidad</div>
+      ${habilidades.map(h => `
+        <div style="margin-bottom:10px;">
+          <div style="display:flex; justify-content:space-between; font-size:12.5px; color:#374151; margin-bottom:3px;"><span>${h.nombre}</span><strong>${formatoValorChart(h.valor)}%</strong></div>
+          <div class="reporte-skill-bar"><div style="width:${h.valor}%; background:${colorMarca};"></div></div>
+        </div>
+      `).join('')}
+    </div>
+  ` : '';
+
+  const observacionesHtml = ultimaEvaluacion?.notas
+    ? `<div style="background:#f9fafb; border:1px solid #e5e7eb; border-radius:10px; padding:12px 14px; font-size:13px; color:#374151; margin-top:6px;">
+        <div style="font-weight:700; margin-bottom:4px; color:#111827;">Observaciones del entrenador (${formatearFechaCorta(ultimaEvaluacion.fecha)})</div>
+        ${ultimaEvaluacion.notas}
+      </div>`
+    : '';
+
+  return `
+    <div class="reporte-hoja" id="reporteHoja">
+      <div style="background:${colorMarca}; padding:20px; display:flex; align-items:center; gap:14px;">
+        ${fotoHtml}
+        <div>
+          <div style="color:#fff; font-size:20px; font-weight:800;">${alumno.nombre}</div>
+          <div style="color:rgba(255,255,255,.9); font-size:13px;">${chipsInfo || (GIMNASIO_ACTUAL?.nombre || '')}</div>
+        </div>
+      </div>
+      ${kpisHtml}
+      ${habilidadesHtml}
+      <div style="padding:16px 20px 20px;">
+        <div style="font-weight:800; font-size:15px; margin-bottom:10px; color:#111827;">Evolución</div>
+        ${evolucionHtml}
+        ${observacionesHtml}
+      </div>
+      <div style="padding:0 20px 18px; font-size:11px; color:#9ca3af; text-align:center;">
+        ${GIMNASIO_ACTUAL?.nombre || ''} · Reporte generado el ${formatearFechaCorta(new Date().toISOString().slice(0,10))}
+      </div>
+    </div>
+  `;
+}
+
+// Variante "hoja blanca" (sin var() de CSS) del gráfico de evolución — la usan
+// tanto la vista en pantalla de la ficha como el export a PDF (que rasteriza
+// este mismo SVG, así lo que se ve es igual a lo que se descarga).
+function svgChartReporte(puntos, colorLinea){
+  if (!puntos.length) return '<div style="color:#6b7280; font-size:12px;">Sin datos.</div>';
+  if (puntos.length === 1){
+    return `<div style="color:#374151; font-size:13px;">Un solo dato: <strong>${formatoValorChart(puntos[0].valor)}${puntos[0].unidad?(' '+puntos[0].unidad):''}</strong> el ${fechaCortaChart(puntos[0].fecha)}. Cargá otra evaluación para ver la evolución.</div>`;
+  }
+  const W = 640, H = 220;
+  const PAD_L = 40, PAD_R = 14, PAD_T = 20, PAD_B = 26;
+  const plotW = W - PAD_L - PAD_R;
+  const plotH = H - PAD_T - PAD_B;
+  const valores = puntos.map(p => p.valor);
+  const min = Math.min(...valores), max = Math.max(...valores);
+  const colchon = (max - min) * 0.15 || Math.max(Math.abs(max), 1) * 0.1;
+  const yMin = min - colchon, yMax = max + colchon;
+  const rangoY = (yMax - yMin) || 1;
+  const stepX = plotW / (puntos.length - 1);
+  const xOf = i => PAD_L + i * stepX;
+  const yOf = v => PAD_T + plotH - ((v - yMin) / rangoY) * plotH;
+  const coords = puntos.map((p,i) => ({ x: xOf(i), y: yOf(p.valor), ...p }));
+
+  const ticks = [...new Set([min, (min+max)/2, max].map(t => Math.round(t*100)/100))];
+  const gridHtml = ticks.map(t => {
+    const y = yOf(t);
+    return `<line x1="${PAD_L}" y1="${y.toFixed(1)}" x2="${W-PAD_R}" y2="${y.toFixed(1)}" stroke="#e5e7eb" stroke-width="1"/>
+      <text x="${PAD_L-6}" y="${(y+3.5).toFixed(1)}" font-size="10" fill="#9ca3af" text-anchor="end">${formatoValorChart(t)}</text>`;
+  }).join('');
+
+  const maxEtiquetas = 6;
+  const pasoEtiqueta = Math.max(1, Math.ceil(coords.length / maxEtiquetas));
+  const xLabelsHtml = coords.map((c,i) => (i % pasoEtiqueta === 0 || i === coords.length-1)
+    ? `<text x="${c.x.toFixed(1)}" y="${H-8}" font-size="10" fill="#9ca3af" text-anchor="middle">${fechaCortaChart(c.fecha)}</text>` : '').join('');
+
+  const linea = coords.map(c => `${c.x.toFixed(1)},${c.y.toFixed(1)}`).join(' ');
+  const ultimo = coords[coords.length - 1];
+  const circulos = coords.map((c,i) => `<circle cx="${c.x.toFixed(1)}" cy="${c.y.toFixed(1)}" r="${i===coords.length-1?5:3.5}" fill="${colorLinea}" stroke="#ffffff" stroke-width="1.5"/>`).join('');
+  const etiquetaUltimo = `<text x="${ultimo.x.toFixed(1)}" y="${(ultimo.y-11).toFixed(1)}" font-size="11" font-weight="700" fill="#111827" text-anchor="${ultimo.x > W-70 ? 'end' : 'middle'}">${formatoValorChart(ultimo.valor)}${ultimo.unidad?(' '+ultimo.unidad):''}</text>`;
+
+  return `<svg width="100%" viewBox="0 0 ${W} ${H}" style="max-width:${W}px; display:block;">
+    <rect x="0" y="0" width="${W}" height="${H}" fill="#ffffff"/>
+    ${gridHtml}
+    <polyline points="${linea}" fill="none" stroke="${colorLinea}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+    ${circulos}
+    ${xLabelsHtml}
+    ${etiquetaUltimo}
+  </svg>`;
+}
+
+function hexARgb(hex){
+  const limpio = (hex || '').replace('#','');
+  const full = limpio.length===3 ? limpio.split('').map(c=>c+c).join('') : limpio.padEnd(6,'0').slice(0,6);
+  const num = parseInt(full, 16) || 0x16a34a;
+  return { r:(num>>16)&255, g:(num>>8)&255, b:num&255 };
+}
+
+// Rasteriza un <svg> del DOM a PNG (data URL) dibujándolo en un <canvas> — así
+// se puede meter en el PDF con jsPDF, que no acepta SVG directamente.
+function svgAPngDataUrl(svgEl, width, height){
+  return new Promise((resolve, reject) => {
+    const clone = svgEl.cloneNode(true);
+    clone.setAttribute('width', width);
+    clone.setAttribute('height', height);
+    clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+    const svgStr = new XMLSerializer().serializeToString(clone);
+    const svg64 = btoa(unescape(encodeURIComponent(svgStr)));
+    const img = new Image();
+    img.onload = () => {
+      const escala = 2;
+      const canvas = document.createElement('canvas');
+      canvas.width = width * escala; canvas.height = height * escala;
+      const ctx = canvas.getContext('2d');
+      ctx.scale(escala, escala);
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, width, height);
+      ctx.drawImage(img, 0, 0, width, height);
+      resolve(canvas.toDataURL('image/png'));
+    };
+    img.onerror = reject;
+    img.src = 'data:image/svg+xml;base64,' + svg64;
+  });
+}
+
+// Foto de perfil del alumno -> PNG (puede fallar por CORS si el bucket no lo
+// permite; se atrapa el error afuera y el PDF sigue sin la foto).
+function imagenAPngDataUrl(url, width, height){
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = width; canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, width, height);
+      try{ resolve(canvas.toDataURL('image/png')); }catch(e){ reject(e); }
+    };
+    img.onerror = reject;
+    img.src = url;
+  });
+}
+
+async function descargarReportePdf(){
+  if (!REPORTE_ALUMNO_ACTUAL){ toast('Esperá a que termine de cargar la ficha.', true); return; }
+  if (!window.jspdf){ toast('No se pudo cargar el generador de PDF (revisá tu conexión a internet y volvé a intentar).', true); return; }
+  const { alumno, porMetrica, pctAsistencia, entrenamientosCompletados, ultimaEvaluacion, nombresCategorias } = REPORTE_ALUMNO_ACTUAL;
+  toast('Generando PDF...');
+  try{
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF('p', 'mm', 'a4');
+    const pageW = 210, marginX = 16;
+    const colorMarca = GIMNASIO_ACTUAL?.color_primario || '#16a34a';
+    const rgb = hexARgb(colorMarca);
+
+    doc.setFillColor(rgb.r, rgb.g, rgb.b);
+    doc.rect(0, 0, pageW, 34, 'F');
+    doc.setTextColor(255,255,255);
+    doc.setFontSize(17); doc.setFont(undefined, 'bold');
+    doc.text(alumno.nombre, marginX, 16);
+    doc.setFontSize(10); doc.setFont(undefined, 'normal');
+    const chipsInfo = [alumno.posicion, nombresCategorias.join(', '), alumno.equipos?.nombre].filter(Boolean).join('   ·   ');
+    doc.text(chipsInfo || (GIMNASIO_ACTUAL?.nombre || ''), marginX, 24);
+    if (GIMNASIO_ACTUAL?.nombre) doc.text(GIMNASIO_ACTUAL.nombre, marginX, 30);
+
+    if (alumno.foto_url){
+      try{
+        const fotoDataUrl = await imagenAPngDataUrl(alumno.foto_url, 160, 160);
+        doc.addImage(fotoDataUrl, 'PNG', pageW - marginX - 20, 7, 20, 20);
+      }catch(e){ /* sin foto en el PDF si falla la carga (ej. CORS) */ }
+    }
+
+    let y = 44;
+    doc.setFontSize(9); doc.setTextColor(107,114,128); doc.setFont(undefined,'normal');
+    doc.text('RESUMEN', marginX, y); y += 5;
+    doc.setFontSize(10.5); doc.setTextColor(17,24,39); doc.setFont(undefined,'bold');
+    const kpisTexto = [
+      `Asistencia: ${pctAsistencia===null?'-':pctAsistencia+'%'}`,
+      `Entrenamientos: ${entrenamientosCompletados}`,
+      ...Object.entries(porMetrica).slice(0,4).map(([m,puntos]) => {
+        const u = puntos[puntos.length-1];
+        return `${m}: ${formatoValorChart(u.valor)}${u.unidad?(' '+u.unidad):''}`;
+      }),
+    ].join('     |     ');
+    const kpisLineas = doc.splitTextToSize(kpisTexto, pageW - marginX*2);
+    doc.text(kpisLineas, marginX, y);
+    y += kpisLineas.length * 5.5 + 6;
+    doc.setFont(undefined,'normal');
+
+    const habilidadesPdf = Object.keys(porMetrica)
+      .filter(m => (porMetrica[m][porMetrica[m].length-1].unidad || '').trim() === '%')
+      .map(m => ({ nombre: m, valor: Math.max(0, Math.min(100, porMetrica[m][porMetrica[m].length-1].valor)) }));
+    if (habilidadesPdf.length){
+      if (y > 250){ doc.addPage(); y = 16; }
+      doc.setFontSize(13); doc.setFont(undefined,'bold'); doc.setTextColor(17,24,39);
+      doc.text('Desempeño por habilidad', marginX, y); y += 7;
+      const barW = pageW - marginX*2;
+      for (const h of habilidadesPdf){
+        if (y > 260){ doc.addPage(); y = 16; }
+        doc.setFontSize(9.5); doc.setFont(undefined,'normal'); doc.setTextColor(55,65,81);
+        doc.text(h.nombre, marginX, y);
+        doc.setFont(undefined,'bold');
+        doc.text(`${formatoValorChart(h.valor)}%`, pageW - marginX, y, { align: 'right' });
+        y += 2;
+        doc.setFillColor(229,231,235);
+        doc.roundedRect(marginX, y, barW, 3, 1.5, 1.5, 'F');
+        doc.setFillColor(rgb.r, rgb.g, rgb.b);
+        doc.roundedRect(marginX, y, barW * (h.valor/100), 3, 1.5, 1.5, 'F');
+        y += 7;
+      }
+      y += 3;
+    }
+
+    doc.setFontSize(13); doc.setFont(undefined,'bold'); doc.setTextColor(17,24,39);
+    doc.text('Evolución', marginX, y); y += 6;
+    doc.setFont(undefined,'normal');
+
+    const metricas = Object.keys(porMetrica);
+    if (!metricas.length){
+      doc.setFontSize(10); doc.setTextColor(107,114,128);
+      doc.text('Todavía no hay evaluaciones cargadas.', marginX, y);
+      y += 8;
+    } else {
+      for (const m of metricas){
+        const puntos = porMetrica[m];
+        const contId = 'reporteChart-' + slugMetrica(m);
+        const svgEl = document.querySelector(`#${CSS.escape(contId)} svg`);
+        if (y > 250){ doc.addPage(); y = 16; }
+        doc.setFontSize(11); doc.setFont(undefined,'bold'); doc.setTextColor(17,24,39);
+        doc.text(m, marginX, y); y += 5;
+        doc.setFont(undefined,'normal');
+        if (puntos.length < 2 || !svgEl){
+          doc.setFontSize(10); doc.setTextColor(55,65,81);
+          const u = puntos[puntos.length-1];
+          doc.text(`Un solo dato: ${formatoValorChart(u.valor)}${u.unidad?(' '+u.unidad):''} el ${formatearFechaCorta(u.fecha)}.`, marginX, y);
+          y += 8;
+          continue;
+        }
+        try{
+          const pngDataUrl = await svgAPngDataUrl(svgEl, 640, 220);
+          const imgW = pageW - marginX*2, imgH = imgW * (220/640);
+          doc.addImage(pngDataUrl, 'PNG', marginX, y, imgW, imgH);
+          y += imgH + 8;
+        }catch(e){ /* si falla ese gráfico puntual, se sigue con el resto */ }
+      }
+    }
+
+    if (ultimaEvaluacion?.notas){
+      if (y > 250){ doc.addPage(); y = 16; }
+      doc.setFontSize(11); doc.setFont(undefined,'bold'); doc.setTextColor(17,24,39);
+      doc.text(`Observaciones del entrenador (${formatearFechaCorta(ultimaEvaluacion.fecha)})`, marginX, y);
+      y += 5;
+      doc.setFont(undefined,'normal'); doc.setFontSize(10); doc.setTextColor(55,65,81);
+      const lineas = doc.splitTextToSize(ultimaEvaluacion.notas, pageW - marginX*2);
+      doc.text(lineas, marginX, y);
+    }
+
+    doc.save(`Reporte - ${alumno.nombre} - ${new Date().toISOString().slice(0,10)}.pdf`);
+    toast('PDF descargado ✓');
+  }catch(e){
+    toast('Error generando el PDF: ' + e.message, true);
+  }
 }
 
 // Lógica compartida: crea la rutina, sus días (con fecha), sus ejercicios, y la
