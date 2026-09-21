@@ -543,6 +543,7 @@
     <button class="tt-btn" id="ttRutinas" onclick="cambiarSubvista('rutinas')" title="Rutinas"><span>🗂️</span></button>
     <button class="tt-btn active" id="ttAgenda" onclick="cambiarSubvista('agenda')" title="Agenda"><span>📋</span></button>
     <button class="tt-btn" id="ttEspeciales" onclick="cambiarSubvista('especiales')" title="Rutinas especiales por alumno"><span>⭐</span></button>
+    <button class="tt-btn" id="ttEquipo" onclick="cambiarSubvista('equipo')" title="Equipo"><span>⚽</span></button>
     <button class="tt-btn" id="ttAlumnos" onclick="cambiarSubvista('alumnos')" style="display:none;" title="Alumnos"><span>👤</span></button>
     <button class="tt-btn" id="ttEvaluaciones" onclick="cambiarSubvista('evaluaciones')" title="Evaluaciones"><span>📏</span></button>
     <button class="tt-btn" id="ttLogros" onclick="cambiarSubvista('logros')" style="display:none;" title="Logros"><span>🏆</span></button>
@@ -568,6 +569,7 @@
     <div class="side-item" id="menuRutinas" onclick="cambiarSubvista('rutinas')" title="Rutinas"><span class="side-ico">🗂️</span><span class="side-label">Rutinas</span></div>
     <div class="side-item active" id="menuAgenda" onclick="cambiarSubvista('agenda')" title="Agenda"><span class="side-ico">📋</span><span class="side-label">Agenda</span></div>
     <div class="side-item" id="menuEspeciales" onclick="cambiarSubvista('especiales')" title="Rutinas especiales por alumno"><span class="side-ico">⭐</span><span class="side-label">Rutinas especiales por alumno</span></div>
+    <div class="side-item" id="menuEquipo" onclick="cambiarSubvista('equipo')" title="Equipo"><span class="side-ico">⚽</span><span class="side-label">Equipo</span></div>
     <div class="side-item" id="menuAlumnos" onclick="cambiarSubvista('alumnos')" title="Alumnos"><span class="side-ico">👤</span><span class="side-label">Alumnos</span></div>
     <div class="side-item" id="menuEvaluaciones" onclick="cambiarSubvista('evaluaciones')" title="Evaluaciones"><span class="side-ico">📏</span><span class="side-label">Evaluaciones</span></div>
     <div class="side-item" id="menuLogros" onclick="cambiarSubvista('logros')" title="Logros"><span class="side-ico">🏆</span><span class="side-label">Logros</span></div>
@@ -747,6 +749,45 @@
         <div class="card">
           <h2 style="margin-top:0">Rutinas especiales ya creadas para este alumno</h2>
           <div id="listaEspecialesAlumno" class="muted">Elegí un alumno arriba.</div>
+        </div>
+      </div>
+
+      <!-- ---- SUBVISTA: EQUIPO (semana planificada + evolución de cada jugador, pedido de Martin 21/9) ---- -->
+      <div id="subvistaEquipo" style="display:none;">
+        <div class="card">
+          <div class="row" style="justify-content:space-between; align-items:center;">
+            <h2 style="margin-top:0; margin-bottom:0;">⚽ Equipo</h2>
+            <button class="ghost" onclick="cargarVistaEquipo()">🔄 Actualizar</button>
+          </div>
+          <div class="row" style="margin-top:10px; align-items:end;">
+            <div class="field" style="flex:1; min-width:220px;">
+              <label>Equipo</label>
+              <select id="equipoSeleccionado" onchange="onCambiarEquipoSeleccionado()"></select>
+            </div>
+            <div class="field">
+              <label>Semana</label>
+              <div class="row" style="gap:6px;">
+                <button class="ghost" onclick="cambiarSemanaEquipo(-1)">◀</button>
+                <div class="muted" id="equipoSemanaLabel" style="align-self:center; white-space:nowrap; padding:0 4px;"></div>
+                <button class="ghost" onclick="cambiarSemanaEquipo(1)">▶</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" id="equipoSinDatos">
+          <div class="empty">Elegí un equipo arriba para ver su semana. Si todavía no cargaste equipos, hacelo desde "🏢 Mi gimnasio".</div>
+        </div>
+
+        <div id="equipoContenido" style="display:none;">
+          <div class="card">
+            <h3 style="margin-top:0;">Entrenamientos planificados esta semana</h3>
+            <div id="equipoEntrenamientos" class="muted">Cargando...</div>
+          </div>
+          <div class="card">
+            <h3 style="margin-top:0;">Jugadores — cumplimiento y evolución</h3>
+            <div id="equipoJugadores" class="muted">Cargando...</div>
+          </div>
         </div>
       </div>
 
@@ -1376,7 +1417,7 @@ const BUCKET = "Ejercicios";
 // un cambio, se incrementa este número — el chequeo de actualización (más abajo) lo compara
 // contra lo que hay publicado y avisa si están desactualizados, sin que nadie tenga que
 // cambiar ningún link a mano.
-const APP_VERSION = 31;
+const APP_VERSION = 32;
 
 function imgUrl(providerRefId){
   return `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${encodeURI(providerRefId)}`;
@@ -1759,6 +1800,7 @@ function cambiarSubvista(v){
   document.getElementById('subvistaArmador').style.display = v==='armador' ? '' : 'none';
   document.getElementById('subvistaRutinas').style.display = v==='rutinas' ? '' : 'none';
   document.getElementById('subvistaEspeciales').style.display = v==='especiales' ? '' : 'none';
+  document.getElementById('subvistaEquipo').style.display = v==='equipo' ? '' : 'none';
   document.getElementById('subvistaAlumnos').style.display = v==='alumnos' ? '' : 'none';
   document.getElementById('subvistaEvaluaciones').style.display = v==='evaluaciones' ? '' : 'none';
   document.getElementById('subvistaLogros').style.display = v==='logros' ? '' : 'none';
@@ -1773,6 +1815,7 @@ function cambiarSubvista(v){
   document.getElementById('menuArmador').classList.toggle('active', v==='armador');
   document.getElementById('menuRutinas').classList.toggle('active', v==='rutinas');
   document.getElementById('menuEspeciales').classList.toggle('active', v==='especiales');
+  document.getElementById('menuEquipo').classList.toggle('active', v==='equipo');
   document.getElementById('menuAlumnos').classList.toggle('active', v==='alumnos');
   document.getElementById('menuEvaluaciones').classList.toggle('active', v==='evaluaciones');
   document.getElementById('menuLogros').classList.toggle('active', v==='logros');
@@ -1787,6 +1830,7 @@ function cambiarSubvista(v){
   document.getElementById('ttArmador').classList.toggle('active', v==='armador');
   document.getElementById('ttRutinas').classList.toggle('active', v==='rutinas');
   document.getElementById('ttEspeciales').classList.toggle('active', v==='especiales');
+  document.getElementById('ttEquipo').classList.toggle('active', v==='equipo');
   document.getElementById('ttAlumnos').classList.toggle('active', v==='alumnos');
   document.getElementById('ttEvaluaciones').classList.toggle('active', v==='evaluaciones');
   document.getElementById('ttLogros').classList.toggle('active', v==='logros');
@@ -1812,6 +1856,7 @@ function cambiarSubvista(v){
   if (v==='planes') cargarPlanes();
   if (v==='cobranzas') cargarCobranzas();
   if (v==='ejercicios') cargarListaEjerciciosPersonalizados();
+  if (v==='equipo'){ poblarSelectEquipoVista(); cargarVistaEquipo(); }
   if (v==='gimnasio'){
     document.getElementById('gimNombre').value = GIMNASIO_ACTUAL?.nombre || '';
     document.getElementById('gimLogoUrl').value = GIMNASIO_ACTUAL?.logo_url || '';
@@ -2225,6 +2270,7 @@ async function cargarCategoriasYEquipos(){
   renderListaCategorias();
   renderListaEquipos();
   poblarSelectEquipoEsp();
+  poblarSelectEquipoVista();
 }
 
 function renderListaCategorias(){
@@ -3945,13 +3991,18 @@ async function renderLogros(contId, alumnoId){
 // "Rutinas especiales por alumno" (especial), cada uno con su propio
 // estado y contenedor en el DOM.
 // =====================================================================
+// Objetivo del entrenamiento de ese día — lista fija (pedido de Martin, 21/9,
+// para la pantalla "⚽ Equipo"). Queda disponible en cualquier constructor de
+// días (Armador normal y Rutinas especiales/equipo), es opcional.
+const OBJETIVOS_ENTRENAMIENTO = ['Fuerza','Resistencia','Velocidad','Potencia','Técnica','Táctica','Movilidad','Recuperación'];
+
 function crearConstructorDeDias(prefijo, containerId){
   const estado = { dias: {}, contador: 0 };
 
   function agregarDia(){
     estado.contador++;
     const diaId = prefijo + estado.contador;
-    estado.dias[diaId] = { nombre_dia: '', fecha: '', bloqueActual: 'General', ejercicios: [] };
+    estado.dias[diaId] = { nombre_dia: '', fecha: '', objetivo: '', bloqueActual: 'General', ejercicios: [] };
     render();
   }
 
@@ -4025,6 +4076,13 @@ function crearConstructorDeDias(prefijo, containerId){
               <div class="field" style="min-width:190px;">
                 <label>Etiqueta (opcional)</label>
                 <input value="${dia.nombre_dia}" placeholder="Ej: Tren superior" onchange="CONS['${prefijo}'].estado.dias['${diaId}'].nombre_dia=this.value">
+              </div>
+              <div class="field" style="min-width:170px;">
+                <label>🎯 Objetivo (opcional)</label>
+                <select onchange="CONS['${prefijo}'].estado.dias['${diaId}'].objetivo=this.value">
+                  <option value="">-- sin definir --</option>
+                  ${OBJETIVOS_ENTRENAMIENTO.map(o => `<option value="${o}" ${dia.objetivo===o?'selected':''}>${o}</option>`).join('')}
+                </select>
               </div>
             </div>
             <button class="danger" onclick="if(confirm('¿Eliminar este día de la rutina?')) CONS['${prefijo}'].eliminarDia('${diaId}')">🗑️ Eliminar día</button>
@@ -4180,6 +4238,156 @@ async function guardarRutinaEspecial(){
   });
 }
 
+// ---------- Pantalla "⚽ Equipo": semana planificada + cumplimiento + evolución
+// de cada jugador (pedido de Martin, 21/9) ----------
+let EQUIPO_SEMANA_OFFSET = 0; // 0 = semana actual, -1 anterior, +1 siguiente
+
+function poblarSelectEquipoVista(){
+  const sel = document.getElementById('equipoSeleccionado');
+  if (!sel) return;
+  const actual = sel.value;
+  sel.innerHTML = `<option value="">-- elegir equipo --</option>` + EQUIPOS_CACHE.map(e => `<option value="${e.id}">${e.nombre}</option>`).join('');
+  if (actual) sel.value = actual;
+}
+
+function onCambiarEquipoSeleccionado(){
+  EQUIPO_SEMANA_OFFSET = 0;
+  cargarVistaEquipo();
+}
+
+function cambiarSemanaEquipo(delta){
+  EQUIPO_SEMANA_OFFSET += delta;
+  cargarVistaEquipo();
+}
+
+// Lunes a Domingo de la semana actual + el offset de semanas elegido.
+function limitesSemanaEquipo(offset){
+  const hoy = new Date();
+  const dow = hoy.getDay(); // 0=domingo..6=sábado
+  const diffLunes = (dow === 0 ? -6 : 1 - dow);
+  const lunes = new Date(hoy);
+  lunes.setDate(hoy.getDate() + diffLunes + offset * 7);
+  lunes.setHours(0, 0, 0, 0);
+  const domingo = new Date(lunes);
+  domingo.setDate(lunes.getDate() + 6);
+  const iso = d => d.toISOString().slice(0, 10);
+  return { desde: iso(lunes), hasta: iso(domingo) };
+}
+
+async function cargarVistaEquipo(){
+  const wrapVacio = document.getElementById('equipoSinDatos');
+  const wrapContenido = document.getElementById('equipoContenido');
+  const equipoId = document.getElementById('equipoSeleccionado')?.value;
+  const { desde, hasta } = limitesSemanaEquipo(EQUIPO_SEMANA_OFFSET);
+  const lblSemana = document.getElementById('equipoSemanaLabel');
+  if (lblSemana) lblSemana.textContent = `${formatearFechaCorta(desde)} al ${formatearFechaCorta(hasta)}`;
+
+  if (!equipoId){
+    wrapVacio.style.display = '';
+    wrapContenido.style.display = 'none';
+    return;
+  }
+  wrapVacio.style.display = 'none';
+  wrapContenido.style.display = '';
+  const contEntrenamientos = document.getElementById('equipoEntrenamientos');
+  const contJugadores = document.getElementById('equipoJugadores');
+  contEntrenamientos.innerHTML = 'Cargando...';
+  contJugadores.innerHTML = 'Cargando...';
+
+  const miembros = ALUMNOS_CACHE.filter(a => a.equipo_id === equipoId);
+  if (!miembros.length){
+    contEntrenamientos.innerHTML = '<div class="empty">Este equipo todavía no tiene jugadores asignados (asignalos desde "👤 Alumnos").</div>';
+    contJugadores.innerHTML = '';
+    return;
+  }
+  const idsAlumnos = miembros.map(m => m.id);
+
+  try{
+    // Todas las rutinas asignadas a algún miembro del equipo — como al asignar
+    // una rutina a "equipo completo" se crea UNA sola rutina compartida, esto
+    // deduplica sola por rutina_dia.id sin importar cuántos jugadores la tengan.
+    const asignaciones = await sb(`rutina_asignaciones?select=rutina_id,rutinas(id,rutina_dias(id,fecha,nombre_dia,objetivo))&alumno_id=in.(${idsAlumnos.join(',')})`);
+    const diasMap = {};
+    asignaciones.forEach(a => {
+      (a.rutinas?.rutina_dias || []).forEach(d => {
+        if (d.fecha >= desde && d.fecha <= hasta) diasMap[d.id] = d;
+      });
+    });
+    const dias = Object.values(diasMap).sort((a, b) => a.fecha.localeCompare(b.fecha));
+    const idsDias = dias.map(d => d.id);
+
+    let ejPorDia = {};
+    let ejecPorDia = {};
+    if (idsDias.length){
+      const [ejerciciosPorDia, ejecucionesEquipo] = await Promise.all([
+        sb(`rutina_ejercicios?select=rutina_dia_id,orden,series,repeticiones,peso_sugerido,ejercicios(nombre)&rutina_dia_id=in.(${idsDias.join(',')})&order=orden.asc`),
+        sb(`ejecuciones?select=rutina_dia_id,alumno_id,estado&rutina_dia_id=in.(${idsDias.join(',')})&alumno_id=in.(${idsAlumnos.join(',')})`),
+      ]);
+      ejerciciosPorDia.forEach(e => { (ejPorDia[e.rutina_dia_id] = ejPorDia[e.rutina_dia_id] || []).push(e); });
+      ejecucionesEquipo.forEach(e => { (ejecPorDia[e.rutina_dia_id] = ejecPorDia[e.rutina_dia_id] || []).push(e); });
+    }
+
+    if (!dias.length){
+      contEntrenamientos.innerHTML = '<div class="empty">No hay entrenamientos planificados para el equipo esta semana. Cargalos desde "⭐ Rutinas especiales" eligiendo "Un equipo completo".</div>';
+    } else {
+      contEntrenamientos.innerHTML = dias.map(d => {
+        const ejercicios = ejPorDia[d.id] || [];
+        const ejecs = ejecPorDia[d.id] || [];
+        const completados = ejecs.filter(e => e.estado === 'finalizada').length;
+        const cargasHtml = ejercicios.length
+          ? ejercicios.map(e => `<div style="padding:2px 0;">${e.ejercicios?.nombre || '-'} — ${e.series}x${e.repeticiones}${e.peso_sugerido ? ` @ ${e.peso_sugerido}kg` : ''}</div>`).join('')
+          : '<div class="muted" style="font-size:13px;">Sin ejercicios cargados.</div>';
+        return `
+          <div style="padding:10px 0; border-bottom:1px solid var(--border);">
+            <div class="row" style="justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;">
+              <div>
+                <div style="font-weight:700;">${fechaLegible(d.fecha)}${d.nombre_dia ? ' · ' + d.nombre_dia : ''}</div>
+                ${d.objetivo ? `<span class="pill">🎯 ${d.objetivo}</span>` : ''}
+              </div>
+              <span class="pill">${completados} de ${miembros.length} completaron</span>
+            </div>
+            <div style="margin-top:8px;">${cargasHtml}</div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // Panel de jugadores: cumplimiento de la semana + última evaluación cargada.
+    const ultimasEvals = await sb(`evaluaciones?select=alumno_id,fecha&alumno_id=in.(${idsAlumnos.join(',')})&order=fecha.desc`);
+    const ultimaPorAlumno = {};
+    ultimasEvals.forEach(e => { if (!ultimaPorAlumno[e.alumno_id]) ultimaPorAlumno[e.alumno_id] = e.fecha; });
+
+    contJugadores.innerHTML = miembros.map(m => {
+      const totalSesiones = dias.length;
+      const completadasJugador = dias.filter(d => (ejecPorDia[d.id] || []).some(e => e.alumno_id === m.id && e.estado === 'finalizada')).length;
+      const ultimaEval = ultimaPorAlumno[m.id];
+      return `
+        <div class="row" style="justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid var(--border); flex-wrap:wrap; gap:6px;">
+          <div>
+            <div style="font-weight:600;">${m.nombre}</div>
+            <div class="muted" style="font-size:12px;">Última evaluación: ${ultimaEval ? formatearFechaCorta(ultimaEval) : 'sin evaluaciones cargadas'}</div>
+          </div>
+          <div class="row" style="gap:10px; align-items:center;">
+            <span class="pill">${totalSesiones ? completadasJugador + ' de ' + totalSesiones : 'sin sesiones'}</span>
+            <button class="ghost" onclick="irAEvaluacionAlumnoDesdeEquipo('${m.id}')">📈 Ver evolución</button>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }catch(e){
+    contEntrenamientos.innerHTML = 'Error: ' + e.message;
+    contJugadores.innerHTML = '';
+  }
+}
+
+function irAEvaluacionAlumnoDesdeEquipo(alumnoId){
+  cambiarSubvista('evaluaciones');
+  const sel = document.getElementById('evalAlumno');
+  sel.value = alumnoId;
+  sel.dispatchEvent(new Event('change'));
+  sincronizarComboBuscable('evalAlumno');
+}
+
 // Lógica compartida: crea la rutina, sus días (con fecha), sus ejercicios, y la
 // asigna (rutina_asignaciones) a la lista de alumnos indicada (puede ser vacía).
 async function guardarRutinaGenerica({ constructor, nombre, profesorId, alumnosDestino, btnId, onOk, msgOk }){
@@ -4206,7 +4414,7 @@ async function guardarRutinaGenerica({ constructor, nombre, profesorId, alumnosD
 
     const diasPayload = idsDias.map((diaId, i) => {
       const dia = constructor.estado.dias[diaId];
-      return { rutina_id: rutina.id, fecha: dia.fecha, nombre_dia: dia.nombre_dia.trim() || fechaLegible(dia.fecha), orden: i };
+      return { rutina_id: rutina.id, fecha: dia.fecha, nombre_dia: dia.nombre_dia.trim() || fechaLegible(dia.fecha), orden: i, objetivo: dia.objetivo || null };
     });
     const diasCreados = await sb('rutina_dias', {
       method:'POST', headers:{Prefer:'return=representation'}, body: JSON.stringify(diasPayload)
