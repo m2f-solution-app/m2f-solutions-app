@@ -1076,20 +1076,31 @@
 
         <div id="horTabCuadro" style="display:none;">
           <div class="card">
-            <div class="row" style="justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:12px;">
-              <div class="field" style="flex:1; min-width:220px; margin-bottom:0;">
-                <label>Filtrar por profesor</label>
-                <select id="cuadroFiltroProfesor" onchange="renderCuadroHorarios()">
-                  <option value="">Todos los profesores</option>
-                </select>
+            <div class="row" style="justify-content:space-between; flex-wrap:wrap; gap:10px;">
+              <div class="row" style="gap:10px;">
+                <button class="ghost" style="border-radius:50%; width:36px; height:36px; padding:0;" onclick="cambiarSemanaCuadro(-1)">◀</button>
+                <div style="font-weight:800; font-size:15px;" id="cuadroSemanaLabel"></div>
+                <button class="ghost" style="border-radius:50%; width:36px; height:36px; padding:0;" onclick="cambiarSemanaCuadro(1)">▶</button>
+                <button class="ghost" onclick="irHoySemanaCuadro()">Hoy</button>
               </div>
-              <div class="leyenda-cuadro" id="cuadroLeyenda" style="display:flex; gap:12px; flex-wrap:wrap;"></div>
+              <div class="row" style="align-items:end;">
+                <div class="field" style="min-width:200px; margin-bottom:0;">
+                  <label>Filtrar por profesor</label>
+                  <select id="cuadroFiltroProfesor" onchange="renderCuadroHorarios()">
+                    <option value="">Todos los profesores</option>
+                  </select>
+                </div>
+                <button onclick="abrirModalExcepcion()">+ Agregar excepción</button>
+              </div>
             </div>
           </div>
           <div class="card">
-            <h2 style="margin-top:0">Cuadro semanal de profesores</h2>
-            <div class="muted" style="margin-bottom:10px; font-size:12.5px;">Días en columnas, horarios en filas. Cada bloque de color es el rango de trabajo de un profesor.</div>
+            <div class="leyenda-cuadro" id="cuadroLeyenda" style="display:flex; gap:12px; flex-wrap:wrap; margin-bottom:12px;"></div>
             <div id="cuadroHorariosWrap" style="overflow-x:auto;">Cargando...</div>
+          </div>
+          <div class="card">
+            <h2 style="margin-top:0; font-size:14px;">Excepciones cargadas esta semana</h2>
+            <div id="cuadroListaExcepciones" class="muted">Sin excepciones esta semana.</div>
           </div>
         </div>
       </div>
@@ -1514,6 +1525,40 @@
   </div>
 </div>
 
+<!-- ---- Excepción puntual al horario (ausencia / cobertura) — pedido 22/9 ---- -->
+<div class="modal-overlay" id="modalExcepcion">
+  <div class="modal-box">
+    <h3>Nueva excepción</h3>
+    <div class="field">
+      <label>Profesor</label>
+      <select id="excProfesor"></select>
+    </div>
+    <div class="field">
+      <label>Fecha</label>
+      <input type="date" id="excFecha">
+    </div>
+    <div class="field">
+      <label>Tipo</label>
+      <div class="row" style="gap:8px;">
+        <button class="ghost" id="excBtnAusencia" onclick="excCambiarTipo('ausencia')" style="flex:1;">Ausencia (no trabaja)</button>
+        <button class="ghost" id="excBtnCobertura" onclick="excCambiarTipo('cobertura')" style="flex:1;">Cobertura / horario extra</button>
+      </div>
+    </div>
+    <div class="row" id="excHorarioWrap" style="display:none; gap:10px;">
+      <div class="field" style="flex:1;"><label>Desde</label><input type="time" id="excDesde" value="08:00"></div>
+      <div class="field" style="flex:1;"><label>Hasta</label><input type="time" id="excHasta" value="12:00"></div>
+    </div>
+    <div class="field">
+      <label>Nota (opcional)</label>
+      <input type="text" id="excNota" placeholder="Ej: cubre a Diego, de vacaciones">
+    </div>
+    <div class="row" style="justify-content:flex-end; margin-top:6px;">
+      <button class="ghost" onclick="cerrarModalExcepcion()">Cancelar</button>
+      <button onclick="guardarExcepcionHorario()">Guardar excepción</button>
+    </div>
+  </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <!-- Para exportar la ficha/reporte del alumno como PDF (pedido de Martin, 21/9) -->
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
@@ -1526,7 +1571,7 @@ const BUCKET = "Ejercicios";
 // un cambio, se incrementa este número — el chequeo de actualización (más abajo) lo compara
 // contra lo que hay publicado y avisa si están desactualizados, sin que nadie tenga que
 // cambiar ningún link a mano.
-const APP_VERSION = 41;
+const APP_VERSION = 42;
 
 function imgUrl(providerRefId){
   return `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${encodeURI(providerRefId)}`;
@@ -2734,37 +2779,75 @@ function horCambiarTab(tab){
 }
 
 // ---------- Cuadro semanal con TODOS los profesores del gimnasio (pedido 22/9) ----------
-// Mismo diseño del mockup aprobado por Martin: días en columnas (se muestran
-// Lunes a Domingo aunque en la base dia_semana usa 0=Domingo), horarios en filas,
-// un bloque de color por rango de trabajo. Si dos profesores coinciden en el
-// mismo horario, se resuelve con "carriles" (se dividen lado a lado, igual que
-// un calendario). Incluye filtro por profesor (atenúa en vez de esconder, para
-// no desarmar la grilla al cambiar el filtro).
-const CUADRO_DIAS_DISPLAY = [
-  { dia: 1, nombre: 'Lunes' }, { dia: 2, nombre: 'Martes' }, { dia: 3, nombre: 'Miércoles' },
-  { dia: 4, nombre: 'Jueves' }, { dia: 5, nombre: 'Viernes' }, { dia: 6, nombre: 'Sábado' },
-  { dia: 0, nombre: 'Domingo' },
-];
+// Mismo diseño del mockup aprobado por Martin: días en columnas, horarios en filas,
+// un bloque de color por rango de trabajo. Si dos profesores coinciden en el mismo
+// horario, se resuelve con "carriles" (se dividen lado a lado, igual que un
+// calendario). Filtro por profesor (atenúa en vez de esconder, para no desarmar
+// la grilla). Ampliado 22/9 para navegar semana a semana con fechas reales y
+// permitir excepciones puntuales (ausencia / cobertura) sobre el horario
+// recurrente de cada profesor, sin tocar ese horario base — pensado para
+// vacaciones, reemplazos y ese tipo de ajustes puntuales del mes.
 const CUADRO_PALETA = ['#ff7a30','#3ddc84','#4da3ff','#c792ea','#f4d35e','#ff6b81','#5eead4','#f0883e'];
 let CUADRO_HORARIOS_CACHE = [];
+let CUADRO_EXCEPCIONES_CACHE = [];
 let CUADRO_COLORES = {};
+let CUADRO_SEMANA_OFFSET = 0;
+let CUADRO_SEMANA_DIAS = [];
+const MESES_CORTOS = ['ene.','feb.','mar.','abr.','may.','jun.','jul.','ago.','sep.','oct.','nov.','dic.'];
+
+function dateAIso(d){
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+// Lunes de la semana actual + offset (offset en semanas, puede ser negativo).
+function obtenerLunesSemana(offset){
+  const hoy = new Date(); hoy.setHours(0,0,0,0);
+  const diasDesdeLunes = (hoy.getDay() + 6) % 7; // getDay(): 0=domingo
+  const lunes = new Date(hoy);
+  lunes.setDate(hoy.getDate() - diasDesdeLunes + offset*7);
+  return lunes;
+}
+function etiquetaSemana(lunes){
+  const domingo = new Date(lunes); domingo.setDate(lunes.getDate()+6);
+  return `Semana del ${lunes.getDate()} de ${MESES_CORTOS[lunes.getMonth()]} al ${domingo.getDate()} de ${MESES_CORTOS[domingo.getMonth()]}`;
+}
 
 async function cargarCuadroHorarios(){
   const cont = document.getElementById('cuadroHorariosWrap');
   const idsProf = (PROFESORES_CACHE || []).map(p => p.id);
   if (!idsProf.length){ cont.innerHTML = 'Todavía no hay profesores cargados.'; return; }
   cont.innerHTML = 'Cargando...';
+
+  const lunes = obtenerLunesSemana(CUADRO_SEMANA_OFFSET);
+  CUADRO_SEMANA_DIAS = Array.from({length:7}, (_, i) => {
+    const f = new Date(lunes); f.setDate(lunes.getDate()+i);
+    return { fecha: f, iso: dateAIso(f), diaSemana: f.getDay(), nombre: DIAS_SEMANA[f.getDay()] };
+  });
+  document.getElementById('cuadroSemanaLabel').textContent = etiquetaSemana(lunes);
+
   try{
-    CUADRO_HORARIOS_CACHE = await sb(`horarios_trabajo?select=id,profesor_id,dia_semana,hora_inicio,hora_fin,activo&profesor_id=in.(${idsProf.join(',')})&activo=eq.true&order=dia_semana.asc,hora_inicio.asc`);
+    const [horarios, excepciones] = await Promise.all([
+      sb(`horarios_trabajo?select=id,profesor_id,dia_semana,hora_inicio,hora_fin,activo&profesor_id=in.(${idsProf.join(',')})&activo=eq.true&order=dia_semana.asc,hora_inicio.asc`),
+      sb(`horarios_excepciones?select=id,profesor_id,fecha,tipo,hora_inicio,hora_fin,nota,activo&profesor_id=in.(${idsProf.join(',')})&activo=eq.true&fecha=gte.${CUADRO_SEMANA_DIAS[0].iso}&fecha=lte.${CUADRO_SEMANA_DIAS[6].iso}&order=fecha.asc`),
+    ]);
+    CUADRO_HORARIOS_CACHE = horarios;
+    CUADRO_EXCEPCIONES_CACHE = excepciones;
     PROFESORES_CACHE.forEach((p, i) => { CUADRO_COLORES[p.id] = CUADRO_PALETA[i % CUADRO_PALETA.length]; });
+
     const sel = document.getElementById('cuadroFiltroProfesor');
+    const filtroPrevio = sel.value;
     sel.innerHTML = `<option value="">Todos los profesores</option>` + PROFESORES_CACHE.map(p => `<option value="${p.id}">${p.nombre}</option>`).join('');
+    sel.value = filtroPrevio;
     document.getElementById('cuadroLeyenda').innerHTML = PROFESORES_CACHE
       .filter(p => CUADRO_HORARIOS_CACHE.some(h => h.profesor_id === p.id))
       .map(p => `<div class="cuadro-leyenda-item"><span class="cuadro-leyenda-dot" style="background:${CUADRO_COLORES[p.id]};"></span>${p.nombre}</div>`).join('');
+
     renderCuadroHorarios();
+    renderListaExcepcionesSemana();
   }catch(e){ cont.innerHTML = 'Error: ' + e.message; }
 }
+
+function cambiarSemanaCuadro(delta){ CUADRO_SEMANA_OFFSET += delta; cargarCuadroHorarios(); }
+function irHoySemanaCuadro(){ CUADRO_SEMANA_OFFSET = 0; cargarCuadroHorarios(); }
 
 function horaADecimal(hms){
   const partes = (hms || '00:00:00').split(':').map(Number);
@@ -2776,16 +2859,24 @@ function formatearHoraCorta(hms){
 
 function renderCuadroHorarios(){
   const cont = document.getElementById('cuadroHorariosWrap');
-  if (!CUADRO_HORARIOS_CACHE.length){ cont.innerHTML = 'Ningún profesor tiene horario de trabajo cargado todavía.'; return; }
+  if (!CUADRO_HORARIOS_CACHE.length && !CUADRO_EXCEPCIONES_CACHE.length){
+    cont.innerHTML = 'Ningún profesor tiene horario de trabajo cargado esta semana.'; return;
+  }
 
-  const horaMin = Math.min(6, ...CUADRO_HORARIOS_CACHE.map(h => Math.floor(horaADecimal(h.hora_inicio))));
-  const horaMax = Math.max(22, ...CUADRO_HORARIOS_CACHE.map(h => Math.ceil(horaADecimal(h.hora_fin))));
+  const horasHorario = CUADRO_HORARIOS_CACHE.flatMap(h => [horaADecimal(h.hora_inicio), horaADecimal(h.hora_fin)]);
+  const horasExcepcion = CUADRO_EXCEPCIONES_CACHE.filter(e => e.hora_inicio && e.hora_fin).flatMap(e => [horaADecimal(e.hora_inicio), horaADecimal(e.hora_fin)]);
+  const horaMin = Math.floor(Math.min(6, ...horasHorario, ...horasExcepcion));
+  const horaMax = Math.ceil(Math.max(22, ...horasHorario, ...horasExcepcion));
   const nFilas = horaMax - horaMin;
   const ALTO_HORA = 46; // px, igual al mockup aprobado
+  const hoyIso = dateAIso(new Date());
 
-  let html = `<div class="cuadro-grid" style="grid-template-rows:36px ${nFilas * ALTO_HORA}px;">`;
+  let html = `<div class="cuadro-grid" style="grid-template-rows:44px ${nFilas * ALTO_HORA}px;">`;
   html += `<div class="cuadro-head hora-head"></div>`;
-  CUADRO_DIAS_DISPLAY.forEach(d => html += `<div class="cuadro-head">${d.nombre}</div>`);
+  CUADRO_SEMANA_DIAS.forEach(d => {
+    const estiloHoy = d.iso === hoyIso ? 'outline:1px solid var(--accent); outline-offset:-1px;' : '';
+    html += `<div class="cuadro-head" style="${estiloHoy}"><div style="font-weight:700; font-size:12.5px;">${d.nombre}</div><div style="font-size:10.5px; color:var(--muted);">${formatearFechaCorta(d.iso).slice(0,5)}</div></div>`;
+  });
 
   html += `<div style="position:relative; grid-row:2; grid-column:1;">`;
   for (let f=0; f<=nFilas; f++){
@@ -2794,24 +2885,47 @@ function renderCuadroHorarios(){
   html += `</div>`;
 
   const filtro = document.getElementById('cuadroFiltroProfesor')?.value || '';
-  CUADRO_DIAS_DISPLAY.forEach((d, idx) => {
+  CUADRO_SEMANA_DIAS.forEach((d, idx) => {
     html += `<div class="cuadro-dia-col" style="grid-row:2; grid-column:${idx+2};">`;
-    html += armarCarrilesCuadro(d.dia, horaMin, ALTO_HORA, filtro);
+    html += armarCarrilesCuadro(d, horaMin, ALTO_HORA, filtro);
     html += `</div>`;
   });
   html += `</div>`;
   cont.innerHTML = html;
 }
 
-function armarCarrilesCuadro(diaSemana, horaMin, altoHora, filtro){
-  const delDia = CUADRO_HORARIOS_CACHE
-    .filter(h => h.dia_semana === diaSemana)
-    .map(h => ({ ...h, desde: horaADecimal(h.hora_inicio), hasta: horaADecimal(h.hora_fin) }))
-    .sort((a,b) => a.desde - b.desde);
-  if (!delDia.length) return '';
+// Combina, para una fecha puntual, el horario recurrente de ese día de la semana
+// con las excepciones cargadas para esa fecha exacta: una "ausencia" saca el
+// bloque recurrente de ese profesor ese día (se muestra como placeholder
+// "ausente" en su lugar); una "cobertura" agrega un bloque extra con borde
+// punteado. Todo se combina en un mismo set de "carriles" para que las
+// superposiciones (ej. el que cubre, al lado del que faltó) se vean lado a lado.
+function armarCarrilesCuadro(diaInfo, horaMin, altoHora, filtro){
+  const ausentesHoy = new Set(
+    CUADRO_EXCEPCIONES_CACHE.filter(e => e.tipo === 'ausencia' && e.fecha === diaInfo.iso).map(e => e.profesor_id)
+  );
+  const recurrentes = CUADRO_HORARIOS_CACHE
+    .filter(h => h.dia_semana === diaInfo.diaSemana)
+    .map(h => ({
+      profesor_id: h.profesor_id,
+      desde: horaADecimal(h.hora_inicio), hasta: horaADecimal(h.hora_fin),
+      horaTexto: `${formatearHoraCorta(h.hora_inicio)}-${formatearHoraCorta(h.hora_fin)}h`,
+      ausente: ausentesHoy.has(h.profesor_id),
+    }));
+  const coberturas = CUADRO_EXCEPCIONES_CACHE
+    .filter(e => e.tipo === 'cobertura' && e.fecha === diaInfo.iso)
+    .map(e => ({
+      profesor_id: e.profesor_id,
+      desde: horaADecimal(e.hora_inicio), hasta: horaADecimal(e.hora_fin),
+      horaTexto: `${formatearHoraCorta(e.hora_inicio)}-${formatearHoraCorta(e.hora_fin)}h`,
+      cobertura: true,
+    }));
+
+  const todos = [...recurrentes, ...coberturas].sort((a,b) => a.desde - b.desde);
+  if (!todos.length) return '';
 
   const carrilesFin = [];
-  const asignados = delDia.map(h => {
+  const asignados = todos.map(h => {
     let carril = carrilesFin.findIndex(fin => fin <= h.desde);
     if (carril === -1){ carril = carrilesFin.length; carrilesFin.push(h.hasta); }
     else carrilesFin[carril] = h.hasta;
@@ -2827,12 +2941,84 @@ function armarCarrilesCuadro(diaSemana, horaMin, altoHora, filtro){
     const alto = Math.max(18, (h.hasta - h.desde) * altoHora);
     const anchoPct = 100 / totalCarriles;
     const opacidad = (!filtro || h.profesor_id === filtro) ? '1' : '0.12';
+    const claseExtra = h.cobertura ? ' cobertura' : (h.ausente ? ' ausente' : '');
+    const estiloFondo = h.ausente ? '' : `background:${color};`;
+    const textoSub = h.ausente ? 'ausente' : h.horaTexto;
     return `
-      <div class="cuadro-bloque" style="top:${top}px; height:${alto - 2}px; left:calc(${anchoPct * h.carril}% + 2px); width:calc(${anchoPct}% - 4px); background:${color}; opacity:${opacidad};">
-        ${nombre}<span class="hora-rango">${formatearHoraCorta(h.hora_inicio)}-${formatearHoraCorta(h.hora_fin)}h</span>
+      <div class="cuadro-bloque${claseExtra}" style="top:${top}px; height:${alto - 2}px; left:calc(${anchoPct * h.carril}% + 2px); width:calc(${anchoPct}% - 4px); ${estiloFondo} opacity:${opacidad};">
+        ${nombre}<span class="hora-rango">${textoSub}</span>
       </div>
     `;
   }).join('');
+}
+
+function renderListaExcepcionesSemana(){
+  const cont = document.getElementById('cuadroListaExcepciones');
+  if (!cont) return;
+  if (!CUADRO_EXCEPCIONES_CACHE.length){ cont.innerHTML = 'Sin excepciones esta semana.'; return; }
+  cont.innerHTML = CUADRO_EXCEPCIONES_CACHE.slice().sort((a,b) => a.fecha.localeCompare(b.fecha)).map(e => {
+    const prof = PROFESORES_CACHE.find(p => p.id === e.profesor_id);
+    const nombre = prof ? prof.nombre : '—';
+    const diaInfo = CUADRO_SEMANA_DIAS.find(d => d.iso === e.fecha);
+    const detalle = e.tipo === 'ausencia' ? 'ausente todo el día' : `cubre ${formatearHoraCorta(e.hora_inicio)}-${formatearHoraCorta(e.hora_fin)}`;
+    const icono = e.tipo === 'ausencia' ? '🚫' : '🔁';
+    return `
+      <div class="row" style="justify-content:space-between; padding:8px 10px; border-radius:8px; background:var(--panel2); margin-bottom:6px; font-size:13px;">
+        <span>${icono} <strong>${nombre}</strong> — ${detalle} — ${diaInfo ? diaInfo.nombre : ''} ${formatearFechaCorta(e.fecha)}${e.nota ? ` · <span class="muted">${e.nota}</span>` : ''}</span>
+        <span style="color:#ff6b6b; font-size:12px; cursor:pointer; font-weight:700;" onclick="quitarExcepcionHorario('${e.id}')">Quitar</span>
+      </div>
+    `;
+  }).join('');
+}
+
+// ---------- Modal para cargar una excepción ----------
+let EXC_TIPO_ACTUAL = 'ausencia';
+function abrirModalExcepcion(){
+  if (!CUADRO_SEMANA_DIAS.length){ toast('Esperá a que termine de cargar el cuadro.', true); return; }
+  document.getElementById('excProfesor').innerHTML = PROFESORES_CACHE.map(p => `<option value="${p.id}">${p.nombre}</option>`).join('');
+  const fechaInput = document.getElementById('excFecha');
+  fechaInput.min = CUADRO_SEMANA_DIAS[0].iso;
+  fechaInput.max = CUADRO_SEMANA_DIAS[6].iso;
+  fechaInput.value = CUADRO_SEMANA_DIAS[0].iso;
+  document.getElementById('excNota').value = '';
+  excCambiarTipo('ausencia');
+  document.getElementById('modalExcepcion').classList.add('show');
+}
+function cerrarModalExcepcion(){
+  document.getElementById('modalExcepcion').classList.remove('show');
+}
+function excCambiarTipo(tipo){
+  EXC_TIPO_ACTUAL = tipo;
+  document.getElementById('excBtnAusencia').classList.toggle('active', tipo==='ausencia');
+  document.getElementById('excBtnCobertura').classList.toggle('active', tipo==='cobertura');
+  document.getElementById('excHorarioWrap').style.display = tipo==='cobertura' ? 'flex' : 'none';
+}
+async function guardarExcepcionHorario(){
+  const profesorId = document.getElementById('excProfesor').value;
+  const fecha = document.getElementById('excFecha').value;
+  if (!profesorId || !fecha){ toast('Elegí profesor y fecha.', true); return; }
+  const nota = document.getElementById('excNota').value.trim() || null;
+  const body = { profesor_id: profesorId, fecha, tipo: EXC_TIPO_ACTUAL, nota, activo: true };
+  if (EXC_TIPO_ACTUAL === 'cobertura'){
+    const desde = document.getElementById('excDesde').value;
+    const hasta = document.getElementById('excHasta').value;
+    if (!desde || !hasta || hasta <= desde){ toast('Revisá el horario: "Hasta" debe ser después de "Desde".', true); return; }
+    body.hora_inicio = desde + ':00';
+    body.hora_fin = hasta + ':00';
+  }
+  try{
+    await sb('horarios_excepciones', { method:'POST', headers:{Prefer:'return=minimal'}, body: JSON.stringify(body) });
+    toast('Excepción guardada ✓');
+    cerrarModalExcepcion();
+    cargarCuadroHorarios();
+  }catch(e){ toast('Error guardando la excepción: ' + extraerMensajeError(e), true); }
+}
+async function quitarExcepcionHorario(id){
+  try{
+    await sb(`horarios_excepciones?id=eq.${id}`, { method:'DELETE', headers:{Prefer:'return=minimal'} });
+    toast('Excepción eliminada ✓');
+    cargarCuadroHorarios();
+  }catch(e){ toast('Error eliminando la excepción: ' + extraerMensajeError(e), true); }
 }
 
 // ---------- Horarios de trabajo (genera turnos cada 1h) ----------
@@ -3562,15 +3748,122 @@ function previewMontoCobro(alumnoId){
 
 async function confirmarCobro(alumnoId){
   const metodo = document.getElementById(`cobrarMetodo${alumnoId}`).value;
+  const alumnoNombre = ALUMNOS_CACHE.find(a => a.id === alumnoId)?.nombre || 'Alumno';
+  const planNombre = COBRANZAS_CACHE[alumnoId]?.plan_nombre || 'Plan';
   try{
-    await sb('rpc/registrar_pago', {
+    const resp = await sb('rpc/registrar_pago', {
       method: 'POST',
       body: JSON.stringify({ p_alumno_id: alumnoId, p_metodo_pago: metodo })
     });
+    const pago = Array.isArray(resp) ? resp[0] : resp;
     toast('Pago registrado ✓');
+    mostrarExitoCobro(alumnoId, pago, alumnoNombre, planNombre);
     cargarCobranzas();
     cargarListaAlumnos();
   }catch(e){ toast('Error registrando el pago: ' + extraerMensajeError(e), true); }
+}
+
+// ---------- Recibo de pago en PDF (pedido de Martin, 22/9) ----------
+// Aparece apenas se confirma un cobro: pensado para que el profesor lo descargue
+// o lo comparta por WhatsApp al toque, desde el celu o la compu, sin tener que
+// buscarlo después en ningún lado. No es un comprobante fiscal — es un recibo
+// prolijo para mandarle al alumno.
+function mostrarExitoCobro(alumnoId, pago, alumnoNombre, planNombre){
+  const cont = document.getElementById(`cobrarForm${alumnoId}`);
+  if (!cont || !pago) return;
+  const idBtn = `reciboWA${alumnoId}`;
+  cont.innerHTML = `
+    <div style="background:rgba(61,220,132,.1); border:1px solid rgba(61,220,132,.35); border-radius:10px; padding:12px;">
+      <div style="font-weight:700; color:var(--accent2); margin-bottom:8px;">✅ Pago registrado — $${Number(pago.monto).toFixed(2)}</div>
+      <div class="row" style="gap:8px;">
+        <button onclick='descargarReciboPago(${JSON.stringify(pago)}, ${JSON.stringify(alumnoNombre)}, ${JSON.stringify(planNombre)})'>🧾 Descargar recibo</button>
+        <button id="${idBtn}" style="display:none;" onclick='compartirReciboPago(${JSON.stringify(pago)}, ${JSON.stringify(alumnoNombre)}, ${JSON.stringify(planNombre)})'>📲 Enviar por WhatsApp</button>
+      </div>
+    </div>
+  `;
+  // El botón de WhatsApp solo se muestra si el navegador puede compartir archivos
+  // (Web Share API con "files") — en compu de escritorio normalmente no está,
+  // ahí queda solo "Descargar" y se comparte el PDF a mano.
+  if (navigator.canShare && navigator.canShare({ files: [new File([''], 'a.pdf', { type: 'application/pdf' })] })){
+    document.getElementById(idBtn).style.display = '';
+  }
+}
+
+function armarDocRecibo(pago, alumnoNombre, planNombre){
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF('p', 'mm', 'a5');
+  const pageW = 148, marginX = 12;
+  const colorMarca = GIMNASIO_ACTUAL?.color_primario || '#16a34a';
+  const rgb = hexARgb(colorMarca);
+  const gimnasioNombre = GIMNASIO_ACTUAL?.nombre || 'Tu gimnasio';
+
+  doc.setFillColor(rgb.r, rgb.g, rgb.b);
+  doc.rect(0, 0, pageW, 38, 'F');
+  doc.setTextColor(255,255,255);
+  doc.setFontSize(14); doc.setFont(undefined, 'bold');
+  doc.text(gimnasioNombre, marginX, 15);
+  doc.setFontSize(10); doc.setFont(undefined, 'normal');
+  doc.text('Comprobante de pago', marginX, 22);
+  doc.setFontSize(8.5);
+  doc.text(`N° ${String(pago.numero_recibo ?? '-').padStart(6,'0')}`, pageW - marginX, 15, { align: 'right' });
+  doc.text(formatearFechaCorta((pago.creado_en || '').slice(0,10)), pageW - marginX, 21, { align: 'right' });
+
+  let y = 52;
+  doc.setTextColor(17,24,39);
+  doc.setFontSize(15); doc.setFont(undefined, 'bold');
+  doc.text(`¡Gracias, ${alumnoNombre}!`, marginX, y);
+  y += 6;
+  doc.setFontSize(10); doc.setFont(undefined, 'normal'); doc.setTextColor(107,114,128);
+  doc.text('Tu pago se registró correctamente. Este es tu comprobante.', marginX, y);
+  y += 10;
+
+  const filas = [
+    ['Plan', planNombre],
+    ['Método de pago', pago.metodo_pago === 'efectivo' ? 'Efectivo' : 'Transferencia'],
+    ['Monto pagado', `$${Number(pago.monto).toFixed(2)}`],
+    ['Período cubierto', `${formatearFechaCorta(pago.vigencia_desde)} al ${formatearFechaCorta(pago.vigencia_hasta)}`],
+    ['Próximo vencimiento', formatearFechaCorta(pago.vigencia_hasta)],
+  ];
+  const boxH = filas.length * 11 + 8;
+  doc.setDrawColor(229,231,235);
+  doc.roundedRect(marginX, y, pageW - marginX*2, boxH, 3, 3, 'S');
+  let fy = y + 10;
+  filas.forEach(([label, valor], i) => {
+    doc.setFontSize(9); doc.setTextColor(107,114,128); doc.setFont(undefined,'normal');
+    doc.text(label, marginX + 6, fy);
+    doc.setFontSize(11); doc.setTextColor(17,24,39); doc.setFont(undefined,'bold');
+    doc.text(String(valor), pageW - marginX - 6, fy, { align: 'right' });
+    fy += 11;
+  });
+  y += boxH + 14;
+
+  doc.setFontSize(8); doc.setTextColor(156,163,175); doc.setFont(undefined,'normal');
+  doc.text(`Comprobante generado por ${gimnasioNombre}.`, marginX, 200);
+
+  return doc;
+}
+
+function nombreArchivoRecibo(pago, alumnoNombre){
+  const slug = (alumnoNombre || 'alumno').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');
+  return `recibo-${slug}-${(pago.creado_en||'').slice(0,10)}.pdf`;
+}
+
+function descargarReciboPago(pago, alumnoNombre, planNombre){
+  if (!window.jspdf){ toast('No se pudo cargar el generador de PDF (revisá tu conexión a internet).', true); return; }
+  const doc = armarDocRecibo(pago, alumnoNombre, planNombre);
+  doc.save(nombreArchivoRecibo(pago, alumnoNombre));
+}
+
+async function compartirReciboPago(pago, alumnoNombre, planNombre){
+  if (!window.jspdf){ toast('No se pudo cargar el generador de PDF (revisá tu conexión a internet).', true); return; }
+  try{
+    const doc = armarDocRecibo(pago, alumnoNombre, planNombre);
+    const blob = doc.output('blob');
+    const archivo = new File([blob], nombreArchivoRecibo(pago, alumnoNombre), { type: 'application/pdf' });
+    await navigator.share({ files: [archivo], title: 'Comprobante de pago', text: `Comprobante de pago de ${alumnoNombre}` });
+  }catch(e){
+    if (e.name !== 'AbortError') toast('No se pudo compartir. Probá descargarlo y enviarlo manual.', true);
+  }
 }
 
 // ---------- Alta de alumnos + tipo (estándar / especial) ----------
