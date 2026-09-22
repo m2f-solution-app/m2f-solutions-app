@@ -390,19 +390,46 @@
     font-variant-numeric:tabular-nums; letter-spacing:.02em;
   }
   #cronoIntervalos{border-radius:10px; padding:8px; transition:background .3s;}
+  /* ---- Landing "¿Qué sos?" (v46, 22/9) — rediseño pedido por Martin: opción "playful/blobs"
+       elegida entre 3 propuestas. Paleta clara propia (no usa las variables --bg/--panel de la
+       app, que son oscuras) porque esta pantalla vive antes de entrar a la app. Todas las clases
+       llevan el prefijo lc- (salvo landing-box/landing-opts/landing-opt, que ya existían y
+       reutilizan los mismos onclick de siempre) para no pisar ninguna clase global de la app. ---- */
   #landingSelector{
-    position:fixed; inset:0; background:var(--bg); z-index:200;
+    position:fixed; inset:0; z-index:200; overflow:hidden;
+    background:#fff7f0; color:#16181f;
     display:flex; align-items:center; justify-content:center; padding:24px;
   }
-  .landing-box{max-width:480px; text-align:center;}
-  .landing-opts{display:flex; justify-content:center; gap:12px; flex-wrap:wrap; margin-top:20px;}
-  .landing-opt{
-    background:var(--panel2); border:1px solid var(--border); color:var(--text);
-    border-radius:14px; padding:22px 18px; font-size:15px; font-weight:700; cursor:pointer;
-    min-width:150px; line-height:1.7;
+  .lc-blob{ position:absolute; border-radius:44% 56% 60% 40% / 45% 40% 60% 55%; opacity:.35; pointer-events:none; }
+  .lc-blob1{ width:420px; height:420px; background:#ffd7b8; top:-120px; right:-100px; }
+  .lc-blob2{ width:320px; height:320px; background:#c7f0e0; bottom:-100px; left:-80px; }
+  .lc-blob3{ width:180px; height:180px; background:#ffe08a; top:50%; right:6%; opacity:.5; }
+  .landing-box{ position:relative; z-index:2; max-width:620px; width:100%; text-align:center; }
+  .lc-greet{
+    display:inline-flex; align-items:center; gap:8px; background:#fff; border:1px solid #ffe0c7;
+    border-radius:30px; padding:8px 18px; font-size:13px; font-weight:700; color:#b5490a; margin-bottom:22px;
+    box-shadow:0 6px 16px rgba(255,122,48,.12);
   }
-  .landing-opt:hover{border-color:var(--accent);}
-  .landing-opt .emoji{font-size:28px; display:block;}
+  .landing-box h1{ font-size:34px; margin:0 0 12px; font-weight:800; color:#16181f; }
+  .landing-box h1 .lc-accent{ color:#ff7a30; }
+  .landing-box .lc-sub{ font-size:15.5px; color:#4b5563; max-width:440px; margin:0 auto 32px; line-height:1.6; }
+  .landing-opts{ position:relative; z-index:2; display:flex; gap:16px; justify-content:center; flex-wrap:wrap; }
+  .landing-opt{
+    flex:1 1 160px; max-width:180px; background:#fff; border:2px solid transparent; color:#16181f;
+    border-radius:24px; padding:26px 18px 20px; font-size:15px; font-weight:800; cursor:pointer;
+    line-height:1.4; box-shadow:0 12px 28px rgba(22,24,31,.08); transition:.2s;
+  }
+  .landing-opt:hover{ border-color:#ff7a30; transform:translateY(-4px); }
+  .landing-opt .emoji{
+    width:58px; height:58px; margin:0 auto 14px; border-radius:44% 56% 60% 40% / 45% 40% 60% 55%;
+    display:flex; align-items:center; justify-content:center; font-size:26px; font-style:normal;
+  }
+  .landing-opt:nth-child(1) .emoji{ background:#ffe0c7; }
+  .landing-opt:nth-child(2) .emoji{ background:#d8f3e8; }
+  .landing-opt:nth-child(3) .emoji{ background:#ffe8a3; }
+  .lc-desc{ display:block; font-size:11.5px; font-weight:500; color:#9aa0b0; margin-top:5px; line-height:1.4; }
+  .lc-login-link{ position:relative; z-index:2; margin-top:28px; font-size:13.5px; color:#6b7280; }
+  .lc-login-link a{ color:#ff7a30; font-weight:800; text-decoration:none; }
 
   /* ---- Barra inferior de navegación (Alumno, solo mobile) ---- */
   .bottom-nav{
@@ -491,22 +518,63 @@
   .cuadro-bloque .hora-rango{ font-size:9.5px; font-weight:600; opacity:.75; }
   .cuadro-leyenda-item{ display:flex; align-items:center; gap:6px; font-size:12.5px; color:var(--muted); }
   .cuadro-leyenda-dot{ width:11px; height:11px; border-radius:3px; flex-shrink:0; }
+
+  /* ---- Fondo decorativo "deportivo" (v47, 22/9) — pedido por Martin: pelota de fútbol +
+       barra con discos + pulso, como marca de agua sobre el fondo negro de toda la app
+       (compu y celular). Capa fija con pointer-events:none (nunca tapa un click) y
+       z-index por debajo de #appShell/#landingSelector: las tarjetas, que tienen fondo
+       opaco (var(--panel)), la tapan donde corresponde — solo se ve en los huecos vacíos. ---- */
+  #fondoDeportivo{ position:fixed; inset:0; z-index:0; overflow:hidden; pointer-events:none; }
+  #fondoDeportivo svg{ position:absolute; }
+  #fondoDeportivo .fd-pelota{ width:560px; height:560px; top:-150px; right:-140px; opacity:.08; }
+  #fondoDeportivo .fd-barra{ width:820px; height:260px; bottom:-70px; left:40px; opacity:.06; }
+  #fondoDeportivo .fd-pulso{ width:420px; height:120px; top:60px; left:35%; opacity:.08; }
+  #appShell{ position:relative; z-index:1; }
+  @media (max-width:720px){
+    #fondoDeportivo .fd-pelota{ width:320px; height:320px; top:-80px; right:-90px; }
+    #fondoDeportivo .fd-barra{ width:480px; height:150px; bottom:-30px; left:-30px; }
+    #fondoDeportivo .fd-pulso{ width:240px; height:70px; top:56px; left:50%; margin-left:-120px; }
+  }
 </style>
 </head>
 <body>
 
+<!-- ===================== FONDO DECORATIVO (deportivo) ===================== -->
+<div id="fondoDeportivo" aria-hidden="true">
+  <svg class="fd-pelota" viewBox="0 0 560 560">
+    <circle cx="280" cy="280" r="220" fill="none" stroke="#ff7a30" stroke-width="7"/>
+    <polygon points="280,180 335,220 315,285 245,285 225,220" fill="none" stroke="#ff7a30" stroke-width="6" stroke-linejoin="round"/>
+    <path d="M280,180 L280,90 M335,220 L410,170 M315,285 L360,355 M245,285 L200,355 M225,220 L150,170" fill="none" stroke="#ff7a30" stroke-width="6" stroke-linecap="round"/>
+  </svg>
+  <svg class="fd-barra" viewBox="0 0 820 260">
+    <rect x="60" y="110" width="700" height="16" rx="8" fill="#ff7a30"/>
+    <rect x="20" y="70" width="34" height="96" rx="8" fill="#ff7a30"/>
+    <rect x="60" y="86" width="20" height="64" rx="6" fill="#ff7a30"/>
+    <rect x="766" y="70" width="34" height="96" rx="8" fill="#ff7a30"/>
+    <rect x="740" y="86" width="20" height="64" rx="6" fill="#ff7a30"/>
+  </svg>
+  <svg class="fd-pulso" viewBox="0 0 420 120">
+    <polyline points="0,60 70,60 95,20 120,100 145,60 420,60" fill="none" stroke="#3ddc84" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+</div>
+
+
 <!-- ===================== LANDING: ¿Qué sos? ===================== -->
 <div id="landingSelector">
+  <div class="lc-blob lc-blob1"></div>
+  <div class="lc-blob lc-blob2"></div>
+  <div class="lc-blob lc-blob3"></div>
   <div class="landing-box">
-    <h1 style="margin-bottom:4px;">M2F Solutions</h1>
-    <p class="muted">Contale a la app qué sos para armarte la cuenta que corresponde.</p>
+    <div class="lc-greet">👋 Hola de nuevo</div>
+    <h1>Bienvenido a <span class="lc-accent">M2F Solutions</span></h1>
+    <p class="lc-sub">La app que ordena tu gimnasio: turnos, rutinas, cobros y la evolución de cada alumno, todo en un solo lugar.</p>
     <div class="landing-opts">
-      <button class="landing-opt" onclick="elegirTipoIngreso('gimnasio')"><span class="emoji">🏢</span>Gimnasio</button>
-      <button class="landing-opt" onclick="elegirTipoIngreso('independiente')"><span class="emoji">🧑‍🏫</span>Profesor<br>independiente</button>
-      <button class="landing-opt" onclick="elegirTipoIngreso('alumno')"><span class="emoji">🏃</span>Alumno/a</button>
+      <button class="landing-opt" onclick="elegirTipoIngreso('gimnasio')"><span class="emoji">🏢</span>Gimnasio<span class="lc-desc">Tengo local y equipo de profes</span></button>
+      <button class="landing-opt" onclick="elegirTipoIngreso('independiente')"><span class="emoji">🧑‍🏫</span>Profesor<br>independiente<span class="lc-desc">Entreno a mis alumnos yo solo/a</span></button>
+      <button class="landing-opt" onclick="elegirTipoIngreso('alumno')"><span class="emoji">🏃</span>Alumno/a<span class="lc-desc">Soy socio de un gym que usa M2F</span></button>
     </div>
-    <div class="muted" style="margin-top:20px; font-size:13px;">
-      ¿Ya tenés cuenta de gimnasio o profesor? <a href="#" onclick="elegirTipoIngreso('login'); return false;">Ingresar</a>
+    <div class="lc-login-link">
+      ¿Ya tenés cuenta de gimnasio o profesor? <a href="#" onclick="elegirTipoIngreso('login'); return false;">Ingresar →</a>
     </div>
   </div>
 </div>
@@ -1574,7 +1642,7 @@ const BUCKET = "Ejercicios";
 // un cambio, se incrementa este número — el chequeo de actualización (más abajo) lo compara
 // contra lo que hay publicado y avisa si están desactualizados, sin que nadie tenga que
 // cambiar ningún link a mano.
-const APP_VERSION = 44;
+const APP_VERSION = 47;
 
 function imgUrl(providerRefId){
   return `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${encodeURI(providerRefId)}`;
@@ -1654,6 +1722,15 @@ const supaAuth = window.supabase.createClient(SUPABASE_URL, ANON_KEY);
 let SESION_ACTUAL = null; // { access_token, user } cuando hay sesión activa
 let PERFIL_ACTUAL = null; // { id, gimnasio_id, rol, nombre, email }
 
+// La pestaña "Profesor / Alumno" de arriba de todo solo tiene sentido ANTES de loguearse
+// (para elegir qué formulario de login mostrar). Una vez que hay una sesión real, se oculta:
+// así nadie logueado como staff tiene, a un clic de distancia, un botón para intentar entrar
+// a la cuenta de un alumno (o viceversa) — para volver a cambiar de rol hay que cerrar sesión.
+function sincronizarTabsRol(){
+  const tabs = document.querySelector('.topbar .tabs');
+  if (tabs) tabs.style.display = (SESION_ACTUAL && PERFIL_ACTUAL) ? 'none' : '';
+}
+
 function authCambiarTab(t){
   document.getElementById('authLogin').style.display = t==='login' ? '' : 'none';
   document.getElementById('authSignup').style.display = t==='signup' ? '' : 'none';
@@ -1712,6 +1789,7 @@ async function entrarComoStaff(){
   document.getElementById('authGate').style.display = 'none';
   document.getElementById('profesorApp').style.display = '';
   document.getElementById('sesionEmail').textContent = `${PERFIL_ACTUAL.nombre || PERFIL_ACTUAL.email} · ${PERFIL_ACTUAL.rol}`;
+  sincronizarTabsRol();
   await Promise.all([cargarPersonas(), cargarCatalogoEjercicios(), cargarGimnasioActual(), cargarCategoriasYEquipos()]);
   cambiarSubvista('agenda'); // lo primero que ve el profesor al entrar es la agenda del día, no el armador
 }
@@ -1788,6 +1866,7 @@ async function hacerLogout(){
   document.getElementById('loginPassword').value = '';
   try{ localStorage.removeItem('m2f_tipo'); }catch(e){}
   volverALanding();
+  sincronizarTabsRol();
   cargarGimnasioActual(); // vuelve la marca genérica / la del gimnasio de demo
 }
 
@@ -1876,6 +1955,7 @@ async function entrarComoAlumnoLogueado(){
     document.getElementById('alumnoHome').style.display = '';
     document.getElementById('bottomNavAlu').classList.add('show');
     document.body.classList.add('tiene-bottom-nav');
+    sincronizarTabsRol();
     await cargarPersonas(); // re-scopea ALUMNOS_CACHE/PROFESORES_CACHE al gimnasio de esta sesión
     mostrarModoAlumnoLogueado(ficha);
     revisarNotificacionesAlumno(ficha.id);
@@ -1964,6 +2044,7 @@ async function hacerLogoutAlumno(){
   sel.innerHTML = '';
   sel.value = '';
   onCambiarAluAlumno();
+  sincronizarTabsRol();
 }
 
 function cambiarVista(v){
@@ -6838,12 +6919,14 @@ if ('serviceWorker' in navigator){
       document.getElementById('profesorApp').style.display = '';
       document.getElementById('sesionEmail').textContent = `${PERFIL_ACTUAL.nombre || PERFIL_ACTUAL.email} · ${PERFIL_ACTUAL.rol}`;
       cambiarVista('profesor');
+      sincronizarTabsRol();
       cambiarSubvista('agenda'); // lo primero que ve el profesor al entrar es la agenda del día, no el armador
     } else {
       let tipoGuardado = null;
       try{ tipoGuardado = localStorage.getItem('m2f_tipo'); }catch(e){}
       if (tipoGuardado === 'alumno') elegirTipoIngreso('alumno');
       // si no, se queda mostrando el landing ("¿Qué sos?") tal como arranca por defecto.
+      sincronizarTabsRol();
     }
   }catch(e){ toast('Error cargando datos: '+e.message, true); }
 })();
