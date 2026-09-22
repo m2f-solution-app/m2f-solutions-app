@@ -18,7 +18,7 @@
   :root{
     --bg:#0f1115; --panel:#171a21; --panel2:#1e222b; --border:#2a2f3a;
     --text:#eef0f4; --muted:#9aa3b2; --accent:#ff7a30; --accent2:#3ddc84;
-    --warn:#ffd23d; --danger:#ff5d5d; --radius:12px;
+    --warn:#ffd23d; --danger:#ff5d5d; --radius:18px;
   }
   *{box-sizing:border-box;}
   body{
@@ -26,7 +26,11 @@
     font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
     padding:0 16px 60px; min-height:100vh;
   }
-  h1,h2,h3{font-weight:700; letter-spacing:-0.01em;}
+  /* (v48, 22/9) Estilo unificado con la landing: títulos más pesados (800, antes 700),
+     tarjetas más redondeadas (--radius 18px, antes 12px) y con una sombra sutil, y
+     botones un poco más redondeados (10px, antes 8px) — pedido por Martin para que
+     toda la app comparta la misma tipografía/formato que la landing nueva. */
+  h1,h2,h3{font-weight:800; letter-spacing:-0.01em;}
   .topbar{
     display:flex; align-items:center; justify-content:space-between;
     padding:16px 0; border-bottom:1px solid var(--border); margin-bottom:16px;
@@ -39,7 +43,7 @@
   .tab.active{background:var(--accent); color:#1a1000;}
   .card{
     background:var(--panel); border:1px solid var(--border); border-radius:var(--radius);
-    padding:18px; margin-bottom:16px;
+    padding:18px; margin-bottom:16px; box-shadow:0 6px 18px rgba(0,0,0,.28);
   }
   .row{display:flex; gap:10px; flex-wrap:wrap; align-items:center;}
   label{font-size:12px; color:var(--muted); display:block; margin-bottom:4px; text-transform:uppercase; letter-spacing:.04em;}
@@ -70,7 +74,7 @@
     background:transparent; border:none; padding:6px 8px; font-size:16px; cursor:pointer; color:var(--muted);
   }
   button{
-    background:var(--accent); color:#1a1000; border:none; border-radius:8px;
+    background:var(--accent); color:#1a1000; border:none; border-radius:10px;
     padding:10px 16px; font-weight:700; font-size:14px; cursor:pointer;
   }
   button.secondary{background:var(--panel2); color:var(--text); border:1px solid var(--border);}
@@ -390,46 +394,45 @@
     font-variant-numeric:tabular-nums; letter-spacing:.02em;
   }
   #cronoIntervalos{border-radius:10px; padding:8px; transition:background .3s;}
-  /* ---- Landing "¿Qué sos?" (v46, 22/9) — rediseño pedido por Martin: opción "playful/blobs"
-       elegida entre 3 propuestas. Paleta clara propia (no usa las variables --bg/--panel de la
-       app, que son oscuras) porque esta pantalla vive antes de entrar a la app. Todas las clases
-       llevan el prefijo lc- (salvo landing-box/landing-opts/landing-opt, que ya existían y
-       reutilizan los mismos onclick de siempre) para no pisar ninguna clase global de la app. ---- */
+  /* ---- Landing "¿Qué sos?" (v46 clara → v48 oscura, 22/9) — Martin probó la versión clara
+       y pidió volver a tono oscuro pero conservando el mismo layout/tipografía (pill de
+       saludo, título, tarjetas con ícono+descripción). Ya no tiene fondo propio: es
+       transparente y deja ver el mismo fondo oscuro + patrón deportivo (#fondoDeportivo)
+       que usa el resto de la app, para que todo comparta una sola identidad visual.
+       Todas las clases llevan el prefijo lc- (salvo landing-box/landing-opts/landing-opt,
+       que ya existían y reutilizan los mismos onclick de siempre) para no pisar ninguna
+       clase global de la app. ---- */
   #landingSelector{
-    position:fixed; inset:0; z-index:200; overflow:hidden;
-    background:#fff7f0; color:#16181f;
+    position:fixed; inset:0; z-index:200; overflow:hidden; background:transparent;
     display:flex; align-items:center; justify-content:center; padding:24px;
   }
-  .lc-blob{ position:absolute; border-radius:44% 56% 60% 40% / 45% 40% 60% 55%; opacity:.35; pointer-events:none; }
-  .lc-blob1{ width:420px; height:420px; background:#ffd7b8; top:-120px; right:-100px; }
-  .lc-blob2{ width:320px; height:320px; background:#c7f0e0; bottom:-100px; left:-80px; }
-  .lc-blob3{ width:180px; height:180px; background:#ffe08a; top:50%; right:6%; opacity:.5; }
   .landing-box{ position:relative; z-index:2; max-width:620px; width:100%; text-align:center; }
   .lc-greet{
-    display:inline-flex; align-items:center; gap:8px; background:#fff; border:1px solid #ffe0c7;
-    border-radius:30px; padding:8px 18px; font-size:13px; font-weight:700; color:#b5490a; margin-bottom:22px;
-    box-shadow:0 6px 16px rgba(255,122,48,.12);
+    display:inline-flex; align-items:center; gap:8px; background:rgba(255,255,255,.06);
+    border:1px solid rgba(255,255,255,.14); backdrop-filter:blur(10px);
+    border-radius:30px; padding:8px 18px; font-size:13px; font-weight:700; color:#ffb98a; margin-bottom:22px;
   }
-  .landing-box h1{ font-size:34px; margin:0 0 12px; font-weight:800; color:#16181f; }
-  .landing-box h1 .lc-accent{ color:#ff7a30; }
-  .landing-box .lc-sub{ font-size:15.5px; color:#4b5563; max-width:440px; margin:0 auto 32px; line-height:1.6; }
+  .landing-box h1{ font-size:34px; margin:0 0 12px; font-weight:800; color:var(--text); }
+  .landing-box h1 .lc-accent{ color:var(--accent); }
+  .landing-box .lc-sub{ font-size:15.5px; color:#c7cad3; max-width:440px; margin:0 auto 32px; line-height:1.6; }
   .landing-opts{ position:relative; z-index:2; display:flex; gap:16px; justify-content:center; flex-wrap:wrap; }
   .landing-opt{
-    flex:1 1 160px; max-width:180px; background:#fff; border:2px solid transparent; color:#16181f;
+    flex:1 1 160px; max-width:180px; background:rgba(255,255,255,.055); backdrop-filter:blur(14px);
+    border:2px solid rgba(255,255,255,.12); color:var(--text);
     border-radius:24px; padding:26px 18px 20px; font-size:15px; font-weight:800; cursor:pointer;
-    line-height:1.4; box-shadow:0 12px 28px rgba(22,24,31,.08); transition:.2s;
+    line-height:1.4; transition:.2s;
   }
-  .landing-opt:hover{ border-color:#ff7a30; transform:translateY(-4px); }
+  .landing-opt:hover{ border-color:var(--accent); background:rgba(255,122,48,.08); transform:translateY(-4px); }
   .landing-opt .emoji{
     width:58px; height:58px; margin:0 auto 14px; border-radius:44% 56% 60% 40% / 45% 40% 60% 55%;
     display:flex; align-items:center; justify-content:center; font-size:26px; font-style:normal;
   }
-  .landing-opt:nth-child(1) .emoji{ background:#ffe0c7; }
-  .landing-opt:nth-child(2) .emoji{ background:#d8f3e8; }
-  .landing-opt:nth-child(3) .emoji{ background:#ffe8a3; }
+  .landing-opt:nth-child(1) .emoji{ background:rgba(255,122,48,.15); }
+  .landing-opt:nth-child(2) .emoji{ background:rgba(61,220,132,.13); }
+  .landing-opt:nth-child(3) .emoji{ background:rgba(255,210,61,.14); }
   .lc-desc{ display:block; font-size:11.5px; font-weight:500; color:#9aa0b0; margin-top:5px; line-height:1.4; }
-  .lc-login-link{ position:relative; z-index:2; margin-top:28px; font-size:13.5px; color:#6b7280; }
-  .lc-login-link a{ color:#ff7a30; font-weight:800; text-decoration:none; }
+  .lc-login-link{ position:relative; z-index:2; margin-top:28px; font-size:13.5px; color:#9aa0b0; }
+  .lc-login-link a{ color:var(--accent); font-weight:800; text-decoration:none; }
 
   /* ---- Barra inferior de navegación (Alumno, solo mobile) ---- */
   .bottom-nav{
@@ -561,9 +564,6 @@
 
 <!-- ===================== LANDING: ¿Qué sos? ===================== -->
 <div id="landingSelector">
-  <div class="lc-blob lc-blob1"></div>
-  <div class="lc-blob lc-blob2"></div>
-  <div class="lc-blob lc-blob3"></div>
   <div class="landing-box">
     <div class="lc-greet">👋 Hola de nuevo</div>
     <h1>Bienvenido a <span class="lc-accent">M2F Solutions</span></h1>
@@ -1642,7 +1642,7 @@ const BUCKET = "Ejercicios";
 // un cambio, se incrementa este número — el chequeo de actualización (más abajo) lo compara
 // contra lo que hay publicado y avisa si están desactualizados, sin que nadie tenga que
 // cambiar ningún link a mano.
-const APP_VERSION = 47;
+const APP_VERSION = 48;
 
 function imgUrl(providerRefId){
   return `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${encodeURI(providerRefId)}`;
