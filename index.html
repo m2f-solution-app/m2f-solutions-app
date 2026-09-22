@@ -1667,7 +1667,7 @@ const BUCKET = "Ejercicios";
 // un cambio, se incrementa este número — el chequeo de actualización (más abajo) lo compara
 // contra lo que hay publicado y avisa si están desactualizados, sin que nadie tenga que
 // cambiar ningún link a mano.
-const APP_VERSION = 51;
+const APP_VERSION = 54;
 
 // ---------- Instalar como app (PWA): acceso directo en escritorio/celular ----------
 // Chrome/Edge/Android disparan "beforeinstallprompt" cuando el manifest + service worker
@@ -6109,14 +6109,21 @@ async function cargarRutinasDeAlumno(selectId, contenedorId){
     if (menuItem) menuItem.style.display = rows.length ? '' : 'none';
     if (!rows.length){ cont.innerHTML = '<div class="empty">Todavía no tenés ninguna rutina asignada — se engancha sola apenas reservás un turno.</div>'; return; }
     cont.innerHTML = rows.map(t => {
-      const esFutura = t.fecha >= hoy;
+      // (v54, 24/9) Antes acá se ofrecía "Ver / Empezar" incluso para turnos futuros (marcados
+      // "Próximo") — eso era justo lo que dejaba arrancar hoy la rutina de un día que todavía
+      // no llegó. Ahora un turno futuro no tiene botón de empezar, solo la fecha en la que va
+      // a estar disponible (comenzarEntrenamiento también lo bloquea si se llega a intentar).
+      const esFutura = t.fecha > hoy;
       return `
         <div class="row" style="justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--border);">
           <div>
             <div style="font-weight:600;">${t.rutina_dias?.rutinas?.nombre || '-'} · ${t.rutina_dias?.nombre_dia || '-'}</div>
             <div class="muted">Turno del ${formatearFechaCorta(t.fecha)} · ${t.hora.slice(0,5)}hs${esFutura ? ' <span class="pill">Próximo</span>' : ''}</div>
           </div>
-          <button class="secondary" onclick="comenzarEntrenamiento('${t.rutina_dia_id}','${alumnoId}','${(t.rutina_dias?.nombre_dia||'').replace(/'/g,"&apos;")}')">Ver / Empezar</button>
+          ${esFutura
+            ? `<span class="muted" style="font-size:12px;">Disponible el ${formatearFechaCorta(t.fecha)}</span>`
+            : `<button class="secondary" onclick="comenzarEntrenamiento('${t.rutina_dia_id}','${alumnoId}','${(t.rutina_dias?.nombre_dia||'').replace(/'/g,"&apos;")}')">Ver / Empezar</button>`
+          }
         </div>
       `;
     }).join('');
@@ -6434,7 +6441,19 @@ function salirEjecucion(){
   document.getElementById('alumnoHome').style.display = '';
   if (document.body.classList.contains('tiene-bottom-nav')) document.getElementById('bottomNavAlu').classList.add('show');
   const alumnoId = document.getElementById('aluAlumno').value;
-  if (alumnoId){ cargarTurnos(alumnoId); cargarHistorial(alumnoId); }
+  // (v53, 24/9) Bug encontrado por Martin: el fix de v50 solo refrescaba Logros/Evolución/
+  // Historial cuando el alumno TOCABA el menú para entrar a esa sección (cambiarSubvistaAlu).
+  // Si esa sección ya estaba abierta ANTES de entrenar (ej. se queda mirando "Logros" y entrena
+  // desde otra pestaña/dispositivo, o vuelve con "Volver a mi panel" sin re-clickear el menú),
+  // se quedaba mostrando el render viejo — racha/constancia/evolución de peso desactualizados,
+  // aunque Turnos sí se veía bien porque era el único que se refrescaba acá. Ahora, al volver de
+  // entrenar, se refrescan las 4 secciones del alumno de una, sin importar cuál esté visible.
+  if (alumnoId){
+    cargarTurnos(alumnoId);
+    cargarHistorial(alumnoId);
+    cargarEvaluacionesAlu(alumnoId);
+    renderLogros('aluLogrosContenido', alumnoId);
+  }
 }
 
 // Botón central de la barra inferior: busca el turno de HOY del alumno logueado
@@ -6447,6 +6466,14 @@ async function irEntrenamientoHoy(){
     const rows = await sb(`turnos?select=id,rutina_dia_id,rutina_dias(nombre_dia)&alumno_id=eq.${alumnoId}&fecha=eq.${hoy}&estado=neq.cancelado&order=hora.asc&limit=1`);
     const t = rows[0];
     if (t && t.rutina_dia_id){
+      // Mismo bug que en "Mis turnos": si ya existe una ejecución finalizada para
+      // este rutina_dia_id, no lo dejamos arrancar de nuevo.
+      const yaHecho = await sb(`ejecuciones?select=id&alumno_id=eq.${alumnoId}&rutina_dia_id=eq.${t.rutina_dia_id}&estado=eq.finalizada&limit=1`);
+      if (yaHecho.length){
+        toast('Ya completaste el entrenamiento de hoy ✓');
+        cambiarSubvistaAlu('turnos');
+        return;
+      }
       comenzarEntrenamiento(t.rutina_dia_id, alumnoId, t.rutina_dias?.nombre_dia || 'Hoy');
       return;
     }
@@ -6515,35 +6542,53 @@ async function cargarTurnos(alumnoId){
   const cont = document.getElementById('listaTurnosAlu');
   cont.innerHTML = 'Cargando...';
   try{
-    const rows = await sb(`turnos?select=id,fecha,hora,estado,rutina_dia_id,rutina_dias(id,nombre_dia),profesores(nombre)&alumno_id=eq.${alumnoId}&order=fecha.desc,hora.desc&limit=30`);
+    const [rows, ejecucionesFinalizadas] = await Promise.all([
+      sb(`turnos?select=id,fecha,hora,estado,rutina_dia_id,rutina_dias(id,nombre_dia),profesores(nombre)&alumno_id=eq.${alumnoId}&order=fecha.desc,hora.desc&limit=30`),
+      sb(`ejecuciones?select=rutina_dia_id&alumno_id=eq.${alumnoId}&estado=eq.finalizada&rutina_dia_id=not.is.null`),
+    ]);
     if (!rows.length){ cont.innerHTML = '<div class="empty">Todavía no reservaste turnos.</div>'; return; }
     // Pedido de Martin, 22/9: de un vistazo, cuáles entrenamientos todavía se pueden
     // arrancar (vigentes, ≤7 días desde la fecha planificada, incluye los futuros) y
     // cuáles ya no (vencidos, hace más de una semana) — a esos últimos se les saca el
     // botón de "Comenzar"/"Reintentar" porque ya no tiene sentido empezarlos.
     const hoy = new Date(); hoy.setHours(0,0,0,0);
+    // Bug reportado por Martin, 22/9: un turno con el entrenamiento ya finalizado
+    // seguía mostrando "Comenzar" (dejaba arrancarlo de nuevo) porque este panel
+    // nunca cruzaba el turno con la tabla `ejecuciones` — solo miraba `turnos.estado`
+    // (que únicamente distingue cancelado) y si tenía rutina_dia_id asignado.
+    const diasCompletados = new Set(ejecucionesFinalizadas.map(e => e.rutina_dia_id));
     cont.innerHTML = rows.map(t => {
       const fechaTurno = new Date(t.fecha + 'T00:00:00');
       const diffDias = Math.round((hoy - fechaTurno) / 86400000);
       const cancelado = t.estado === 'cancelado';
-      const vencido = !cancelado && diffDias > 7;
+      const completado = !cancelado && t.rutina_dia_id && diasCompletados.has(t.rutina_dia_id);
+      // (v54, 24/9) Bug encontrado por Martin: un turno futuro con rutina ya enganchada mostraba
+      // "Comenzar" igual que uno de hoy — dejaba arrancar hoy la rutina de un día que todavía no
+      // llegó (ej. la del 24/9 arrancada el 22/9), guardando la ejecución con la fecha de hoy pero
+      // los ejercicios de otro día. Ahora un turno futuro no ofrece "Comenzar" (sí se puede cancelar).
+      const futuro = !cancelado && !completado && diffDias < 0;
+      const vencido = !cancelado && !completado && !futuro && diffDias > 7;
       const estiloFila = cancelado
         ? 'opacity:0.5;'
-        : vencido
-          ? 'opacity:0.5; filter:grayscale(0.7);'
-          : 'background:rgba(61,220,132,.12); border-left:3px solid var(--accent2); padding-left:8px;';
+        : completado
+          ? 'opacity:0.75; border-left:3px solid var(--accent2); padding-left:8px;'
+          : vencido
+            ? 'opacity:0.5; filter:grayscale(0.7);'
+            : futuro
+              ? 'border-left:3px solid var(--border); padding-left:8px;'
+              : 'background:rgba(61,220,132,.12); border-left:3px solid var(--accent2); padding-left:8px;';
       return `
       <div class="row" style="justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--border); ${estiloFila}">
         <div>
           <div style="font-weight:700; font-size:18px;">${formatearFechaCorta(t.fecha)}</div>
-          <div class="muted">${cancelado ? 'Cancelado' : vencido ? 'Vencido' : (t.rutina_dias ? t.rutina_dias.nombre_dia : 'Todavía sin rutina planificada para este día')}</div>
+          <div class="muted">${cancelado ? 'Cancelado' : completado ? '✓ Entrenamiento realizado' : vencido ? 'Vencido' : futuro ? 'Próximo · disponible ese día' : (t.rutina_dias ? t.rutina_dias.nombre_dia : 'Todavía sin rutina planificada para este día')}</div>
         </div>
         <div class="row" style="gap:6px;">
-          ${(cancelado || vencido) ? '' : (t.rutina_dia_id
+          ${(cancelado || completado || vencido || futuro) ? '' : (t.rutina_dia_id
             ? `<button class="secondary" onclick="comenzarEntrenamiento('${t.rutina_dia_id}','${alumnoId}','${(t.rutina_dias?.nombre_dia||'').replace(/'/g,"&apos;")}')">Comenzar</button>`
             : `<button class="ghost" onclick="reintentarAsignacion('${t.id}','${alumnoId}','${t.fecha}')">Reintentar</button>`
           )}
-          ${(cancelado || vencido) ? '' : `<button class="ghost" onclick="cancelarTurno('${t.id}','${alumnoId}')">Cancelar</button>`}
+          ${(cancelado || completado || vencido) ? '' : `<button class="ghost" onclick="cancelarTurno('${t.id}','${alumnoId}')">Cancelar</button>`}
         </div>
       </div>
     `;}).join('');
@@ -6592,6 +6637,21 @@ async function cargarUltimosPesos(ejercicioIds){
 
 // ---------- Ejecución de un día (vista alumno) ----------
 async function comenzarEntrenamiento(rutinaDiaId, alumnoId, nombreDia){
+  // (v54, 24/9) Bug encontrado por Martin: tanto "Rutinas" (botón "Ver / Empezar") como
+  // "Mis turnos" dejaban arrancar la rutina de un turno FUTURO (ej. la del 24/9, arrancada
+  // el 22/9). Como no hay forma de cargar una fecha manual, la ejecución quedaba guardada con
+  // la fecha de HOY pero con los ejercicios de la rutina de OTRO día — mezclando datos.
+  // Se valida acá, en el único punto de entrada real a "empezar un entrenamiento" (lo llaman
+  // las 3 pantallas), así que ninguna pantalla puede saltearlo aunque no oculte bien el botón.
+  try{
+    const [diaInfo] = await sb(`rutina_dias?id=eq.${rutinaDiaId}&select=fecha`);
+    const hoy = new Date().toISOString().slice(0,10);
+    if (diaInfo && diaInfo.fecha > hoy){
+      toast(`Esa rutina es del ${formatearFechaCorta(diaInfo.fecha)}, todavía no llegó ese día — vas a poder empezarla recién ese día.`, true);
+      return;
+    }
+  }catch(e){ console.error('No se pudo validar la fecha de la rutina antes de empezar:', e); }
+
   document.getElementById('alumnoHome').style.display = 'none';
   document.getElementById('bottomNavAlu').classList.remove('show');
   const cont = document.getElementById('ejecucionContainer');
