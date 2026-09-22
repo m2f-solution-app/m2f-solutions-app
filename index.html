@@ -59,12 +59,12 @@
   /* (v49, 22/9) Botón para instalar la app como PWA (acceso directo en escritorio/celular).
      Se muestra siempre; si el navegador soporta el instalado nativo (Chrome/Edge/Android)
      dispara el prompt real, si no (Safari/iOS u otros) muestra el paso manual. */
-  .btn-instalar-app{
+  .btn-instalar-app, .btn-soporte-top{
     display:inline-flex; align-items:center; gap:6px; white-space:nowrap;
     background:rgba(255,122,48,.12); border:1.5px solid var(--accent); color:var(--accent);
     font-weight:800; font-size:12.5px; padding:7px 14px; border-radius:999px; cursor:pointer;
   }
-  .btn-instalar-app:hover{background:rgba(255,122,48,.22);}
+  .btn-instalar-app:hover, .btn-soporte-top:hover{background:rgba(255,122,48,.22);}
   .card{
     background:var(--panel); border:1px solid var(--border); border-radius:var(--radius);
     padding:18px; margin-bottom:16px; box-shadow:0 6px 18px rgba(0,0,0,.28);
@@ -625,6 +625,7 @@
     <span class="muted" id="brandSub">· plataforma para gimnasios</span>
   </div>
   <div class="topbar-right">
+    <a class="btn-soporte-top" id="btnSoporteTop" href="#" onclick="abrirSoporteWhatsapp(); return false;" style="text-decoration:none;">💬 Soporte</a>
     <button class="btn-instalar-app" id="btnInstalarAppTop" onclick="instalarApp()">📲 Instalar app</button>
     <div class="tabs">
       <div class="tab active" id="tabProf" onclick="cambiarVista('profesor')">Profesor</div>
@@ -680,6 +681,7 @@
       <div class="muted" style="text-align:right;">
         <span id="sesionEmail"></span><br>
         <span class="muted" style="cursor:pointer; text-decoration:underline; font-size:12px;" onclick="document.getElementById('staffCambiarPasswordWrap').style.display = document.getElementById('staffCambiarPasswordWrap').style.display==='none' ? '' : 'none';">Cambiar contraseña</span>
+        <span id="linkCodigosActivacion" style="display:none; margin-left:8px;">· <span class="muted" style="cursor:pointer; text-decoration:underline; font-size:12px; color:var(--accent);" onclick="abrirPanelCodigos()">🔑 Códigos</span></span>
         <button class="ghost" onclick="hacerLogout()" style="margin-top:4px;">Salir</button>
       </div>
     </div>
@@ -1698,6 +1700,68 @@ window.addEventListener('appinstalled', () => {
   deferredInstallPrompt = null;
   document.querySelectorAll('.btn-instalar-app').forEach(b => b.style.display = 'none');
 });
+// ---------- Soporte por WhatsApp ----------
+// Reemplazá este número por el tuyo (con código de país, sin +, sin espacios ni guiones,
+// ej: Argentina 11-1234-5678 -> "5491112345678"). Con esto el botón "💬 Soporte" del
+// topbar (visible siempre, staff o alumno, logueado o no) ya queda funcionando.
+const SOPORTE_WHATSAPP_NUMERO = 'PONE_TU_NUMERO_ACA'; // ej: '5491112345678'
+function abrirSoporteWhatsapp(){
+  if (!SOPORTE_WHATSAPP_NUMERO || SOPORTE_WHATSAPP_NUMERO === 'PONE_TU_NUMERO_ACA'){
+    alert('Falta configurar el número de WhatsApp de soporte (SOPORTE_WHATSAPP_NUMERO en el código).');
+    return;
+  }
+  const msg = encodeURIComponent('Hola! Te escribo por soporte de M2F Solutions.');
+  window.open(`https://wa.me/${SOPORTE_WHATSAPP_NUMERO}?text=${msg}`, '_blank');
+}
+
+// ---------- Panel de códigos de activación (solo Martin) ----------
+// El chequeo de acá es solo para mostrar/ocultar el link en la UI — no es seguridad real,
+// esa vive en las RPC (auth.uid() hardcodeado del lado del servidor). Aunque alguien
+// forzara a mostrar el botón, las llamadas a la RPC le van a devolver "No autorizado".
+const EMAIL_SUPERADMIN = 'martinkohanoff28@gmail.com';
+function mostrarLinkCodigosSiCorresponde(){
+  const link = document.getElementById('linkCodigosActivacion');
+  if (!link) return;
+  const email = (PERFIL_ACTUAL && PERFIL_ACTUAL.email) || '';
+  link.style.display = (email.toLowerCase() === EMAIL_SUPERADMIN) ? '' : 'none';
+}
+function abrirPanelCodigos(){
+  document.getElementById('panelCodigosActivacion').style.display = '';
+  cargarCodigosActivacion();
+}
+async function cargarCodigosActivacion(){
+  const tbody = document.getElementById('codigosTbody');
+  tbody.innerHTML = '<tr><td colspan="5" class="muted" style="padding:10px;">Cargando...</td></tr>';
+  try{
+    const filas = await sb('rpc/listar_codigos_activacion', { method:'POST', body: JSON.stringify({}) });
+    if (!filas || !filas.length){ tbody.innerHTML = '<tr><td colspan="5" class="muted" style="padding:10px;">Todavía no generaste ningún código.</td></tr>'; return; }
+    tbody.innerHTML = filas.map(f => `
+      <tr style="border-bottom:1px solid var(--border);">
+        <td style="padding:6px; font-family:monospace; cursor:pointer;" title="Tocar para copiar" onclick="navigator.clipboard && navigator.clipboard.writeText('${f.codigo}'); toast('Código copiado');">${f.codigo}</td>
+        <td style="padding:6px;">${f.nota || '—'}</td>
+        <td style="padding:6px;">${f.usado ? '🔴 Usado' : '🟢 Disponible'}</td>
+        <td style="padding:6px;">${f.gimnasio_nombre || '—'}</td>
+        <td style="padding:6px;">${f.creado_en ? formatearFechaCorta(f.creado_en) : '—'}</td>
+      </tr>`).join('');
+  }catch(e){
+    tbody.innerHTML = `<tr><td colspan="5" class="muted" style="padding:10px;">Error: ${e.message}</td></tr>`;
+  }
+}
+async function generarCodigoActivacionUI(){
+  const nota = document.getElementById('codigosNota').value.trim() || null;
+  const msg = document.getElementById('codigosMsg');
+  msg.textContent = 'Generando...';
+  try{
+    const resp = await sb('rpc/generar_codigo_activacion', { method:'POST', body: JSON.stringify({ p_nota: nota }) });
+    const codigo = (resp && resp[0] && resp[0].codigo) || (resp && resp.codigo);
+    msg.textContent = codigo ? `✅ Código generado: ${codigo}` : '✅ Código generado.';
+    document.getElementById('codigosNota').value = '';
+    await cargarCodigosActivacion();
+  }catch(e){
+    msg.textContent = `Error: ${e.message}`;
+  }
+}
+
 async function instalarApp(){
   if (deferredInstallPrompt){
     deferredInstallPrompt.prompt();
@@ -1858,6 +1922,7 @@ async function entrarComoStaff(){
   document.getElementById('authGate').style.display = 'none';
   document.getElementById('profesorApp').style.display = '';
   document.getElementById('sesionEmail').textContent = `${PERFIL_ACTUAL.nombre || PERFIL_ACTUAL.email} · ${PERFIL_ACTUAL.rol}`;
+  mostrarLinkCodigosSiCorresponde();
   sincronizarTabsRol();
   await Promise.all([cargarPersonas(), cargarCatalogoEjercicios(), cargarGimnasioActual(), cargarCategoriasYEquipos()]);
   cambiarSubvista('agenda'); // lo primero que ve el profesor al entrar es la agenda del día, no el armador
@@ -2078,7 +2143,7 @@ async function subirFotoPropiaAlumno(file){
     toast('Subiendo foto...');
     const resp = await fetch(`${SUPABASE_URL}/storage/v1/object/logos/${path}`, {
       method: 'POST',
-      headers: { apikey: ANON_KEY, Authorization: `Bearer ${ANON_KEY}`, 'Content-Type': file.type || 'application/octet-stream' },
+      headers: { apikey: ANON_KEY, Authorization: `Bearer ${(SESION_ACTUAL && SESION_ACTUAL.access_token) || ANON_KEY}`, 'Content-Type': file.type || 'application/octet-stream' },
       body: file,
     });
     if (!resp.ok){ const t = await resp.text().catch(()=> ''); throw new Error(`${resp.status}: ${t.slice(0,200)}`); }
@@ -2566,10 +2631,10 @@ function idAleatorio(){
   });
 }
 
-// Sube el archivo elegido al bucket "logos" (público) y deja la URL resultante
-// cargada en el campo de link, lista para guardar. Sin login todavía la sube
-// cualquiera que tenga el anon key, por eso el bucket es exclusivo para logos
-// (nada sensible) — se restringe a profesor/admin logueado cuando esté el login real.
+// Sube el archivo elegido al bucket "logos" (público, solo lectura) y deja la URL
+// resultante cargada en el campo de link, lista para guardar. La subida viaja con el
+// access_token real de la sesión (no la anon key) para que la política de Storage
+// (solo "authenticated") la acepte — ver migración rls_storage_logos_authenticated_write.
 async function subirLogoGimnasio(file){
   if (!file) return;
   const ext = (file.name.split('.').pop() || 'png').toLowerCase().replace(/[^a-z0-9]/g,'') || 'png';
@@ -2578,7 +2643,7 @@ async function subirLogoGimnasio(file){
     toast('Subiendo imagen...');
     const resp = await fetch(`${SUPABASE_URL}/storage/v1/object/logos/${path}`, {
       method: 'POST',
-      headers: { apikey: ANON_KEY, Authorization: `Bearer ${ANON_KEY}`, 'Content-Type': file.type || 'application/octet-stream' },
+      headers: { apikey: ANON_KEY, Authorization: `Bearer ${(SESION_ACTUAL && SESION_ACTUAL.access_token) || ANON_KEY}`, 'Content-Type': file.type || 'application/octet-stream' },
       body: file,
     });
     if (!resp.ok){ const t = await resp.text().catch(()=> ''); throw new Error(`${resp.status}: ${t.slice(0,200)}`); }
@@ -4311,7 +4376,7 @@ async function subirFotoAlumno(alumnoId, file){
     toast('Subiendo foto...');
     const resp = await fetch(`${SUPABASE_URL}/storage/v1/object/logos/${path}`, {
       method: 'POST',
-      headers: { apikey: ANON_KEY, Authorization: `Bearer ${ANON_KEY}`, 'Content-Type': file.type || 'application/octet-stream' },
+      headers: { apikey: ANON_KEY, Authorization: `Bearer ${(SESION_ACTUAL && SESION_ACTUAL.access_token) || ANON_KEY}`, 'Content-Type': file.type || 'application/octet-stream' },
       body: file,
     });
     if (!resp.ok){ const t = await resp.text().catch(()=> ''); throw new Error(`${resp.status}: ${t.slice(0,200)}`); }
@@ -7135,6 +7200,7 @@ if ('serviceWorker' in navigator){
       document.getElementById('authGate').style.display = 'none';
       document.getElementById('profesorApp').style.display = '';
       document.getElementById('sesionEmail').textContent = `${PERFIL_ACTUAL.nombre || PERFIL_ACTUAL.email} · ${PERFIL_ACTUAL.rol}`;
+      mostrarLinkCodigosSiCorresponde();
       cambiarVista('profesor');
       sincronizarTabsRol();
       cambiarSubvista('agenda'); // lo primero que ve el profesor al entrar es la agenda del día, no el armador
@@ -7156,5 +7222,32 @@ if ('serviceWorker' in navigator){
      ocultaba por completo — no pasaba nada en pantalla. Al vivir acá afuera,
      funciona sin importar qué vista esté activa. -->
 <div id="reporteAlumnoContainer"></div>
+
+<!-- Panel "superadmin" para generar/ver códigos de activación sin pedirlos por Supabase.
+     Visible solo si el email de la sesión es el de Martin (ver mostrarLinkCodigosSiCorresponde);
+     el control real de acceso está del lado del servidor, en las RPC generar_codigo_activacion /
+     listar_codigos_activacion (chequean auth.uid() contra su cuenta, no el rol de perfiles). -->
+<div id="panelCodigosActivacion" style="display:none; position:fixed; inset:0; z-index:500; background:rgba(0,0,0,.6); overflow:auto;">
+  <div class="card" style="max-width:640px; margin:40px auto;">
+    <div class="row" style="justify-content:space-between; align-items:center; margin-bottom:10px;">
+      <h3 style="margin:0;">🔑 Códigos de activación</h3>
+      <button class="ghost" onclick="document.getElementById('panelCodigosActivacion').style.display='none';">✕ Cerrar</button>
+    </div>
+    <p class="muted" style="font-size:13px;">Cada código sirve una sola vez para crear un gimnasio nuevo. Generá uno cuando cierres una venta y pasáselo al cliente.</p>
+    <div class="row" style="align-items:flex-end;">
+      <div class="field" style="flex:1; min-width:200px;"><label>Nota (ej: nombre del cliente)</label><input id="codigosNota" placeholder="Ej: Gimnasio PowerZone"></div>
+      <button onclick="generarCodigoActivacionUI()">+ Generar código</button>
+    </div>
+    <div id="codigosMsg" class="muted" style="margin-top:8px;"></div>
+    <div style="margin-top:16px; overflow-x:auto;">
+      <table style="width:100%; border-collapse:collapse; font-size:13px;">
+        <thead><tr style="text-align:left; border-bottom:1px solid var(--border);">
+          <th style="padding:6px;">Código</th><th style="padding:6px;">Nota</th><th style="padding:6px;">Estado</th><th style="padding:6px;">Usado por</th><th style="padding:6px;">Fecha</th>
+        </tr></thead>
+        <tbody id="codigosTbody"><tr><td colspan="5" class="muted" style="padding:10px;">Cargando...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</div>
 </body>
 </html>
