@@ -75,6 +75,7 @@
   }
   button.secondary{background:var(--panel2); color:var(--text); border:1px solid var(--border);}
   button.ghost{background:transparent; color:var(--muted); border:1px solid var(--border);}
+  button.ghost.active{background:var(--accent); color:#1a1000; border-color:var(--accent); font-weight:800;}
   button.danger{background:var(--danger); color:#2a0000;}
   button:disabled{opacity:.45; cursor:not-allowed;}
   .field{display:flex; flex-direction:column; min-width:120px;}
@@ -475,6 +476,21 @@
     .grid-exercise .field label{font-size:9px; margin-bottom:2px;}
     .grid-exercise select, .grid-exercise input, .grid-exercise textarea{padding:6px 6px; font-size:12.5px;}
   }
+
+  /* ---- Cuadro semanal de horarios (todos los profesores) — pedido 22/9, mockup aprobado por Martin ---- */
+  .cuadro-grid{ display:grid; grid-template-columns: 58px repeat(7, minmax(110px, 1fr)); position:relative; min-width:900px; }
+  .cuadro-head{ background:var(--panel2); border-bottom:1px solid var(--border); padding:9px 4px; text-align:center; font-weight:700; font-size:13px; }
+  .cuadro-head.hora-head{ background:transparent; border-bottom:none; }
+  .cuadro-hora-label{ font-size:11px; color:var(--muted); text-align:right; padding-right:8px; }
+  .cuadro-dia-col{ position:relative; border-left:1px solid var(--border); background-image:repeating-linear-gradient(to bottom, transparent, transparent 45px, var(--border) 45px, var(--border) 46px); }
+  .cuadro-bloque{
+    position:absolute; border-radius:7px; padding:5px 8px; font-size:11.5px; font-weight:700; color:#0c0d10;
+    overflow:hidden; text-overflow:ellipsis; box-shadow:0 2px 6px rgba(0,0,0,.25);
+    display:flex; flex-direction:column; justify-content:flex-start; gap:1px; transition:opacity .15s;
+  }
+  .cuadro-bloque .hora-rango{ font-size:9.5px; font-weight:600; opacity:.75; }
+  .cuadro-leyenda-item{ display:flex; align-items:center; gap:6px; font-size:12.5px; color:var(--muted); }
+  .cuadro-leyenda-dot{ width:11px; height:11px; border-radius:3px; flex-shrink:0; }
 </style>
 </head>
 <body>
@@ -1039,8 +1055,42 @@
       <!-- ---- SUBVISTA: HORARIOS DE TRABAJO (genera turnos cada 1h) ---- -->
       <div id="subvistaHorarios" style="display:none;">
         <div class="card">
-          <h2 style="margin-top:0">Horario semanal</h2>
-          <div id="listaHorarios">Elegí un profesor arriba de todo.</div>
+          <div class="row" style="gap:8px;">
+            <button class="ghost active" id="horTabBtnEditar" onclick="horCambiarTab('editar')">✎ Editar horario</button>
+            <button class="ghost" id="horTabBtnCuadro" onclick="horCambiarTab('cuadro')">🗓️ Ver cuadro de todos</button>
+          </div>
+        </div>
+
+        <div id="horTabEditar">
+          <div class="card">
+            <div class="field" style="margin-bottom:0;">
+              <label>Profesor a editar</label>
+              <select id="horProfesor" onchange="onCambiarHorProfesor()"></select>
+            </div>
+          </div>
+          <div class="card">
+            <h2 style="margin-top:0">Horario semanal</h2>
+            <div id="listaHorarios">Elegí un profesor arriba.</div>
+          </div>
+        </div>
+
+        <div id="horTabCuadro" style="display:none;">
+          <div class="card">
+            <div class="row" style="justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:12px;">
+              <div class="field" style="flex:1; min-width:220px; margin-bottom:0;">
+                <label>Filtrar por profesor</label>
+                <select id="cuadroFiltroProfesor" onchange="renderCuadroHorarios()">
+                  <option value="">Todos los profesores</option>
+                </select>
+              </div>
+              <div class="leyenda-cuadro" id="cuadroLeyenda" style="display:flex; gap:12px; flex-wrap:wrap;"></div>
+            </div>
+          </div>
+          <div class="card">
+            <h2 style="margin-top:0">Cuadro semanal de profesores</h2>
+            <div class="muted" style="margin-bottom:10px; font-size:12.5px;">Días en columnas, horarios en filas. Cada bloque de color es el rango de trabajo de un profesor.</div>
+            <div id="cuadroHorariosWrap" style="overflow-x:auto;">Cargando...</div>
+          </div>
         </div>
       </div>
 
@@ -1331,7 +1381,6 @@
 
   <!-- Pantalla dedicada de ejecución: reemplaza todo lo de arriba mientras se entrena -->
   <div id="ejecucionContainer" style="display:none;"></div>
-  <div id="reporteAlumnoContainer"></div>
 
   <!-- ---- Barra inferior de navegación (solo mobile, mientras hay sesión de alumno) ---- -->
   <div class="bottom-nav" id="bottomNavAlu">
@@ -1477,7 +1526,7 @@ const BUCKET = "Ejercicios";
 // un cambio, se incrementa este número — el chequeo de actualización (más abajo) lo compara
 // contra lo que hay publicado y avisa si están desactualizados, sin que nadie tenga que
 // cambiar ningún link a mano.
-const APP_VERSION = 39;
+const APP_VERSION = 41;
 
 function imgUrl(providerRefId){
   return `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${encodeURI(providerRefId)}`;
@@ -1952,7 +2001,7 @@ function cambiarSubvista(v){
   if (v==='logros') iniciarLogros();
   if (v==='profesores') cargarListaProfesores();
   if (v==='agenda') iniciarAgenda();
-  if (v==='horarios') cargarHorarioProfesorActual();
+  if (v==='horarios'){ horCambiarTab('editar'); cargarHorarioProfesorActual(); }
   if (v==='planes') cargarPlanes();
   if (v==='cobranzas') cargarCobranzas();
   if (v==='ejercicios') cargarListaEjerciciosPersonalizados();
@@ -2540,17 +2589,22 @@ async function cargarPersonas(){
   document.getElementById('profActual').innerHTML = optsProf;
   document.getElementById('profProfesor').innerHTML = optsProf;
   document.getElementById('espProfesor').innerHTML = optsProf;
+  document.getElementById('horProfesor').innerHTML = optsProf;
   ALUMNOS_CACHE = alumnos;
   PROFESORES_CACHE = profesores;
   // Si el que se logueó tiene su propia fila en `profesores`, se preselecciona
   // sola (no hace falta que se busque a sí mismo en la lista cada vez).
   if (PERFIL_ACTUAL){
     const propio = profesores.find(p => p.perfil_id === PERFIL_ACTUAL.id);
-    if (propio) document.getElementById('profActual').value = propio.id;
+    if (propio){
+      document.getElementById('profActual').value = propio.id;
+      document.getElementById('horProfesor').value = propio.id;
+    }
   }
   armarComboBuscable('profActual', 'Buscar profesor...');
   armarComboBuscable('profProfesor', 'Buscar profesor...');
   armarComboBuscable('espProfesor', 'Buscar profesor...');
+  armarComboBuscable('horProfesor', 'Buscar profesor...');
   armarComboBuscable('espAlumno', 'Buscar alumno por nombre...');
   onCambiarProfesorActual();
 }
@@ -2646,8 +2700,139 @@ function onCambiarProfesorActual(){
   if (!profesorId) return;
   document.getElementById('profProfesor').value = profesorId;
   document.getElementById('espProfesor').value = profesorId;
+  const horSel = document.getElementById('horProfesor');
+  if (horSel){
+    horSel.value = profesorId;
+    sincronizarComboBuscable('horProfesor');
+  }
   const subHorarios = document.getElementById('subvistaHorarios');
   if (subHorarios && subHorarios.style.display !== 'none') cargarHorarioProfesorActual();
+}
+
+// Selector propio dentro de "🕒 Horarios" (antes solo se podía elegir el
+// profesor desde el combo de arriba de todo, etiquetado "autoría de rutinas",
+// lo cual generaba confusión: Martin no encontraba dónde asignar el horario
+// de trabajo de un profesor ya existente — pedido 22/9).
+function onCambiarHorProfesor(){
+  const profesorId = document.getElementById('horProfesor').value;
+  if (!profesorId) return;
+  document.getElementById('profActual').value = profesorId;
+  sincronizarComboBuscable('profActual');
+  document.getElementById('profProfesor').value = profesorId;
+  document.getElementById('espProfesor').value = profesorId;
+  cargarHorarioProfesorActual();
+}
+
+// ---------- Tabs dentro de "🕒 Horarios": editar (por profesor) vs. cuadro (todos) ----------
+function horCambiarTab(tab){
+  const esCuadro = tab === 'cuadro';
+  document.getElementById('horTabEditar').style.display = esCuadro ? 'none' : '';
+  document.getElementById('horTabCuadro').style.display = esCuadro ? '' : 'none';
+  document.getElementById('horTabBtnEditar').classList.toggle('active', !esCuadro);
+  document.getElementById('horTabBtnCuadro').classList.toggle('active', esCuadro);
+  if (esCuadro) cargarCuadroHorarios();
+}
+
+// ---------- Cuadro semanal con TODOS los profesores del gimnasio (pedido 22/9) ----------
+// Mismo diseño del mockup aprobado por Martin: días en columnas (se muestran
+// Lunes a Domingo aunque en la base dia_semana usa 0=Domingo), horarios en filas,
+// un bloque de color por rango de trabajo. Si dos profesores coinciden en el
+// mismo horario, se resuelve con "carriles" (se dividen lado a lado, igual que
+// un calendario). Incluye filtro por profesor (atenúa en vez de esconder, para
+// no desarmar la grilla al cambiar el filtro).
+const CUADRO_DIAS_DISPLAY = [
+  { dia: 1, nombre: 'Lunes' }, { dia: 2, nombre: 'Martes' }, { dia: 3, nombre: 'Miércoles' },
+  { dia: 4, nombre: 'Jueves' }, { dia: 5, nombre: 'Viernes' }, { dia: 6, nombre: 'Sábado' },
+  { dia: 0, nombre: 'Domingo' },
+];
+const CUADRO_PALETA = ['#ff7a30','#3ddc84','#4da3ff','#c792ea','#f4d35e','#ff6b81','#5eead4','#f0883e'];
+let CUADRO_HORARIOS_CACHE = [];
+let CUADRO_COLORES = {};
+
+async function cargarCuadroHorarios(){
+  const cont = document.getElementById('cuadroHorariosWrap');
+  const idsProf = (PROFESORES_CACHE || []).map(p => p.id);
+  if (!idsProf.length){ cont.innerHTML = 'Todavía no hay profesores cargados.'; return; }
+  cont.innerHTML = 'Cargando...';
+  try{
+    CUADRO_HORARIOS_CACHE = await sb(`horarios_trabajo?select=id,profesor_id,dia_semana,hora_inicio,hora_fin,activo&profesor_id=in.(${idsProf.join(',')})&activo=eq.true&order=dia_semana.asc,hora_inicio.asc`);
+    PROFESORES_CACHE.forEach((p, i) => { CUADRO_COLORES[p.id] = CUADRO_PALETA[i % CUADRO_PALETA.length]; });
+    const sel = document.getElementById('cuadroFiltroProfesor');
+    sel.innerHTML = `<option value="">Todos los profesores</option>` + PROFESORES_CACHE.map(p => `<option value="${p.id}">${p.nombre}</option>`).join('');
+    document.getElementById('cuadroLeyenda').innerHTML = PROFESORES_CACHE
+      .filter(p => CUADRO_HORARIOS_CACHE.some(h => h.profesor_id === p.id))
+      .map(p => `<div class="cuadro-leyenda-item"><span class="cuadro-leyenda-dot" style="background:${CUADRO_COLORES[p.id]};"></span>${p.nombre}</div>`).join('');
+    renderCuadroHorarios();
+  }catch(e){ cont.innerHTML = 'Error: ' + e.message; }
+}
+
+function horaADecimal(hms){
+  const partes = (hms || '00:00:00').split(':').map(Number);
+  return partes[0] + (partes[1]||0)/60;
+}
+function formatearHoraCorta(hms){
+  return (hms || '00:00:00').slice(0,5);
+}
+
+function renderCuadroHorarios(){
+  const cont = document.getElementById('cuadroHorariosWrap');
+  if (!CUADRO_HORARIOS_CACHE.length){ cont.innerHTML = 'Ningún profesor tiene horario de trabajo cargado todavía.'; return; }
+
+  const horaMin = Math.min(6, ...CUADRO_HORARIOS_CACHE.map(h => Math.floor(horaADecimal(h.hora_inicio))));
+  const horaMax = Math.max(22, ...CUADRO_HORARIOS_CACHE.map(h => Math.ceil(horaADecimal(h.hora_fin))));
+  const nFilas = horaMax - horaMin;
+  const ALTO_HORA = 46; // px, igual al mockup aprobado
+
+  let html = `<div class="cuadro-grid" style="grid-template-rows:36px ${nFilas * ALTO_HORA}px;">`;
+  html += `<div class="cuadro-head hora-head"></div>`;
+  CUADRO_DIAS_DISPLAY.forEach(d => html += `<div class="cuadro-head">${d.nombre}</div>`);
+
+  html += `<div style="position:relative; grid-row:2; grid-column:1;">`;
+  for (let f=0; f<=nFilas; f++){
+    html += `<div class="cuadro-hora-label" style="position:absolute; top:${f*ALTO_HORA - 6}px; right:8px;">${String(horaMin+f).padStart(2,'0')}:00</div>`;
+  }
+  html += `</div>`;
+
+  const filtro = document.getElementById('cuadroFiltroProfesor')?.value || '';
+  CUADRO_DIAS_DISPLAY.forEach((d, idx) => {
+    html += `<div class="cuadro-dia-col" style="grid-row:2; grid-column:${idx+2};">`;
+    html += armarCarrilesCuadro(d.dia, horaMin, ALTO_HORA, filtro);
+    html += `</div>`;
+  });
+  html += `</div>`;
+  cont.innerHTML = html;
+}
+
+function armarCarrilesCuadro(diaSemana, horaMin, altoHora, filtro){
+  const delDia = CUADRO_HORARIOS_CACHE
+    .filter(h => h.dia_semana === diaSemana)
+    .map(h => ({ ...h, desde: horaADecimal(h.hora_inicio), hasta: horaADecimal(h.hora_fin) }))
+    .sort((a,b) => a.desde - b.desde);
+  if (!delDia.length) return '';
+
+  const carrilesFin = [];
+  const asignados = delDia.map(h => {
+    let carril = carrilesFin.findIndex(fin => fin <= h.desde);
+    if (carril === -1){ carril = carrilesFin.length; carrilesFin.push(h.hasta); }
+    else carrilesFin[carril] = h.hasta;
+    return { ...h, carril };
+  });
+  const totalCarriles = Math.max(1, carrilesFin.length);
+
+  return asignados.map(h => {
+    const prof = PROFESORES_CACHE.find(p => p.id === h.profesor_id);
+    const nombre = prof ? prof.nombre : '—';
+    const color = CUADRO_COLORES[h.profesor_id] || '#888';
+    const top = (h.desde - horaMin) * altoHora;
+    const alto = Math.max(18, (h.hasta - h.desde) * altoHora);
+    const anchoPct = 100 / totalCarriles;
+    const opacidad = (!filtro || h.profesor_id === filtro) ? '1' : '0.12';
+    return `
+      <div class="cuadro-bloque" style="top:${top}px; height:${alto - 2}px; left:calc(${anchoPct * h.carril}% + 2px); width:calc(${anchoPct}% - 4px); background:${color}; opacity:${opacidad};">
+        ${nombre}<span class="hora-rango">${formatearHoraCorta(h.hora_inicio)}-${formatearHoraCorta(h.hora_fin)}h</span>
+      </div>
+    `;
+  }).join('');
 }
 
 // ---------- Horarios de trabajo (genera turnos cada 1h) ----------
@@ -2657,7 +2842,7 @@ let HORARIOS_CACHE = [];
 async function cargarHorarioProfesorActual(){
   const profesorId = document.getElementById('profActual').value;
   const cont = document.getElementById('listaHorarios');
-  if (!profesorId){ cont.innerHTML = 'Elegí un profesor arriba de todo.'; return; }
+  if (!profesorId){ cont.innerHTML = 'Elegí un profesor arriba.'; return; }
   cont.innerHTML = 'Cargando...';
   try{
     HORARIOS_CACHE = await sb(`horarios_trabajo?profesor_id=eq.${profesorId}&order=dia_semana.asc,hora_inicio.asc`);
@@ -6312,5 +6497,13 @@ if ('serviceWorker' in navigator){
   }catch(e){ toast('Error cargando datos: '+e.message, true); }
 })();
 </script>
+
+<!-- Fuera de #profesorApp y #vistaAlumno a propósito (bug 22/9): estaba anidado
+     dentro de #vistaAlumno, así que cuando un profesor/admin (con #profesorApp
+     visible y #vistaAlumno en display:none) tocaba "Ver ficha", el contenedor
+     quedaba con display:block pero un ancestro en display:none igual lo
+     ocultaba por completo — no pasaba nada en pantalla. Al vivir acá afuera,
+     funciona sin importar qué vista esté activa. -->
+<div id="reporteAlumnoContainer"></div>
 </body>
 </html>
