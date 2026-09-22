@@ -204,6 +204,7 @@
   .kpi.clickable:hover{border-color:var(--accent);}
   .kpi.activo{background:rgba(255,122,48,.14); border-color:var(--accent);}
   .kpi.activo .num, .kpi.activo .label{color:var(--accent);}
+  .filtro-estado-alu.activo{background:rgba(255,122,48,.14); border-color:var(--accent); color:var(--accent);}
   .filtro-aviso{
     display:flex; align-items:center; justify-content:space-between; gap:10px;
     background:rgba(255,122,48,.10); border:1px solid rgba(255,122,48,.35); color:var(--accent);
@@ -790,6 +791,31 @@
               El monto pendiente por cobrar es estimado: toma el precio del plan de cada socio vencido, no una factura real.
             </div>
 
+            <h2 style="margin-top:22px;">📈 Membresía</h2>
+            <div class="row" style="flex-wrap:wrap; gap:12px; align-items:stretch;">
+              <div class="card" style="flex:1; min-width:230px; margin:0;">
+                <h3 style="margin:0 0 2px; font-size:15px;">📉 Tasa de bajas (Churn)</h3>
+                <div class="muted" style="font-size:12px; margin-bottom:14px;">Socios que dejaste de tener activos este mes, sobre los que tenías activos al empezar el mes.</div>
+                <div class="row" style="align-items:baseline; gap:10px; margin-bottom:4px;">
+                  <div style="font-size:34px; font-weight:800; color:var(--danger);" id="churnPct">-</div>
+                  <div id="churnDelta" style="font-size:12px; font-weight:700; padding:3px 9px; border-radius:999px;"></div>
+                </div>
+                <div class="muted" style="font-size:12px; margin-top:8px;" id="churnDetalle"></div>
+              </div>
+              <div class="card" style="flex:1.6; min-width:320px; margin:0;">
+                <h3 style="margin:0 0 2px; font-size:15px;">Evolución de la membresía</h3>
+                <div class="muted" style="font-size:12px; margin-bottom:10px;">Socios activos totales, últimos 6 meses</div>
+                <div class="row" style="gap:16px; font-size:11.5px; color:var(--muted); margin-bottom:6px;">
+                  <span class="row" style="gap:5px;"><span style="width:8px;height:8px;border-radius:50%;display:inline-block;background:var(--accent);"></span>Socios activos</span>
+                  <span class="row" style="gap:5px;"><span style="width:8px;height:8px;border-radius:50%;display:inline-block;background:var(--accent2);"></span>Altas</span>
+                  <span class="row" style="gap:5px;"><span style="width:8px;height:8px;border-radius:50%;display:inline-block;background:var(--danger);"></span>Bajas</span>
+                </div>
+                <div id="membresiaChart"></div>
+                <div id="membresiaBars" class="row" style="gap:10px; margin-top:12px; align-items:flex-end;"></div>
+              </div>
+            </div>
+            <div class="muted" style="margin-top:10px; font-size:12px;" id="membresiaNota"></div>
+
             <h2 style="margin-top:22px;">📅 Ocupación por día (últimas 4 semanas)</h2>
             <div class="muted" style="font-size:12px; margin-bottom:10px;">% de cupos reservados sobre la capacidad total de horarios de trabajo cargados, promediado por día de la semana.</div>
             <div id="dashboardOcupacion"></div>
@@ -1044,8 +1070,16 @@
         </div>
 
         <div class="card">
-          <h2 style="margin-top:0">Alumnos cargados</h2>
-          <div id="listaAlumnos" class="muted">Cargando...</div>
+          <div class="row" style="justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+            <h2 style="margin-top:0; margin-bottom:0;">Alumnos cargados</h2>
+            <div class="row" style="gap:6px;">
+              <button class="ghost filtro-estado-alu activo" id="filtroAluActivos" onclick="cambiarFiltroEstadoAlumnos('activos')">🟢 Activos</button>
+              <button class="ghost filtro-estado-alu" id="filtroAluInactivos" onclick="cambiarFiltroEstadoAlumnos('inactivos')">⚪ Inactivos</button>
+              <button class="ghost filtro-estado-alu" id="filtroAluTodos" onclick="cambiarFiltroEstadoAlumnos('todos')">Todos</button>
+            </div>
+          </div>
+          <div class="muted" style="font-size:12px; margin-top:6px;">Dar de baja no borra al alumno ni su historial — solo lo saca de las listas activas. Se puede reactivar en cualquier momento.</div>
+          <div id="listaAlumnos" class="muted" style="margin-top:10px;">Cargando...</div>
         </div>
       </div>
 
@@ -1704,7 +1738,7 @@ window.addEventListener('appinstalled', () => {
 // Reemplazá este número por el tuyo (con código de país, sin +, sin espacios ni guiones,
 // ej: Argentina 11-1234-5678 -> "5491112345678"). Con esto el botón "💬 Soporte" del
 // topbar (visible siempre, staff o alumno, logueado o no) ya queda funcionando.
-const SOPORTE_WHATSAPP_NUMERO = 'PONE_TU_NUMERO_ACA'; // ej: '5491112345678'
+const SOPORTE_WHATSAPP_NUMERO = '5493417219828';
 function abrirSoporteWhatsapp(){
   if (!SOPORTE_WHATSAPP_NUMERO || SOPORTE_WHATSAPP_NUMERO === 'PONE_TU_NUMERO_ACA'){
     alert('Falta configurar el número de WhatsApp de soporte (SOPORTE_WHATSAPP_NUMERO en el código).');
@@ -2079,10 +2113,19 @@ async function cambiarPasswordStaff(){
 async function entrarComoAlumnoLogueado(){
   const msg = document.getElementById('alumnoAuthMsg');
   try{
-    const fichas = await sb(`alumnos?perfil_id=eq.${PERFIL_ACTUAL.id}&select=id,nombre,gimnasio_id,foto_url`);
+    const fichas = await sb(`alumnos?perfil_id=eq.${PERFIL_ACTUAL.id}&select=id,nombre,gimnasio_id,foto_url,activo`);
     const ficha = fichas && fichas[0];
     if (!ficha){
       msg.textContent = 'Tu cuenta todavía no está vinculada a ninguna ficha de alumno.';
+      return;
+    }
+    if (!ficha.activo){
+      // Alumno dado de baja: se le corta el acceso acá (RLS no lo bloquea solo,
+      // porque sigue siendo dueño de su propia fila). Se cierra la sesión para
+      // que no quede "medio logueado" con datos viejos en pantalla.
+      msg.textContent = 'Tu cuenta está inactiva. Consultá con tu gimnasio para reactivarla.';
+      await supaAuth.auth.signOut();
+      SESION_ACTUAL = null; PERFIL_ACTUAL = null;
       return;
     }
     document.getElementById('alumnoAuthGate').style.display = 'none';
@@ -2331,10 +2374,66 @@ async function cargarDashboardAdmin(){
     estado.style.display = 'none';
     kpis.style.display = '';
     cargarOcupacionSemanalDashboard(gimId);
+    cargarMetricasMembresia(gimId);
   }catch(e){
     estado.textContent = 'Error cargando el dashboard: ' + e.message;
     estado.style.display = '';
     kpis.style.display = 'none';
+  }
+}
+
+// ---------- Churn + evolución de membresía (Dashboard admin) ----------
+async function cargarMetricasMembresia(gimId){
+  const churnPct = document.getElementById('churnPct');
+  const churnDelta = document.getElementById('churnDelta');
+  const churnDetalle = document.getElementById('churnDetalle');
+  const chartCont = document.getElementById('membresiaChart');
+  const barsCont = document.getElementById('membresiaBars');
+  const nota = document.getElementById('membresiaNota');
+  try{
+    const m = await sb('rpc/obtener_metricas_membresia', {
+      method: 'POST',
+      body: JSON.stringify({ p_gimnasio_id: gimId })
+    });
+    const actual = Number(m.churn_mes_actual ?? 0);
+    const anterior = Number(m.churn_mes_anterior ?? 0);
+    churnPct.textContent = actual.toLocaleString('es-AR', {minimumFractionDigits:1, maximumFractionDigits:1}) + '%';
+    const bajo = actual <= anterior;
+    churnDelta.textContent = (bajo ? '▼ ' : '▲ ') + 'vs. ' + anterior.toLocaleString('es-AR', {minimumFractionDigits:1, maximumFractionDigits:1}) + '% mes anterior';
+    churnDelta.style.background = bajo ? 'rgba(61,220,132,.14)' : 'rgba(255,93,93,.14)';
+    churnDelta.style.color = bajo ? 'var(--accent2)' : 'var(--danger)';
+    churnDetalle.textContent = `${m.bajas_mes_actual ?? 0} baja(s) este mes sobre ${m.activos_inicio_mes_actual ?? 0} socios activos al empezar el mes.`;
+
+    const meses = m.meses || [];
+    if (!meses.length){ chartCont.innerHTML = '<div class="muted">Todavía no hay suficiente historial.</div>'; barsCont.innerHTML=''; return; }
+    const maxActivos = Math.max(1, ...meses.map(x => x.activos_fin_mes));
+    const W = 560, H = 120, padTop = 16, padBot = 20, padX = 30;
+    const stepX = meses.length > 1 ? (W - padX*2) / (meses.length - 1) : 0;
+    const yFor = v => padTop + (H - padTop - padBot) * (1 - (v / maxActivos));
+    const pts = meses.map((x,i) => ({ x: padX + i*stepX, y: yFor(x.activos_fin_mes), v: x.activos_fin_mes }));
+    const NOMBRES_MES = {'01':'Ene','02':'Feb','03':'Mar','04':'Abr','05':'May','06':'Jun','07':'Jul','08':'Ago','09':'Sep','10':'Oct','11':'Nov','12':'Dic'};
+    const polyline = pts.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
+    const circles = pts.map((p,i) => `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${i===pts.length-1?5:4}" fill="var(--accent)"/>`).join('');
+    const lastLbl = pts.length ? `<text x="${(pts[pts.length-1].x+8).toFixed(1)}" y="${Math.max(12,pts[pts.length-1].y-6).toFixed(1)}" font-size="10.5" fill="var(--accent)" font-weight="700">${pts[pts.length-1].v}</text>` : '';
+    const gridlines = [0.2,0.55,0.9].map(f => `<line x1="0" y1="${(padTop+(H-padTop-padBot)*f).toFixed(1)}" x2="${W}" y2="${(padTop+(H-padTop-padBot)*f).toFixed(1)}" stroke="var(--border)" stroke-width="1"/>`).join('');
+    const labels = meses.map((x,i) => `<text x="${(padX+i*stepX).toFixed(1)}" y="${H-6}" font-size="10.5" fill="var(--muted)" text-anchor="middle">${NOMBRES_MES[x.mes.slice(5,7)]||x.mes}</text>`).join('');
+    chartCont.innerHTML = `<svg width="100%" height="${H}" viewBox="0 0 ${W} ${H}">${gridlines}<polyline points="${polyline}" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>${circles}${lastLbl}${labels}</svg>`;
+
+    const maxBar = Math.max(1, ...meses.map(x => Math.max(x.altas, x.bajas)));
+    barsCont.innerHTML = meses.map(x => `
+      <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:4px; justify-content:flex-end; height:70px;">
+        <div style="width:16px; border-radius:4px 4px 2px 2px; height:${Math.max(2, 40*x.altas/maxBar).toFixed(0)}px; background:var(--accent2);"></div>
+        <div style="width:16px; border-radius:4px 4px 2px 2px; height:${Math.max(2, 40*x.bajas/maxBar).toFixed(0)}px; background:var(--danger);"></div>
+        <div style="font-size:10px; color:var(--muted);">+${x.altas} / −${x.bajas}</div>
+      </div>`).join('');
+
+    nota.textContent = 'El histórico solo cuenta las bajas registradas desde que se activó esta función (las bajas anteriores no quedaron guardadas).';
+  }catch(e){
+    chartCont.innerHTML = '';
+    barsCont.innerHTML = '';
+    churnPct.textContent = '-';
+    churnDelta.textContent = '';
+    churnDetalle.textContent = 'Error cargando métricas de membresía: ' + e.message;
   }
 }
 
@@ -4217,12 +4316,39 @@ async function crearAlumno(){
 }
 
 let VIGENTES_POR_ALUMNO = {};
+let FILTRO_ESTADO_ALUMNOS = 'activos';
+let ALUMNOS_LISTA_CACHE = [];
+
+// ALUMNOS_CACHE solo trae activos (se usa en selects operativos: turnos, rutinas, etc.).
+// Para acciones que pueden venir de un alumno inactivo (ver ficha, generar acceso desde
+// la lista con filtro "Inactivos"/"Todos"), hay que buscar también en ALUMNOS_LISTA_CACHE.
+function buscarAlumnoCache(alumnoId){
+  return ALUMNOS_CACHE.find(a => a.id === alumnoId) || ALUMNOS_LISTA_CACHE.find(a => a.id === alumnoId);
+}
+
+function cambiarFiltroEstadoAlumnos(filtro){
+  FILTRO_ESTADO_ALUMNOS = filtro;
+  document.querySelectorAll('.filtro-estado-alu').forEach(b => b.classList.remove('activo'));
+  const map = { activos:'filtroAluActivos', inactivos:'filtroAluInactivos', todos:'filtroAluTodos' };
+  document.getElementById(map[filtro])?.classList.add('activo');
+  cargarListaAlumnos();
+}
 
 async function cargarListaAlumnos(){
   const cont = document.getElementById('listaAlumnos');
-  if (!ALUMNOS_CACHE.length){ cont.innerHTML = '<div class="empty">Todavía no hay alumnos cargados.</div>'; return; }
+  cont.innerHTML = 'Cargando...';
+  const filtroGym = PERFIL_ACTUAL ? `&gimnasio_id=eq.${PERFIL_ACTUAL.gimnasio_id}` : '';
+  const filtroEstado = FILTRO_ESTADO_ALUMNOS === 'activos' ? '&activo=eq.true'
+    : FILTRO_ESTADO_ALUMNOS === 'inactivos' ? '&activo=eq.false' : '';
   try{
-    const ids = ALUMNOS_CACHE.map(a => a.id);
+    ALUMNOS_LISTA_CACHE = await sb(`alumnos?select=id,nombre,tipo,gimnasio_id,plan_id,altura_cm,peso_kg,objetivo,telefono,email,direccion,dni,perfil_id,equipo_id,posicion,foto_url,activo,equipos(nombre),alumno_categorias(categoria_id,categorias(nombre))${filtroEstado}${filtroGym}&order=nombre.asc`);
+  }catch(e){
+    cont.innerHTML = `<div class="empty">Error cargando alumnos: ${e.message}</div>`;
+    return;
+  }
+  if (!ALUMNOS_LISTA_CACHE.length){ cont.innerHTML = '<div class="empty">No hay alumnos en este filtro.</div>'; return; }
+  try{
+    const ids = ALUMNOS_LISTA_CACHE.map(a => a.id);
     const vigentes = await sb(`v_plan_vigente_alumno?alumno_id=in.(${ids.join(',')})`);
     VIGENTES_POR_ALUMNO = {};
     vigentes.forEach(v => VIGENTES_POR_ALUMNO[v.alumno_id] = v);
@@ -4230,7 +4356,7 @@ async function cargarListaAlumnos(){
   await cargarPlanesEnSelectAlumno();
   const ETIQUETA_ESTADO = { vencido: 'Cuota vencida', por_vencer: 'Por vencer', al_dia: 'Al día', sin_pagos: 'Nunca pagó', sin_plan: 'Sin plan' };
   const COLOR_ESTADO = { vencido: 'color:#ff8a8a; border-color:rgba(255,93,93,.4);', por_vencer: 'color:var(--warn); border-color:rgba(255,210,61,.4);', al_dia: 'color:var(--accent2); border-color:rgba(61,220,132,.4);', sin_pagos: 'color:var(--warn); border-color:rgba(255,210,61,.4);' };
-  cont.innerHTML = ALUMNOS_CACHE.map(a => {
+  cont.innerHTML = ALUMNOS_LISTA_CACHE.map(a => {
     const datos = [
       a.altura_cm ? a.altura_cm+' cm' : null,
       a.peso_kg ? a.peso_kg+' kg' : null,
@@ -4257,11 +4383,15 @@ async function cargarListaAlumnos(){
     const fotoChica = a.foto_url
       ? `<img src="${a.foto_url}" style="width:32px; height:32px; border-radius:50%; object-fit:cover; margin-right:8px; vertical-align:middle;">`
       : '';
+    const chipInactivo = a.activo ? '' : `<span class="pill" style="color:var(--danger); border-color:rgba(255,93,93,.4);">⚪ Inactivo</span>`;
+    const btnEstado = a.activo
+      ? `<button class="ghost" onclick="toggleActivoAlumno('${a.id}', false, '${(a.nombre||'').replace(/'/g,"\\'")}')" title="Marca al alumno como inactivo sin borrar sus datos ni su historial">🔴 Dar de baja</button>`
+      : `<button class="ghost" onclick="toggleActivoAlumno('${a.id}', true, '${(a.nombre||'').replace(/'/g,"\\'")}')" title="Vuelve a poner al alumno como activo">🟢 Reactivar</button>`;
     return `
-    <div style="padding:8px 0; border-bottom:1px solid var(--border);">
-      <div class="row" style="justify-content:space-between;">
+    <div style="padding:8px 0; border-bottom:1px solid var(--border); ${a.activo?'':'opacity:.7;'}">
+      <div class="row" style="justify-content:space-between; flex-wrap:wrap; gap:8px;">
         <div style="font-weight:600; display:flex; align-items:center;">${fotoChica}${a.nombre}${a.dni ? ` <span class="muted" style="font-weight:400;">· DNI ${a.dni}</span>` : ''}</div>
-        <div class="row" style="gap:8px;">
+        <div class="row" style="gap:8px; flex-wrap:wrap;">
           <select onchange="cambiarTipoAlumno('${a.id}', this.value)">
             <option value="estandar" ${a.tipo==='estandar'?'selected':''}>Estándar</option>
             <option value="especial" ${a.tipo==='especial'?'selected':''}>Especial</option>
@@ -4273,9 +4403,10 @@ async function cargarListaAlumnos(){
           ${chipAcceso}
           <button class="ghost" onclick="abrirReporteAlumno('${a.id}')">📄 Ver ficha</button>
           <button class="ghost" onclick="toggleEditarAlumno('${a.id}')">✏️ Datos</button>
+          ${btnEstado}
         </div>
       </div>
-      <div class="muted" style="margin-top:4px;">${datos || 'Sin datos de contacto/físicos cargados.'} ${chipPlan} ${chipsCategorias} ${chipEquipo} ${chipPosicion}</div>
+      <div class="muted" style="margin-top:4px;">${datos || 'Sin datos de contacto/físicos cargados.'} ${chipPlan} ${chipInactivo} ${chipsCategorias} ${chipEquipo} ${chipPosicion}</div>
       <div id="editarAlumno${a.id}" style="display:none; margin-top:10px;">
         <div class="row">
           <div class="field"><label>DNI</label><input id="editDni${a.id}" value="${a.dni||''}"></div>
@@ -4327,7 +4458,7 @@ async function cargarListaAlumnos(){
 // (email sintético interno, invisible para el alumno). El alumno puede cambiar
 // la contraseña después desde su perfil.
 async function generarAccesoAlumno(alumnoId){
-  const alumno = ALUMNOS_CACHE.find(a => a.id === alumnoId);
+  const alumno = buscarAlumnoCache(alumnoId);
   if (!alumno) return;
   if (!alumno.dni){ toast('Cargale el DNI primero (botón "✏️ Datos").', true); return; }
   if (!confirm(`¿Generar acceso para ${alumno.nombre}? Usuario y contraseña inicial: DNI ${alumno.dni}.`)) return;
@@ -4358,6 +4489,25 @@ async function cambiarPlanAlumno(alumnoId, planId){
     toast('Plan actualizado ✓');
     cargarListaAlumnos();
   }catch(e){ toast('Error actualizando el plan: ' + e.message, true); }
+}
+
+// Dar de baja/reactivar no borra nada: solo cambia alumnos.activo (vía RPC, que
+// además registra la fecha de baja para poder calcular el churn mensual). Un
+// alumno reactivado vuelve a aparecer en todos los selects operativos (turnos,
+// rutinas, etc.) apenas se refresca cargarPersonas().
+async function toggleActivoAlumno(alumnoId, nuevoActivo, nombre){
+  const accion = nuevoActivo ? 'reactivar' : 'dar de baja a';
+  if (!confirm(`¿Seguro que querés ${accion} ${nombre || 'este alumno'}? No se borra ningún dato, se puede revertir después.`)) return;
+  try{
+    await sb('rpc/toggle_activo_alumno', {
+      method: 'POST',
+      body: JSON.stringify({ p_alumno_id: alumnoId, p_activo: nuevoActivo })
+    });
+    toast(nuevoActivo ? 'Alumno reactivado ✓' : 'Alumno dado de baja ✓');
+    await cargarPersonas();
+    cargarListaAlumnos();
+    if (document.getElementById('subvistaDashboard')?.style.display !== 'none') cargarDashboardAdmin();
+  }catch(e){ toast('Error cambiando el estado: ' + extraerMensajeError(e), true); }
 }
 
 function toggleEditarAlumno(alumnoId){
@@ -5469,7 +5619,7 @@ function slugMetrica(nombre){
 }
 
 async function abrirReporteAlumno(alumnoId){
-  const alumno = ALUMNOS_CACHE.find(a => a.id === alumnoId);
+  const alumno = buscarAlumnoCache(alumnoId);
   if (!alumno){ toast('No se encontró el alumno.', true); return; }
   const cont = document.getElementById('reporteAlumnoContainer');
   cont.style.display = 'block';
