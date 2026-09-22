@@ -537,6 +537,7 @@
         <div class="field" style="margin-bottom:10px;" id="campoNombreGimnasio"><label>Nombre de tu gimnasio</label><input id="signupGimnasio" placeholder="Ej: PowerZone Fitness" /></div>
         <div class="field" style="margin-bottom:10px;"><label>Email</label><input type="email" id="signupEmail" /></div>
         <div class="field" style="margin-bottom:14px;"><label>Contraseña</label><div class="password-wrap"><input type="password" id="signupPassword" placeholder="Mínimo 6 caracteres" /><button type="button" class="toggle-pass" onclick="togglePasswordVisibility('signupPassword', this)">👁️</button></div></div>
+        <div class="field" style="margin-bottom:14px;"><label>Código de activación</label><input id="signupCodigo" placeholder="Te lo pasa quien te vendió la app" /></div>
         <button onclick="hacerSignup()" id="btnSignup" style="width:100%;">Crear cuenta</button>
       </div>
 
@@ -1476,7 +1477,7 @@ const BUCKET = "Ejercicios";
 // un cambio, se incrementa este número — el chequeo de actualización (más abajo) lo compara
 // contra lo que hay publicado y avisa si están desactualizados, sin que nadie tenga que
 // cambiar ningún link a mano.
-const APP_VERSION = 37;
+const APP_VERSION = 38;
 
 function imgUrl(providerRefId){
   return `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${encodeURI(providerRefId)}`;
@@ -1645,10 +1646,11 @@ async function hacerSignup(){
   const nombreGimnasio = document.getElementById('signupGimnasio').value.trim();
   const email = document.getElementById('signupEmail').value.trim();
   const password = document.getElementById('signupPassword').value;
+  const codigoActivacion = document.getElementById('signupCodigo').value.trim();
   const msg = document.getElementById('authMsg');
   msg.textContent = '';
-  if (!nombre || (!esIndependiente && !nombreGimnasio) || !email || !password){
-    msg.textContent = 'Completá todos los campos.'; return;
+  if (!nombre || (!esIndependiente && !nombreGimnasio) || !email || !password || !codigoActivacion){
+    msg.textContent = 'Completá todos los campos, incluido el código de activación.'; return;
   }
   const btn = document.getElementById('btnSignup');
   btn.disabled = true;
@@ -1659,6 +1661,7 @@ async function hacerSignup(){
         nombre,
         nombre_gimnasio: esIndependiente ? null : nombreGimnasio,
         tipo_gimnasio: esIndependiente ? 'independiente' : 'gimnasio',
+        codigo_activacion: codigoActivacion,
       } }
     });
     if (error) throw error;
