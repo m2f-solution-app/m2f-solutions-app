@@ -41,6 +41,16 @@
   .tabs{display:flex; gap:8px; background:var(--panel); padding:4px; border-radius:999px; border:1px solid var(--border);}
   .tab{padding:8px 18px; border-radius:999px; cursor:pointer; font-size:14px; font-weight:600; color:var(--muted);}
   .tab.active{background:var(--accent); color:#1a1000;}
+  .topbar-right{display:flex; align-items:center; gap:10px;}
+  /* (v49, 22/9) Botón para instalar la app como PWA (acceso directo en escritorio/celular).
+     Se muestra siempre; si el navegador soporta el instalado nativo (Chrome/Edge/Android)
+     dispara el prompt real, si no (Safari/iOS u otros) muestra el paso manual. */
+  .btn-instalar-app{
+    display:inline-flex; align-items:center; gap:6px; white-space:nowrap;
+    background:rgba(255,122,48,.12); border:1.5px solid var(--accent); color:var(--accent);
+    font-weight:800; font-size:12.5px; padding:7px 14px; border-radius:999px; cursor:pointer;
+  }
+  .btn-instalar-app:hover{background:rgba(255,122,48,.22);}
   .card{
     background:var(--panel); border:1px solid var(--border); border-radius:var(--radius);
     padding:18px; margin-bottom:16px; box-shadow:0 6px 18px rgba(0,0,0,.28);
@@ -414,7 +424,15 @@
   }
   .landing-box h1{ font-size:34px; margin:0 0 12px; font-weight:800; color:var(--text); }
   .landing-box h1 .lc-accent{ color:var(--accent); }
-  .landing-box .lc-sub{ font-size:15.5px; color:#c7cad3; max-width:440px; margin:0 auto 32px; line-height:1.6; }
+  .landing-box .lc-sub{ font-size:15.5px; color:#c7cad3; max-width:440px; margin:0 auto 18px; line-height:1.6; }
+  /* (v49, 22/9) Frase institucional pedida por Martin, estilo "cita" para que se destaque
+     sin competir con el título ni con las opciones de abajo. */
+  .lc-quote{
+    position:relative; z-index:2; font-size:13.5px; font-style:italic; color:#ffb98a;
+    max-width:480px; margin:0 auto 28px; line-height:1.55; padding:10px 18px;
+    border-left:2px solid var(--accent); text-align:left;
+  }
+  .lc-quote strong{ font-style:normal; color:var(--accent); }
   .landing-opts{ position:relative; z-index:2; display:flex; gap:16px; justify-content:center; flex-wrap:wrap; }
   .landing-opt{
     flex:1 1 160px; max-width:180px; background:rgba(255,255,255,.055); backdrop-filter:blur(14px);
@@ -568,6 +586,7 @@
     <div class="lc-greet">👋 Hola de nuevo</div>
     <h1>Bienvenido a <span class="lc-accent">M2F Solutions</span></h1>
     <p class="lc-sub">La app que ordena tu gimnasio: turnos, rutinas, cobros y la evolución de cada alumno, todo en un solo lugar.</p>
+    <p class="lc-quote">"Así como el B2B conecta empresas, nuestro modelo <strong>M2F (Management to Fitness)</strong> conecta la alta gestión con el mundo del bienestar."</p>
     <div class="landing-opts">
       <button class="landing-opt" onclick="elegirTipoIngreso('gimnasio')"><span class="emoji">🏢</span>Gimnasio<span class="lc-desc">Tengo local y equipo de profes</span></button>
       <button class="landing-opt" onclick="elegirTipoIngreso('independiente')"><span class="emoji">🧑‍🏫</span>Profesor<br>independiente<span class="lc-desc">Entreno a mis alumnos yo solo/a</span></button>
@@ -575,6 +594,9 @@
     </div>
     <div class="lc-login-link">
       ¿Ya tenés cuenta de gimnasio o profesor? <a href="#" onclick="elegirTipoIngreso('login'); return false;">Ingresar →</a>
+    </div>
+    <div style="position:relative; z-index:2; margin-top:18px;">
+      <button class="btn-instalar-app" id="btnInstalarAppLanding" onclick="instalarApp()">📲 Instalar app</button>
     </div>
   </div>
 </div>
@@ -588,9 +610,12 @@
     <strong id="brandNombre">M2F Solutions</strong>
     <span class="muted" id="brandSub">· plataforma para gimnasios</span>
   </div>
-  <div class="tabs">
-    <div class="tab active" id="tabProf" onclick="cambiarVista('profesor')">Profesor</div>
-    <div class="tab" id="tabAlu" onclick="cambiarVista('alumno')">Alumno</div>
+  <div class="topbar-right">
+    <button class="btn-instalar-app" id="btnInstalarAppTop" onclick="instalarApp()">📲 Instalar app</button>
+    <div class="tabs">
+      <div class="tab active" id="tabProf" onclick="cambiarVista('profesor')">Profesor</div>
+      <div class="tab" id="tabAlu" onclick="cambiarVista('alumno')">Alumno</div>
+    </div>
   </div>
 </div>
 
@@ -1642,7 +1667,37 @@ const BUCKET = "Ejercicios";
 // un cambio, se incrementa este número — el chequeo de actualización (más abajo) lo compara
 // contra lo que hay publicado y avisa si están desactualizados, sin que nadie tenga que
 // cambiar ningún link a mano.
-const APP_VERSION = 48;
+const APP_VERSION = 51;
+
+// ---------- Instalar como app (PWA): acceso directo en escritorio/celular ----------
+// Chrome/Edge/Android disparan "beforeinstallprompt" cuando el manifest + service worker
+// cumplen los requisitos; lo guardamos para poder mostrar el prompt nativo cuando el
+// usuario toca el botón (en vez de que aparezca solo, que es más fácil que se pierda).
+// Safari/iOS no dispara este evento nunca: ahí mostramos el paso manual ("Compartir" ->
+// "Agregar a inicio"), que es la única forma de instalar en ese navegador.
+let deferredInstallPrompt = null;
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredInstallPrompt = e;
+});
+window.addEventListener('appinstalled', () => {
+  deferredInstallPrompt = null;
+  document.querySelectorAll('.btn-instalar-app').forEach(b => b.style.display = 'none');
+});
+async function instalarApp(){
+  if (deferredInstallPrompt){
+    deferredInstallPrompt.prompt();
+    await deferredInstallPrompt.userChoice;
+    deferredInstallPrompt = null;
+    return;
+  }
+  const esIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  if (esIOS){
+    alert('Para instalarla en iPhone/iPad:\n\n1. Tocá el ícono de Compartir (el cuadrado con la flecha hacia arriba).\n2. Elegí "Agregar a pantalla de inicio".\n\nQueda como un ícono más, sin barra del navegador.');
+  } else {
+    alert('Para instalarla:\n\n• En Chrome/Edge (compu o Android): abrí el menú ⋮ (arriba a la derecha) y elegí "Instalar M2F Solutions..." (o buscá el ícono de instalar en la barra de direcciones).\n\nQueda como una app aparte, con su propio ícono, sin pestañas del navegador.');
+  }
+}
 
 function imgUrl(providerRefId){
   return `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${encodeURI(providerRefId)}`;
@@ -2281,6 +2336,19 @@ function cambiarSubvistaAlu(v){
   document.getElementById('bnavRutinas').classList.toggle('active', v==='rutinas');
   document.getElementById('bnavEvolucion').classList.toggle('active', v==='evolucion');
   cerrarMenuAlu();
+
+  // (v50, 22/9) Bug encontrado por Martin: entrenaba y después iba a "Logros"/"Evolución"/
+  // "Historial" y veía datos viejos (ej. racha semanal en 0 aunque ya había entrenado esta
+  // semana). Causa: esta función solo mostraba/ocultaba paneles ya renderizados, nunca volvía
+  // a pedir los datos — esos paneles solo se cargaban una vez, al elegir el nombre del alumno
+  // (onCambiarAluAlumno). Ahora cada vez que se entra a una de estas 3 secciones se refresca
+  // con los datos más recientes (sin esperar a que el alumno vuelva a elegir su nombre).
+  const alumnoId = document.getElementById('aluAlumno')?.value;
+  if (alumnoId){
+    if (v === 'logros') renderLogros('aluLogrosContenido', alumnoId);
+    else if (v === 'evolucion') cargarEvaluacionesAlu(alumnoId);
+    else if (v === 'historial') cargarHistorial(alumnoId);
+  }
 }
 
 function actualizarPreviewLogo(){
@@ -4671,10 +4739,19 @@ async function fetchDatosLogros(alumnoId){
 }
 
 // Lunes de la semana calendario a la que pertenece 'fechaStr' (YYYY-MM-DD), como clave YYYY-MM-DD.
+// (v50, 22/9) Corregido bug de huso horario encontrado por Martin (racha semanal en 0 aunque
+// ya había entrenado esa semana): antes se armaba con `new Date(fechaStr+'T00:00:00')`, que JS
+// interpreta en el huso horario LOCAL del navegador, y después se leía con `.toISOString()`
+// (que siempre devuelve UTC) — en cualquier huso adelantado a UTC (España, gran parte de Europa,
+// África, Asia, Oceanía) esa vuelta local→UTC corre la fecha un día para atrás, y al aplicarse
+// dos veces en cadena (acá y de nuevo al armar la lista de semanas más abajo) terminaba dejando
+// afuera la semana actual. Ahora todo el cálculo se hace en UTC de punta a punta (Date.UTC +
+// getUTCDay/setUTCDate), así el resultado no depende del huso horario del dispositivo de nadie.
 function claveSemana(fechaStr){
-  const d = new Date(fechaStr + 'T00:00:00');
-  const dow = d.getDay(); // 0=domingo..6=sábado
-  d.setDate(d.getDate() + (dow === 0 ? -6 : 1 - dow));
+  const [y, m, dd] = fechaStr.split('-').map(Number);
+  const d = new Date(Date.UTC(y, m - 1, dd));
+  const dow = d.getUTCDay(); // 0=domingo..6=sábado
+  d.setUTCDate(d.getUTCDate() + (dow === 0 ? -6 : 1 - dow));
   return d.toISOString().slice(0,10);
 }
 
@@ -4696,12 +4773,19 @@ function calcularRachaSemanal(fechas, metaSemanal){
   // Se recorren TODAS las semanas entre la primera con datos y la actual (inclusive),
   // así una semana sin ningún entrenamiento cuenta como "no cumplida" y corta la racha
   // (no solo las semanas que tienen registros).
+  // (v50, 22/9) También en UTC (ver nota en claveSemana): antes, armar este cursor con
+  // `new Date(primeraClave+'T00:00:00')` + `.toISOString()` volvía a correr la fecha un día
+  // para atrás en husos adelantados a UTC, y la semana de "hoy" terminaba quedando FUERA de
+  // esta lista — por eso "esta semana" podía mostrar 0/N aunque ya hubiera un entrenamiento
+  // cargado hoy mismo.
   const semanas = [];
-  const cursor = new Date(primeraClave + 'T00:00:00');
-  const limite = new Date(claveHoy + 'T00:00:00');
+  const [phY, phM, phD] = primeraClave.split('-').map(Number);
+  const [chY, chM, chD] = claveHoy.split('-').map(Number);
+  const cursor = new Date(Date.UTC(phY, phM - 1, phD));
+  const limite = new Date(Date.UTC(chY, chM - 1, chD));
   while (cursor <= limite){
     semanas.push(cursor.toISOString().slice(0,10));
-    cursor.setDate(cursor.getDate() + 7);
+    cursor.setUTCDate(cursor.getUTCDate() + 7);
   }
 
   const cumplida = clave => (porSemana[clave]?.size || 0) >= metaSemanal;
@@ -4730,12 +4814,68 @@ function badgeRowHtml(valorActual, umbrales, icono){
   </div>`;
 }
 
+// ---------- Evolución del peso por ejercicio (pedido de Martin, 22/9) ----------
+// Complementa los Récords personales de más abajo: los PRs solo guardan el máximo histórico
+// (un número), esto muestra la CURVA completa — un punto por sesión donde se entrenó ese
+// ejercicio. Se arma solo con lo que el alumno ya carga al entrenar (series_registradas), sin
+// que nadie tenga que anotar nada aparte. Valor por sesión = el peso más alto entre todas las
+// series de ese ejercicio ese día (mismo criterio que ya usan los PRs), calculado en la vista
+// `v_evolucion_peso_ejercicio`. Mismo bloque para Profesor (por alumno elegido) y Alumno (su
+// propio perfil) — igual que el resto de Logros — así que los ids del selector/gráfico se
+// namespacean con el contId (`logrosContenido` / `aluLogrosContenido`) para no chocar entre sí,
+// ya que ambos paneles conviven en el DOM aunque solo uno esté visible a la vez.
+let EJ_PESO_CACHE = {}; // { [contId]: filas de v_evolucion_peso_ejercicio para el alumno actual }
+
+async function fetchEvolucionPesoEjercicio(alumnoId){
+  return sb(`v_evolucion_peso_ejercicio?alumno_id=eq.${alumnoId}&select=ejercicio_id,ejercicio_nombre,fecha,peso_maximo&order=fecha.asc`);
+}
+
+function evolucionPesoHtml(contId, filas){
+  if (!filas.length){
+    return `<div class="card">
+      <h2 style="margin-top:0;">📈 Evolución de peso por ejercicio</h2>
+      <div class="empty">Todavía no hay series con peso registradas en ningún entrenamiento.</div>
+    </div>`;
+  }
+  const vistos = new Map();
+  filas.forEach(f => { if (!vistos.has(f.ejercicio_id)) vistos.set(f.ejercicio_id, f.ejercicio_nombre); });
+  const opciones = [...vistos.entries()]
+    .sort((a,b) => a[1].localeCompare(b[1]))
+    .map(([id,nombre]) => `<option value="${id}">${nombre}</option>`).join('');
+  return `<div class="card">
+    <h2 style="margin-top:0;">📈 Evolución de peso por ejercicio</h2>
+    <div class="muted" style="margin-bottom:10px;">El peso más alto levantado en cada sesión, ejercicio por ejercicio.</div>
+    <div class="field" style="max-width:280px;">
+      <label>Ejercicio</label>
+      <select id="ejPesoSelect_${contId}" onchange="renderEjPesoChart('${contId}')">${opciones}</select>
+    </div>
+    <div id="ejPesoChart_${contId}" style="margin-top:10px;"></div>
+  </div>`;
+}
+
+function renderEjPesoChart(contId){
+  const cache = EJ_PESO_CACHE[contId];
+  const sel = document.getElementById(`ejPesoSelect_${contId}`);
+  const cont = document.getElementById(`ejPesoChart_${contId}`);
+  if (!cache || !sel || !cont) return;
+  const ejercicioId = sel.value;
+  const puntos = cache
+    .filter(f => f.ejercicio_id === ejercicioId)
+    .map(f => ({ fecha: f.fecha, valor: Number(f.peso_maximo), unidad: 'kg' }))
+    .sort((a,b) => a.fecha.localeCompare(b.fecha));
+  cont.innerHTML = svgChart(`ejPesoChart_${contId}`, puntos);
+}
+
 async function renderLogros(contId, alumnoId){
   const cont = document.getElementById(contId);
   if (!alumnoId){ cont.innerHTML = 'Elegí un alumno.'; return; }
   cont.innerHTML = '<div class="muted">Cargando logros...</div>';
   try{
-    const { plan, fechas, prs } = await fetchDatosLogros(alumnoId);
+    const [{ plan, fechas, prs }, filasPeso] = await Promise.all([
+      fetchDatosLogros(alumnoId),
+      fetchEvolucionPesoEjercicio(alumnoId),
+    ]);
+    EJ_PESO_CACHE[contId] = filasPeso;
     const total = fechas.length;
     const racha = calcularRachaSemanal(fechas, plan?.dias_por_semana);
 
@@ -4776,7 +4916,10 @@ async function renderLogros(contId, alumnoId){
           }).join('')}
         </div>`;
 
-    cont.innerHTML = rachaHtml + constanciaHtml + prsHtml;
+    const evolucionPesoHtmlStr = evolucionPesoHtml(contId, filasPeso);
+
+    cont.innerHTML = rachaHtml + constanciaHtml + evolucionPesoHtmlStr + prsHtml;
+    if (filasPeso.length) renderEjPesoChart(contId);
   }catch(e){
     cont.innerHTML = `<div class="empty">Error cargando logros: ${e.message}</div>`;
   }
