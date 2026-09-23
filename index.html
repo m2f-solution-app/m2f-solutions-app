@@ -646,7 +646,7 @@
         <button class="ghost" onclick="volverALanding()">← Volver</button>
         <span class="muted" id="authContexto"></span>
       </div>
-      <div class="tabs" style="margin-bottom:16px; width:100%;">
+      <div class="tabs" id="authTabsRow" style="margin-bottom:16px; width:100%;">
         <div class="tab active" id="authTabLogin" onclick="authCambiarTab('login')" style="flex:1; text-align:center;">Ingresar</div>
         <div class="tab" id="authTabSignup" onclick="authCambiarTab('signup')" style="flex:1; text-align:center;">Crear cuenta</div>
       </div>
@@ -664,6 +664,19 @@
         <div class="field" style="margin-bottom:14px;"><label>Contraseña</label><div class="password-wrap"><input type="password" id="signupPassword" placeholder="Mínimo 6 caracteres" /><button type="button" class="toggle-pass" onclick="togglePasswordVisibility('signupPassword', this)">👁️</button></div></div>
         <div class="field" style="margin-bottom:14px;"><label>Código de activación</label><input id="signupCodigo" placeholder="Te lo pasa quien te vendió la app" /></div>
         <button onclick="hacerSignup()" id="btnSignup" style="width:100%;">Crear cuenta</button>
+      </div>
+
+      <!-- PREVIEW→REAL (24/9): pantalla dedicada de "confirmá tu email", reemplaza el
+           mensaje de texto suelto que había antes. La dispara mostrarPantallaConfirmarEmail()
+           tanto al crear la cuenta (si el proyecto pide confirmación) como si alguien intenta
+           loguearse sin haber confirmado todavía. -->
+      <div id="authConfirmarEmail" style="display:none; text-align:center;">
+        <div style="font-size:40px; margin-bottom:6px;">📧</div>
+        <h3 style="margin:0 0 8px;">Confirmá tu email para poder ingresar</h3>
+        <p class="muted">Te enviamos un link de confirmación a <strong id="authConfirmarEmailDireccion"></strong>. Abrí ese correo (revisá también spam/promociones) y tocá el link — recién ahí vas a poder iniciar sesión.</p>
+        <button onclick="reenviarConfirmacionEmail()" id="btnReenviarConfirmacion" style="width:100%; margin-top:10px;">📩 Reenviar email de confirmación</button>
+        <button class="ghost" onclick="volverALoginDesdeConfirmar()" style="width:100%; margin-top:8px;">Ya confirmé, ir a Ingresar</button>
+        <div id="authConfirmarMsg" class="muted" style="margin-top:10px;"></div>
       </div>
 
       <div id="authMsg" class="muted" style="margin-top:12px; text-align:center;"></div>
@@ -1899,11 +1912,49 @@ function sincronizarTabsRol(){
 }
 
 function authCambiarTab(t){
+  document.getElementById('authTabsRow').style.display = '';
+  document.getElementById('authConfirmarEmail').style.display = 'none';
   document.getElementById('authLogin').style.display = t==='login' ? '' : 'none';
   document.getElementById('authSignup').style.display = t==='signup' ? '' : 'none';
   document.getElementById('authTabLogin').classList.toggle('active', t==='login');
   document.getElementById('authTabSignup').classList.toggle('active', t==='signup');
   document.getElementById('authMsg').textContent = '';
+}
+
+// PREVIEW→REAL (24/9): pantalla de "confirmá tu email" — antes esto era un simple
+// mensaje de texto ("Cuenta creada. Si tu proyecto pide confirmar el email...") que
+// ni siquiera afirmaba con seguridad que hacía falta confirmar. Ahora hay un panel
+// dedicado, con la dirección real a la que se mandó el mail y un botón para reenviarlo.
+let EMAIL_PENDIENTE_CONFIRMACION = '';
+
+function mostrarPantallaConfirmarEmail(email){
+  EMAIL_PENDIENTE_CONFIRMACION = email;
+  document.getElementById('authTabsRow').style.display = 'none';
+  document.getElementById('authLogin').style.display = 'none';
+  document.getElementById('authSignup').style.display = 'none';
+  document.getElementById('authMsg').textContent = '';
+  document.getElementById('authConfirmarEmailDireccion').textContent = email;
+  document.getElementById('authConfirmarMsg').textContent = '';
+  document.getElementById('authConfirmarEmail').style.display = '';
+}
+
+function volverALoginDesdeConfirmar(){
+  authCambiarTab('login');
+  document.getElementById('loginEmail').value = EMAIL_PENDIENTE_CONFIRMACION || '';
+}
+
+async function reenviarConfirmacionEmail(){
+  if (!EMAIL_PENDIENTE_CONFIRMACION) return;
+  const btn = document.getElementById('btnReenviarConfirmacion');
+  const msg = document.getElementById('authConfirmarMsg');
+  btn.disabled = true;
+  msg.textContent = 'Enviando...';
+  try{
+    const { error } = await supaAuth.auth.resend({ type: 'signup', email: EMAIL_PENDIENTE_CONFIRMACION });
+    if (error) throw error;
+    msg.textContent = 'Listo, te reenviamos el correo ✓';
+  }catch(e){ msg.textContent = 'No se pudo reenviar: ' + e.message; }
+  finally{ btn.disabled = false; }
 }
 
 // ---------- Landing: "¿Qué sos?" (gimnasio / profesor independiente / alumno) ----------
@@ -1979,7 +2030,13 @@ async function hacerLogin(){
     await cargarPerfilDeSesion();
     if (!PERFIL_ACTUAL){ msg.textContent = 'Tu cuenta no tiene un gimnasio asociado todavía.'; return; }
     await entrarComoStaff();
-  }catch(e){ msg.textContent = 'Error: ' + e.message; }
+  }catch(e){
+    // Si todavía no confirmó el email, en vez del error crudo de Supabase mostramos
+    // la misma pantalla de "confirmá tu email" que ve al crear la cuenta (24/9).
+    const noConfirmado = e.code === 'email_not_confirmed' || /email.*not.*confirmed/i.test(e.message || '');
+    if (noConfirmado) mostrarPantallaConfirmarEmail(email);
+    else msg.textContent = 'Error: ' + e.message;
+  }
   finally{ btn.disabled = false; }
 }
 
@@ -2013,8 +2070,7 @@ async function hacerSignup(){
       await cargarPerfilDeSesion();
       await entrarComoStaff();
     } else {
-      msg.textContent = 'Cuenta creada. Si tu proyecto pide confirmar el email, revisalo y después iniciá sesión.';
-      authCambiarTab('login');
+      mostrarPantallaConfirmarEmail(email);
     }
   }catch(e){ msg.textContent = 'Error: ' + e.message; }
   finally{ btn.disabled = false; }
