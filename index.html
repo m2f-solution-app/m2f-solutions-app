@@ -696,6 +696,7 @@
         <span id="sesionEmail"></span><br>
         <span class="muted" style="cursor:pointer; text-decoration:underline; font-size:12px;" onclick="document.getElementById('staffCambiarPasswordWrap').style.display = document.getElementById('staffCambiarPasswordWrap').style.display==='none' ? '' : 'none';">Cambiar contraseña</span>
         <span id="linkCodigosActivacion" style="display:none; margin-left:8px;">· <span class="muted" style="cursor:pointer; text-decoration:underline; font-size:12px; color:var(--accent);" onclick="abrirPanelCodigos()">🔑 Códigos</span></span>
+        <span id="linkPanelGimnasios" style="display:none; margin-left:8px;">· <span class="muted" style="cursor:pointer; text-decoration:underline; font-size:12px; color:var(--accent);" onclick="abrirPanelGimnasiosAdmin()">🏋️ Gimnasios</span></span>
         <button class="ghost" onclick="hacerLogout()" style="margin-top:4px;">Salir</button>
       </div>
     </div>
@@ -1767,42 +1768,127 @@ function abrirSoporteWhatsapp(){
 // forzara a mostrar el botón, las llamadas a la RPC le van a devolver "No autorizado".
 const EMAIL_SUPERADMIN = 'martinkohanoff28@gmail.com';
 function mostrarLinkCodigosSiCorresponde(){
-  const link = document.getElementById('linkCodigosActivacion');
-  if (!link) return;
   const email = (PERFIL_ACTUAL && PERFIL_ACTUAL.email) || '';
-  link.style.display = (email.toLowerCase() === EMAIL_SUPERADMIN) ? '' : 'none';
+  const esSuperadmin = email.toLowerCase() === EMAIL_SUPERADMIN;
+  const link = document.getElementById('linkCodigosActivacion');
+  if (link) link.style.display = esSuperadmin ? '' : 'none';
+  const link2 = document.getElementById('linkPanelGimnasios');
+  if (link2) link2.style.display = esSuperadmin ? '' : 'none';
 }
-function abrirPanelCodigos(){
-  document.getElementById('panelCodigosActivacion').style.display = '';
-  cargarCodigosActivacion();
+
+// Actividad simple por gimnasio (23/9, pedido de Martin): un timestamp que se
+// pisa cada vez que alguien de ESE gimnasio entra a la app, sin registrar qué
+// pantalla usó ni ningún detalle — solo sirve para el semáforo del panel
+// "🏋️ Gimnasios" de abajo, para que Martin vea qué gimnasios están activos y
+// cuáles no. Best-effort: si falla, no corta el login (por eso no lleva await
+// en los call-sites ni try/catch visible para el usuario).
+function registrarActividadGimnasio(){
+  sb('rpc/registrar_actividad_gimnasio', { method:'POST', body: JSON.stringify({}) }).catch(()=>{});
 }
-async function cargarCodigosActivacion(){
-  const tbody = document.getElementById('codigosTbody');
+
+// ---------- Panel "🏋️ Gimnasios" (solo Martin) — monitoreo simple ----------
+// Depende de listar_gimnasios_admin() (mismo patrón de auth.uid() hardcodeado
+// que ya usan las RPC de códigos de activación). A propósito NO muestra qué
+// usa cada gimnasio ni datos financieros de sus alumnos — Martin pidió algo
+// simple: estado de actividad + socios activos, nada más (23/9).
+function abrirPanelGimnasiosAdmin(){
+  document.getElementById('panelGimnasiosAdmin').style.display = '';
+  cargarGimnasiosAdmin();
+}
+function semaforoActividad(fechaIso){
+  if (!fechaIso) return '🔴 Nunca entraron';
+  const dias = (Date.now() - new Date(fechaIso).getTime()) / 86400000;
+  if (dias <= 7) return '🟢 Activo';
+  if (dias <= 30) return '🟡 Poco uso';
+  return '🔴 Inactivo';
+}
+async function cargarGimnasiosAdmin(){
+  const tbody = document.getElementById('gimnasiosAdminTbody');
   tbody.innerHTML = '<tr><td colspan="5" class="muted" style="padding:10px;">Cargando...</td></tr>';
   try{
-    const filas = await sb('rpc/listar_codigos_activacion', { method:'POST', body: JSON.stringify({}) });
-    if (!filas || !filas.length){ tbody.innerHTML = '<tr><td colspan="5" class="muted" style="padding:10px;">Todavía no generaste ningún código.</td></tr>'; return; }
+    const filas = await sb('rpc/listar_gimnasios_admin', { method:'POST', body: JSON.stringify({}) });
+    if (!filas || !filas.length){ tbody.innerHTML = '<tr><td colspan="5" class="muted" style="padding:10px;">Todavía no hay gimnasios dados de alta.</td></tr>'; return; }
     tbody.innerHTML = filas.map(f => `
       <tr style="border-bottom:1px solid var(--border);">
-        <td style="padding:6px; font-family:monospace; cursor:pointer;" title="Tocar para copiar" onclick="navigator.clipboard && navigator.clipboard.writeText('${f.codigo}'); toast('Código copiado');">${f.codigo}</td>
-        <td style="padding:6px;">${f.nota || '—'}</td>
-        <td style="padding:6px;">${f.usado ? '🔴 Usado' : '🟢 Disponible'}</td>
-        <td style="padding:6px;">${f.gimnasio_nombre || '—'}</td>
+        <td style="padding:6px;">${f.nombre}</td>
+        <td style="padding:6px;">${semaforoActividad(f.ultima_actividad)}</td>
+        <td style="padding:6px;">${f.ultima_actividad ? formatearFechaCorta(f.ultima_actividad) : '—'}</td>
+        <td style="padding:6px;">${f.socios_activos ?? 0}</td>
         <td style="padding:6px;">${f.creado_en ? formatearFechaCorta(f.creado_en) : '—'}</td>
       </tr>`).join('');
   }catch(e){
     tbody.innerHTML = `<tr><td colspan="5" class="muted" style="padding:10px;">Error: ${e.message}</td></tr>`;
   }
 }
+
+// ---------- Panel de códigos de activación / mini-CRM de ventas (solo Martin) ----------
+let CODIGOS_CACHE = [];
+let CODIGO_EDITANDO_ID = null;
+function abrirPanelCodigos(){
+  document.getElementById('panelCodigosActivacion').style.display = '';
+  cargarCodigosActivacion();
+}
+async function cargarCodigosActivacion(){
+  const tbody = document.getElementById('codigosTbody');
+  tbody.innerHTML = '<tr><td colspan="7" class="muted" style="padding:10px;">Cargando...</td></tr>';
+  try{
+    const filas = await sb('rpc/listar_codigos_activacion', { method:'POST', body: JSON.stringify({}) });
+    CODIGOS_CACHE = filas || [];
+    if (!CODIGOS_CACHE.length){ tbody.innerHTML = '<tr><td colspan="7" class="muted" style="padding:10px;">Todavía no generaste ningún código.</td></tr>'; return; }
+    tbody.innerHTML = CODIGOS_CACHE.map(f => `
+      <tr style="border-bottom:1px solid var(--border);">
+        <td style="padding:6px; font-family:monospace; cursor:pointer;" title="Tocar para copiar" onclick="navigator.clipboard && navigator.clipboard.writeText('${f.codigo}'); toast('Código copiado');">${f.codigo}</td>
+        <td style="padding:6px;">${f.nota || '—'}</td>
+        <td style="padding:6px;">${f.precio != null ? '$' + Number(f.precio).toLocaleString('es-AR') : '—'}</td>
+        <td style="padding:6px;">${f.contacto || '—'}</td>
+        <td style="padding:6px;">${f.usado ? '🔴 Usado' : '🟢 Disponible'}</td>
+        <td style="padding:6px;">${f.gimnasio_nombre || '—'}</td>
+        <td style="padding:6px;"><button class="ghost" style="font-size:11px; padding:2px 6px;" onclick="editarCodigoUI('${f.id}')">✏️</button></td>
+      </tr>`).join('');
+  }catch(e){
+    tbody.innerHTML = `<tr><td colspan="7" class="muted" style="padding:10px;">Error: ${e.message}</td></tr>`;
+  }
+}
+function editarCodigoUI(id){
+  const f = CODIGOS_CACHE.find(c => c.id === id);
+  if (!f) return;
+  CODIGO_EDITANDO_ID = id;
+  document.getElementById('codigosNota').value = f.nota || '';
+  document.getElementById('codigosPrecio').value = f.precio ?? '';
+  document.getElementById('codigosContacto').value = f.contacto || '';
+  document.getElementById('btnCodigosAccion').textContent = '💾 Guardar cambios';
+  document.getElementById('btnCodigosCancelarEdicion').style.display = '';
+  document.getElementById('codigosMsg').textContent = `Editando ${f.codigo} — el código en sí no se puede cambiar.`;
+}
+function cancelarEdicionCodigo(){
+  CODIGO_EDITANDO_ID = null;
+  document.getElementById('codigosNota').value = '';
+  document.getElementById('codigosPrecio').value = '';
+  document.getElementById('codigosContacto').value = '';
+  document.getElementById('btnCodigosAccion').textContent = '+ Generar código';
+  document.getElementById('btnCodigosCancelarEdicion').style.display = 'none';
+  document.getElementById('codigosMsg').textContent = '';
+}
 async function generarCodigoActivacionUI(){
   const nota = document.getElementById('codigosNota').value.trim() || null;
+  const precioTxt = document.getElementById('codigosPrecio').value.trim();
+  const precio = precioTxt ? Number(precioTxt) : null;
+  const contacto = document.getElementById('codigosContacto').value.trim() || null;
   const msg = document.getElementById('codigosMsg');
-  msg.textContent = 'Generando...';
+  msg.textContent = CODIGO_EDITANDO_ID ? 'Guardando...' : 'Generando...';
   try{
-    const resp = await sb('rpc/generar_codigo_activacion', { method:'POST', body: JSON.stringify({ p_nota: nota }) });
-    const codigo = (resp && resp[0] && resp[0].codigo) || (resp && resp.codigo);
-    msg.textContent = codigo ? `✅ Código generado: ${codigo}` : '✅ Código generado.';
-    document.getElementById('codigosNota').value = '';
+    if (CODIGO_EDITANDO_ID){
+      await sb('rpc/actualizar_codigo_activacion', { method:'POST', body: JSON.stringify({ p_id: CODIGO_EDITANDO_ID, p_nota: nota, p_precio: precio, p_contacto: contacto }) });
+      msg.textContent = '✅ Cambios guardados.';
+      cancelarEdicionCodigo();
+    } else {
+      const resp = await sb('rpc/generar_codigo_activacion', { method:'POST', body: JSON.stringify({ p_nota: nota, p_precio: precio, p_contacto: contacto }) });
+      const codigo = (resp && resp[0] && resp[0].codigo) || (resp && resp.codigo);
+      msg.textContent = codigo ? `✅ Código generado: ${codigo}` : '✅ Código generado.';
+      document.getElementById('codigosNota').value = '';
+      document.getElementById('codigosPrecio').value = '';
+      document.getElementById('codigosContacto').value = '';
+    }
     await cargarCodigosActivacion();
   }catch(e){
     msg.textContent = `Error: ${e.message}`;
@@ -2008,6 +2094,7 @@ async function entrarComoStaff(){
   document.getElementById('profesorApp').style.display = '';
   document.getElementById('sesionEmail').textContent = `${PERFIL_ACTUAL.nombre || PERFIL_ACTUAL.email} · ${PERFIL_ACTUAL.rol}`;
   mostrarLinkCodigosSiCorresponde();
+  registrarActividadGimnasio();
   sincronizarTabsRol();
   await Promise.all([cargarPersonas(), cargarCatalogoEjercicios(), cargarGimnasioActual(), cargarCategoriasYEquipos()]);
   cambiarSubvista('agenda'); // lo primero que ve el profesor al entrar es la agenda del día, no el armador
@@ -2189,6 +2276,7 @@ async function entrarComoAlumnoLogueado(){
     document.getElementById('bottomNavAlu').classList.add('show');
     document.body.classList.add('tiene-bottom-nav');
     sincronizarTabsRol();
+    registrarActividadGimnasio();
     await cargarPersonas(); // re-scopea ALUMNOS_CACHE/PROFESORES_CACHE al gimnasio de esta sesión
     mostrarModoAlumnoLogueado(ficha);
     revisarNotificacionesAlumno(ficha.id);
@@ -7407,6 +7495,7 @@ if ('serviceWorker' in navigator){
       document.getElementById('profesorApp').style.display = '';
       document.getElementById('sesionEmail').textContent = `${PERFIL_ACTUAL.nombre || PERFIL_ACTUAL.email} · ${PERFIL_ACTUAL.rol}`;
       mostrarLinkCodigosSiCorresponde();
+      registrarActividadGimnasio();
       cambiarVista('profesor');
       sincronizarTabsRol();
       cambiarSubvista('agenda'); // lo primero que ve el profesor al entrar es la agenda del día, no el armador
@@ -7434,23 +7523,47 @@ if ('serviceWorker' in navigator){
      el control real de acceso está del lado del servidor, en las RPC generar_codigo_activacion /
      listar_codigos_activacion (chequean auth.uid() contra su cuenta, no el rol de perfiles). -->
 <div id="panelCodigosActivacion" style="display:none; position:fixed; inset:0; z-index:500; background:rgba(0,0,0,.6); overflow:auto;">
-  <div class="card" style="max-width:640px; margin:40px auto;">
+  <div class="card" style="max-width:760px; margin:40px auto;">
     <div class="row" style="justify-content:space-between; align-items:center; margin-bottom:10px;">
-      <h3 style="margin:0;">🔑 Códigos de activación</h3>
-      <button class="ghost" onclick="document.getElementById('panelCodigosActivacion').style.display='none';">✕ Cerrar</button>
+      <h3 style="margin:0;">🔑 Códigos de activación — Ventas</h3>
+      <button class="ghost" onclick="document.getElementById('panelCodigosActivacion').style.display='none'; cancelarEdicionCodigo();">✕ Cerrar</button>
     </div>
-    <p class="muted" style="font-size:13px;">Cada código sirve una sola vez para crear un gimnasio nuevo. Generá uno cuando cierres una venta y pasáselo al cliente.</p>
-    <div class="row" style="align-items:flex-end;">
-      <div class="field" style="flex:1; min-width:200px;"><label>Nota (ej: nombre del cliente)</label><input id="codigosNota" placeholder="Ej: Gimnasio PowerZone"></div>
-      <button onclick="generarCodigoActivacionUI()">+ Generar código</button>
+    <p class="muted" style="font-size:13px;">Cada código sirve una sola vez para crear un gimnasio nuevo. Generá uno cuando cierres una venta y pasáselo al cliente. Precio y contacto son solo para tu propio registro — no afectan el código.</p>
+    <div class="row" style="align-items:flex-end; flex-wrap:wrap; gap:8px;">
+      <div class="field" style="flex:1; min-width:180px;"><label>Nota (ej: nombre del cliente)</label><input id="codigosNota" placeholder="Ej: Gimnasio PowerZone"></div>
+      <div class="field" style="width:120px;"><label>Precio</label><input id="codigosPrecio" type="number" step="0.01" placeholder="Ej: 15000"></div>
+      <div class="field" style="flex:1; min-width:160px;"><label>Contacto</label><input id="codigosContacto" placeholder="Tel./email/IG"></div>
+      <button id="btnCodigosAccion" onclick="generarCodigoActivacionUI()">+ Generar código</button>
+      <button id="btnCodigosCancelarEdicion" class="ghost" style="display:none;" onclick="cancelarEdicionCodigo()">Cancelar</button>
     </div>
     <div id="codigosMsg" class="muted" style="margin-top:8px;"></div>
     <div style="margin-top:16px; overflow-x:auto;">
       <table style="width:100%; border-collapse:collapse; font-size:13px;">
         <thead><tr style="text-align:left; border-bottom:1px solid var(--border);">
-          <th style="padding:6px;">Código</th><th style="padding:6px;">Nota</th><th style="padding:6px;">Estado</th><th style="padding:6px;">Usado por</th><th style="padding:6px;">Fecha</th>
+          <th style="padding:6px;">Código</th><th style="padding:6px;">Nota</th><th style="padding:6px;">Precio</th><th style="padding:6px;">Contacto</th><th style="padding:6px;">Estado</th><th style="padding:6px;">Usado por</th><th style="padding:6px;"></th>
         </tr></thead>
-        <tbody id="codigosTbody"><tr><td colspan="5" class="muted" style="padding:10px;">Cargando...</td></tr></tbody>
+        <tbody id="codigosTbody"><tr><td colspan="7" class="muted" style="padding:10px;">Cargando...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Panel "🏋️ Gimnasios" (solo Martin) — seguimiento simple de actividad +
+     socios activos por gimnasio. Depende de listar_gimnasios_admin() y del
+     timestamp que pisa registrar_actividad_gimnasio() en cada login (ver JS). -->
+<div id="panelGimnasiosAdmin" style="display:none; position:fixed; inset:0; z-index:500; background:rgba(0,0,0,.6); overflow:auto;">
+  <div class="card" style="max-width:640px; margin:40px auto;">
+    <div class="row" style="justify-content:space-between; align-items:center; margin-bottom:10px;">
+      <h3 style="margin:0;">🏋️ Mis gimnasios</h3>
+      <button class="ghost" onclick="document.getElementById('panelGimnasiosAdmin').style.display='none';">✕ Cerrar</button>
+    </div>
+    <p class="muted" style="font-size:13px;">🟢 con actividad en los últimos 7 días · 🟡 entre 8 y 30 días · 🔴 sin actividad hace más de 30 días o nunca entraron.</p>
+    <div style="margin-top:10px; overflow-x:auto;">
+      <table style="width:100%; border-collapse:collapse; font-size:13px;">
+        <thead><tr style="text-align:left; border-bottom:1px solid var(--border);">
+          <th style="padding:6px;">Gimnasio</th><th style="padding:6px;">Estado</th><th style="padding:6px;">Última actividad</th><th style="padding:6px;">Socios activos</th><th style="padding:6px;">Alta</th>
+        </tr></thead>
+        <tbody id="gimnasiosAdminTbody"><tr><td colspan="5" class="muted" style="padding:10px;">Cargando...</td></tr></tbody>
       </table>
     </div>
   </div>
