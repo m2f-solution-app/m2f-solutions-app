@@ -3025,8 +3025,9 @@ function onBloqueOtroInput(uid, val){
 function filtrarEjercicios(q, patron){
   const terminos = normalizar(q).trim().split(/\s+/).filter(Boolean);
   let base = TODOS_EJERCICIOS;
-  if (patron) base = base.filter(e => e.patron_movimiento === patron);
-  if (!terminos.length) return patron ? base.slice(0, 40) : [];
+  const patronNorm = normalizar(patron||'').trim();
+  if (patronNorm) base = base.filter(e => normalizar(e.patron_movimiento||'').includes(patronNorm));
+  if (!terminos.length) return patronNorm ? base.slice(0, 40) : [];
   return base.filter(e => {
     const texto = normalizar(`${e.nombre} ${e.categoria||''} ${e.grupo_muscular||''} ${e.equipamiento||''} ${e.patron_movimiento||''}`);
     return terminos.every(t => texto.includes(t));
@@ -3037,15 +3038,16 @@ function filtrarEjercicios(q, patron){
 function patronesDisponibles(){
   return Array.from(new Set(TODOS_EJERCICIOS.map(e => e.patron_movimiento).filter(Boolean))).sort((a,b) => a.localeCompare(b));
 }
-// Desplegable reutilizable de "patrón de movimiento". `onchangeExpr` es el JS (como string)
-// que se ejecuta al cambiar la selección — normalmente vuelve a invocar la función de
-// búsqueda correspondiente pasándole el texto actual del buscador de al lado.
+// Campo reutilizable de "patrón de movimiento": input con datalist, así se puede
+// escribir para filtrar (autocompleta) y también tocar el campo vacío para ver el
+// desplegable con todos los patrones disponibles, sin tener que escribir nada.
+// `onchangeExpr` es el JS (como string) que se ejecuta al tipear o elegir una opción —
+// normalmente vuelve a invocar la función de búsqueda pasándole el texto del buscador de al lado.
 function patronSelectHtml(id, onchangeExpr){
-  const opciones = patronesDisponibles().map(p => `<option value="${p}">${p}</option>`).join('');
-  return `<select id="${id}" onchange="${onchangeExpr}" title="Filtrar por patrón de movimiento" style="flex:0 0 auto; width:auto; max-width:180px;">
-      <option value="">Todos los patrones</option>
-      ${opciones}
-    </select>`;
+  const opciones = patronesDisponibles().map(p => `<option value="${p.replace(/"/g,'&quot;')}"></option>`).join('');
+  return `<input list="${id}-lista" id="${id}" placeholder="Patrón" autocomplete="off" title="Escribí o tocá para ver todos los patrones de movimiento"
+      oninput="${onchangeExpr}" onchange="${onchangeExpr}" style="flex:0 0 auto; width:auto; min-width:110px; max-width:180px;">
+    <datalist id="${id}-lista">${opciones}</datalist>`;
 }
 
 // ---------- Ejercicios personalizados (propios, no del catálogo estándar) ----------
