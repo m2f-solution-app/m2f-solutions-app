@@ -780,6 +780,7 @@
     <button class="tt-btn" id="ttEquipo" onclick="cambiarSubvista('equipo')" title="Equipo"><span class="tt-ico">⚽</span><span class="tt-lbl">Equipo</span></button>
     <button class="tt-btn" id="ttAlumnos" onclick="cambiarSubvista('alumnos')" style="display:none;" title="Alumnos"><span class="tt-ico">👤</span><span class="tt-lbl">Alumnos</span></button>
     <button class="tt-btn" id="ttEvaluaciones" onclick="cambiarSubvista('evaluaciones')" title="Evaluaciones"><span class="tt-ico">📏</span><span class="tt-lbl">Evaluaciones</span></button>
+    <button class="tt-btn" id="ttSeguimiento" onclick="cambiarSubvista('seguimiento')" title="Seguimiento de entrenamientos"><span class="tt-ico">📈</span><span class="tt-lbl">Seguimiento</span></button>
     <button class="tt-btn" id="ttLogros" onclick="cambiarSubvista('logros')" style="display:none;" title="Logros"><span class="tt-ico">🏆</span><span class="tt-lbl">Logros</span></button>
     <button class="tt-btn" id="ttProfesores" onclick="cambiarSubvista('profesores')" style="display:none;" title="Profesores"><span class="tt-ico">🧑‍🏫</span><span class="tt-lbl">Profesores</span></button>
     <button class="tt-btn" id="ttHorarios" onclick="cambiarSubvista('horarios')" style="display:none;" title="Horarios"><span class="tt-ico">🕒</span><span class="tt-lbl">Horarios</span></button>
@@ -806,6 +807,7 @@
     <div class="side-item" id="menuEquipo" onclick="cambiarSubvista('equipo')" title="Equipo"><span class="side-ico">⚽</span><span class="side-label">Equipo</span></div>
     <div class="side-item" id="menuAlumnos" onclick="cambiarSubvista('alumnos')" title="Alumnos"><span class="side-ico">👤</span><span class="side-label">Alumnos</span></div>
     <div class="side-item" id="menuEvaluaciones" onclick="cambiarSubvista('evaluaciones')" title="Evaluaciones"><span class="side-ico">📏</span><span class="side-label">Evaluaciones</span></div>
+    <div class="side-item" id="menuSeguimiento" onclick="cambiarSubvista('seguimiento')" title="Seguimiento de entrenamientos"><span class="side-ico">📈</span><span class="side-label">Seguimiento</span></div>
     <div class="side-item" id="menuLogros" onclick="cambiarSubvista('logros')" title="Logros"><span class="side-ico">🏆</span><span class="side-label">Logros</span></div>
     <div class="side-item" id="menuProfesores" onclick="cambiarSubvista('profesores')" title="Profesores"><span class="side-ico">🧑‍🏫</span><span class="side-label">Profesores</span></div>
     <div class="side-item" id="menuHorarios" onclick="cambiarSubvista('horarios')" title="Horarios"><span class="side-ico">🕒</span><span class="side-label">Horarios</span></div>
@@ -1236,6 +1238,22 @@
           </div>
         </div>
         <div id="logrosContenido" class="muted">Elegí un alumno arriba.</div>
+      </div>
+
+      <!-- ---- SUBVISTA: SEGUIMIENTO DE ENTRENAMIENTOS ----
+           (24/9) Pedido de Martin: que CUALQUIER profesor (no solo Admin, a diferencia de
+           "Logros" de arriba) pueda consultar el peso/reps/RIR que carga el alumno al
+           entrenar, sesión por sesión, más el tonelaje por serie y por ejercicio. ---- -->
+      <div id="subvistaSeguimiento" style="display:none;">
+        <div class="card">
+          <div class="row">
+            <div class="field" style="flex:1; min-width:220px;">
+              <label>Alumno</label>
+              <select id="seguimientoAlumno" onchange="onCambiarSeguimientoAlumno()"></select>
+            </div>
+          </div>
+        </div>
+        <div id="seguimientoContenido" class="muted">Elegí un alumno arriba.</div>
       </div>
 
       <!-- ---- SUBVISTA: PROFESORES (cuentas de login para tu staff) ---- -->
@@ -2646,6 +2664,7 @@ function cambiarSubvista(v){
   document.getElementById('subvistaEquipo').style.display = v==='equipo' ? '' : 'none';
   document.getElementById('subvistaAlumnos').style.display = v==='alumnos' ? '' : 'none';
   document.getElementById('subvistaEvaluaciones').style.display = v==='evaluaciones' ? '' : 'none';
+  document.getElementById('subvistaSeguimiento').style.display = v==='seguimiento' ? '' : 'none';
   document.getElementById('subvistaLogros').style.display = v==='logros' ? '' : 'none';
   document.getElementById('subvistaProfesores').style.display = v==='profesores' ? '' : 'none';
   document.getElementById('subvistaAgenda').style.display = v==='agenda' ? '' : 'none';
@@ -2661,6 +2680,7 @@ function cambiarSubvista(v){
   document.getElementById('menuEquipo').classList.toggle('active', v==='equipo');
   document.getElementById('menuAlumnos').classList.toggle('active', v==='alumnos');
   document.getElementById('menuEvaluaciones').classList.toggle('active', v==='evaluaciones');
+  document.getElementById('menuSeguimiento').classList.toggle('active', v==='seguimiento');
   document.getElementById('menuLogros').classList.toggle('active', v==='logros');
   document.getElementById('menuProfesores').classList.toggle('active', v==='profesores');
   document.getElementById('menuAgenda').classList.toggle('active', v==='agenda');
@@ -2676,6 +2696,7 @@ function cambiarSubvista(v){
   document.getElementById('ttEquipo').classList.toggle('active', v==='equipo');
   document.getElementById('ttAlumnos').classList.toggle('active', v==='alumnos');
   document.getElementById('ttEvaluaciones').classList.toggle('active', v==='evaluaciones');
+  document.getElementById('ttSeguimiento').classList.toggle('active', v==='seguimiento');
   document.getElementById('ttLogros').classList.toggle('active', v==='logros');
   document.getElementById('ttProfesores').classList.toggle('active', v==='profesores');
   document.getElementById('ttAgenda').classList.toggle('active', v==='agenda');
@@ -2692,6 +2713,7 @@ function cambiarSubvista(v){
   if (v==='rutinas') cargarGrillaRutinas();
   if (v==='alumnos') cargarListaAlumnos();
   if (v==='evaluaciones') iniciarEvaluaciones();
+  if (v==='seguimiento') iniciarSeguimiento();
   if (v==='logros') iniciarLogros();
   if (v==='profesores') cargarListaProfesores();
   if (v==='agenda') iniciarAgenda();
@@ -6555,6 +6577,98 @@ async function renderLogros(contId, alumnoId){
   }catch(e){
     cont.innerHTML = `<div class="empty">Error cargando logros: ${e.message}</div>`;
   }
+}
+
+// =====================================================================
+// ---------- Seguimiento de entrenamientos (peso/reps/RIR/tonelaje) ----------
+// (24/9) Pedido de Martin: el profesor necesita poder consultar, sesión por sesión,
+// lo que el alumno cargó al entrenar (peso, repeticiones y RIR de cada serie) y el
+// tonelaje resultante — tanto por serie como el total de cada ejercicio. A diferencia
+// de "Logros" (que es solo agregados: PRs y curva de evolución), esto es el detalle
+// crudo de cada sesión, y a diferencia de Logros SÍ lo puede ver cualquier profesor,
+// no solo Admin. No hace falta ninguna vista nueva en la base: se arma con embeds de
+// PostgREST sobre ejecuciones → ejecucion_ejercicios → series_registradas, y las
+// políticas RLS ya dejan que cualquier staff del gimnasio lea eso de sus alumnos.
+// =====================================================================
+function iniciarSeguimiento(){
+  const sel = document.getElementById('seguimientoAlumno');
+  sel.innerHTML = '<option value="">-- elegir --</option>' + ALUMNOS_CACHE.map(a=>`<option value="${a.id}">${a.nombre}</option>`).join('');
+  armarComboBuscable('seguimientoAlumno', 'Buscar alumno por nombre...');
+  document.getElementById('seguimientoContenido').innerHTML = 'Elegí un alumno arriba.';
+}
+
+function onCambiarSeguimientoAlumno(){
+  const alumnoId = document.getElementById('seguimientoAlumno').value;
+  if (alumnoId) cargarSeguimiento(alumnoId);
+  else document.getElementById('seguimientoContenido').innerHTML = 'Elegí un alumno arriba.';
+}
+
+let SEGUIMIENTO_CACHE = []; // últimas sesiones ya traídas para el alumno elegido, para poder
+                            // abrir/cerrar el detalle de cada una sin volver a pedirlas.
+
+async function cargarSeguimiento(alumnoId){
+  const cont = document.getElementById('seguimientoContenido');
+  cont.innerHTML = '<div class="muted">Cargando...</div>';
+  try{
+    const rows = await sb(`ejecuciones?select=id,fecha,estado,rutina_dias(nombre_dia,rutinas(nombre)),ejecucion_ejercicios(id,finalizado,omitido,motivo_omision,sustituido,ejercicios(nombre,grupo_muscular),series_registradas(numero_serie,peso_realizado,repeticiones_realizadas,rir_realizado,tonelaje))&alumno_id=eq.${alumnoId}&order=fecha.desc&limit=20`);
+    SEGUIMIENTO_CACHE = rows;
+    if (!rows.length){ cont.innerHTML = '<div class="empty">Este alumno todavía no registró entrenamientos.</div>'; return; }
+    cont.innerHTML = rows.map((r, i) => {
+      const tonelajeSesion = (r.ejecucion_ejercicios||[]).reduce((acc, ee) =>
+        acc + (ee.series_registradas||[]).reduce((a,s) => a + (Number(s.tonelaje)||0), 0), 0);
+      return `
+        <div class="card" style="margin-bottom:10px; cursor:pointer;" onclick="toggleSeguimientoSesion(${i})">
+          <div class="row" style="justify-content:space-between; align-items:center;">
+            <div>
+              <div style="font-weight:600;">${r.rutina_dias?.rutinas?.nombre || '-'} · ${r.rutina_dias?.nombre_dia || '-'}</div>
+              <div class="muted">${new Date(r.fecha).toLocaleString('es-AR')}${tonelajeSesion > 0 ? ' · Tonelaje de la sesión: <strong>'+Math.round(tonelajeSesion).toLocaleString('es-AR')+' kg</strong>' : ''}</div>
+            </div>
+            <span class="${r.estado==='finalizada' ? 'badge-ok' : 'pill'}">${r.estado}</span>
+          </div>
+          <div id="seguimientoDetalle-${i}" style="display:none; margin-top:10px;" onclick="event.stopPropagation()"></div>
+        </div>
+      `;
+    }).join('');
+  }catch(e){ cont.innerHTML = `<div class="empty">Error: ${e.message}</div>`; }
+}
+
+function toggleSeguimientoSesion(i){
+  const div = document.getElementById(`seguimientoDetalle-${i}`);
+  const yaAbierto = div.dataset.open === '1';
+  div.style.display = yaAbierto ? 'none' : '';
+  div.dataset.open = yaAbierto ? '0' : '1';
+  if (yaAbierto || div.dataset.armado === '1') return; // ya armado antes, no hace falta reconstruirlo
+  div.dataset.armado = '1';
+
+  const sesion = SEGUIMIENTO_CACHE[i];
+  const ejercicios = (sesion.ejecucion_ejercicios||[]).filter(ee => ee.ejercicios);
+  if (!ejercicios.length){ div.innerHTML = '<div class="muted">Sin ejercicios registrados en esta sesión.</div>'; return; }
+
+  div.innerHTML = ejercicios.map(ee => {
+    if (ee.omitido){
+      return `<div class="muted" style="padding:6px 0; border-top:1px solid var(--border);">
+        ${ee.ejercicios.nombre} — <em>omitido${ee.motivo_omision ? ' ('+ee.motivo_omision+')' : ''}</em>
+      </div>`;
+    }
+    const series = (ee.series_registradas||[]).slice().sort((a,b) => (a.numero_serie||0) - (b.numero_serie||0));
+    const tonelajeEjercicio = series.reduce((a,s) => a + (Number(s.tonelaje)||0), 0);
+    const filasSeries = series.length
+      ? series.map(s => `
+          <div class="row" style="justify-content:space-between; font-size:13px; padding:3px 0; gap:8px;">
+            <span style="min-width:56px;">Serie ${s.numero_serie ?? '-'}</span>
+            <span style="flex:1;">${s.peso_realizado != null ? s.peso_realizado+' kg' : '-'} × ${s.repeticiones_realizadas ?? '-'} reps${s.rir_realizado != null ? ' · RIR '+s.rir_realizado : ''}</span>
+            <span class="muted" style="white-space:nowrap;">${s.tonelaje ? Number(s.tonelaje).toFixed(1)+' kg' : '-'}</span>
+          </div>
+        `).join('')
+      : '<div class="muted" style="font-size:13px;">Sin series registradas.</div>';
+    return `
+      <div style="padding:8px 0; border-top:1px solid var(--border);">
+        <div style="font-weight:600;">${ee.ejercicios.nombre} <span class="pill">${ee.ejercicios.grupo_muscular||'-'}</span>${ee.sustituido ? ' <span class="pill">Sustituido</span>' : ''}</div>
+        ${filasSeries}
+        ${tonelajeEjercicio > 0 ? `<div class="muted" style="font-size:12.5px; margin-top:4px;"><strong>Tonelaje del ejercicio: ${tonelajeEjercicio.toFixed(1)} kg</strong></div>` : ''}
+      </div>
+    `;
+  }).join('');
 }
 
 // =====================================================================
