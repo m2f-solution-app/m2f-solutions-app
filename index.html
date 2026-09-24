@@ -3704,12 +3704,24 @@ async function calcularFacturadorHoras(){
   if (!desde || !hasta || desde > hasta){ toast('Elegí un rango de fechas válido.', true); return; }
   cont.innerHTML = 'Calculando...';
   try{
-    const [horarios, excepciones] = await Promise.all([
+    const [horarios, excepciones, liquidacionesPrevias] = await Promise.all([
       sb(`horarios_trabajo?select=dia_semana,hora_inicio,hora_fin&profesor_id=eq.${profesorId}&activo=eq.true`),
       sb(`horarios_excepciones?select=fecha,tipo,hora_inicio,hora_fin&profesor_id=eq.${profesorId}&activo=eq.true&fecha=gte.${desde}&fecha=lte.${hasta}`),
+      // (24/9) Pedido de Martin: no dejar liquidar de nuevo un rango que ya se pagó.
+      // Traemos las liquidaciones previas de este profesor cuyo período se cruza con
+      // el rango pedido (condición de solapamiento estándar entre dos rangos de fecha).
+      sb(`liquidaciones_profesor?select=periodo_desde,periodo_hasta&profesor_id=eq.${profesorId}&periodo_desde=lte.${hasta}&periodo_hasta=gte.${desde}`),
     ]);
     const excepcionesPorFecha = {};
     excepciones.forEach(e => { (excepcionesPorFecha[e.fecha] = excepcionesPorFecha[e.fecha] || []).push(e); });
+    const diasYaPagados = new Set();
+    liquidacionesPrevias.forEach(l => {
+      const ini = l.periodo_desde > desde ? l.periodo_desde : desde;
+      const fin = l.periodo_hasta < hasta ? l.periodo_hasta : hasta;
+      for (let d = new Date(ini + 'T00:00:00'); d <= new Date(fin + 'T00:00:00'); d.setDate(d.getDate()+1)){
+        diasYaPagados.add(dateAIso(d));
+      }
+    });
     let totalHoras = 0;
     const detalle = [];
     const d0 = new Date(desde + 'T00:00:00');
@@ -3732,16 +3744,23 @@ async function calcularFacturadorHoras(){
     const tarifa = Number(p?.tarifa_hora) || 0;
     const impuesto = Number(p?.impuesto_pct) || 0;
     const monto = totalHoras * tarifa * (1 + impuesto/100);
-    FACTURADOR_CALC = { profesorId, desde, hasta, totalHoras, tarifa, impuesto, monto };
+    const haySolapamiento = diasYaPagados.size > 0;
+    FACTURADOR_CALC = haySolapamiento ? null : { profesorId, desde, hasta, totalHoras, tarifa, impuesto, monto };
+    const avisoSolapamientoHtml = haySolapamiento ? `
+      <div style="background:#fff7ed; border:1px solid #fed7aa; color:#9a3412; border-radius:8px; padding:10px 12px; margin-bottom:10px; font-size:13px;">
+        ⚠️ Ya se pagaron horas de este profesor en: <strong>${[...diasYaPagados].sort().map(formatearFechaCorta).join(', ')}</strong>. Ajustá el rango de fechas para no superponerte con una liquidación ya confirmada.
+      </div>` : '';
     cont.innerHTML = `
+      ${avisoSolapamientoHtml}
       <table style="width:100%; border-collapse:collapse; font-size:13px;">
-        ${detalle.length ? detalle.map(x => `<tr><td style="padding:3px 0; border-bottom:1px solid var(--border);">${formatearFechaCorta(x.fecha)}</td><td style="text-align:right; border-bottom:1px solid var(--border);">${x.horas.toFixed(1)}h</td></tr>`).join('') : '<tr><td class="muted">Sin horas asignadas en el rango.</td></tr>'}
+        ${detalle.length ? detalle.map(x => `<tr><td style="padding:3px 0; border-bottom:1px solid var(--border); ${diasYaPagados.has(x.fecha)?'color:#9a3412;':''}">${formatearFechaCorta(x.fecha)}${diasYaPagados.has(x.fecha)?' · ya pagado':''}</td><td style="text-align:right; border-bottom:1px solid var(--border);">${x.horas.toFixed(1)}h</td></tr>`).join('') : '<tr><td class="muted">Sin horas asignadas en el rango.</td></tr>'}
       </table>
       <div class="row" style="justify-content:space-between; margin-top:10px; font-weight:700; flex-wrap:wrap; gap:8px;">
         <div>Total: ${totalHoras.toFixed(1)} horas</div>
         ${tarifa ? `<div>${formatearMonto(monto)}</div>` : `<div class="muted" style="font-weight:400;">Cargá la tarifa/hora del profesor en "Profesores" para calcular el monto.</div>`}
       </div>
-      ${(tarifa && totalHoras > 0) ? `<button style="margin-top:10px;" onclick="confirmarLiquidacion()">Confirmar y registrar pago</button>` : ''}
+      ${(!haySolapamiento && tarifa && totalHoras > 0) ? `<button style="margin-top:10px;" onclick="confirmarLiquidacion()">Confirmar y registrar pago</button>` : ''}
+      ${(haySolapamiento && tarifa && totalHoras > 0) ? `<div class="muted" style="margin-top:8px; font-size:12px;">No se puede confirmar mientras el rango incluya días ya liquidados.</div>` : ''}
     `;
   }catch(e){ cont.innerHTML = 'Error: ' + e.message; }
 }
@@ -3760,7 +3779,17 @@ async function confirmarLiquidacion(){
     toast('Liquidación registrada ✓');
     FACTURADOR_CALC = null;
     cargarHistorialLiquidaciones();
-  }catch(e){ toast('Error registrando la liquidación: ' + extraerMensajeError(e), true); }
+  }catch(e){
+    // (24/9) Candado a nivel de base de datos (constraint de exclusión sobre el
+    // período por profesor): el chequeo de arriba ya evita mostrar el botón si hay
+    // solapamiento, esto cubre la carrera de dos confirmaciones casi simultáneas.
+    if (/23P01/.test(e.message)){
+      toast('Ese rango se superpone con una liquidación ya confirmada para este profesor. Se recalculó abajo.', true);
+      calcularFacturadorHoras();
+    } else {
+      toast('Error registrando la liquidación: ' + extraerMensajeError(e), true);
+    }
+  }
 }
 
 async function cargarHistorialLiquidaciones(){
@@ -3769,14 +3798,26 @@ async function cargarHistorialLiquidaciones(){
   if (!profesorId){ cont.innerHTML = 'Elegí un profesor.'; return; }
   cont.innerHTML = 'Cargando...';
   try{
-    const rows = await sb(`liquidaciones_profesor?select=periodo_desde,periodo_hasta,horas_totales,monto_total,fecha_pago&profesor_id=eq.${profesorId}&order=fecha_pago.desc&limit=12`);
+    const rows = await sb(`liquidaciones_profesor?select=id,periodo_desde,periodo_hasta,horas_totales,monto_total,fecha_pago&profesor_id=eq.${profesorId}&order=fecha_pago.desc&limit=12`);
     cont.innerHTML = rows.length ? rows.map(r => `
-      <div class="row" style="justify-content:space-between; padding:4px 0; border-bottom:1px solid var(--border); font-size:13px;">
+      <div class="row" style="justify-content:space-between; align-items:center; padding:4px 0; border-bottom:1px solid var(--border); font-size:13px; gap:8px;">
         <div>${formatearFechaCorta(r.periodo_desde)} al ${formatearFechaCorta(r.periodo_hasta)} · ${Number(r.horas_totales).toFixed(1)}hs</div>
-        <div style="font-weight:600;">${formatearMonto(r.monto_total)}</div>
+        <div class="row" style="gap:8px; align-items:center;">
+          <div style="font-weight:600;">${formatearMonto(r.monto_total)}</div>
+          <button class="ghost" style="padding:3px 8px; font-size:11px;" onclick="eliminarLiquidacion('${r.id}')" title="Eliminar (ej. si se cargó por error)">🗑️</button>
+        </div>
       </div>
     `).join('') : '<div class="empty">Todavía no hay liquidaciones pagadas.</div>';
   }catch(e){ cont.innerHTML = 'Error: ' + e.message; }
+}
+
+async function eliminarLiquidacion(id){
+  if (!confirm('¿Eliminar esta liquidación? Deja de contar como gasto en el Dashboard y libera esas fechas para poder volver a liquidarlas si hace falta.')) return;
+  try{
+    await sb(`liquidaciones_profesor?id=eq.${id}`, { method:'DELETE', headers:{Prefer:'return=minimal'} });
+    toast('Liquidación eliminada ✓');
+    cargarHistorialLiquidaciones();
+  }catch(e){ toast('Error eliminando la liquidación: ' + extraerMensajeError(e), true); }
 }
 
 // ---------- Cuadro semanal con TODOS los profesores del gimnasio (pedido 22/9) ----------
