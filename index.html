@@ -2127,7 +2127,7 @@ function tipoDeMediaUrl(url){
   return 'imagen';
 }
 function urlEmbed(url){
-  let m = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([\w-]{6,})/);
+  let m = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/shorts\/)([\w-]{6,})/);
   if (m) return `https://www.youtube.com/embed/${m[1]}`;
   m = url.match(/vimeo\.com\/(\d+)/);
   if (m) return `https://player.vimeo.com/video/${m[1]}`;
@@ -2951,11 +2951,27 @@ function actualizarPreviewLogo(){
 // ---------- Catálogo completo de ejercicios (cargado una vez, filtro 100% local) ----------
 let TODOS_EJERCICIOS = [];
 async function cargarCatalogoEjercicios(){
+  const CAMPOS_EJ = 'id,nombre,categoria,grupo_muscular,equipamiento,provider_ref_id,video_provider,video_url_propio,creado_por,gym_id,patron_movimiento';
   // Catálogo global (gym_id null) + los propios del gimnasio logueado, si hay sesión.
   const filtro = PERFIL_ACTUAL
     ? `&or=(gym_id.is.null,gym_id.eq.${PERFIL_ACTUAL.gimnasio_id})`
     : '&gym_id=is.null';
-  TODOS_EJERCICIOS = await sb(`ejercicios?select=id,nombre,categoria,grupo_muscular,equipamiento,provider_ref_id,video_provider,video_url_propio,creado_por,gym_id&activo=eq.true${filtro}&order=nombre.asc&limit=5000`);
+  const base = await sb(`ejercicios?select=${CAMPOS_EJ}&activo=eq.true${filtro}&order=nombre.asc&limit=5000`);
+
+  // Ejercicios de catálogos compartidos (ej. importaciones) otorgados a este gimnasio
+  // vía la tabla ejercicio_gimnasio (many-to-many), sin duplicar la fila base.
+  let compartidos = [];
+  if (PERFIL_ACTUAL){
+    const grants = await sb(`ejercicio_gimnasio?select=ejercicio_id&gym_id=eq.${PERFIL_ACTUAL.gimnasio_id}`);
+    const ids = grants.map(g => g.ejercicio_id);
+    if (ids.length){
+      compartidos = await sb(`ejercicios?select=${CAMPOS_EJ}&activo=eq.true&id=in.(${ids.join(',')})&order=nombre.asc&limit=5000`);
+    }
+  }
+
+  const porId = new Map();
+  [...base, ...compartidos].forEach(e => porId.set(e.id, e));
+  TODOS_EJERCICIOS = Array.from(porId.values()).sort((a,b) => a.nombre.localeCompare(b.nombre));
 }
 function normalizar(s){
   return (s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase();
@@ -3006,13 +3022,30 @@ function onBloqueOtroInput(uid, val){
   if (cb) cb(val.trim() || 'General');
 }
 
-function filtrarEjercicios(q){
+function filtrarEjercicios(q, patron){
   const terminos = normalizar(q).trim().split(/\s+/).filter(Boolean);
-  if (!terminos.length) return [];
-  return TODOS_EJERCICIOS.filter(e => {
-    const texto = normalizar(`${e.nombre} ${e.categoria||''} ${e.grupo_muscular||''} ${e.equipamiento||''}`);
+  let base = TODOS_EJERCICIOS;
+  if (patron) base = base.filter(e => e.patron_movimiento === patron);
+  if (!terminos.length) return patron ? base.slice(0, 40) : [];
+  return base.filter(e => {
+    const texto = normalizar(`${e.nombre} ${e.categoria||''} ${e.grupo_muscular||''} ${e.equipamiento||''} ${e.patron_movimiento||''}`);
     return terminos.every(t => texto.includes(t));
   }).slice(0, 40);
+}
+// Devuelve los valores distintos de patron_movimiento presentes en el catálogo cargado,
+// ordenados alfabéticamente, para poblar los desplegables de filtro.
+function patronesDisponibles(){
+  return Array.from(new Set(TODOS_EJERCICIOS.map(e => e.patron_movimiento).filter(Boolean))).sort((a,b) => a.localeCompare(b));
+}
+// Desplegable reutilizable de "patrón de movimiento". `onchangeExpr` es el JS (como string)
+// que se ejecuta al cambiar la selección — normalmente vuelve a invocar la función de
+// búsqueda correspondiente pasándole el texto actual del buscador de al lado.
+function patronSelectHtml(id, onchangeExpr){
+  const opciones = patronesDisponibles().map(p => `<option value="${p}">${p}</option>`).join('');
+  return `<select id="${id}" onchange="${onchangeExpr}" title="Filtrar por patrón de movimiento" style="flex:0 0 auto; width:auto; max-width:180px;">
+      <option value="">Todos los patrones</option>
+      ${opciones}
+    </select>`;
 }
 
 // ---------- Ejercicios personalizados (propios, no del catálogo estándar) ----------
@@ -6616,7 +6649,10 @@ function crearConstructorDeDias(prefijo, containerId){
                 ${bloqueFieldHtml(`${prefijo}-actual-${diaId}`, dia.bloqueActual, (v)=>{ CONS[prefijo].estado.dias[diaId].bloqueActual=v; })}
               </div>
             </div>
-            <input id="buscador-${diaId}" placeholder="Escribí para filtrar: bíceps, glúteos, press banca..." oninput="CONS['${prefijo}'].buscar(this.value,'${diaId}')" style="width:100%;" />
+            <div class="row" style="margin-bottom:8px;">
+              <input id="buscador-${diaId}" placeholder="Escribí para filtrar: bíceps, glúteos, press banca..." oninput="CONS['${prefijo}'].buscar(this.value,'${diaId}')" style="flex:1; min-width:160px;" />
+              ${patronSelectHtml(`patron-${diaId}`, `CONS['${prefijo}'].buscar(document.getElementById('buscador-${diaId}').value, '${diaId}')`)}
+            </div>
             <button type="button" class="btn-crear-rapido" onclick="CONTEXTOS_EJ['${prefijo}-${diaId}']=(nuevo)=>CONS['${prefijo}'].agregarEjercicio('${diaId}', nuevo); mostrarFormularioNuevoEjercicio('${prefijo}-${diaId}', this, document.getElementById('buscador-${diaId}').value.trim())">➕ Agregar ejercicio nuevo</button>
             <div class="search-results" id="resultados-${diaId}" style="display:none;"></div>
           </div>
@@ -6631,8 +6667,10 @@ function crearConstructorDeDias(prefijo, containerId){
 
   function buscar(q, diaId){
     const cont = document.getElementById(`resultados-${diaId}`);
-    if (!q || !q.trim()){ cont.style.display='none'; cont.innerHTML=''; return; }
-    const rows = filtrarEjercicios(q);
+    const patronSel = document.getElementById(`patron-${diaId}`);
+    const patron = patronSel ? patronSel.value : '';
+    if ((!q || !q.trim()) && !patron){ cont.style.display='none'; cont.innerHTML=''; return; }
+    const rows = filtrarEjercicios(q, patron);
     const contexto = `${prefijo}-${diaId}`;
     CONTEXTOS_EJ[contexto] = (nuevo) => agregarEjercicio(diaId, nuevo);
     const tarjetaCrear = `
@@ -7651,7 +7689,10 @@ function renderEdicionDia(diaId){
     </div>
     ${filas}
     <div style="margin-top:10px;">
-      <input id="buscadorEdicion-${diaId}" placeholder="Escribí para agregar un ejercicio: bíceps, glúteos, press banca..." oninput="buscarParaAgregarEdicion(this.value,'${diaId}')" style="width:100%;" />
+      <div class="row" style="margin-bottom:8px;">
+        <input id="buscadorEdicion-${diaId}" placeholder="Escribí para agregar un ejercicio: bíceps, glúteos, press banca..." oninput="buscarParaAgregarEdicion(this.value,'${diaId}')" style="flex:1; min-width:160px;" />
+        ${patronSelectHtml(`patronEdicion-${diaId}`, `buscarParaAgregarEdicion(document.getElementById('buscadorEdicion-${diaId}').value, '${diaId}')`)}
+      </div>
       <button type="button" class="btn-crear-rapido" onclick="CONTEXTOS_EJ['edicion-${diaId}']=(nuevo)=>agregarEjercicioEdicion('${diaId}', nuevo); mostrarFormularioNuevoEjercicio('edicion-${diaId}', this, document.getElementById('buscadorEdicion-${diaId}').value.trim())">➕ Agregar ejercicio nuevo</button>
       <div class="search-results" id="resEdicion-${diaId}" style="display:none;"></div>
     </div>
@@ -7750,8 +7791,10 @@ async function quitarEjercicioEdicion(diaId, itemId){
 
 function buscarParaAgregarEdicion(q, diaId){
   const cont = document.getElementById(`resEdicion-${diaId}`);
-  if (!q || !q.trim()){ cont.style.display='none'; cont.innerHTML=''; return; }
-  const rows = filtrarEjercicios(q);
+  const patronSel = document.getElementById(`patronEdicion-${diaId}`);
+  const patron = patronSel ? patronSel.value : '';
+  if ((!q || !q.trim()) && !patron){ cont.style.display='none'; cont.innerHTML=''; return; }
+  const rows = filtrarEjercicios(q, patron);
   const contexto = `edicion-${diaId}`;
   CONTEXTOS_EJ[contexto] = (nuevo) => agregarEjercicioEdicion(diaId, nuevo);
   const tarjetaCrear = `
@@ -8707,7 +8750,10 @@ function abrirSustitucion(idx){
         <option value="no_disponible">Equipo no disponible</option>
         <option value="otro">Otro</option>
       </select>
-      <input id="buscadorSust-${idx}" placeholder="Escribí para filtrar: bíceps, glúteos, press banca..." oninput="buscarSustituto(this.value, ${idx})" style="width:100%; margin-bottom:8px;">
+      <div class="row" style="margin-bottom:8px;">
+        <input id="buscadorSust-${idx}" placeholder="Escribí para filtrar: bíceps, glúteos, press banca..." oninput="buscarSustituto(this.value, ${idx})" style="flex:1; min-width:160px;">
+        ${patronSelectHtml(`patronSust-${idx}`, `buscarSustituto(document.getElementById('buscadorSust-${idx}').value, ${idx})`)}
+      </div>
       <div class="search-results" id="resSust-${idx}" style="display:none;"></div>
       <hr style="margin:14px 0;">
       <div style="font-weight:600; margin-bottom:8px;">O, si no llegás a hacerlo</div>
@@ -8724,8 +8770,10 @@ function abrirSustitucion(idx){
 
 function buscarSustituto(q, idx){
   const cont = document.getElementById(`resSust-${idx}`);
-  if (!q || !q.trim()){ cont.style.display='none'; return; }
-  const rows = filtrarEjercicios(q);
+  const patronSel = document.getElementById(`patronSust-${idx}`);
+  const patron = patronSel ? patronSel.value : '';
+  if ((!q || !q.trim()) && !patron){ cont.style.display='none'; return; }
+  const rows = filtrarEjercicios(q, patron);
   const contexto = `sust-${idx}`;
   CONTEXTOS_EJ[contexto] = (nuevo) => confirmarSustitucion(idx, nuevo);
   const tarjetaCrear = `
