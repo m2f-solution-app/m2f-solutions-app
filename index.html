@@ -155,13 +155,32 @@
     margin:14px 0 8px; padding-bottom:4px; border-bottom:1px solid var(--border);
   }
   .bloque-titulo:first-child{margin-top:0;}
-  .set-row{display:grid; grid-template-columns:28px 1fr 1fr 1fr 90px; gap:8px; align-items:center; margin-bottom:6px;}
+  .set-row{display:grid; grid-template-columns:26px 1fr 1fr 1fr 76px; gap:6px; align-items:center; margin-bottom:6px;}
   .set-row input{width:100%;}
+  .set-row .set-head{font-size:11px;}
+  .set-row .set-sug{font-size:11px; line-height:1.2;}
   .ex-block{border:1px solid var(--border); border-radius:10px; padding:14px; margin-bottom:14px; background:#14171e;}
   .ex-header{display:flex; gap:12px; align-items:center; margin-bottom:10px;}
   .ex-header img, .ex-header video, .ex-header iframe{width:64px;height:64px;object-fit:cover;border-radius:8px;background:#000;border:none;}
   .badge-ok{background:rgba(61,220,132,.15); color:var(--accent2); border:1px solid rgba(61,220,132,.4); padding:2px 10px; border-radius:999px; font-size:12px; font-weight:700;}
   .badge-sub{background:rgba(255,122,48,.15); color:var(--accent); border:1px solid rgba(255,122,48,.4); padding:2px 10px; border-radius:999px; font-size:12px; font-weight:700;}
+  /* ---- Ejecucion de rutina (series a realizar): letras y columnas mas chicas en
+       celu para que entre bien en pantallas angostas (pedido Martin, 24/9) ---- */
+  @media (max-width:520px){
+    .ex-block{padding:10px;}
+    .ex-header{gap:8px;}
+    .ex-header img, .ex-header video, .ex-header iframe{width:46px; height:46px;}
+    .ex-nombre{font-size:14px;}
+    .ex-header .muted{font-size:11.5px;}
+    .ex-header button.ghost{font-size:11px; padding:6px 9px;}
+    .set-row{grid-template-columns:16px 1fr 1fr 1fr 54px; gap:4px; margin-bottom:4px;}
+    .set-row input{font-size:12.5px; padding:7px 5px;}
+    .set-row .muted{font-size:9.5px;}
+    .set-row .set-head{font-size:9px;}
+    .set-row .set-sug{font-size:9px; line-height:1.15;}
+    .bloque-titulo{font-size:10px;}
+    .nota-profesor{font-size:11.5px; padding:6px 8px;}
+  }
   .toast{
     position:fixed; bottom:20px; left:50%; transform:translateX(-50%);
     background:var(--panel2); border:1px solid var(--border); padding:12px 20px; border-radius:10px;
@@ -7640,7 +7659,7 @@ function bloqueHtml(b, idx){
         <div class="ex-header">
           ${mediaTagHtml(b.ejercicioActual, '')}
           <div style="flex:1;">
-            <div style="font-weight:700;">${b.ejercicioActual.nombre}</div>
+            <div class="ex-nombre" style="font-weight:700;">${b.ejercicioActual.nombre}</div>
             <div class="muted">${b.ejercicioActual.grupo_muscular}</div>
           </div>
         </div>
@@ -7674,17 +7693,17 @@ function bloqueHtml(b, idx){
       <input type="number" step="0.5" placeholder="${p.peso_corporal ? 'Extra (kg)' : 'Peso (kg)'}" id="peso-${idx}-${s}" value="${pesoDefault}" ${dis}>
       <input type="number" placeholder="Reps" id="reps-${idx}-${s}" value="${repsDefault}" ${dis}>
       <input type="number" placeholder="RIR" id="rir-${idx}-${s}" value="${rirDefault}" ${dis}>
-      <span class="muted">sug: ${p.peso_corporal ? 'peso corporal' : (p.peso_sugerido ?? '-')+'kg'} × ${p.repeticiones}</span>
+      <span class="muted set-sug">${p.peso_corporal ? 'p.corporal' : (p.peso_sugerido ?? '-')+'kg'}×${p.repeticiones}</span>
     </div>
   `;
   }).join('');
   const encabezadoSets = `
     <div class="set-row" style="margin-bottom:2px;">
-      <div class="muted" style="font-size:11px;">#</div>
-      <div class="muted" style="font-size:11px;">${p.peso_corporal ? 'Extra (kg)' : 'Peso (kg)'}</div>
-      <div class="muted" style="font-size:11px;">Reps</div>
-      <div class="muted" style="font-size:11px;">RIR</div>
-      <div class="muted" style="font-size:11px;">Sugerido</div>
+      <div class="muted set-head">#</div>
+      <div class="muted set-head">${p.peso_corporal ? 'Extra' : 'Peso'}</div>
+      <div class="muted set-head">Reps</div>
+      <div class="muted set-head">RIR</div>
+      <div class="muted set-head">Sug.</div>
     </div>
   `;
 
@@ -7698,7 +7717,7 @@ function bloqueHtml(b, idx){
       <div class="ex-header">
         ${mediaTagHtml(b.ejercicioActual, '')}
         <div style="flex:1;">
-          <div style="font-weight:700;">${b.ejercicioActual.nombre} ${b.ejercicioActual.id !== p.ejercicios.id ? '<span class="badge-sub">Sustituido</span>' : ''} ${p.variante ? `<span class="badge-sub">${p.variante}</span>` : ''}</div>
+          <div class="ex-nombre" style="font-weight:700;">${b.ejercicioActual.nombre} ${b.ejercicioActual.id !== p.ejercicios.id ? '<span class="badge-sub">Sustituido</span>' : ''} ${p.variante ? `<span class="badge-sub">${p.variante}</span>` : ''}</div>
           <div class="muted">${b.ejercicioActual.grupo_muscular} · ${detalleSets}</div>
           ${p.notas ? `<div class="nota-profesor">📋 ${p.notas}</div>` : ''}
         </div>
