@@ -155,9 +155,18 @@
     margin:14px 0 8px; padding-bottom:4px; border-bottom:1px solid var(--border);
   }
   .bloque-seccion:first-child .bloque-titulo{margin-top:0;}
-  .bloque-titulo-clickable{cursor:pointer; display:flex; align-items:center; gap:8px; user-select:none;}
+  /* Área de toque más generosa (24/9, pedido de Martin: "se puede tocar mal con el
+     dedo") — antes el header de cada bloque plegable era casi del alto del texto
+     solo, muy angosto para el dedo en el celu. Ahora tiene padding real arriba y
+     abajo, y un feedback visual al tocar, para que quede claro dónde tocar. */
+  .bloque-titulo-clickable{
+    cursor:pointer; display:flex; align-items:center; gap:10px; user-select:none;
+    padding:14px 6px; margin:10px -6px 8px; border-radius:8px;
+    -webkit-tap-highlight-color:transparent; transition:background .1s;
+  }
   .bloque-titulo-clickable:hover{color:var(--text);}
-  .bloque-caret{display:inline-block; width:10px; font-size:11px; color:var(--muted); flex-shrink:0;}
+  .bloque-titulo-clickable:active{background:var(--panel2);}
+  .bloque-caret{display:inline-block; width:14px; font-size:13px; color:var(--muted); flex-shrink:0;}
   .bloque-conteo{margin-left:auto; text-transform:none; letter-spacing:0; font-weight:600; font-size:11px; color:var(--muted);}
   .bloque-titulo-clickable .badge-ok{margin-left:auto;}
   .set-row{display:grid; grid-template-columns:26px 1fr 1fr 1fr 76px; gap:6px; align-items:center; margin-bottom:6px;}
@@ -7286,6 +7295,12 @@ async function cambiarFechaEdicionDia(diaId, nuevaFecha){
     await sb(`rutina_dias?id=eq.${diaId}`, { method:'PATCH', headers:{Prefer:'return=minimal'}, body: JSON.stringify({ fecha: nuevaFecha }) });
     if (EDICION_DIAS[diaId]) EDICION_DIAS[diaId].fecha = nuevaFecha;
     RUTINAS_CACHE.forEach(r => (r.dias||[]).forEach(d => { if (d.id === diaId) d.fecha = nuevaFecha; }));
+
+    // (24/9) Pedido de Martin: que el nombre de la rutina siga reflejando su fecha
+    // real cuando se corrige el día — así no se repite lo de la rutina que quedó
+    // con el nombre viejo ("jueves 24") apuntando en realidad al 25.
+    await sincronizarNombreRutinaSiEsGenerica(diaId);
+
     // Si algún turno había quedado enganchado a este día con la fecha vieja, ese
     // enganche ya no corresponde (el matcheo automático es siempre por fecha
     // igual) — se desengancha para que se pueda volver a asignar bien.
@@ -7295,6 +7310,30 @@ async function cambiarFechaEdicionDia(diaId, nuevaFecha){
     }
     toast(`Fecha corregida ✓${turnosDesactualizados.length ? ' Se desenganchó de '+turnosDesactualizados.length+' turno(s) que ya no correspondían a esa fecha — se vuelven a asignar solos, o el alumno puede tocar "Reintentar".' : ''}`);
   }catch(e){ toast('Error corrigiendo la fecha: ' + e.message, true); }
+}
+
+// Recalcula el nombre de una rutina "de biblioteca" (general, armada por tipo de
+// alumno) para que siga siendo tipo + fecha del primer día, igual que al crearla.
+// Una rutina "especial" (con nombre puesto a mano por el profesor, identificada acá
+// porque tiene alguna fila en rutina_asignaciones) nunca se toca: ese nombre lo
+// eligió la persona a propósito.
+async function sincronizarNombreRutinaSiEsGenerica(diaId){
+  try{
+    const [diaInfo] = await sb(`rutina_dias?id=eq.${diaId}&select=rutina_id,rutinas(id,tipo_alumno_id)`);
+    const rutinaId = diaInfo?.rutina_id;
+    if (!rutinaId) return;
+    const asignaciones = await sb(`rutina_asignaciones?select=rutina_id&rutina_id=eq.${rutinaId}&limit=1`);
+    if (asignaciones.length) return; // es especial: nombre puesto a mano, no se toca
+
+    const tipoAlumnoId = diaInfo.rutinas?.tipo_alumno_id;
+    const tipoNombre = TIPOS_ALUMNO_CACHE.find(t => t.id === tipoAlumnoId)?.nombre || 'General';
+    const dias = await sb(`rutina_dias?select=fecha&rutina_id=eq.${rutinaId}`);
+    const fechasOrdenadas = dias.map(d => d.fecha).filter(Boolean).sort();
+    const nombreNuevo = `${tipoNombre}${fechasOrdenadas.length ? ' · ' + fechaLegible(fechasOrdenadas[0]) : ''}`;
+
+    await sb(`rutinas?id=eq.${rutinaId}`, { method:'PATCH', headers:{Prefer:'return=minimal'}, body: JSON.stringify({ nombre: nombreNuevo }) });
+    RUTINAS_CACHE.forEach(r => { if (r.id === rutinaId) r.nombre = nombreNuevo; });
+  }catch(e){ console.error('No se pudo resincronizar el nombre de la rutina:', e); }
 }
 
 function filaEdicionHtml(diaId, item){
