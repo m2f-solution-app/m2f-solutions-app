@@ -6684,18 +6684,26 @@ function slugMetrica(nombre){
 }
 
 async function abrirReporteAlumno(alumnoId){
-  const alumno = buscarAlumnoCache(alumnoId);
-  if (!alumno){ toast('No se encontró el alumno.', true); return; }
+  const alumnoCache = buscarAlumnoCache(alumnoId);
+  if (!alumnoCache){ toast('No se encontró el alumno.', true); return; }
   const cont = document.getElementById('reporteAlumnoContainer');
   cont.style.display = 'block';
-  cont.innerHTML = renderReporteTopbar() + `<div class="reporte-hoja" id="reporteHoja" style="padding:24px;">Cargando ficha de ${alumno.nombre}...</div>`;
+  cont.innerHTML = renderReporteTopbar() + `<div class="reporte-hoja" id="reporteHoja" style="padding:24px;">Cargando ficha de ${alumnoCache.nombre}...</div>`;
 
   try{
-    const [evaluaciones, turnos, ejecuciones] = await Promise.all([
+    // (24/9) Pedido de Martin: la ficha tiene que mostrar los datos físicos (edad,
+    // sexo, altura, peso, IMC, deporte, categoría de peso) y si se hicieron
+    // evaluaciones. Estos campos a veces no están en el caché en memoria del
+    // alumno (ALUMNOS_LISTA_CACHE no los trae, y ALUMNOS_CACHE puede haberse
+    // cargado antes de que se completaran) — se piden frescos acá para que la
+    // ficha siempre muestre lo último cargado, sin depender de qué caché tocó.
+    const [datosFrescos, evaluaciones, turnos, ejecuciones] = await Promise.all([
+      sb(`alumnos?id=eq.${alumnoId}&select=fecha_nacimiento,sexo,deporte_disciplina,categoria_peso,altura_cm,peso_kg`),
       fetchEvaluacionesConMetricas(alumnoId),
       sb(`turnos?select=id,estado,asistio&alumno_id=eq.${alumnoId}&estado=neq.cancelado`),
       sb(`ejecuciones?select=id,estado&alumno_id=eq.${alumnoId}`),
     ]);
+    const alumno = { ...alumnoCache, ...(datosFrescos[0] || {}) };
     const porMetrica = construirHistorialMetricas(evaluaciones);
 
     const turnosMarcados = turnos.filter(t => t.asistio !== null);
@@ -6705,11 +6713,23 @@ async function abrirReporteAlumno(alumnoId){
     const ultimaEvaluacion = evaluaciones[0] || null; // ya viene ordenada fecha.desc
     const nombresCategorias = (alumno.alumno_categorias || []).map(ac => ac.categorias?.nombre).filter(Boolean);
 
-    REPORTE_ALUMNO_ACTUAL = { alumno, porMetrica, pctAsistencia, entrenamientosCompletados, ultimaEvaluacion, nombresCategorias };
+    REPORTE_ALUMNO_ACTUAL = { alumno, porMetrica, pctAsistencia, entrenamientosCompletados, ultimaEvaluacion, cantidadEvaluaciones: evaluaciones.length, nombresCategorias };
     document.getElementById('reporteAlumnoContainer').innerHTML = renderReporteTopbar() + renderReporteHoja(REPORTE_ALUMNO_ACTUAL);
   }catch(e){
     cont.innerHTML = renderReporteTopbar() + `<div class="reporte-hoja" style="padding:24px; color:#b91c1c;">Error cargando la ficha: ${e.message}</div>`;
   }
+}
+
+// Botón de la ficha para ir directo a cargarle una evaluación cuando todavía no
+// tiene ninguna (o para agregar una nueva) — mismo patrón que el resto de los
+// accesos directos desde una ficha/modal hacia otra pantalla.
+function irACargarEvaluacionDesdeFicha(alumnoId){
+  cerrarReporteAlumno();
+  cambiarSubvista('evaluaciones');
+  const sel = document.getElementById('evalAlumno');
+  sel.value = alumnoId;
+  sel.dispatchEvent(new Event('change'));
+  sincronizarComboBuscable('evalAlumno');
 }
 
 function cerrarReporteAlumno(){
@@ -6729,7 +6749,7 @@ function renderReporteTopbar(){
 }
 
 function renderReporteHoja(datos){
-  const { alumno, porMetrica, pctAsistencia, entrenamientosCompletados, ultimaEvaluacion, nombresCategorias } = datos;
+  const { alumno, porMetrica, pctAsistencia, entrenamientosCompletados, ultimaEvaluacion, cantidadEvaluaciones, nombresCategorias } = datos;
   const colorMarca = GIMNASIO_ACTUAL?.color_primario || '#16a34a';
   const fotoHtml = alumno.foto_url
     ? `<img src="${alumno.foto_url}" style="width:64px; height:64px; border-radius:50%; object-fit:cover; border:3px solid #ffffff; flex-shrink:0;">`
@@ -6758,7 +6778,7 @@ function renderReporteHoja(datos){
           <div id="reporteChart-${slugMetrica(m)}">${svgChartReporte(porMetrica[m], colorMarca)}</div>
         </div>
       `).join('')
-    : '<div style="color:#6b7280; font-size:13px;">Todavía no hay evaluaciones cargadas para ver la evolución. Cargalas desde "📏 Evaluaciones".</div>';
+    : ''; // el estado vacío ya lo cubre el resumenEvaluacionesHtml de arriba, no hace falta repetirlo
 
   // "Desempeño por habilidad" — barras con el último valor de cada métrica
   // cargada en % (0-100), al estilo del reporte de referencia. Sólo aparecen
@@ -6785,6 +6805,47 @@ function renderReporteHoja(datos){
       </div>`
     : '';
 
+  // (24/9) Pedido de Martin: mostrar los datos físicos del alumno en la ficha,
+  // en un formato prolijo tipo tarjetas — mismo estilo que los KPI de arriba.
+  const edad = edadDesdeFecha(alumno.fecha_nacimiento);
+  const imc = imcDesde(alumno.peso_kg, alumno.altura_cm);
+  const SEXO_LABEL = { H: 'Masculino', M: 'Femenino', Otro: 'Otro' };
+  const datosFisicosTiles = [
+    edad != null ? { valor: `${edad}`, etiqueta: 'Edad' } : null,
+    alumno.sexo ? { valor: SEXO_LABEL[alumno.sexo] || alumno.sexo, etiqueta: 'Sexo' } : null,
+    alumno.altura_cm ? { valor: `${alumno.altura_cm} cm`, etiqueta: 'Altura' } : null,
+    alumno.peso_kg ? { valor: `${alumno.peso_kg} kg`, etiqueta: 'Peso' } : null,
+    imc != null ? { valor: imc.toFixed(1), etiqueta: 'IMC' } : null,
+    alumno.deporte_disciplina ? { valor: alumno.deporte_disciplina, etiqueta: 'Deporte' } : null,
+    alumno.categoria_peso ? { valor: alumno.categoria_peso, etiqueta: 'Cat. de peso' } : null,
+  ].filter(Boolean);
+  const datosFisicosHtml = datosFisicosTiles.length ? `
+    <div style="padding:16px 20px 4px;">
+      <div style="font-weight:800; font-size:15px; margin-bottom:10px; color:#111827;">Datos físicos</div>
+      <div class="row" style="gap:10px; flex-wrap:wrap;">
+        ${datosFisicosTiles.map(t => `<div class="reporte-kpi"><div class="valor">${t.valor}</div><div class="etiqueta">${t.etiqueta}</div></div>`).join('')}
+      </div>
+    </div>
+  ` : `
+    <div style="padding:16px 20px 4px;">
+      <div style="font-weight:800; font-size:15px; margin-bottom:6px; color:#111827;">Datos físicos</div>
+      <div style="color:#6b7280; font-size:13px;">Todavía no hay datos físicos cargados. Se cargan desde "📏 Evaluaciones" → módulo "Datos personales".</div>
+    </div>
+  `;
+
+  // Resumen bien visible de si se hicieron evaluaciones o no, en vez de que haya
+  // que interpretarlo mirando si aparecen gráficos de evolución más abajo.
+  const resumenEvaluacionesHtml = cantidadEvaluaciones
+    ? `<div style="display:flex; align-items:center; gap:8px; font-size:13px; color:#111827; margin-bottom:12px;">
+        <span style="background:#dcfce7; color:#166534; font-weight:700; padding:3px 10px; border-radius:999px; font-size:12px;">✓ ${cantidadEvaluaciones} evaluación${cantidadEvaluaciones===1?'':'es'} registrada${cantidadEvaluaciones===1?'':'s'}</span>
+        <span style="color:#6b7280;">Última: ${formatearFechaCorta(ultimaEvaluacion.fecha)}</span>
+        <button class="ghost" style="margin-left:auto;" onclick="irACargarEvaluacionDesdeFicha('${alumno.id}')">+ Nueva evaluación</button>
+      </div>`
+    : `<div style="display:flex; align-items:center; justify-content:space-between; gap:8px; background:#fff7ed; border:1px solid #fed7aa; border-radius:10px; padding:10px 14px; margin-bottom:12px;">
+        <span style="font-size:13px; color:#9a3412;">⚠️ Todavía no se le registró ninguna evaluación.</span>
+        <button class="ghost" onclick="irACargarEvaluacionDesdeFicha('${alumno.id}')">📏 Cargar evaluación</button>
+      </div>`;
+
   return `
     <div class="reporte-hoja" id="reporteHoja">
       <div style="background:${colorMarca}; padding:20px; display:flex; align-items:center; gap:14px;">
@@ -6794,10 +6855,12 @@ function renderReporteHoja(datos){
           <div style="color:rgba(255,255,255,.9); font-size:13px;">${chipsInfo || (GIMNASIO_ACTUAL?.nombre || '')}</div>
         </div>
       </div>
+      ${datosFisicosHtml}
       ${kpisHtml}
       ${habilidadesHtml}
       <div style="padding:16px 20px 20px;">
-        <div style="font-weight:800; font-size:15px; margin-bottom:10px; color:#111827;">Evolución</div>
+        <div style="font-weight:800; font-size:15px; margin-bottom:10px; color:#111827;">Evaluaciones y evolución</div>
+        ${resumenEvaluacionesHtml}
         ${evolucionHtml}
         ${observacionesHtml}
       </div>
