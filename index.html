@@ -1531,6 +1531,18 @@
         </div>
 
         <div class="card">
+          <h2 style="margin-top:0">Bloques de rutina</h2>
+          <div class="muted" style="margin-bottom:10px;">Ej: Movilidad, Bloque 1, Fuerza, Core. Se usan para agrupar ejercicios en el Armador y en Rutina especial — el profesor elige uno de esta lista al armar cada día (o escribe uno nuevo con "Otro...").</div>
+          <div class="row">
+            <div class="field" style="flex:1; min-width:200px;">
+              <input id="nuevoBloqueGimnasioNombre" placeholder="Ej: Core" onkeydown="if(event.key==='Enter') crearBloqueGimnasio();">
+            </div>
+            <button onclick="crearBloqueGimnasio()">+ Agregar bloque</button>
+          </div>
+          <div id="listaBloquesGimnasio" class="muted" style="margin-top:10px;">Cargando...</div>
+        </div>
+
+        <div class="card">
           <h2 style="margin-top:0">Categorías / disciplinas</h2>
           <div class="muted" style="margin-bottom:10px;">Ej: Fuerza, Funcional, Fútbol. Después, a cada alumno le tildás una o varias desde "👤 Alumnos".</div>
           <div class="row">
@@ -2876,14 +2888,18 @@ function normalizar(s){
 // También ignora tildes, así "biceps"/"gluteos" matchean aunque la base tenga "Bíceps"/"Glúteos".
 
 // ---------- Selector de "Bloque" con lista fija + Otro (texto libre) ----------
-const BLOQUES_FIJOS = ['Movilidad','Bloque 1','Bloque 2','Bloque 3','Fuerza'];
+// (24/9) Los bloques ahora salen de BLOQUES_GIMNASIO_CACHE (configurable por
+// gimnasio desde "🏢 Mi gimnasio → Bloques de rutina"), ya no es una lista fija
+// en el código. Se deja "Otro..." igual que antes para poder tipear uno puntual
+// sin tener que darlo de alta primero.
 const BLOQUE_CB = {}; // uid -> callback(valorFinal) a ejecutar cuando cambia el bloque
 
 function bloqueFieldHtml(uid, valorActual, callback){
   BLOQUE_CB[uid] = callback;
-  const esFijo = BLOQUES_FIJOS.includes(valorActual);
+  const nombresConfigurados = BLOQUES_GIMNASIO_CACHE.map(b => b.nombre);
+  const esFijo = nombresConfigurados.includes(valorActual);
   const valorOtro = esFijo ? '' : (valorActual || '');
-  const opciones = BLOQUES_FIJOS.map(b => `<option value="${b}" ${valorActual===b?'selected':''}>${b}</option>`).join('');
+  const opciones = nombresConfigurados.map(b => `<option value="${b}" ${valorActual===b?'selected':''}>${b}</option>`).join('');
   return `
     <select id="bloqueSel-${uid}" onchange="onBloqueSelectChange('${uid}', this.value)">
       <option value="" ${!valorActual?'selected':''} disabled>Elegir...</option>
@@ -3141,25 +3157,65 @@ async function guardarGimnasio(){
 let CATEGORIAS_CACHE = [];
 let EQUIPOS_CACHE = [];
 let TIPOS_ALUMNO_CACHE = [];
+let BLOQUES_GIMNASIO_CACHE = [];
 
 async function cargarCategoriasYEquipos(){
   if (!PERFIL_ACTUAL) return;
   try{
-    const [categorias, equipos, tiposAlumno] = await Promise.all([
+    const [categorias, equipos, tiposAlumno, bloques] = await Promise.all([
       sb(`categorias?select=id,nombre,activa&gimnasio_id=eq.${PERFIL_ACTUAL.gimnasio_id}&activa=eq.true&order=nombre.asc`),
       sb(`equipos?select=id,nombre,activo&gimnasio_id=eq.${PERFIL_ACTUAL.gimnasio_id}&activo=eq.true&order=nombre.asc`),
       sb(`tipos_alumno?select=id,nombre,activo&gimnasio_id=eq.${PERFIL_ACTUAL.gimnasio_id}&activo=eq.true&order=orden.asc,nombre.asc`),
+      sb(`bloques_gimnasio?select=id,nombre,activo&gimnasio_id=eq.${PERFIL_ACTUAL.gimnasio_id}&activo=eq.true&order=orden.asc,nombre.asc`),
     ]);
     CATEGORIAS_CACHE = categorias;
     EQUIPOS_CACHE = equipos;
     TIPOS_ALUMNO_CACHE = tiposAlumno;
+    BLOQUES_GIMNASIO_CACHE = bloques;
   }catch(e){ /* si falla, se queda con lo que ya tenía en caché */ }
   renderListaCategorias();
   renderListaEquipos();
   renderListaTiposAlumno();
+  renderListaBloquesGimnasio();
   poblarSelectEquipoEsp();
   poblarSelectEquipoVista();
   poblarSelectsTipoAlumno();
+}
+
+// ---------- Bloques de rutina (pedido 24/9, reemplaza la lista fija BLOQUES_FIJOS) ----------
+function renderListaBloquesGimnasio(){
+  const cont = document.getElementById('listaBloquesGimnasio');
+  if (!cont) return;
+  cont.innerHTML = BLOQUES_GIMNASIO_CACHE.length
+    ? BLOQUES_GIMNASIO_CACHE.map(b => `
+        <span class="pill" style="margin:0 6px 6px 0;">${b.nombre}
+          <span style="cursor:pointer; margin-left:6px;" title="Eliminar bloque" onclick="eliminarBloqueGimnasio('${b.id}','${b.nombre.replace(/'/g,"&apos;")}')">✕</span>
+        </span>
+      `).join('')
+    : '<div class="empty">Todavía no cargaste ningún bloque.</div>';
+}
+
+async function crearBloqueGimnasio(){
+  const input = document.getElementById('nuevoBloqueGimnasioNombre');
+  const nombre = input.value.trim();
+  if (!nombre) return;
+  try{
+    await sb('bloques_gimnasio', { method:'POST', headers:{Prefer:'return=minimal'}, body: JSON.stringify([{ gimnasio_id: PERFIL_ACTUAL.gimnasio_id, nombre }]) });
+    input.value = '';
+    toast('Bloque agregado ✓');
+    await cargarCategoriasYEquipos();
+  }catch(e){
+    toast('Error agregando el bloque: ' + extraerMensajeError(e), true);
+  }
+}
+
+async function eliminarBloqueGimnasio(id, nombre){
+  if (!confirm(`¿Eliminar el bloque "${nombre}"? Los ejercicios que ya lo tengan asignado no se ven afectados, solo deja de aparecer como opción para rutinas nuevas.`)) return;
+  try{
+    await sb(`bloques_gimnasio?id=eq.${id}`, { method:'DELETE', headers:{Prefer:'return=minimal'} });
+    toast('Bloque eliminado ✓');
+    await cargarCategoriasYEquipos();
+  }catch(e){ toast('Error eliminando el bloque: ' + extraerMensajeError(e), true); }
 }
 
 function renderListaCategorias(){
@@ -6105,17 +6161,6 @@ function crearConstructorDeDias(prefijo, containerId){
               <div class="field" style="min-width:150px;">
                 <label>📅 Fecha (tocá para elegir del calendario)</label>
                 <input type="date" value="${dia.fecha}" onchange="CONS['${prefijo}'].setFecha('${diaId}',this.value)">
-              </div>
-              <div class="field" style="min-width:190px;">
-                <label>Etiqueta (opcional)</label>
-                <input value="${dia.nombre_dia}" placeholder="Ej: Tren superior" onchange="CONS['${prefijo}'].estado.dias['${diaId}'].nombre_dia=this.value">
-              </div>
-              <div class="field" style="min-width:170px;">
-                <label>🎯 Objetivo (opcional)</label>
-                <select onchange="CONS['${prefijo}'].estado.dias['${diaId}'].objetivo=this.value">
-                  <option value="">-- sin definir --</option>
-                  ${OBJETIVOS_ENTRENAMIENTO.map(o => `<option value="${o}" ${dia.objetivo===o?'selected':''}>${o}</option>`).join('')}
-                </select>
               </div>
             </div>
             <button class="danger" onclick="if(confirm('¿Eliminar este día de la rutina?')) CONS['${prefijo}'].eliminarDia('${diaId}')">🗑️ Eliminar día</button>
