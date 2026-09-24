@@ -4419,7 +4419,7 @@ async function verRutinaDelTurno(){
   }
   cont.innerHTML = 'Cargando...';
   try{
-    const items = await sb(`rutina_ejercicios?select=id,orden,bloque,series,repeticiones,peso_sugerido,tiempo_trabajo_seg,descanso_seg,rir,notas,unilateral,ejercicios(id,nombre,grupo_muscular,provider_ref_id,video_provider,video_url_propio)&rutina_dia_id=eq.${rutinaDiaId}&order=orden.asc`);
+    const items = await sb(`rutina_ejercicios?select=id,orden,bloque,series,repeticiones,peso_sugerido,tiempo_trabajo_seg,descanso_seg,rir,notas,unilateral,peso_corporal,variante,ejercicios(id,nombre,grupo_muscular,provider_ref_id,video_provider,video_url_propio)&rutina_dia_id=eq.${rutinaDiaId}&order=orden.asc`);
     if (!items.length){ cont.innerHTML = '<div class="empty">Esa rutina no tiene ejercicios cargados.</div>'; return; }
     let bloqueActual = null;
     cont.innerHTML = items.map(item => {
@@ -5788,6 +5788,8 @@ function crearConstructorDeDias(prefijo, containerId){
             <div class="field" style="min-width:70px;"><label>RIR</label><input type="number" min="0" max="5" value="${ex.rir ?? ''}" onchange="CONS['${prefijo}'].estado.dias['${diaId}'].ejercicios[${idx}].rir=this.value?parseInt(this.value):null"></div>
             <div class="field" style="flex:1; min-width:140px;"><label>Notas</label><input value="${ex.notas ?? ''}" onchange="CONS['${prefijo}'].estado.dias['${diaId}'].ejercicios[${idx}].notas=this.value"></div>
             <div class="field" style="min-width:100px;"><label>Unilateral</label><label style="display:flex; align-items:center; gap:4px; font-weight:400; height:38px;"><input type="checkbox" ${ex.unilateral?'checked':''} onchange="CONS['${prefijo}'].estado.dias['${diaId}'].ejercicios[${idx}].unilateral=this.checked"> Por lado</label></div>
+            <div class="field" style="min-width:110px;"><label>Peso corporal</label><label style="display:flex; align-items:center; gap:4px; font-weight:400; height:38px;"><input type="checkbox" ${ex.peso_corporal?'checked':''} onchange="CONS['${prefijo}'].estado.dias['${diaId}'].ejercicios[${idx}].peso_corporal=this.checked"> Sin peso extra</label></div>
+            <div class="field" style="min-width:130px;"><label>Variante</label><input placeholder="Ej: Con banda" value="${ex.variante ?? ''}" onchange="CONS['${prefijo}'].estado.dias['${diaId}'].ejercicios[${idx}].variante=this.value"></div>
             <button class="danger" style="align-self:end;" onclick="CONS['${prefijo}'].quitarEjercicio('${diaId}',${idx})">Quitar</button>
           </div>
         </div>
@@ -5895,7 +5897,7 @@ function crearConstructorDeDias(prefijo, containerId){
   function agregarEjercicio(diaId, ejercicioJson){
     const ejercicio = typeof ejercicioJson === 'string' ? JSON.parse(ejercicioJson) : ejercicioJson;
     const bloque = (estado.dias[diaId].bloqueActual || '').trim() || 'General';
-    estado.dias[diaId].ejercicios.push({ ejercicio, bloque, series:3, repeticiones:'10-12', peso_sugerido:null, tiempo_trabajo_seg:null, descanso_seg:60, rir:null, notas:'', unilateral:false });
+    estado.dias[diaId].ejercicios.push({ ejercicio, bloque, series:3, repeticiones:'10-12', peso_sugerido:null, tiempo_trabajo_seg:null, descanso_seg:60, rir:null, notas:'', unilateral:false, peso_corporal:false, variante:'' });
     document.getElementById(`resultados-${diaId}`).style.display='none';
     render();
   }
@@ -6608,6 +6610,8 @@ async function guardarRutinaGenerica({ constructor, nombre, profesorId, tipoAlum
           rir: ex.rir,
           notas: ex.notas || null,
           unilateral: !!ex.unilateral,
+          peso_corporal: !!ex.peso_corporal,
+          variante: ex.variante || null,
         });
       });
     });
@@ -6794,7 +6798,7 @@ async function cargarEdicionDia(diaId, contId){
   const div = document.getElementById(contId);
   div.innerHTML = 'Cargando...';
   try{
-    const items = await sb(`rutina_ejercicios?select=id,orden,bloque,series,repeticiones,peso_sugerido,tiempo_trabajo_seg,descanso_seg,rir,notas,unilateral,ejercicios(id,nombre,grupo_muscular,provider_ref_id,video_provider,video_url_propio)&rutina_dia_id=eq.${diaId}&order=orden.asc`);
+    const items = await sb(`rutina_ejercicios?select=id,orden,bloque,series,repeticiones,peso_sugerido,tiempo_trabajo_seg,descanso_seg,rir,notas,unilateral,peso_corporal,variante,ejercicios(id,nombre,grupo_muscular,provider_ref_id,video_provider,video_url_propio)&rutina_dia_id=eq.${diaId}&order=orden.asc`);
     EDICION_DIAS[diaId] = { items, contId };
     renderEdicionDia(diaId);
   }catch(e){ div.innerHTML = 'Error: ' + e.message; }
@@ -6835,6 +6839,8 @@ function filaEdicionHtml(diaId, item){
           <div class="field" style="min-width:70px;"><label>RIR</label><input type="number" min="0" max="5" value="${item.rir ?? ''}" onchange="setCampoEdicion('${diaId}','${item.id}','rir',this.value?parseInt(this.value):null)"></div>
           <div class="field" style="flex:1; min-width:140px;"><label>Notas</label><input value="${item.notas ?? ''}" onchange="setCampoEdicion('${diaId}','${item.id}','notas',this.value)"></div>
           <div class="field" style="min-width:100px;"><label>Unilateral</label><label style="display:flex; align-items:center; gap:4px; font-weight:400; height:38px;"><input type="checkbox" ${item.unilateral?'checked':''} onchange="setCampoEdicion('${diaId}','${item.id}','unilateral',this.checked)"> Por lado</label></div>
+          <div class="field" style="min-width:110px;"><label>Peso corporal</label><label style="display:flex; align-items:center; gap:4px; font-weight:400; height:38px;"><input type="checkbox" ${item.peso_corporal?'checked':''} onchange="setCampoEdicion('${diaId}','${item.id}','peso_corporal',this.checked)"> Sin peso extra</label></div>
+          <div class="field" style="min-width:130px;"><label>Variante</label><input placeholder="Ej: Con banda" value="${item.variante ?? ''}" onchange="setCampoEdicion('${diaId}','${item.id}','variante',this.value)"></div>
           <button class="danger" style="align-self:end;" onclick="quitarEjercicioEdicion('${diaId}','${item.id}')">Quitar</button>
         </div>
       </div>
@@ -6913,6 +6919,8 @@ async function guardarEdicionDia(diaId){
         peso_sugerido: item.peso_sugerido, tiempo_trabajo_seg: item.tiempo_trabajo_seg,
         descanso_seg: item.descanso_seg, rir: item.rir, notas: item.notas,
         unilateral: !!item.unilateral,
+        peso_corporal: !!item.peso_corporal,
+        variante: item.variante || null,
       })
     })));
     toast('Cambios guardados ✓ El alumno los va a ver la próxima vez que entre a ese día.');
@@ -7492,7 +7500,7 @@ async function comenzarEntrenamiento(rutinaDiaId, alumnoId, nombreDia){
   cont.style.display = '';
   cont.innerHTML = '<div class="card">Iniciando entrenamiento...</div>';
   try{
-    const rows = await sb(`rutina_ejercicios?select=id,orden,bloque,series,repeticiones,peso_sugerido,tiempo_trabajo_seg,descanso_seg,rir,notas,unilateral,ejercicios(id,nombre,grupo_muscular,provider_ref_id,video_provider,video_url_propio)&rutina_dia_id=eq.${rutinaDiaId}&order=orden.asc`);
+    const rows = await sb(`rutina_ejercicios?select=id,orden,bloque,series,repeticiones,peso_sugerido,tiempo_trabajo_seg,descanso_seg,rir,notas,unilateral,peso_corporal,variante,ejercicios(id,nombre,grupo_muscular,provider_ref_id,video_provider,video_url_propio)&rutina_dia_id=eq.${rutinaDiaId}&order=orden.asc`);
 
     // (24/9) Feedback de Martin: si ya había un entrenamiento sin terminar para este
     // mismo día (salió y volvió a entrar), retomarlo en vez de crear uno nuevo — así
@@ -7547,6 +7555,13 @@ async function comenzarEntrenamiento(rutinaDiaId, alumnoId, nombreDia){
 
     const defaultsPorEjercicio = await cargarUltimosPesos(rows.map(r => r.ejercicios.id));
 
+    // Peso corporal del alumno (24/9): lo usan los ejercicios marcados "peso corporal"
+    // (ej. dominadas) para calcular el tonelaje real (peso corporal + extra cargado).
+    try{
+      const [alumnoDatos] = await sb(`alumnos?id=eq.${alumnoId}&select=peso_kg`);
+      window._alumnoPesoCorporal = alumnoDatos?.peso_kg ?? null;
+    }catch(e){ window._alumnoPesoCorporal = null; }
+
     const porRutinaEjercicioId = {};
     eeFilas.forEach(e => { porRutinaEjercicioId[e.rutina_ejercicio_id] = e; });
 
@@ -7554,7 +7569,8 @@ async function comenzarEntrenamiento(rutinaDiaId, alumnoId, nombreDia){
     const bloques = rows.map(r => {
       const ee = porRutinaEjercicioId[r.id];
       const seriesPrevias = seriesPorEjecucionEjercicio[ee.id] || [];
-      seriesPrevias.forEach(s => { tonelajeAcumulado += Number(s.tonelaje || 0); });
+      let tonelajeEjercicio = 0;
+      seriesPrevias.forEach(s => { const t = Number(s.tonelaje || 0); tonelajeAcumulado += t; tonelajeEjercicio += t; });
       return {
         ejecucionEjercicioId: ee.id,
         prescripcion: r,
@@ -7563,6 +7579,7 @@ async function comenzarEntrenamiento(rutinaDiaId, alumnoId, nombreDia){
         omitido: !!ee.omitido,
         motivoOmision: ee.motivo_omision || null,
         seriesPrevias,
+        tonelajeEjercicio,
         defaults: defaultsPorEjercicio[r.ejercicios.id] || {},
       };
     });
@@ -7632,27 +7649,44 @@ function bloqueHtml(b, idx){
     `;
   }
 
+  const pesoCorporalAlumno = Number(window._alumnoPesoCorporal) || 0;
   const filasSets = Array.from({length: p.series}).map((_, s) => {
     const numero = s + 1;
     const registrada = (b.seriesPrevias || [])[s];
     const prev = d[numero];
     // Si ya se registró esta serie en una sesión anterior (retomando el entrenamiento),
     // se muestra fija con lo ya cargado; si no, se precarga con el último registro
-    // histórico del alumno o, en su defecto, la sugerencia del profesor.
-    const pesoDefault = registrada ? (registrada.peso_realizado ?? '') : ((prev && prev.peso != null) ? prev.peso : (p.peso_sugerido ?? ''));
+    // histórico del alumno o, en su defecto, la sugerencia del profesor. En ejercicios
+    // de peso corporal (24/9, ej. dominadas) el campo pasa a ser "extra" (lo que se le
+    // suma al propio peso), no el peso total.
+    let pesoDefault;
+    if (p.peso_corporal){
+      pesoDefault = registrada ? (registrada.peso_realizado != null ? Math.max(0, registrada.peso_realizado - pesoCorporalAlumno) : '') : '';
+    } else {
+      pesoDefault = registrada ? (registrada.peso_realizado ?? '') : ((prev && prev.peso != null) ? prev.peso : (p.peso_sugerido ?? ''));
+    }
     const repsDefault = registrada ? (registrada.repeticiones_realizadas ?? '') : ((prev && prev.reps != null) ? prev.reps : '');
     const rirDefault = registrada ? (registrada.rir_realizado ?? '') : ((prev && prev.rir != null) ? prev.rir : (p.rir ?? ''));
     const dis = b.finalizado ? 'disabled' : '';
     return `
     <div class="set-row">
       <div class="muted">#${numero}</div>
-      <input type="number" step="0.5" placeholder="Peso (kg)" id="peso-${idx}-${s}" value="${pesoDefault}" ${dis}>
+      <input type="number" step="0.5" placeholder="${p.peso_corporal ? 'Extra (kg)' : 'Peso (kg)'}" id="peso-${idx}-${s}" value="${pesoDefault}" ${dis}>
       <input type="number" placeholder="Reps" id="reps-${idx}-${s}" value="${repsDefault}" ${dis}>
       <input type="number" placeholder="RIR" id="rir-${idx}-${s}" value="${rirDefault}" ${dis}>
-      <span class="muted">sug: ${p.peso_sugerido ?? '-'}kg × ${p.repeticiones}</span>
+      <span class="muted">sug: ${p.peso_corporal ? 'peso corporal' : (p.peso_sugerido ?? '-')+'kg'} × ${p.repeticiones}</span>
     </div>
   `;
   }).join('');
+  const encabezadoSets = `
+    <div class="set-row" style="margin-bottom:2px;">
+      <div class="muted" style="font-size:11px;">#</div>
+      <div class="muted" style="font-size:11px;">${p.peso_corporal ? 'Extra (kg)' : 'Peso (kg)'}</div>
+      <div class="muted" style="font-size:11px;">Reps</div>
+      <div class="muted" style="font-size:11px;">RIR</div>
+      <div class="muted" style="font-size:11px;">Sugerido</div>
+    </div>
+  `;
 
   const esPorTiempo = !!p.tiempo_trabajo_seg;
   const detalleSets = esPorTiempo
@@ -7664,7 +7698,7 @@ function bloqueHtml(b, idx){
       <div class="ex-header">
         ${mediaTagHtml(b.ejercicioActual, '')}
         <div style="flex:1;">
-          <div style="font-weight:700;">${b.ejercicioActual.nombre} ${b.ejercicioActual.id !== p.ejercicios.id ? '<span class="badge-sub">Sustituido</span>' : ''}</div>
+          <div style="font-weight:700;">${b.ejercicioActual.nombre} ${b.ejercicioActual.id !== p.ejercicios.id ? '<span class="badge-sub">Sustituido</span>' : ''} ${p.variante ? `<span class="badge-sub">${p.variante}</span>` : ''}</div>
           <div class="muted">${b.ejercicioActual.grupo_muscular} · ${detalleSets}</div>
           ${p.notas ? `<div class="nota-profesor">📋 ${p.notas}</div>` : ''}
         </div>
@@ -7672,7 +7706,8 @@ function bloqueHtml(b, idx){
         <button class="ghost" onclick="abrirSustitucion(${idx})" ${b.finalizado?'disabled':''}>No puedo hacer este ejercicio</button>
       </div>
       <div id="sustitucion-${idx}"></div>
-      <div id="sets-${idx}">${filasSets}</div>
+      <div id="sets-${idx}">${encabezadoSets}${filasSets}</div>
+      <div class="muted" id="tonelajeEj-${idx}" style="margin-top:4px; font-size:12px;">${(b.finalizado && !b.omitido && b.tonelajeEjercicio) ? 'Tonelaje de este ejercicio: '+Number(b.tonelajeEjercicio).toFixed(1)+' kg' : ''}</div>
       <div class="row" style="justify-content:flex-end; margin-top:8px;">
         <button onclick="finalizarEjercicio(${idx})" ${b.finalizado?'disabled':''} id="btnFin-${idx}">${b.finalizado ? 'Registrado ✓' : 'Finalizar ejercicio y registrar'}</button>
       </div>
@@ -7773,17 +7808,25 @@ async function marcarEjercicioOmitido(idx){
 async function finalizarEjercicio(idx){
   const b = window._bloques[idx];
   const p = b.prescripcion;
+  const pesoCorporalAlumno = Number(window._alumnoPesoCorporal) || 0;
   const filas = [];
   for (let s=0; s<p.series; s++){
-    const peso = document.getElementById(`peso-${idx}-${s}`).value;
+    const pesoInput = document.getElementById(`peso-${idx}-${s}`).value;
     const reps = document.getElementById(`reps-${idx}-${s}`).value;
     const rir = document.getElementById(`rir-${idx}-${s}`).value;
+    let pesoRealizado;
+    if (p.peso_corporal){
+      const extra = pesoInput ? parseFloat(pesoInput) : 0;
+      pesoRealizado = (pesoCorporalAlumno + extra) > 0 ? (pesoCorporalAlumno + extra) : null;
+    } else {
+      pesoRealizado = pesoInput ? parseFloat(pesoInput) : null;
+    }
     filas.push({
       ejecucion_ejercicio_id: b.ejecucionEjercicioId,
       numero_serie: s+1,
       peso_sugerido: p.peso_sugerido,
       repeticiones_sugeridas: p.repeticiones,
-      peso_realizado: peso ? parseFloat(peso) : null,
+      peso_realizado: pesoRealizado,
       repeticiones_realizadas: reps ? parseInt(reps) : null,
       rir_realizado: rir ? parseInt(rir) : null,
     });
@@ -7796,9 +7839,13 @@ async function finalizarEjercicio(idx){
     b.finalizado = true;
     b.seriesPrevias = filas.map(f => ({ peso_realizado: f.peso_realizado, repeticiones_realizadas: f.repeticiones_realizadas, rir_realizado: f.rir_realizado }));
     // (24/9) Tonelaje de la serie (reps x kg) — se calcula solo y queda guardado en la
-    // base (columna calculada en series_registradas); acá solo sumamos el total de la
-    // sesión para mostrarlo al finalizar el entrenamiento.
-    window._tonelajeTotal = (window._tonelajeTotal || 0) + filas.reduce((acc,f) => acc + ((f.peso_realizado||0) * (f.repeticiones_realizadas||0)), 0);
+    // base (columna calculada en series_registradas). Acá se suma tanto el total de la
+    // sesión (se muestra al finalizar el entrenamiento) como el de este ejercicio puntual.
+    const tonelajeEjercicio = filas.reduce((acc,f) => acc + ((f.peso_realizado||0) * (f.repeticiones_realizadas||0)), 0);
+    window._tonelajeTotal = (window._tonelajeTotal || 0) + tonelajeEjercicio;
+    b.tonelajeEjercicio = tonelajeEjercicio;
+    const tonelajeEl = document.getElementById(`tonelajeEj-${idx}`);
+    if (tonelajeEl) tonelajeEl.textContent = tonelajeEjercicio > 0 ? `Tonelaje de este ejercicio: ${tonelajeEjercicio.toFixed(1)} kg` : '';
     btn.textContent = 'Registrado ✓';
     document.querySelectorAll(`#bloque-${idx} input`).forEach(i=>i.disabled=true);
     document.querySelectorAll(`#bloque-${idx} button.ghost`).forEach(x=>x.disabled=true);
@@ -7932,6 +7979,19 @@ function cronoBeep(freq, dur){
   }catch(e){ /* sin audio disponible, seguimos igual */ }
 }
 
+// (24/9) Pedido de Martin: que el cronómetro de intervalos diga en voz alta
+// "Empezar" / "Descanso" / "Ejercicio terminado", además del beep.
+function cronoDecir(texto){
+  try{
+    if (!('speechSynthesis' in window)) return;
+    const u = new SpeechSynthesisUtterance(texto);
+    u.lang = 'es-ES';
+    u.rate = 1.05;
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(u);
+  }catch(e){ /* sin voz disponible, seguimos igual */ }
+}
+
 // --- Simple: cronómetro que cuenta para arriba, con botón de "vuelta/pasada" ---
 function cronoSimpleIniciar(){
   if (CRONO.simple.intervalId) return;
@@ -7979,6 +8039,7 @@ function cronoIntervalosIniciar(){
     st.fase = 'trabajo';
     st.segRestantes = st.trabajo;
     cronoBeep(880, 150);
+    cronoDecir('Empezar');
   }
   document.getElementById('btnCronoIntIniciar').disabled = true;
   document.getElementById('btnCronoIntPausar').disabled = false;
@@ -7996,6 +8057,7 @@ function cronoIntervalosAvanzar(st){
       st.fase = 'descanso';
       st.segRestantes = st.descanso;
       cronoBeep(440, 150);
+      cronoDecir('Descanso');
       return;
     }
     if (cronoIntervalosEsUltimoTramo(st)){
@@ -8016,6 +8078,7 @@ function cronoIntervalosAvanzar(st){
   st.fase = 'trabajo';
   st.segRestantes = st.trabajo;
   cronoBeep(880, 150);
+  cronoDecir('Empezar');
 }
 function finalizarIntervalos(st){
   st.fase = 'terminado';
@@ -8024,6 +8087,7 @@ function finalizarIntervalos(st){
   document.getElementById('btnCronoIntIniciar').disabled = false;
   document.getElementById('btnCronoIntPausar').disabled = true;
   cronoBeep(1200, 400);
+  cronoDecir('Ejercicio terminado');
 }
 function cronoIntervalosTick(){
   const st = CRONO.intervalos;
