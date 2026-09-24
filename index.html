@@ -154,7 +154,12 @@
     font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--accent);
     margin:14px 0 8px; padding-bottom:4px; border-bottom:1px solid var(--border);
   }
-  .bloque-titulo:first-child{margin-top:0;}
+  .bloque-seccion:first-child .bloque-titulo{margin-top:0;}
+  .bloque-titulo-clickable{cursor:pointer; display:flex; align-items:center; gap:8px; user-select:none;}
+  .bloque-titulo-clickable:hover{color:var(--text);}
+  .bloque-caret{display:inline-block; width:10px; font-size:11px; color:var(--muted); flex-shrink:0;}
+  .bloque-conteo{margin-left:auto; text-transform:none; letter-spacing:0; font-weight:600; font-size:11px; color:var(--muted);}
+  .bloque-titulo-clickable .badge-ok{margin-left:auto;}
   .set-row{display:grid; grid-template-columns:26px 1fr 1fr 1fr 76px; gap:6px; align-items:center; margin-bottom:6px;}
   .set-row input{width:100%;}
   .set-row .set-head{font-size:11px;}
@@ -893,11 +898,7 @@
               <label>Profesor</label>
               <select id="profProfesor"></select>
             </div>
-            <div class="field" style="flex:1; min-width:220px;">
-              <label>Nombre de la rutina</label>
-              <input id="profNombreRutina" placeholder="Ej: Fuerza - Fase 1, Fútbol - Sub15, Funcional..." />
-            </div>
-            <div class="field" style="min-width:200px;">
+            <div class="field" style="flex:1; min-width:200px;">
               <label>Tipo de alumno</label>
               <select id="profTipoAlumno"></select>
             </div>
@@ -5942,14 +5943,20 @@ function agregarDiaEsp(){ CONS['esp'].agregarDia(); }
 // directo a una persona se usa el panel de "Rutinas especiales por alumno".
 async function guardarRutina(){
   const profesorId = document.getElementById('profProfesor').value;
-  const nombre = document.getElementById('profNombreRutina').value.trim();
   const tipoAlumnoId = document.getElementById('profTipoAlumno').value;
+  // (24/9) Pedido de Martin: sacar el campo manual de "nombre de la rutina" en el
+  // Armador — ya no hace falta porque ahora se matchea sola por tipo de alumno +
+  // fecha, y tener que inventarle un nombre a mano solo confundía. El nombre se
+  // arma solo (tipo + fecha del primer día) y queda igual para mostrar en la
+  // grilla y el buscador de rutinas.
+  const tipoNombre = TIPOS_ALUMNO_CACHE.find(t => t.id === tipoAlumnoId)?.nombre || 'General';
+  const fechasOrdenadas = Object.values(CONS['dia'].estado.dias).map(d => d.fecha).filter(Boolean).sort();
+  const nombre = `${tipoNombre}${fechasOrdenadas.length ? ' · ' + fechaLegible(fechasOrdenadas[0]) : ''}`;
   await guardarRutinaGenerica({
     constructor: CONS['dia'], nombre, profesorId, tipoAlumnoId,
     alumnosDestino: [],
     btnId: 'btnGuardarRutina',
     onOk: () => {
-      document.getElementById('profNombreRutina').value = '';
       document.getElementById('profTipoAlumno').value = '';
       cargarGrillaRutinas();
     },
@@ -7620,10 +7627,31 @@ function renderEjecucion(ejecucionId, nombreDia, bloques){
     if (!indicesPorSeccion[s]){ indicesPorSeccion[s] = []; seccionesOrden.push(s); }
     indicesPorSeccion[s].push(idx);
   });
-  const bloquesHtml = seccionesOrden.map(s => `
-    <div class="bloque-titulo">${s}</div>
-    ${indicesPorSeccion[s].map(idx => bloqueHtml(bloques[idx], idx)).join('')}
-  `).join('');
+  // (24/9) Pedido de Martin: agrupar por bloque en secciones plegables — vista mas
+  // limpia, se va abriendo bloque por bloque a medida que se entrena. Se guarda la
+  // relacion seccion<->ejercicios para poder colapsar/abrir sola la siguiente
+  // seccion cuando se termina la actual (ver revisarAvanceBloques).
+  window._seccionesOrden = seccionesOrden;
+  window._idxsPorSeccion = indicesPorSeccion;
+  let yaAbrioUna = false;
+  const bloquesHtml = seccionesOrden.map((s, sIdx) => {
+    const idxs = indicesPorSeccion[s];
+    const completada = idxs.every(i => bloques[i].finalizado || bloques[i].omitido);
+    const abierta = !completada && !yaAbrioUna;
+    if (abierta) yaAbrioUna = true;
+    return `
+    <div class="bloque-seccion">
+      <div class="bloque-titulo bloque-titulo-clickable" onclick="toggleBloqueSeccion(${sIdx})">
+        <span class="bloque-caret" id="caret-${sIdx}">${abierta ? '▾' : '▸'}</span>
+        <span>${s}</span>
+        ${completada ? '<span class="badge-ok">✓ Completado</span>' : `<span class="bloque-conteo">${idxs.length} ejercicio${idxs.length===1?'':'s'}</span>`}
+      </div>
+      <div class="bloque-contenido" id="bloqueCont-${sIdx}" style="${abierta ? '' : 'display:none;'}">
+        ${idxs.map(idx => bloqueHtml(bloques[idx], idx)).join('')}
+      </div>
+    </div>
+  `;
+  }).join('');
 
   cont.innerHTML = `
     <div class="card">
@@ -7636,6 +7664,50 @@ function renderEjecucion(ejecucionId, nombreDia, bloques){
     </div>
   `;
   window._bloques = bloques;
+}
+
+function toggleBloqueSeccion(sIdx){
+  const cont = document.getElementById(`bloqueCont-${sIdx}`);
+  const caret = document.getElementById(`caret-${sIdx}`);
+  if (!cont) return;
+  const abierta = cont.style.display !== 'none';
+  cont.style.display = abierta ? 'none' : '';
+  if (caret) caret.textContent = abierta ? '▸' : '▾';
+}
+
+// (24/9) Al terminar (o marcar no realizado) el ultimo ejercicio pendiente de un
+// bloque, lo colapsa solo y abre el siguiente bloque con ejercicios pendientes —
+// asi el alumno va avanzando bloque por bloque sin tener que ir cerrando a mano.
+function revisarAvanceBloques(idxTocado){
+  const secciones = window._seccionesOrden || [];
+  const porSeccion = window._idxsPorSeccion || {};
+  const sIdx = secciones.findIndex(s => (porSeccion[s]||[]).includes(idxTocado));
+  if (sIdx === -1) return;
+  const idxs = porSeccion[secciones[sIdx]];
+  const completada = idxs.every(i => window._bloques[i].finalizado || window._bloques[i].omitido);
+  if (!completada) return;
+  const cont = document.getElementById(`bloqueCont-${sIdx}`);
+  const caret = document.getElementById(`caret-${sIdx}`);
+  if (cont){
+    cont.style.display = 'none';
+    const titulo = cont.previousElementSibling;
+    if (titulo && !titulo.querySelector('.badge-ok')){
+      const conteo = titulo.querySelector('.bloque-conteo');
+      if (conteo) conteo.outerHTML = '<span class="badge-ok">✓ Completado</span>';
+    }
+  }
+  if (caret) caret.textContent = '▸';
+  for (let n = sIdx+1; n < secciones.length; n++){
+    const idxsN = porSeccion[secciones[n]];
+    const completadaN = idxsN.every(i => window._bloques[i].finalizado || window._bloques[i].omitido);
+    if (!completadaN){
+      const contN = document.getElementById(`bloqueCont-${n}`);
+      const caretN = document.getElementById(`caret-${n}`);
+      if (contN) contN.style.display = '';
+      if (caretN) caretN.textContent = '▾';
+      break;
+    }
+  }
 }
 
 // (24/9) Etiqueta de la causa cuando un ejercicio queda marcado "no realizado".
@@ -7820,6 +7892,7 @@ async function marcarEjercicioOmitido(idx){
     const wrapper = document.createElement('div');
     wrapper.innerHTML = bloqueHtml(b, idx);
     document.getElementById(`bloque-${idx}`).replaceWith(wrapper.firstElementChild);
+    revisarAvanceBloques(idx);
     toast('Ejercicio marcado como no realizado.');
   }catch(e){ toast('Error marcando el ejercicio: ' + e.message, true); }
 }
@@ -7868,6 +7941,7 @@ async function finalizarEjercicio(idx){
     btn.textContent = 'Registrado ✓';
     document.querySelectorAll(`#bloque-${idx} input`).forEach(i=>i.disabled=true);
     document.querySelectorAll(`#bloque-${idx} button.ghost`).forEach(x=>x.disabled=true);
+    revisarAvanceBloques(idx);
     toast('Ejercicio registrado ✓');
   }catch(e){
     toast('Error registrando: ' + e.message, true);
