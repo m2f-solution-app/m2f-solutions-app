@@ -3789,6 +3789,8 @@ async function confirmarLiquidacion(){
     toast('Liquidación registrada ✓');
     FACTURADOR_CALC = null;
     cargarHistorialLiquidaciones();
+    cargarGastos();
+    if (document.getElementById('gastoGraficoCategoria').value === '__profesores__') cargarGraficoGastos();
   }catch(e){
     // (24/9) Candado a nivel de base de datos (constraint de exclusión sobre el
     // período por profesor): el chequeo de arriba ya evita mostrar el botón si hay
@@ -3827,6 +3829,8 @@ async function eliminarLiquidacion(id){
     await sb(`liquidaciones_profesor?id=eq.${id}`, { method:'DELETE', headers:{Prefer:'return=minimal'} });
     toast('Liquidación eliminada ✓');
     cargarHistorialLiquidaciones();
+    cargarGastos();
+    if (document.getElementById('gastoGraficoCategoria').value === '__profesores__') cargarGraficoGastos();
   }catch(e){ toast('Error eliminando la liquidación: ' + extraerMensajeError(e), true); }
 }
 
@@ -5010,30 +5014,41 @@ async function cargarGastos(){
   if (!gimId){ cont.innerHTML = '<div class="empty">Necesitás estar logueado.</div>'; return; }
   cont.innerHTML = 'Cargando...';
   try{
-    const rows = await sb(`gastos_gimnasio?select=id,concepto,monto,fecha,gastos_categorias(nombre)&gimnasio_id=eq.${gimId}&order=fecha.desc&limit=100`);
-    const total = rows.reduce((acc,r) => acc + Number(r.monto), 0);
+    // (24/9, 3ra vuelta) Pedido de Martin: ver también el pago a profesores acá,
+    // para chequear TODOS los gastos del gimnasio en un solo lugar. Se unen dos
+    // tablas de origen distinto (gastos_gimnasio se carga a mano; liquidaciones_profesor
+    // sale del Facturador de horas) en una sola lista de solo lectura por este lado —
+    // para borrar una liquidación se sigue usando su propio candado (eliminarLiquidacion),
+    // nunca un borrado genérico, para no saltarse esa lógica.
+    const [gastos, liquidaciones] = await Promise.all([
+      sb(`gastos_gimnasio?select=id,concepto,monto,fecha,gastos_categorias(nombre)&gimnasio_id=eq.${gimId}&order=fecha.desc&limit=100`),
+      sb(`liquidaciones_profesor?select=id,monto_total,fecha_pago,periodo_desde,periodo_hasta,profesores(nombre)&gimnasio_id=eq.${gimId}&order=fecha_pago.desc&limit=100`),
+    ]);
+    const filas = [
+      ...gastos.map(r => ({ id:r.id, tipo:'gasto', concepto:r.concepto, monto:Number(r.monto), fecha:r.fecha, categoria:r.gastos_categorias?.nombre || 'Sin categoría' })),
+      ...liquidaciones.map(r => ({ id:r.id, tipo:'liquidacion', concepto:`Pago a ${r.profesores?.nombre || 'profesor'} (${formatearFechaCorta(r.periodo_desde)} al ${formatearFechaCorta(r.periodo_hasta)})`, monto:Number(r.monto_total), fecha:r.fecha_pago, categoria:'Pago a profesores' })),
+    ].sort((a,b) => b.fecha.localeCompare(a.fecha));
+
+    const total = filas.reduce((acc,r) => acc + r.monto, 0);
     totalEl.textContent = formatearMonto(total);
 
-    // Agrupado por categoría, para ver de un vistazo cuánto se va en cada rubro
-    // (luz, agua, gas, alquiler...) y no solo el total general.
+    // Agrupado por categoría (incluye "Pago a profesores" como una categoría más),
+    // para ver de un vistazo cuánto se va en cada rubro y no solo el total general.
     const porCategoria = {};
-    rows.forEach(r => {
-      const nombre = r.gastos_categorias?.nombre || 'Sin categoría';
-      porCategoria[nombre] = (porCategoria[nombre] || 0) + Number(r.monto);
-    });
+    filas.forEach(r => { porCategoria[r.categoria] = (porCategoria[r.categoria] || 0) + r.monto; });
     porCatEl.innerHTML = Object.entries(porCategoria).sort((a,b) => b[1]-a[1]).map(([nombre, monto]) => `
       <span class="pill" style="display:inline-block; margin:0 6px 6px 0;">${nombre}: <strong>${formatearMonto(monto)}</strong></span>
     `).join('');
 
-    cont.innerHTML = rows.length ? rows.map(r => `
+    cont.innerHTML = filas.length ? filas.map(r => `
       <div class="row" style="justify-content:space-between; padding:6px 0; border-bottom:1px solid var(--border);">
         <div>
           <div style="font-weight:600;">${r.concepto}</div>
-          <div class="muted" style="font-size:12px;">${r.gastos_categorias?.nombre || 'Sin categoría'} · ${formatearFechaCorta(r.fecha)}</div>
+          <div class="muted" style="font-size:12px;">${r.categoria} · ${formatearFechaCorta(r.fecha)}</div>
         </div>
         <div class="row" style="gap:8px; align-items:center;">
           <div style="font-weight:700;">${formatearMonto(r.monto)}</div>
-          <button class="ghost" style="color:var(--danger); padding:4px 8px;" onclick="eliminarGasto('${r.id}')">🗑️</button>
+          <button class="ghost" style="color:var(--danger); padding:4px 8px;" onclick="${r.tipo==='gasto' ? `eliminarGasto('${r.id}')` : `eliminarLiquidacion('${r.id}')`}">🗑️</button>
         </div>
       </div>
     `).join('') : '<div class="empty">Todavía no cargaste ningún gasto.</div>';
@@ -5060,8 +5075,8 @@ async function cargarCategoriasGraficoGasto(){
   try{
     const cats = await sb(`gastos_categorias?select=id,nombre&gimnasio_id=eq.${gimId}&activo=eq.true&order=nombre.asc`);
     const seleccionActual = sel.value;
-    sel.innerHTML = `<option value="">Elegí una categoría</option>` + cats.map(c => `<option value="${c.id}">${c.nombre}</option>`).join('');
-    if (seleccionActual && cats.some(c => c.id === seleccionActual)) sel.value = seleccionActual;
+    sel.innerHTML = `<option value="">Elegí una categoría</option><option value="__profesores__">Pago a profesores</option>` + cats.map(c => `<option value="${c.id}">${c.nombre}</option>`).join('');
+    if (seleccionActual && (seleccionActual === '__profesores__' || cats.some(c => c.id === seleccionActual))) sel.value = seleccionActual;
   }catch(e){ console.error('No se pudieron cargar las categorías para el gráfico:', e); }
 }
 
@@ -5086,9 +5101,15 @@ async function cargarGraficoGastos(){
       meses.push({ clave: `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`, anio: d.getFullYear(), mes: d.getMonth(), monto: 0 });
     }
     const desde = `${meses[0].anio}-${String(meses[0].mes+1).padStart(2,'0')}-01`;
-    const rows = await sb(`gastos_gimnasio?select=monto,fecha&gimnasio_id=eq.${gimId}&categoria_id=eq.${categoriaId}&fecha=gte.${desde}&order=fecha.asc`);
+    const esProfesores = categoriaId === '__profesores__';
+    const rows = esProfesores
+      ? await sb(`liquidaciones_profesor?select=monto_total,fecha_pago&gimnasio_id=eq.${gimId}&fecha_pago=gte.${desde}&order=fecha_pago.asc`)
+      : await sb(`gastos_gimnasio?select=monto,fecha&gimnasio_id=eq.${gimId}&categoria_id=eq.${categoriaId}&fecha=gte.${desde}&order=fecha.asc`);
     const porMes = {};
-    rows.forEach(r => { const clave = r.fecha.slice(0,7); porMes[clave] = (porMes[clave] || 0) + Number(r.monto); });
+    rows.forEach(r => {
+      const clave = (esProfesores ? r.fecha_pago : r.fecha).slice(0,7);
+      porMes[clave] = (porMes[clave] || 0) + Number(esProfesores ? r.monto_total : r.monto);
+    });
     meses.forEach(m => { m.monto = porMes[m.clave] || 0; });
     GASTO_GRAFICO_DATA = meses;
     const nombreCategoria = document.getElementById('gastoGraficoCategoria').selectedOptions[0]?.textContent || '';
