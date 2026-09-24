@@ -130,6 +130,7 @@
   .search-item .meta{font-size:11px; color:var(--muted); line-height:1.2;}
   .search-item.vacio{grid-column:1/-1; cursor:default; background:transparent; border:none;}
   .search-item.crear{border:1px dashed var(--border); cursor:pointer; justify-content:center;}
+  .media-placeholder{display:flex; align-items:center; justify-content:center; background:var(--panel2); border:1px dashed var(--border); font-size:22px; opacity:.6;}
   .lista-busqueda{
     max-height:220px; overflow-y:auto; border:1px solid var(--border); border-radius:10px;
     background:#10131a;
@@ -1332,7 +1333,7 @@
           </div>
           <div class="row" style="margin-top:8px;">
             <div class="field" style="flex:1; min-width:260px;">
-              <label>Link de imagen o video</label>
+              <label>Link de imagen o video (opcional)</label>
               <input id="nuevoEjPanelUrl" placeholder="URL: imagen, .mp4, YouTube, Vimeo..." />
             </div>
             <button onclick="crearEjercicioPersonalizadoPanel()" id="btnCrearEjPanel" style="align-self:end;">Guardar ejercicio</button>
@@ -1670,6 +1671,24 @@
   </div>
 </div>
 
+<!-- RPE (percepción subjetiva de esfuerzo) al finalizar el entrenamiento del día —
+     obligatorio: no se puede finalizar sin mover la barra al menos una vez. -->
+<div class="modal-overlay" id="modalRpe">
+  <div class="modal-box" style="max-width:380px;">
+    <h3>¿Qué tan pesado sentiste el entrenamiento?</h3>
+    <p>RPE — percepción subjetiva de esfuerzo. 1 = muy liviano, 10 = al máximo.</p>
+    <div style="font-size:36px; font-weight:800; margin-bottom:6px;" id="rpeValor">–</div>
+    <input type="range" min="1" max="10" step="1" id="rpeSlider" style="width:100%;" oninput="onRpeInput(this.value)">
+    <div class="row" style="justify-content:space-between; font-size:11px; color:var(--muted); margin-top:2px;">
+      <span>1 · liviano</span><span>10 · muy pesado</span>
+    </div>
+    <div class="row" style="gap:8px; margin-top:18px;">
+      <button class="btn-cancelar" style="flex:1;" onclick="cerrarModalRpe()">Cancelar</button>
+      <button class="btn-confirmar" style="flex:1;" id="btnConfirmarRpe" disabled onclick="confirmarRpeYFinalizar()">Finalizar entrenamiento</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="modalCopiarHorario">
   <div class="modal-box">
     <h3>Copiar horario de <span id="copiarHorarioOrigenNombre"></span> a otros días</h3>
@@ -1933,7 +1952,11 @@ function urlEmbed(url){
 // Catálogo (video_provider='gif_pack', etc.) sigue usando provider_ref_id + bucket Ejercicios.
 // Propio (video_provider='own_video') usa la URL pegada por el profesor tal cual.
 function mediaTagHtml(ej, cls){
-  const esPropio = ej.video_provider === 'own_video' && ej.video_url_propio;
+  const esPropio = ej.video_provider === 'own_video';
+  if (esPropio && !ej.video_url_propio){
+    // Ejercicio propio cargado sin imagen/video (opcional) — placeholder prolijo, sin pedir nada roto.
+    return `<div class="${cls} media-placeholder" title="Sin imagen ni video">🏋️</div>`;
+  }
   if (!esPropio){
     return `<img class="${cls}" src="${imgUrl(ej.provider_ref_id)}" onerror="this.style.opacity=0.2" />`;
   }
@@ -2695,6 +2718,44 @@ function normalizar(s){
 // palabras sueltas en cualquier orden (ej: "bicep mancuerna" => tiene que aparecer "bicep"
 // en algún lado Y "mancuerna" en algún lado, no hace falta que sea la frase exacta).
 // También ignora tildes, así "biceps"/"gluteos" matchean aunque la base tenga "Bíceps"/"Glúteos".
+
+// ---------- Selector de "Bloque" con lista fija + Otro (texto libre) ----------
+const BLOQUES_FIJOS = ['Movilidad','Bloque 1','Bloque 2','Bloque 3','Fuerza'];
+const BLOQUE_CB = {}; // uid -> callback(valorFinal) a ejecutar cuando cambia el bloque
+
+function bloqueFieldHtml(uid, valorActual, callback){
+  BLOQUE_CB[uid] = callback;
+  const esFijo = BLOQUES_FIJOS.includes(valorActual);
+  const valorOtro = esFijo ? '' : (valorActual || '');
+  const opciones = BLOQUES_FIJOS.map(b => `<option value="${b}" ${valorActual===b?'selected':''}>${b}</option>`).join('');
+  return `
+    <select id="bloqueSel-${uid}" onchange="onBloqueSelectChange('${uid}', this.value)">
+      <option value="" ${!valorActual?'selected':''} disabled>Elegir...</option>
+      ${opciones}
+      <option value="__otro__" ${(!esFijo && valorActual) ? 'selected':''}>Otro...</option>
+    </select>
+    <input id="bloqueOtro-${uid}" placeholder="Nombre del bloque" value="${(valorOtro||'').replace(/"/g,'&quot;')}"
+      style="margin-top:4px; width:100%; ${(!esFijo && valorActual) ? '' : 'display:none;'}"
+      oninput="onBloqueOtroInput('${uid}', this.value)">
+  `;
+}
+function onBloqueSelectChange(uid, val){
+  const otroInput = document.getElementById(`bloqueOtro-${uid}`);
+  if (val === '__otro__'){
+    otroInput.style.display = '';
+    otroInput.value = '';
+    otroInput.focus();
+  } else {
+    otroInput.style.display = 'none';
+    const cb = BLOQUE_CB[uid];
+    if (cb && val) cb(val);
+  }
+}
+function onBloqueOtroInput(uid, val){
+  const cb = BLOQUE_CB[uid];
+  if (cb) cb(val.trim() || 'General');
+}
+
 function filtrarEjercicios(q){
   const terminos = normalizar(q).trim().split(/\s+/).filter(Boolean);
   if (!terminos.length) return [];
@@ -2712,13 +2773,12 @@ const CONTEXTOS_EJ = {}; // contexto (string) -> callback(nuevoEjercicio) a ejec
 async function crearEjercicioPersonalizado({ nombre, grupo_muscular, categoria, url }){
   if (!nombre) throw new Error('Ponele un nombre al ejercicio.');
   if (!grupo_muscular) throw new Error('Ponele un grupo muscular.');
-  if (!url) throw new Error('Pegá un link de imagen o video.');
   const profesorId = document.getElementById('profActual').value || null;
   const [creado] = await sb('ejercicios', {
     method:'POST', headers:{Prefer:'return=representation'},
     body: JSON.stringify([{
       nombre, grupo_muscular, categoria: categoria || null,
-      video_provider: 'own_video', video_url_propio: url,
+      video_provider: 'own_video', video_url_propio: url || null,
       creado_por: profesorId, gym_id: PERFIL_ACTUAL?.gimnasio_id || null, activo: true,
     }])
   });
@@ -2735,7 +2795,7 @@ function mostrarFormularioNuevoEjercicio(contexto, el, nombreInicial){
       <div class="field"><label>Nombre</label><input id="nuevoEjNombre-${contexto}" value="${(nombreInicial||'').replace(/"/g,'&quot;')}"></div>
       <div class="field"><label>Grupo muscular</label><input id="nuevoEjGrupo-${contexto}" placeholder="Ej: Espalda"></div>
       <div class="field"><label>Categoría (opcional)</label><input id="nuevoEjCategoria-${contexto}" placeholder="Ej: Dorsales"></div>
-      <div class="field"><label>Link de imagen o video</label><input id="nuevoEjUrl-${contexto}" placeholder="URL: imagen, .mp4, YouTube, Vimeo..."></div>
+      <div class="field"><label>Link de imagen o video (opcional)</label><input id="nuevoEjUrl-${contexto}" placeholder="URL: imagen, .mp4, YouTube, Vimeo..."></div>
       <button onclick="crearEjercicioPersonalizadoInline('${contexto}')">Guardar y usar</button>
     </div>
   `;
@@ -4042,7 +4102,7 @@ async function verRutinaDelTurno(){
   }
   cont.innerHTML = 'Cargando...';
   try{
-    const items = await sb(`rutina_ejercicios?select=id,orden,bloque,series,repeticiones,peso_sugerido,tiempo_trabajo_seg,descanso_seg,rir,notas,ejercicios(id,nombre,grupo_muscular,provider_ref_id,video_provider,video_url_propio)&rutina_dia_id=eq.${rutinaDiaId}&order=orden.asc`);
+    const items = await sb(`rutina_ejercicios?select=id,orden,bloque,series,repeticiones,peso_sugerido,tiempo_trabajo_seg,descanso_seg,rir,notas,unilateral,ejercicios(id,nombre,grupo_muscular,provider_ref_id,video_provider,video_url_propio)&rutina_dia_id=eq.${rutinaDiaId}&order=orden.asc`);
     if (!items.length){ cont.innerHTML = '<div class="empty">Esa rutina no tiene ejercicios cargados.</div>'; return; }
     let bloqueActual = null;
     cont.innerHTML = items.map(item => {
@@ -5315,7 +5375,7 @@ function crearConstructorDeDias(prefijo, containerId){
   function agregarDia(){
     estado.contador++;
     const diaId = prefijo + estado.contador;
-    estado.dias[diaId] = { nombre_dia: '', fecha: '', objetivo: '', bloqueActual: 'General', ejercicios: [] };
+    estado.dias[diaId] = { nombre_dia: '', fecha: '', objetivo: '', bloqueActual: 'Bloque 1', ejercicios: [] };
     render();
   }
 
@@ -5332,7 +5392,7 @@ function crearConstructorDeDias(prefijo, containerId){
         <div>
           <div style="font-weight:600;">${ex.ejercicio.nombre} <span class="pill">${ex.ejercicio.grupo_muscular}</span>${ex.ejercicio.video_provider==='own_video' ? '<span class="pill-propio">Propio</span>' : ''}</div>
           <div class="row" style="margin-top:6px;">
-            <div class="field" style="min-width:110px;"><label>Bloque</label><input list="bloques-${diaId}" value="${ex.bloque}" onchange="CONS['${prefijo}'].setBloque('${diaId}',${idx},this.value)"></div>
+            <div class="field" style="min-width:150px;"><label>Bloque</label>${bloqueFieldHtml(`${prefijo}-${diaId}-${idx}`, ex.bloque, (v)=>CONS[prefijo].setBloque(diaId,idx,v))}</div>
             <div class="field" style="min-width:70px;"><label>Series</label><input type="number" min="1" value="${ex.series}" onchange="CONS['${prefijo}'].estado.dias['${diaId}'].ejercicios[${idx}].series=parseInt(this.value)||1"></div>
             <div class="field" style="min-width:90px;"><label>Reps</label><input value="${ex.repeticiones}" onchange="CONS['${prefijo}'].estado.dias['${diaId}'].ejercicios[${idx}].repeticiones=this.value"></div>
             <div class="field" style="min-width:90px;"><label>Peso sug. (kg)</label><input type="number" step="0.5" value="${ex.peso_sugerido ?? ''}" onchange="CONS['${prefijo}'].estado.dias['${diaId}'].ejercicios[${idx}].peso_sugerido=this.value?parseFloat(this.value):null"></div>
@@ -5340,6 +5400,7 @@ function crearConstructorDeDias(prefijo, containerId){
             <div class="field" style="min-width:90px;"><label>Pausa (s)</label><input type="number" value="${ex.descanso_seg ?? ''}" onchange="CONS['${prefijo}'].estado.dias['${diaId}'].ejercicios[${idx}].descanso_seg=this.value?parseInt(this.value):null"></div>
             <div class="field" style="min-width:70px;"><label>RIR</label><input type="number" min="0" max="5" value="${ex.rir ?? ''}" onchange="CONS['${prefijo}'].estado.dias['${diaId}'].ejercicios[${idx}].rir=this.value?parseInt(this.value):null"></div>
             <div class="field" style="flex:1; min-width:140px;"><label>Notas</label><input value="${ex.notas ?? ''}" onchange="CONS['${prefijo}'].estado.dias['${diaId}'].ejercicios[${idx}].notas=this.value"></div>
+            <div class="field" style="min-width:100px;"><label>Unilateral</label><label style="display:flex; align-items:center; gap:4px; font-weight:400; height:38px;"><input type="checkbox" ${ex.unilateral?'checked':''} onchange="CONS['${prefijo}'].estado.dias['${diaId}'].ejercicios[${idx}].unilateral=this.checked"> Por lado</label></div>
             <button class="danger" style="align-self:end;" onclick="CONS['${prefijo}'].quitarEjercicio('${diaId}',${idx})">Quitar</button>
           </div>
         </div>
@@ -5406,8 +5467,7 @@ function crearConstructorDeDias(prefijo, containerId){
             <div class="row" style="margin-bottom:8px;">
               <div class="field" style="min-width:180px;">
                 <label>Agregar al bloque</label>
-                <input list="bloques-${diaId}" value="${dia.bloqueActual}" onchange="CONS['${prefijo}'].estado.dias['${diaId}'].bloqueActual=this.value.trim()||'General'">
-                <datalist id="bloques-${diaId}">${bloquesOrden.map(b=>`<option value="${b}">`).join('')}</datalist>
+                ${bloqueFieldHtml(`${prefijo}-actual-${diaId}`, dia.bloqueActual, (v)=>{ CONS[prefijo].estado.dias[diaId].bloqueActual=v; })}
               </div>
             </div>
             <input id="buscador-${diaId}" placeholder="Escribí para filtrar: bíceps, glúteos, press banca..." oninput="CONS['${prefijo}'].buscar(this.value,'${diaId}')" style="width:100%;" />
@@ -5447,7 +5507,7 @@ function crearConstructorDeDias(prefijo, containerId){
   function agregarEjercicio(diaId, ejercicioJson){
     const ejercicio = typeof ejercicioJson === 'string' ? JSON.parse(ejercicioJson) : ejercicioJson;
     const bloque = (estado.dias[diaId].bloqueActual || '').trim() || 'General';
-    estado.dias[diaId].ejercicios.push({ ejercicio, bloque, series:3, repeticiones:'10-12', peso_sugerido:null, tiempo_trabajo_seg:null, descanso_seg:60, rir:null, notas:'' });
+    estado.dias[diaId].ejercicios.push({ ejercicio, bloque, series:3, repeticiones:'10-12', peso_sugerido:null, tiempo_trabajo_seg:null, descanso_seg:60, rir:null, notas:'', unilateral:false });
     document.getElementById(`resultados-${diaId}`).style.display='none';
     render();
   }
@@ -6156,6 +6216,7 @@ async function guardarRutinaGenerica({ constructor, nombre, profesorId, alumnosD
           descanso_seg: ex.descanso_seg,
           rir: ex.rir,
           notas: ex.notas || null,
+          unilateral: !!ex.unilateral,
         });
       });
     });
@@ -6342,7 +6403,7 @@ async function cargarEdicionDia(diaId, contId){
   const div = document.getElementById(contId);
   div.innerHTML = 'Cargando...';
   try{
-    const items = await sb(`rutina_ejercicios?select=id,orden,bloque,series,repeticiones,peso_sugerido,tiempo_trabajo_seg,descanso_seg,rir,notas,ejercicios(id,nombre,grupo_muscular,provider_ref_id,video_provider,video_url_propio)&rutina_dia_id=eq.${diaId}&order=orden.asc`);
+    const items = await sb(`rutina_ejercicios?select=id,orden,bloque,series,repeticiones,peso_sugerido,tiempo_trabajo_seg,descanso_seg,rir,notas,unilateral,ejercicios(id,nombre,grupo_muscular,provider_ref_id,video_provider,video_url_propio)&rutina_dia_id=eq.${diaId}&order=orden.asc`);
     EDICION_DIAS[diaId] = { items, contId };
     renderEdicionDia(diaId);
   }catch(e){ div.innerHTML = 'Error: ' + e.message; }
@@ -6373,7 +6434,7 @@ function filaEdicionHtml(diaId, item){
       <div>
         <div style="font-weight:600;">${item.ejercicios.nombre} <span class="pill">${item.ejercicios.grupo_muscular}</span></div>
         <div class="row" style="margin-top:6px;">
-          <div class="field" style="min-width:110px;"><label>Bloque</label><input value="${item.bloque||''}" onchange="setCampoEdicion('${diaId}','${item.id}','bloque',this.value.trim()||'General')"></div>
+          <div class="field" style="min-width:150px;"><label>Bloque</label>${bloqueFieldHtml(`edicion-${diaId}-${item.id}`, item.bloque, (v)=>setCampoEdicion(diaId,item.id,'bloque',v))}</div>
           <div class="field" style="min-width:70px;"><label>Series</label><input type="number" min="1" value="${item.series}" onchange="setCampoEdicion('${diaId}','${item.id}','series',parseInt(this.value)||1)"></div>
           <div class="field" style="min-width:90px;"><label>Reps</label><input value="${item.repeticiones||''}" onchange="setCampoEdicion('${diaId}','${item.id}','repeticiones',this.value)"></div>
           <div class="field" style="min-width:90px;"><label>Peso sug. (kg)</label><input type="number" step="0.5" value="${item.peso_sugerido ?? ''}" onchange="setCampoEdicion('${diaId}','${item.id}','peso_sugerido',this.value?parseFloat(this.value):null)"></div>
@@ -6381,6 +6442,7 @@ function filaEdicionHtml(diaId, item){
           <div class="field" style="min-width:90px;"><label>Pausa (s)</label><input type="number" value="${item.descanso_seg ?? ''}" onchange="setCampoEdicion('${diaId}','${item.id}','descanso_seg',this.value?parseInt(this.value):null)"></div>
           <div class="field" style="min-width:70px;"><label>RIR</label><input type="number" min="0" max="5" value="${item.rir ?? ''}" onchange="setCampoEdicion('${diaId}','${item.id}','rir',this.value?parseInt(this.value):null)"></div>
           <div class="field" style="flex:1; min-width:140px;"><label>Notas</label><input value="${item.notas ?? ''}" onchange="setCampoEdicion('${diaId}','${item.id}','notas',this.value)"></div>
+          <div class="field" style="min-width:100px;"><label>Unilateral</label><label style="display:flex; align-items:center; gap:4px; font-weight:400; height:38px;"><input type="checkbox" ${item.unilateral?'checked':''} onchange="setCampoEdicion('${diaId}','${item.id}','unilateral',this.checked)"> Por lado</label></div>
           <button class="danger" style="align-self:end;" onclick="quitarEjercicioEdicion('${diaId}','${item.id}')">Quitar</button>
         </div>
       </div>
@@ -6458,6 +6520,7 @@ async function guardarEdicionDia(diaId){
         bloque: item.bloque, series: item.series, repeticiones: item.repeticiones,
         peso_sugerido: item.peso_sugerido, tiempo_trabajo_seg: item.tiempo_trabajo_seg,
         descanso_seg: item.descanso_seg, rir: item.rir, notas: item.notas,
+        unilateral: !!item.unilateral,
       })
     })));
     toast('Cambios guardados ✓ El alumno los va a ver la próxima vez que entre a ese día.');
@@ -7031,25 +7094,81 @@ async function comenzarEntrenamiento(rutinaDiaId, alumnoId, nombreDia){
   cont.style.display = '';
   cont.innerHTML = '<div class="card">Iniciando entrenamiento...</div>';
   try{
-    const rows = await sb(`rutina_ejercicios?select=id,orden,bloque,series,repeticiones,peso_sugerido,tiempo_trabajo_seg,descanso_seg,rir,notas,ejercicios(id,nombre,grupo_muscular,provider_ref_id)&rutina_dia_id=eq.${rutinaDiaId}&order=orden.asc`);
+    const rows = await sb(`rutina_ejercicios?select=id,orden,bloque,series,repeticiones,peso_sugerido,tiempo_trabajo_seg,descanso_seg,rir,notas,unilateral,ejercicios(id,nombre,grupo_muscular,provider_ref_id,video_provider,video_url_propio)&rutina_dia_id=eq.${rutinaDiaId}&order=orden.asc`);
 
-    const [ejecucion] = await sb('ejecuciones', {
-      method:'POST', headers:{Prefer:'return=representation'},
-      body: JSON.stringify([{ rutina_dia_id: rutinaDiaId, alumno_id: alumnoId }])
-    });
+    // (24/9) Feedback de Martin: si ya había un entrenamiento sin terminar para este
+    // mismo día (salió y volvió a entrar), retomarlo en vez de crear uno nuevo — así
+    // lo que ya registró queda guardado y no tiene que rehacer los ejercicios ya hechos.
+    const existentes = await sb(`ejecuciones?rutina_dia_id=eq.${rutinaDiaId}&alumno_id=eq.${alumnoId}&estado=neq.finalizada&order=fecha.desc&limit=1`);
 
-    const eePayload = rows.map(r => ({ ejecucion_id: ejecucion.id, rutina_ejercicio_id: r.id, ejercicio_efectivo_id: r.ejercicios.id }));
-    const eeCreados = await sb('ejecucion_ejercicios', { method:'POST', headers:{Prefer:'return=representation'}, body: JSON.stringify(eePayload) });
+    let ejecucion, eeFilas;
+    if (existentes && existentes.length){
+      ejecucion = existentes[0];
+      eeFilas = await sb(`ejecucion_ejercicios?select=id,rutina_ejercicio_id,ejercicio_efectivo_id,sustituido,finalizado,omitido,motivo_omision&ejecucion_id=eq.${ejecucion.id}`);
+      // Si la rutina cambió después de haber empezado (se agregó un ejercicio nuevo al
+      // día), completar lo que falte en vez de romper o ignorarlo.
+      const yaCubiertos = new Set(eeFilas.map(e => e.rutina_ejercicio_id));
+      const faltantes = rows.filter(r => !yaCubiertos.has(r.id));
+      if (faltantes.length){
+        const nuevas = await sb('ejecucion_ejercicios', {
+          method:'POST', headers:{Prefer:'return=representation'},
+          body: JSON.stringify(faltantes.map(r => ({ ejecucion_id: ejecucion.id, rutina_ejercicio_id: r.id, ejercicio_efectivo_id: r.ejercicios.id })))
+        });
+        eeFilas = eeFilas.concat(nuevas);
+      }
+    } else {
+      [ejecucion] = await sb('ejecuciones', {
+        method:'POST', headers:{Prefer:'return=representation'},
+        body: JSON.stringify([{ rutina_dia_id: rutinaDiaId, alumno_id: alumnoId }])
+      });
+      eeFilas = await sb('ejecucion_ejercicios', {
+        method:'POST', headers:{Prefer:'return=representation'},
+        body: JSON.stringify(rows.map(r => ({ ejecucion_id: ejecucion.id, rutina_ejercicio_id: r.id, ejercicio_efectivo_id: r.ejercicios.id })))
+      });
+    }
+
+    // Ejercicios ya sustituidos en una sesión anterior: traer los datos del ejercicio
+    // efectivo (puede no ser el original que tiene la rutina).
+    const idsSustituidos = eeFilas.filter(e => e.sustituido && e.ejercicio_efectivo_id).map(e => e.ejercicio_efectivo_id);
+    let sustituidosMap = {};
+    if (idsSustituidos.length){
+      const sustituidosRows = await sb(`ejercicios?id=in.(${idsSustituidos.join(',')})&select=id,nombre,grupo_muscular,provider_ref_id,video_provider,video_url_propio`);
+      sustituidosMap = Object.fromEntries(sustituidosRows.map(x => [x.id, x]));
+    }
+
+    // Series ya registradas de ejercicios ya finalizados (para retomar mostrando lo
+    // que ya se cargó, en vez de pedirlo de nuevo).
+    const idsFinalizadosConSeries = eeFilas.filter(e => e.finalizado && !e.omitido).map(e => e.id);
+    let seriesPorEjecucionEjercicio = {};
+    if (idsFinalizadosConSeries.length){
+      const seriesRows = await sb(`series_registradas?ejecucion_ejercicio_id=in.(${idsFinalizadosConSeries.join(',')})&select=ejecucion_ejercicio_id,numero_serie,peso_realizado,repeticiones_realizadas,rir_realizado,tonelaje&order=numero_serie.asc`);
+      seriesRows.forEach(s => {
+        (seriesPorEjecucionEjercicio[s.ejecucion_ejercicio_id] = seriesPorEjecucionEjercicio[s.ejecucion_ejercicio_id] || []).push(s);
+      });
+    }
 
     const defaultsPorEjercicio = await cargarUltimosPesos(rows.map(r => r.ejercicios.id));
 
-    const bloques = rows.map((r, i) => ({
-      ejecucionEjercicioId: eeCreados[i].id,
-      prescripcion: r,
-      ejercicioActual: r.ejercicios,
-      finalizado: false,
-      defaults: defaultsPorEjercicio[r.ejercicios.id] || {},
-    }));
+    const porRutinaEjercicioId = {};
+    eeFilas.forEach(e => { porRutinaEjercicioId[e.rutina_ejercicio_id] = e; });
+
+    let tonelajeAcumulado = 0;
+    const bloques = rows.map(r => {
+      const ee = porRutinaEjercicioId[r.id];
+      const seriesPrevias = seriesPorEjecucionEjercicio[ee.id] || [];
+      seriesPrevias.forEach(s => { tonelajeAcumulado += Number(s.tonelaje || 0); });
+      return {
+        ejecucionEjercicioId: ee.id,
+        prescripcion: r,
+        ejercicioActual: ee.sustituido ? (sustituidosMap[ee.ejercicio_efectivo_id] || r.ejercicios) : r.ejercicios,
+        finalizado: !!ee.finalizado,
+        omitido: !!ee.omitido,
+        motivoOmision: ee.motivo_omision || null,
+        seriesPrevias,
+        defaults: defaultsPorEjercicio[r.ejercicios.id] || {},
+      };
+    });
+    window._tonelajeTotal = tonelajeAcumulado;
 
     renderEjecucion(ejecucion.id, nombreDia, bloques);
   }catch(e){
@@ -7077,7 +7196,7 @@ function renderEjecucion(ejecucionId, nombreDia, bloques){
       <div class="row" style="justify-content:space-between;">
         <button class="ghost" onclick="salirEjecucion()">← Volver</button>
         <h2 style="margin:0;">${nombreDia}</h2>
-        <button onclick="finalizarEntrenamiento('${ejecucionId}')">Finalizar entrenamiento</button>
+        <button onclick="abrirModalRpe('${ejecucionId}')">Finalizar entrenamiento</button>
       </div>
       <div id="bloques">${bloquesHtml}</div>
     </div>
@@ -7085,23 +7204,53 @@ function renderEjecucion(ejecucionId, nombreDia, bloques){
   window._bloques = bloques;
 }
 
+// (24/9) Etiqueta de la causa cuando un ejercicio queda marcado "no realizado".
+function motivoOmisionTexto(causa){
+  return {
+    sin_tiempo: 'no llegó con el tiempo',
+    dolor: 'dolor / molestia',
+    no_disponible: 'equipo no disponible',
+    otro: 'otro motivo',
+  }[causa] || 'sin especificar';
+}
+
 function bloqueHtml(b, idx){
   const p = b.prescripcion;
   const d = b.defaults || {};
+
+  // (24/9) Ejercicio marcado como "no lo pude hacer" — sin filas de series, cerrado.
+  if (b.omitido){
+    return `
+      <div class="ex-block" id="bloque-${idx}">
+        <div class="ex-header">
+          ${mediaTagHtml(b.ejercicioActual, '')}
+          <div style="flex:1;">
+            <div style="font-weight:700;">${b.ejercicioActual.nombre}</div>
+            <div class="muted">${b.ejercicioActual.grupo_muscular}</div>
+          </div>
+        </div>
+        <div class="muted" style="padding:8px 0;">⚠️ No realizado — ${motivoOmisionTexto(b.motivoOmision)}</div>
+      </div>
+    `;
+  }
+
   const filasSets = Array.from({length: p.series}).map((_, s) => {
     const numero = s + 1;
+    const registrada = (b.seriesPrevias || [])[s];
     const prev = d[numero];
-    // Si el alumno ya hizo este ejercicio antes, precarga con lo que dejó registrado
-    // la última vez; si no, cae en la sugerencia del profesor (comportamiento anterior).
-    const pesoDefault = (prev && prev.peso != null) ? prev.peso : (p.peso_sugerido ?? '');
-    const repsDefault = (prev && prev.reps != null) ? prev.reps : '';
-    const rirDefault = (prev && prev.rir != null) ? prev.rir : (p.rir ?? '');
+    // Si ya se registró esta serie en una sesión anterior (retomando el entrenamiento),
+    // se muestra fija con lo ya cargado; si no, se precarga con el último registro
+    // histórico del alumno o, en su defecto, la sugerencia del profesor.
+    const pesoDefault = registrada ? (registrada.peso_realizado ?? '') : ((prev && prev.peso != null) ? prev.peso : (p.peso_sugerido ?? ''));
+    const repsDefault = registrada ? (registrada.repeticiones_realizadas ?? '') : ((prev && prev.reps != null) ? prev.reps : '');
+    const rirDefault = registrada ? (registrada.rir_realizado ?? '') : ((prev && prev.rir != null) ? prev.rir : (p.rir ?? ''));
+    const dis = b.finalizado ? 'disabled' : '';
     return `
     <div class="set-row">
       <div class="muted">#${numero}</div>
-      <input type="number" step="0.5" placeholder="Peso (kg)" id="peso-${idx}-${s}" value="${pesoDefault}">
-      <input type="number" placeholder="Reps" id="reps-${idx}-${s}" value="${repsDefault}">
-      <input type="number" placeholder="RIR" id="rir-${idx}-${s}" value="${rirDefault}">
+      <input type="number" step="0.5" placeholder="Peso (kg)" id="peso-${idx}-${s}" value="${pesoDefault}" ${dis}>
+      <input type="number" placeholder="Reps" id="reps-${idx}-${s}" value="${repsDefault}" ${dis}>
+      <input type="number" placeholder="RIR" id="rir-${idx}-${s}" value="${rirDefault}" ${dis}>
       <span class="muted">sug: ${p.peso_sugerido ?? '-'}kg × ${p.repeticiones}</span>
     </div>
   `;
@@ -7119,8 +7268,9 @@ function bloqueHtml(b, idx){
         <div style="flex:1;">
           <div style="font-weight:700;">${b.ejercicioActual.nombre} ${b.ejercicioActual.id !== p.ejercicios.id ? '<span class="badge-sub">Sustituido</span>' : ''}</div>
           <div class="muted">${b.ejercicioActual.grupo_muscular} · ${detalleSets} ${p.notas ? '· '+p.notas : ''}</div>
+          ${p.unilateral ? '<div class="pill" style="margin-top:4px; background:rgba(255,122,48,.15); color:#ffb37a; display:inline-block;">🔁 Alternar lado en cada serie</div>' : ''}
         </div>
-        ${esPorTiempo ? `<button class="ghost" onclick="cronoParaEjercicio(${idx})">⏱️ Usar cronómetro</button>` : ''}
+        ${esPorTiempo ? `<button class="ghost" onclick="cronoParaEjercicio(${idx})" ${b.finalizado?'disabled':''}>⏱️ Usar cronómetro</button>` : ''}
         <button class="ghost" onclick="abrirSustitucion(${idx})" ${b.finalizado?'disabled':''}>No puedo hacer este ejercicio</button>
       </div>
       <div id="sustitucion-${idx}"></div>
@@ -7138,6 +7288,7 @@ function abrirSustitucion(idx){
   cont.dataset.open = '1';
   cont.innerHTML = `
     <div style="background:var(--panel2); border:1px solid var(--border); border-radius:10px; padding:10px; margin-bottom:10px;">
+      <div style="font-weight:600; margin-bottom:8px;">Sustituir por otro ejercicio</div>
       <label>Motivo</label>
       <select id="motivo-${idx}" style="margin-bottom:8px;">
         <option value="dolor">Dolor / molestia</option>
@@ -7146,6 +7297,15 @@ function abrirSustitucion(idx){
       </select>
       <input id="buscadorSust-${idx}" placeholder="Escribí para filtrar: bíceps, glúteos, press banca..." oninput="buscarSustituto(this.value, ${idx})" style="width:100%; margin-bottom:8px;">
       <div class="search-results" id="resSust-${idx}" style="display:none;"></div>
+      <hr style="margin:14px 0;">
+      <div style="font-weight:600; margin-bottom:8px;">O, si no llegás a hacerlo</div>
+      <select id="causaOmision-${idx}" style="margin-bottom:8px;">
+        <option value="sin_tiempo">No tengo tiempo</option>
+        <option value="dolor">Dolor / molestia</option>
+        <option value="no_disponible">Equipo no disponible</option>
+        <option value="otro">Otro</option>
+      </select>
+      <button class="danger" style="width:100%;" onclick="marcarEjercicioOmitido(${idx})">No pude hacer este ejercicio</button>
     </div>
   `;
 }
@@ -7192,6 +7352,26 @@ async function confirmarSustitucion(idx, ejercicioJson){
   }catch(e){ toast('Error sustituyendo: ' + e.message, true); }
 }
 
+// (24/9) Pedido de Martin: si no llega con el tiempo (o hay otro motivo), poder cerrar
+// el ejercicio sin tener que elegir un sustituto, y poder finalizar el entrenamiento igual.
+async function marcarEjercicioOmitido(idx){
+  const b = window._bloques[idx];
+  const causa = document.getElementById(`causaOmision-${idx}`).value;
+  try{
+    await sb(`ejecucion_ejercicios?id=eq.${b.ejecucionEjercicioId}`, {
+      method:'PATCH', headers:{Prefer:'return=minimal'},
+      body: JSON.stringify({ omitido:true, motivo_omision: causa, finalizado:true })
+    });
+    b.omitido = true;
+    b.motivoOmision = causa;
+    b.finalizado = true;
+    const wrapper = document.createElement('div');
+    wrapper.innerHTML = bloqueHtml(b, idx);
+    document.getElementById(`bloque-${idx}`).replaceWith(wrapper.firstElementChild);
+    toast('Ejercicio marcado como no realizado.');
+  }catch(e){ toast('Error marcando el ejercicio: ' + e.message, true); }
+}
+
 async function finalizarEjercicio(idx){
   const b = window._bloques[idx];
   const p = b.prescripcion;
@@ -7216,9 +7396,14 @@ async function finalizarEjercicio(idx){
     await sb('series_registradas', { method:'POST', headers:{Prefer:'return=minimal'}, body: JSON.stringify(filas) });
     await sb(`ejecucion_ejercicios?id=eq.${b.ejecucionEjercicioId}`, { method:'PATCH', headers:{Prefer:'return=minimal'}, body: JSON.stringify({finalizado:true}) });
     b.finalizado = true;
+    b.seriesPrevias = filas.map(f => ({ peso_realizado: f.peso_realizado, repeticiones_realizadas: f.repeticiones_realizadas, rir_realizado: f.rir_realizado }));
+    // (24/9) Tonelaje de la serie (reps x kg) — se calcula solo y queda guardado en la
+    // base (columna calculada en series_registradas); acá solo sumamos el total de la
+    // sesión para mostrarlo al finalizar el entrenamiento.
+    window._tonelajeTotal = (window._tonelajeTotal || 0) + filas.reduce((acc,f) => acc + ((f.peso_realizado||0) * (f.repeticiones_realizadas||0)), 0);
     btn.textContent = 'Registrado ✓';
     document.querySelectorAll(`#bloque-${idx} input`).forEach(i=>i.disabled=true);
-    document.querySelector(`#bloque-${idx} button.ghost`).disabled = true;
+    document.querySelectorAll(`#bloque-${idx} button.ghost`).forEach(x=>x.disabled=true);
     toast('Ejercicio registrado ✓');
   }catch(e){
     toast('Error registrando: ' + e.message, true);
@@ -7226,15 +7411,45 @@ async function finalizarEjercicio(idx){
   }
 }
 
-async function finalizarEntrenamiento(ejecucionId){
+// (24/9) RPE obligatorio al finalizar el entrenamiento del día — barra 1 a 10.
+let RPE_EJECUCION_ID = null;
+function abrirModalRpe(ejecucionId){
+  RPE_EJECUCION_ID = ejecucionId;
+  document.getElementById('rpeValor').textContent = '–';
+  document.getElementById('rpeSlider').value = 5;
+  document.getElementById('btnConfirmarRpe').disabled = true;
+  document.getElementById('modalRpe').classList.add('show');
+}
+function cerrarModalRpe(){
+  document.getElementById('modalRpe').classList.remove('show');
+  RPE_EJECUCION_ID = null;
+}
+function onRpeInput(v){
+  document.getElementById('rpeValor').textContent = v;
+  document.getElementById('btnConfirmarRpe').disabled = false;
+}
+async function confirmarRpeYFinalizar(){
+  if (!RPE_EJECUCION_ID) return;
+  const rpe = parseInt(document.getElementById('rpeSlider').value, 10);
+  const pendientes = (window._bloques || []).filter(b => !b.finalizado).length;
+  if (pendientes > 0 && !confirm(`Todavía tenés ${pendientes} ejercicio(s) sin registrar. ¿Finalizar el entrenamiento igual?`)) return;
+  const ejecucionId = RPE_EJECUCION_ID;
+  cerrarModalRpe();
+  await finalizarEntrenamiento(ejecucionId, rpe);
+}
+
+async function finalizarEntrenamiento(ejecucionId, rpe){
   try{
-    await sb(`ejecuciones?id=eq.${ejecucionId}`, { method:'PATCH', headers:{Prefer:'return=minimal'}, body: JSON.stringify({estado:'finalizada'}) });
+    await sb(`ejecuciones?id=eq.${ejecucionId}`, { method:'PATCH', headers:{Prefer:'return=minimal'}, body: JSON.stringify({estado:'finalizada', rpe}) });
     toast('Entrenamiento finalizado ✓');
+    const tonelajeTotal = window._tonelajeTotal || 0;
     document.getElementById('ejecucionContainer').innerHTML = `
       <div class="card" style="text-align:center;">
-        <div style="font-size:20px; font-weight:700; margin-bottom:14px;">Entrenamiento finalizado. ¡Buen trabajo! 💪</div>
+        <div style="font-size:20px; font-weight:700; margin-bottom:8px;">Entrenamiento finalizado. ¡Buen trabajo! 💪</div>
+        ${tonelajeTotal > 0 ? `<div class="muted" style="margin-bottom:14px;">Tonelaje total de hoy: <strong>${Math.round(tonelajeTotal).toLocaleString('es-AR')} kg</strong></div>` : ''}
         <button onclick="salirEjecucion()">Volver a mi panel</button>
       </div>`;
+    window._tonelajeTotal = 0;
     const alumnoId = document.getElementById('aluAlumno').value;
     if (alumnoId) cargarHistorial(alumnoId);
   }catch(e){ toast('Error finalizando: ' + e.message, true); }
