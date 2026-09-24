@@ -2110,7 +2110,7 @@ function mediaTagHtml(ej, cls){
   return `<img class="${cls}" src="${url}" onerror="this.style.opacity=0.2" />`;
 }
 
-async function sb(path, opts = {}){
+async function sb(path, opts = {}, _retry){
   // Si hay sesión real (login del profesor/admin), mandamos su token en vez del
   // anon key, para que más adelante las políticas de RLS puedan distinguir quién
   // hace cada operación. Sin sesión (ej: vista Alumno, todavía sin login propio)
@@ -2127,6 +2127,26 @@ async function sb(path, opts = {}){
   // "Unexpected end of JSON input". Parseamos solo si realmente vino contenido.
   const text = await resp.text().catch(()=> "");
   if (!resp.ok){
+    // El JWT de la sesión vence (por defecto, a la hora). Si la pestaña quedó
+    // mucho tiempo en segundo plano (celular bloqueado, notebook suspendida), el
+    // refresh automático de supabase-js puede no haber llegado a dispararse a
+    // tiempo. En vez de mostrarle el error crudo al usuario, intentamos refrescar
+    // la sesión una sola vez y reintentar el mismo pedido antes de darnos por vencidos.
+    const jwtVencido = resp.status === 401 && /JWT expired|PGRST303/i.test(text);
+    if (jwtVencido && !_retry && SESION_ACTUAL){
+      try{
+        const { data, error } = await supaAuth.auth.refreshSession();
+        if (!error && data && data.session){
+          SESION_ACTUAL = data.session;
+          return sb(path, opts, true);
+        }
+      }catch(e){ /* seguimos al error de abajo si el refresh también falla */ }
+      // No se pudo refrescar: la sesión venció de verdad (ej: usuario inactivo días).
+      // Avisamos claro en vez de dejar que rompa a mitad de una pantalla.
+      SESION_ACTUAL = null; PERFIL_ACTUAL = null;
+      toast('Tu sesión venció, iniciá sesión de nuevo', true);
+      setTimeout(()=> location.reload(), 1500);
+    }
     throw new Error(`${resp.status} ${path}: ${text.slice(0,300)}`);
   }
   if (!text) return null;
@@ -2153,6 +2173,15 @@ function fechaLegible(fecha){
 const supaAuth = window.supabase.createClient(SUPABASE_URL, ANON_KEY);
 let SESION_ACTUAL = null; // { access_token, user } cuando hay sesión activa
 let PERFIL_ACTUAL = null; // { id, gimnasio_id, rol, nombre, email }
+
+// supabase-js refresca el token solo en segundo plano (antes de que venza), pero si
+// nadie escucha ese evento, SESION_ACTUAL se queda con el access_token viejo para
+// siempre y sb() sigue usándolo hasta que el server lo rechaza con "JWT expired".
+// Con este listener, cada vez que la librería renueva el token (o cierra sesión),
+// SESION_ACTUAL se actualiza solo — así el 401 ni llega a pasar en el caso normal.
+supaAuth.auth.onAuthStateChange((_evento, sesion) => {
+  SESION_ACTUAL = sesion;
+});
 
 // La pestaña "Profesor / Alumno" de arriba de todo solo tiene sentido ANTES de loguearse
 // (para elegir qué formulario de login mostrar). Una vez que hay una sesión real, se oculta:
