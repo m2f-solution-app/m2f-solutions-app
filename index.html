@@ -261,6 +261,14 @@
   /* Flechita para que se note que el chip se puede tocar (antes no había ningún
      indicio visual de eso — Martin lo marcó como poco intuitivo). */
   .chip-chevron{margin-left:auto; padding-left:4px; color:var(--muted); font-size:16px;}
+  /* Progreso en vivo del entrenamiento (24/9): nombre arriba, estado del
+     entrenamiento abajo, sin romper el layout compacto del chip. */
+  .chip-info{display:flex; flex-direction:column; gap:1px; min-width:0;}
+  .chip-nombre{white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .chip-progreso{font-size:10.5px; font-weight:600; white-space:nowrap;}
+  .chip-progreso.sin-empezar{color:var(--muted); font-weight:400;}
+  .chip-progreso.en-curso{color:var(--accent);}
+  .chip-progreso.completo{color:var(--accent2);}
   /* Resalta en el popup de asistencia cuál de las dos opciones es la actual. */
   #btnMarcarPresente.activo{outline:2px solid var(--accent2);}
   #btnMarcarAusente.activo{outline:2px solid var(--danger);}
@@ -2589,7 +2597,14 @@ function cambiarVista(v){
   }
 }
 
+let AGENDA_AUTO_REFRESH_TIMER = null;
+
 function cambiarSubvista(v){
+  // Progreso en vivo (24/9): mientras el profe tiene la Agenda abierta, la refresca
+  // sola cada 25s para que el avance de los alumnos se vaya viendo sin tener que
+  // tocar nada. Se corta apenas se cambia a cualquier otra pestaña.
+  clearInterval(AGENDA_AUTO_REFRESH_TIMER);
+  if (v==='agenda') AGENDA_AUTO_REFRESH_TIMER = setInterval(renderAgenda, 25000);
   document.getElementById('subvistaDashboard').style.display = v==='dashboard' ? '' : 'none';
   document.getElementById('subvistaArmador').style.display = v==='armador' ? '' : 'none';
   document.getElementById('subvistaRutinas').style.display = v==='rutinas' ? '' : 'none';
@@ -4317,6 +4332,44 @@ function toggleAgendaFiltroLibres(){
   renderAgenda();
 }
 
+// Progreso en vivo de la Agenda (24/9): para cada turno con rutina enganchada, busca
+// la ejecución más reciente de ESE alumno para ESE día de rutina y cuenta cuántos
+// ejercicios ya finalizó u omitió sobre el total — así el profesor ve en la Agenda,
+// sin entrar a nada más, quién ya terminó y quién va a mitad de camino.
+async function cargarProgresoTurnos(turnosDelDia){
+  const conRutina = turnosDelDia.filter(t => t.rutina_dia_id);
+  if (!conRutina.length) return {};
+  try{
+    const alumnoIds = [...new Set(conRutina.map(t => t.alumno_id))];
+    const rutinaDiaIds = [...new Set(conRutina.map(t => t.rutina_dia_id))];
+    const ejecs = await sb(`ejecuciones?select=id,rutina_dia_id,alumno_id,estado,fecha&alumno_id=in.(${alumnoIds.join(',')})&rutina_dia_id=in.(${rutinaDiaIds.join(',')})&order=fecha.desc`);
+    if (!ejecs.length) return {};
+    // Si el mismo alumno entrenó ese día de rutina más de una vez históricamente,
+    // nos quedamos con la más reciente (la lista ya viene ordenada por fecha desc).
+    const ejecPorPar = {};
+    ejecs.forEach(e => {
+      const clave = `${e.alumno_id}|${e.rutina_dia_id}`;
+      if (!ejecPorPar[clave]) ejecPorPar[clave] = e;
+    });
+    const ejecIds = Object.values(ejecPorPar).map(e => e.id);
+    const eeFilas = await sb(`ejecucion_ejercicios?select=ejecucion_id,finalizado,omitido&ejecucion_id=in.(${ejecIds.join(',')})`);
+    const conteoPorEjec = {};
+    eeFilas.forEach(ee => {
+      const c = (conteoPorEjec[ee.ejecucion_id] = conteoPorEjec[ee.ejecucion_id] || { hechos: 0, total: 0 });
+      c.total++;
+      if (ee.finalizado || ee.omitido) c.hechos++;
+    });
+    const progresoPorTurno = {};
+    conRutina.forEach(t => {
+      const ejec = ejecPorPar[`${t.alumno_id}|${t.rutina_dia_id}`];
+      if (!ejec) return;
+      const conteo = conteoPorEjec[ejec.id] || { hechos: 0, total: 0 };
+      progresoPorTurno[t.id] = { estado: ejec.estado, ...conteo };
+    });
+    return progresoPorTurno;
+  }catch(e){ console.error('No se pudo cargar el progreso de los entrenamientos:', e); return {}; }
+}
+
 async function renderAgenda(){
   renderAgendaDias();
   const wrap = document.getElementById('agendaTimelineWrap');
@@ -4339,14 +4392,20 @@ async function renderAgenda(){
       sb(`turnos?select=id,hora,profesor_id,alumno_id,asistio,rutina_dia_id,rutina_dias(nombre_dia),alumnos(nombre)&fecha=eq.${fecha}&profesor_id=in.(${idsProf.join(',')})&estado=neq.cancelado`),
     ]);
 
+    // Progreso en vivo (24/9, pedido de Martin): a medida que el alumno va finalizando
+    // ejercicios de SU rutina, que el profesor vea desde la Agenda cuáles ya hizo y
+    // cuáles le quedan, sin tener que estar al lado suyo.
+    const progresoPorTurno = await cargarProgresoTurnos(turnosDelDia);
+
     // Agrupa las reservas reales por profesor+hora, para pegárselas a cada franja.
-    const reservasPorSlot = {}; // `${profesor_id}|${hora}` -> [{id, alumnoId, nombre, asistio, rutinaDiaId, nombreDia}]
+    const reservasPorSlot = {}; // `${profesor_id}|${hora}` -> [{id, alumnoId, nombre, asistio, rutinaDiaId, nombreDia, progreso}]
     turnosDelDia.forEach(t => {
       if (!t.hora) return;
       const clave = `${t.profesor_id}|${t.hora}`;
       (reservasPorSlot[clave] = reservasPorSlot[clave] || []).push({
         id: t.id, alumnoId: t.alumno_id, nombre: t.alumnos ? t.alumnos.nombre : 'Alumno', asistio: t.asistio,
         rutinaDiaId: t.rutina_dia_id, nombreDia: t.rutina_dias?.nombre_dia || null,
+        progreso: progresoPorTurno[t.id] || null,
       });
     });
 
@@ -4391,8 +4450,23 @@ async function renderAgenda(){
             const nombreEscapado = r.nombre.replace(/'/g,"&apos;");
             const rutinaDiaArg = r.rutinaDiaId ? `'${r.rutinaDiaId}'` : 'null';
             const nombreDiaEscapado = (r.nombreDia || '').replace(/'/g,"&apos;");
+            // Progreso del entrenamiento de HOY, sin tener que abrir el detalle.
+            let progresoHtml = '';
+            if (r.rutinaDiaId){
+              if (!r.progreso){
+                progresoHtml = `<div class="chip-progreso sin-empezar">Sin empezar</div>`;
+              } else if (r.progreso.total > 0 && r.progreso.hechos >= r.progreso.total){
+                progresoHtml = `<div class="chip-progreso completo">✅ Rutina completa</div>`;
+              } else {
+                progresoHtml = `<div class="chip-progreso en-curso">🏋️ ${r.progreso.hechos}/${r.progreso.total} ejercicios</div>`;
+              }
+            }
             return `<div class="alumno-chip asistencia-${estado} ${esAuto?'asistencia-auto':''}" onclick="abrirModalAsistencia('${r.id}', ${asistioArg}, '${fecha}', '${horaStr}', '${r.alumnoId}', '${nombreEscapado}', ${rutinaDiaArg}, '${nombreDiaEscapado}')">
-              <span class="avatar">${iniciales(r.nombre)}</span>${r.nombre}${icono}
+              <span class="avatar">${iniciales(r.nombre)}</span>
+              <div class="chip-info">
+                <div class="chip-nombre">${r.nombre}${icono}</div>
+                ${progresoHtml}
+              </div>
               <span class="chip-chevron">›</span>
             </div>`;
           }).join('');
@@ -4524,19 +4598,40 @@ async function verRutinaDelTurno(){
   }
   cont.innerHTML = 'Cargando...';
   try{
-    const items = await sb(`rutina_ejercicios?select=id,orden,bloque,series,repeticiones,peso_sugerido,tiempo_trabajo_seg,descanso_seg,rir,notas,unilateral,peso_corporal,variante,ejercicios(id,nombre,grupo_muscular,provider_ref_id,video_provider,video_url_propio)&rutina_dia_id=eq.${rutinaDiaId}&order=orden.asc`);
+    const [items, ejecs] = await Promise.all([
+      sb(`rutina_ejercicios?select=id,orden,bloque,series,repeticiones,peso_sugerido,tiempo_trabajo_seg,descanso_seg,rir,notas,unilateral,peso_corporal,variante,ejercicios(id,nombre,grupo_muscular,provider_ref_id,video_provider,video_url_propio)&rutina_dia_id=eq.${rutinaDiaId}&order=orden.asc`),
+      sb(`ejecuciones?select=id,estado&rutina_dia_id=eq.${rutinaDiaId}&alumno_id=eq.${alumnoId}&order=fecha.desc&limit=1`),
+    ]);
     if (!items.length){ cont.innerHTML = '<div class="empty">Esa rutina no tiene ejercicios cargados.</div>'; return; }
+
+    // Progreso en vivo (24/9, pedido de Martin): si el alumno ya arrancó este
+    // entrenamiento, mostramos acá mismo qué ejercicios ya finalizó/omitió y cuáles
+    // le quedan pendientes — sin esto, el profesor solo veía el plan, no el avance real.
+    let progresoPorRutinaEjercicio = {};
+    let resumenProgresoHtml = `<div class="muted" style="margin-bottom:10px;">Todavía no empezó este entrenamiento.</div>`;
+    if (ejecs.length){
+      const eeFilas = await sb(`ejecucion_ejercicios?select=rutina_ejercicio_id,finalizado,omitido&ejecucion_id=eq.${ejecs[0].id}`);
+      eeFilas.forEach(ee => { progresoPorRutinaEjercicio[ee.rutina_ejercicio_id] = ee; });
+      const hechos = eeFilas.filter(ee => ee.finalizado || ee.omitido).length;
+      resumenProgresoHtml = (ejecs[0].estado === 'finalizada' || (eeFilas.length && hechos >= eeFilas.length))
+        ? `<div class="badge-ok" style="display:inline-block; margin-bottom:10px;">✅ Rutina completa</div>`
+        : `<div class="pill" style="margin-bottom:10px;">🏋️ En curso · ${hechos}/${eeFilas.length} ejercicios</div>`;
+    }
+
     let bloqueActual = null;
-    cont.innerHTML = items.map(item => {
+    cont.innerHTML = resumenProgresoHtml + items.map(item => {
       const encabezadoBloque = item.bloque !== bloqueActual ? (bloqueActual = item.bloque, `<div class="pill" style="margin:10px 0 6px;">${item.bloque || 'General'}</div>`) : '';
       const detalle = item.tiempo_trabajo_seg
         ? `${item.series} series × ${item.tiempo_trabajo_seg}s trabajo / ${item.descanso_seg || 0}s pausa`
         : `${item.series} series × ${item.repeticiones || '-'} reps${item.peso_sugerido ? ` · ${item.peso_sugerido}kg` : ''}${item.rir!=null ? ` · RIR ${item.rir}` : ''}`;
+      const prog = progresoPorRutinaEjercicio[item.id];
+      const yaHecho = prog && (prog.finalizado || prog.omitido);
+      const estadoTxt = !ejecs.length ? '' : prog ? (prog.omitido ? ' · ⏭️ omitido' : prog.finalizado ? ' · ✅ hecho' : ' · ⏳ pendiente') : ' · ⏳ pendiente';
       return `${encabezadoBloque}
-        <div class="grid-exercise" style="align-items:center;">
+        <div class="grid-exercise" style="align-items:center; ${yaHecho ? 'opacity:.55;' : ''}">
           ${mediaTagHtml(item.ejercicios, '')}
           <div>
-            <div style="font-weight:600;">${item.ejercicios.nombre}</div>
+            <div style="font-weight:600;">${item.ejercicios.nombre}${estadoTxt}</div>
             <div class="muted" style="font-size:13px;">${detalle}</div>
             ${item.notas ? `<div class="muted" style="font-size:12px; margin-top:2px;">📝 ${item.notas}</div>` : ''}
           </div>
@@ -7727,7 +7822,7 @@ async function intentarAsignarRutina(turnoId, alumnoId, fecha){
       }
     }
 
-    // 2) Biblioteca por tipo de alumno.
+    // 2) Biblioteca por tipo de alumno (o "sin tipo definido" = válida para cualquiera).
     // Ojo: se pide FRESCO a la base (no de ALUMNOS_CACHE, que se carga una sola vez
     // al abrir la app). Bug real encontrado (24/9): si el alumno ya tenía la app
     // abierta en el celu de antes, y el profe recién ahora le asigna/cambia el tipo
@@ -7736,26 +7831,37 @@ async function intentarAsignarRutina(turnoId, alumnoId, fecha){
     // vacío aunque en la base ya estuviera bien cargado.
     const [alumnoFresco] = await sb(`alumnos?select=tipo_alumno_id,gimnasio_id&id=eq.${alumnoId}`);
     const tipoAlumnoId = alumnoFresco?.tipo_alumno_id;
-    if (!tipoAlumnoId) return false;
-
     const gimnasioIdAlumno = alumnoFresco?.gimnasio_id;
+    if (!gimnasioIdAlumno) return false;
+
     // Con RLS estricta, un alumno solo puede leer sus PROPIAS filas de rutina_asignaciones
     // (no las de otros), así que para saber "cuáles ya tienen dueño" en todo el gimnasio
     // se usa esta vista, que expone solo rutina_id+gimnasio_id (sin alumno_id).
-    const [rutinasDelTipo, todasAsignaciones] = await Promise.all([
-      sb(`rutinas?select=id&gimnasio_id=eq.${gimnasioIdAlumno}&tipo_alumno_id=eq.${tipoAlumnoId}`),
-      gimnasioIdAlumno ? sb(`v_rutinas_asignadas_gimnasio?select=rutina_id&gimnasio_id=eq.${gimnasioIdAlumno}`) : Promise.resolve([]),
-    ]);
-    if (!rutinasDelTipo.length) return false;
+    const todasAsignaciones = await sb(`v_rutinas_asignadas_gimnasio?select=rutina_id&gimnasio_id=eq.${gimnasioIdAlumno}`);
     const idsConAsignacion = new Set(todasAsignaciones.map(a => a.rutina_id));
-    const idsRutinasLibres = rutinasDelTipo.map(r => r.id).filter(id => !idsConAsignacion.has(id));
-    if (!idsRutinasLibres.length) return false;
 
-    const diasPorTipo = await sb(`rutina_dias?select=id,fecha,rutina_id&fecha=eq.${fecha}&rutina_id=in.(${idsRutinasLibres.join(',')})`);
-    if (!diasPorTipo.length) return false;
-
-    await sb(`turnos?id=eq.${turnoId}`, { method:'PATCH', headers:{Prefer:'return=minimal'}, body: JSON.stringify({ rutina_dia_id: diasPorTipo[0].id }) });
-    return true;
+    // Bug real encontrado (24/9, Fernando Nadeo): una rutina armada SIN elegir tipo de
+    // alumno (el combo tiene "-- elegir --", queda tipo_alumno_id = null en la base)
+    // no matcheaba con NADIE, porque antes acá solo se buscaba tipo_alumno_id=eq.X — un
+    // "sin tipo" nunca es igual a nada. Ahora se entiende igual que alumno_id null: "no
+    // restringida", o sea válida para cualquier alumno del gimnasio. Se prueba primero
+    // con las del tipo EXACTO del alumno, y solo si ninguna tiene día para esa fecha, se
+    // prueba con las "sin tipo" — así una rutina genérica nunca le gana el lugar a una
+    // pensada específicamente para su tipo.
+    const filtrosTipo = tipoAlumnoId
+      ? [`tipo_alumno_id=eq.${tipoAlumnoId}`, `tipo_alumno_id=is.null`]
+      : [`tipo_alumno_id=is.null`];
+    for (const filtroTipo of filtrosTipo){
+      const rutinasCandidatas = await sb(`rutinas?select=id&gimnasio_id=eq.${gimnasioIdAlumno}&${filtroTipo}`);
+      if (!rutinasCandidatas.length) continue;
+      const idsLibres = rutinasCandidatas.map(r => r.id).filter(id => !idsConAsignacion.has(id));
+      if (!idsLibres.length) continue;
+      const dias = await sb(`rutina_dias?select=id,fecha,rutina_id&fecha=eq.${fecha}&rutina_id=in.(${idsLibres.join(',')})`);
+      if (!dias.length) continue;
+      await sb(`turnos?id=eq.${turnoId}`, { method:'PATCH', headers:{Prefer:'return=minimal'}, body: JSON.stringify({ rutina_dia_id: dias[0].id }) });
+      return true;
+    }
+    return false;
   }catch(e){ console.error(e); return false; }
 }
 
