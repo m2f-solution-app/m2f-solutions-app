@@ -3376,7 +3376,7 @@ async function cargarPersonas(){
   // esto devuelve listas vacías directamente desde la base (ya no hay acceso anónimo).
   const filtroGym = PERFIL_ACTUAL ? `&gimnasio_id=eq.${PERFIL_ACTUAL.gimnasio_id}` : '';
   const [alumnos, profesores] = await Promise.all([
-    sb(`alumnos?select=id,nombre,tipo,tipo_alumno_id,gimnasio_id,plan_id,altura_cm,peso_kg,objetivo,telefono,email,direccion,dni,perfil_id,equipo_id,posicion,foto_url,equipos(nombre),alumno_categorias(categoria_id,categorias(nombre))&activo=eq.true${filtroGym}&order=nombre.asc`),
+    sb(`alumnos?select=id,nombre,tipo,tipo_alumno_id,gimnasio_id,plan_id,altura_cm,peso_kg,objetivo,telefono,email,direccion,dni,perfil_id,equipo_id,posicion,foto_url,fecha_nacimiento,sexo,deporte_disciplina,categoria_peso,equipos(nombre),alumno_categorias(categoria_id,categorias(nombre))&activo=eq.true${filtroGym}&order=nombre.asc`),
     sb(`profesores?select=id,nombre,perfil_id,gimnasio_id,dni,tarifa_hora,impuesto_pct,perfiles(rol)&activo=eq.true${filtroGym}&order=nombre.asc`),
   ]);
   const optsAlu = alumnos.map(a=>`<option value="${a.id}">${a.nombre}</option>`).join('');
@@ -5199,6 +5199,14 @@ async function cambiarTipoAlumno(alumnoId, tipoAlumnoId){
 // (subvistaEvaluaciones, carga habilitada) y para el perfil del alumno
 // (solo lectura, dentro de vistaAlumno).
 // =====================================================================
+// (24/9) Catálogo ampliado para que coincida con la planilla de referencia de
+// Martin (ficha de evaluación inicial). Se mantiene "Composición Corporal" tal
+// cual estaba (no se pisa el histórico ya cargado); se suman "Perfil de
+// Rendimiento" (10 cualidades 1-10) y "Capacidad Física" (reemplaza a las
+// viejas Potencia/Velocidad, agrupadas como en la planilla), y "Movilidad"
+// pasa a tener las 7 articulaciones de la planilla. "Fuerza" ya no vive acá:
+// tiene su propio módulo especial más abajo (ver TESTS_FUERZA), porque carga
+// peso+reps y calcula el 1RM solo.
 const CATALOGO_METRICAS = {
   'Composición Corporal': [
     { nombre:'Peso', unidad:'kg' },
@@ -5208,26 +5216,56 @@ const CATALOGO_METRICAS = {
     { nombre:'Circunferencia cadera', unidad:'cm' },
     { nombre:'Circunferencia brazo', unidad:'cm' },
   ],
-  'Fuerza': [
-    { nombre:'Sentadilla 1RM', unidad:'kg' },
-    { nombre:'Press banca 1RM', unidad:'kg' },
-    { nombre:'Peso muerto 1RM', unidad:'kg' },
-    { nombre:'Press militar 1RM', unidad:'kg' },
+  'Perfil de Rendimiento': [
+    { nombre:'Fuerza máxima', unidad:'pts (1-10)' },
+    { nombre:'Potencia / Explosividad', unidad:'pts (1-10)' },
+    { nombre:'Resistencia aeróbica', unidad:'pts (1-10)' },
+    { nombre:'Movilidad / Flexibilidad', unidad:'pts (1-10)' },
+    { nombre:'Composición corporal (rating)', unidad:'pts (1-10)' },
+    { nombre:'Técnica / Coordinación', unidad:'pts (1-10)' },
+    { nombre:'Recuperación', unidad:'pts (1-10)' },
+    { nombre:'Constancia / Adherencia', unidad:'pts (1-10)' },
+    { nombre:'Intensidad en el entrenamiento', unidad:'pts (1-10)' },
+    { nombre:'Gestión del estrés', unidad:'pts (1-10)' },
   ],
-  'Potencia': [
-    { nombre:'Salto vertical (CMJ)', unidad:'cm' },
-    { nombre:'Salto horizontal', unidad:'cm' },
+  'Capacidad Física': [
+    { nombre:'CMJ - Salto vertical', unidad:'cm', referencia:'>40cm (H) · >30cm (M)' },
+    { nombre:'SJ - Sin contramovimiento', unidad:'cm', referencia:'>35cm (H) · >30cm (M)' },
+    { nombre:'Sprint 30 metros', unidad:'seg', referencia:'<4.5 seg' },
+    { nombre:'Plancha isométrica', unidad:'seg', referencia:'>120 seg' },
+    { nombre:'Flexión de tronco (sit&reach)', unidad:'cm', referencia:'>10 cm' },
+    { nombre:'VO2max Cooper (estimado)', unidad:'ml/kg/min', referencia:'>45 (H) · >38 (M)' },
+    { nombre:'1km tiempo', unidad:'min', referencia:'<4:30 min' },
   ],
-  'Velocidad': [
-    { nombre:'Sprint 20m', unidad:'s' },
-    { nombre:'Sprint 40m', unidad:'s' },
-  ],
-  'Movilidad': [
-    { nombre:'Flexión de hombro', unidad:'grados' },
-    { nombre:'Flexión de cadera', unidad:'grados' },
-    { nombre:'Dorsiflexión de tobillo', unidad:'grados' },
+  'Movilidad (ROM)': [
+    { nombre:'Dorsiflexión de tobillo', unidad:'pts (0-4)' },
+    { nombre:'Apertura de cadera', unidad:'pts (0-4)' },
+    { nombre:'Rotación interna de cadera', unidad:'pts (0-4)' },
+    { nombre:'Flexión lumbar', unidad:'pts (0-4)' },
+    { nombre:'Extensión torácica', unidad:'pts (0-4)' },
+    { nombre:'Movilidad de hombro', unidad:'pts (0-4)' },
+    { nombre:'Overhead squat (evaluación)', unidad:'pts (0-4)' },
   ],
 };
+
+// Tests de fuerza: se cargan peso + reps por ejercicio; el 1RM estimado
+// (fórmula de Epley: peso × (1 + reps/30)), el %peso corporal y el nivel
+// (Novato/Intermedio/Elite) salen solos, no se cargan a mano — mismos
+// umbrales que la planilla de referencia de Martin.
+const TESTS_FUERZA = [
+  'Sentadilla Trasera', 'Press Banca', 'Peso Muerto', 'Press Militar (OHP)',
+  'Dominadas (lastre + peso corporal)', 'Sentadilla Frontal', 'Hip Thrust', 'Remo con Barra',
+];
+function calcular1RM(peso, reps){
+  if (!peso) return 0;
+  return peso * (1 + (reps||0) / 30);
+}
+function nivelPorPesoCorporal(pct){
+  if (!pct) return 'Novato';
+  if (pct >= 160) return 'Elite';
+  if (pct >= 100) return 'Intermedio';
+  return 'Novato';
+}
 
 function iniciarEvaluaciones(){
   const sel = document.getElementById('evalAlumno');
@@ -5239,7 +5277,7 @@ function iniciarEvaluaciones(){
 }
 
 async function fetchEvaluacionesConMetricas(alumnoId){
-  const evaluaciones = await sb(`evaluaciones?alumno_id=eq.${alumnoId}&select=id,fecha,notas&order=fecha.desc`);
+  const evaluaciones = await sb(`evaluaciones?alumno_id=eq.${alumnoId}&select=id,fecha,notas,historial_contexto,plan_accion&order=fecha.desc`);
   if (!evaluaciones.length) return [];
   const ids = evaluaciones.map(e => e.id);
   const metricas = await sb(`evaluacion_metricas?evaluacion_id=in.(${ids.join(',')})&select=id,evaluacion_id,categoria,metrica,valor,unidad`);
@@ -5415,28 +5453,202 @@ async function onCambiarEvalAlumno(){
   nuevaWrap.style.display = ''; evolWrap.style.display = ''; histWrap.style.display = '';
   if (!document.getElementById('evalFecha').value) document.getElementById('evalFecha').value = new Date().toISOString().slice(0,10);
   document.getElementById('evalMetricasExtra').innerHTML = '';
-  renderCategoriasEvaluacion();
+  // (24/9) El historial se trae ANTES de armar los módulos para poder precargar
+  // "Historial y contexto" / "Observaciones y plan de acción" con lo último
+  // cargado (no suele cambiar evaluación a evaluación).
   EVAL_CACHE_PROF = await fetchEvaluacionesConMetricas(alumnoId);
+  renderCategoriasEvaluacion(alumnoId);
   poblarSelectMetricas('evalMetricaChart', EVAL_CACHE_PROF);
   renderEvalChart();
   renderHistorialEvaluaciones('evalHistorial', EVAL_CACHE_PROF);
 }
 
-function renderCategoriasEvaluacion(){
-  const cont = document.getElementById('evalCategorias');
-  cont.innerHTML = Object.entries(CATALOGO_METRICAS).map(([cat, metricas]) => `
-    <div style="margin-bottom:14px;">
-      <div style="font-weight:600; margin-bottom:6px;">${cat}</div>
-      <div class="row">
-        ${metricas.map(m => `
-          <div class="field" style="min-width:150px;">
-            <label>${m.nombre}${m.unidad ? ' ('+m.unidad+')' : ''}</label>
-            <input type="number" step="0.1" class="eval-metrica-input" data-categoria="${cat}" data-metrica="${m.nombre}" data-unidad="${m.unidad}">
-          </div>
-        `).join('')}
+// (24/9) Pedido de Martin: en vez de un formulario largo con todo junto, cada
+// módulo se abre por separado ("por módulo se pueda ir abriendo según lo que
+// querramos ir cargando") — reusa el mismo patrón visual plegable del bloque
+// de ejecución de rutina (misma clase .bloque-seccion/.bloque-titulo-clickable).
+function moduloEvalHtml(id, icono, titulo, contenidoHtml){
+  return `
+    <div class="bloque-seccion">
+      <div class="bloque-titulo bloque-titulo-clickable" onclick="toggleModulo('${id}')">
+        <span class="bloque-caret" id="caret-${id}">▸</span>
+        <span>${icono} ${titulo}</span>
+      </div>
+      <div class="bloque-contenido" id="${id}" style="display:none;">${contenidoHtml}</div>
+    </div>
+  `;
+}
+
+function toggleModulo(id){
+  const cont = document.getElementById(id);
+  const caret = document.getElementById('caret-'+id);
+  if (!cont) return;
+  const abierta = cont.style.display !== 'none';
+  cont.style.display = abierta ? 'none' : '';
+  if (caret) caret.textContent = abierta ? '▸' : '▾';
+}
+
+function categoriaGenericaHtml(cat, metricas){
+  return `
+    <div class="row">
+      ${metricas.map(m => `
+        <div class="field" style="min-width:170px;">
+          <label>${m.nombre}${m.unidad ? ' ('+m.unidad+')' : ''}</label>
+          <input type="number" step="0.1" class="eval-metrica-input" data-categoria="${cat}" data-metrica="${m.nombre}" data-unidad="${m.unidad}">
+          ${m.referencia ? `<div class="muted" style="font-size:10.5px; margin-top:2px;">Ref: ${m.referencia}</div>` : ''}
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+function edadDesdeFecha(fecha){
+  if (!fecha) return null;
+  const hoy = new Date(); const nac = new Date(fecha+'T00:00:00');
+  let edad = hoy.getFullYear() - nac.getFullYear();
+  const m = hoy.getMonth() - nac.getMonth();
+  if (m < 0 || (m === 0 && hoy.getDate() < nac.getDate())) edad--;
+  return edad;
+}
+function imcDesde(peso, altura){
+  if (!peso || !altura) return null;
+  const m = altura / 100;
+  return peso / (m*m);
+}
+
+function datosPersonalesModuloHtml(alumnoId){
+  const a = buscarAlumnoCache(alumnoId) || {};
+  const edad = edadDesdeFecha(a.fecha_nacimiento);
+  const imc = imcDesde(a.peso_kg, a.altura_cm);
+  return `
+    <div class="row">
+      <div class="field"><label>Fecha de nacimiento</label><input type="date" id="evalDatFechaNac" value="${a.fecha_nacimiento||''}" onchange="actualizarEdadImcEval()"></div>
+      <div class="field"><label>Edad</label><input value="${edad!=null?edad+' años':'-'}" disabled id="evalDatEdad"></div>
+      <div class="field">
+        <label>Sexo</label>
+        <select id="evalDatSexo">
+          <option value="">-- sin definir --</option>
+          <option value="H" ${a.sexo==='H'?'selected':''}>Hombre</option>
+          <option value="M" ${a.sexo==='M'?'selected':''}>Mujer</option>
+          <option value="Otro" ${a.sexo==='Otro'?'selected':''}>Otro</option>
+        </select>
       </div>
     </div>
+    <div class="row" style="margin-top:8px;">
+      <div class="field"><label>Peso corporal (kg)</label><input value="${a.peso_kg||'-'}" disabled></div>
+      <div class="field"><label>Altura (cm)</label><input value="${a.altura_cm||'-'}" disabled></div>
+      <div class="field"><label>IMC</label><input value="${imc!=null?imc.toFixed(1):'-'}" disabled></div>
+      <div class="field" style="flex:1; min-width:180px;"><label>Deporte / disciplina</label><input id="evalDatDeporte" value="${(a.deporte_disciplina||'').replace(/"/g,'&quot;')}" placeholder="Ej: Fútbol"></div>
+      <div class="field" style="min-width:160px;"><label>Categoría de peso</label><input id="evalDatCategoriaPeso" value="${(a.categoria_peso||'').replace(/"/g,'&quot;')}" placeholder="Ej: -74kg"></div>
+    </div>
+    <div class="muted" style="margin-top:6px; font-size:12px;">Peso y altura se cargan desde "👤 Alumnos → ✏️ Datos". Acá solo se completan los datos extra de la ficha.</div>
+    <button style="margin-top:8px;" onclick="guardarDatosPersonalesEval('${alumnoId}')">Guardar datos personales</button>
+  `;
+}
+
+function actualizarEdadImcEval(){
+  const fecha = document.getElementById('evalDatFechaNac').value;
+  const edad = edadDesdeFecha(fecha);
+  const el = document.getElementById('evalDatEdad');
+  if (el) el.value = edad!=null ? edad+' años' : '-';
+}
+
+async function guardarDatosPersonalesEval(alumnoId){
+  const body = {
+    fecha_nacimiento: document.getElementById('evalDatFechaNac').value || null,
+    sexo: document.getElementById('evalDatSexo').value || null,
+    deporte_disciplina: document.getElementById('evalDatDeporte').value.trim() || null,
+    categoria_peso: document.getElementById('evalDatCategoriaPeso').value.trim() || null,
+  };
+  try{
+    await sb(`alumnos?id=eq.${alumnoId}`, { method:'PATCH', headers:{Prefer:'return=minimal'}, body: JSON.stringify(body) });
+    toast('Datos personales guardados ✓');
+    await cargarPersonas();
+  }catch(e){ toast('Error guardando datos personales: ' + extraerMensajeError(e), true); }
+}
+
+function historialContextoModuloHtml(){
+  const ultima = EVAL_CACHE_PROF[0];
+  const h = (ultima && ultima.historial_contexto) || {};
+  const esc = v => (v||'').toString().replace(/"/g,'&quot;');
+  return `
+    <div class="row">
+      <div class="field"><label>Años entrenando</label><input id="evalHistAnios" value="${esc(h.anios_entrenando)}" placeholder="Ej: 1 año"></div>
+      <div class="field" style="flex:1; min-width:160px;"><label>Lesiones pasadas</label><input id="evalHistLesionesPasadas" value="${esc(h.lesiones_pasadas)}"></div>
+      <div class="field" style="flex:1; min-width:160px;"><label>Lesiones activas</label><input id="evalHistLesionesActivas" value="${esc(h.lesiones_activas)}"></div>
+    </div>
+    <div class="row" style="margin-top:8px;">
+      <div class="field" style="flex:1; min-width:160px;"><label>Limitaciones físicas</label><input id="evalHistLimitaciones" value="${esc(h.limitaciones_fisicas)}"></div>
+      <div class="field" style="flex:1; min-width:160px;"><label>Medicación relevante</label><input id="evalHistMedicacion" value="${esc(h.medicacion_relevante)}"></div>
+      <div class="field" style="flex:1; min-width:160px;"><label>Cirugías previas</label><input id="evalHistCirugias" value="${esc(h.cirugias_previas)}"></div>
+    </div>
+    <div class="row" style="margin-top:8px;">
+      <div class="field"><label>Deporte previo (años)</label><input id="evalHistDeportePrevio" value="${esc(h.deporte_previo_anios)}" placeholder="Ej: Fútbol"></div>
+      <div class="field"><label>Frecuencia sem./año</label><input id="evalHistFrecuencia" value="${esc(h.frecuencia_sem)}" placeholder="Ej: 3"></div>
+      <div class="field" style="flex:1; min-width:160px;"><label>Última competencia</label><input id="evalHistUltimaComp" value="${esc(h.ultima_competencia)}"></div>
+      <div class="field" style="flex:1; min-width:200px;"><label>Objetivo principal</label><input id="evalHistObjetivo" value="${esc(h.objetivo_principal)}"></div>
+    </div>
+  `;
+}
+
+function planAccionModuloHtml(){
+  const ultima = EVAL_CACHE_PROF[0];
+  const p = (ultima && ultima.plan_accion) || {};
+  return `
+    <div class="field"><label>Principales fortalezas</label><textarea id="evalPlanFortalezas" rows="2">${p.fortalezas||''}</textarea></div>
+    <div class="field" style="margin-top:8px;"><label>Principales debilidades</label><textarea id="evalPlanDebilidades" rows="2">${p.debilidades||''}</textarea></div>
+    <div class="field" style="margin-top:8px;"><label>Prioridades de trabajo</label><textarea id="evalPlanPrioridades" rows="2">${p.prioridades||''}</textarea></div>
+    <div class="field" style="margin-top:8px;"><label>Restricciones a considerar</label><textarea id="evalPlanRestricciones" rows="2">${p.restricciones||''}</textarea></div>
+    <div class="row" style="margin-top:8px;">
+      <div class="field" style="flex:1; min-width:200px;"><label>Objetivos a 12 semanas</label><input id="evalPlanObjetivos12" value="${(p.objetivos_12sem||'').replace(/"/g,'&quot;')}"></div>
+      <div class="field"><label>Fecha de re-evaluación</label><input type="date" id="evalPlanFechaReeval" value="${p.fecha_reevaluacion||''}"></div>
+    </div>
+  `;
+}
+
+function testsFuerzaModuloHtml(alumnoId){
+  const a = buscarAlumnoCache(alumnoId) || {};
+  const pesoCorporal = Number(a.peso_kg) || 0;
+  const filas = TESTS_FUERZA.map((ej, i) => `
+    <div class="row" style="align-items:flex-end; margin-bottom:8px;">
+      <div class="field" style="flex:1; min-width:160px;"><label>${ej}</label></div>
+      <div class="field" style="width:90px;"><label>Peso (kg)</label><input type="number" step="0.5" class="eval-fuerza-peso" data-idx="${i}" oninput="actualizarCalculoFuerza(${i})"></div>
+      <div class="field" style="width:80px;"><label>Reps</label><input type="number" class="eval-fuerza-reps" data-idx="${i}" oninput="actualizarCalculoFuerza(${i})"></div>
+      <div class="muted" style="min-width:190px; padding-bottom:9px;" id="evalFuerzaCalc-${i}">1RM: - · %PC: - · Nivel: -</div>
+    </div>
   `).join('');
+  return `
+    <div class="muted" style="font-size:12px; margin-bottom:8px;">1RM estimado (fórmula de Epley), % de peso corporal y nivel se calculan solos${pesoCorporal ? '' : ' — cargá el peso corporal del alumno en "👤 Alumnos → ✏️ Datos" para que se puedan calcular'}.</div>
+    ${filas}
+  `;
+}
+
+function actualizarCalculoFuerza(idx){
+  const alumnoId = document.getElementById('evalAlumno').value;
+  const a = buscarAlumnoCache(alumnoId) || {};
+  const pesoCorporal = Number(a.peso_kg) || 0;
+  const peso = parseFloat(document.querySelector(`.eval-fuerza-peso[data-idx="${idx}"]`).value) || 0;
+  const reps = parseFloat(document.querySelector(`.eval-fuerza-reps[data-idx="${idx}"]`).value) || 0;
+  const cont = document.getElementById(`evalFuerzaCalc-${idx}`);
+  if (!peso){ cont.textContent = '1RM: - · %PC: - · Nivel: -'; return; }
+  const rm = calcular1RM(peso, reps);
+  const pct = pesoCorporal ? (rm / pesoCorporal * 100) : null;
+  const nivel = nivelPorPesoCorporal(pct || 0);
+  cont.textContent = `1RM: ${rm.toFixed(1)}kg · %PC: ${pct!=null ? pct.toFixed(0)+'%' : '-'} · Nivel: ${nivel}`;
+}
+
+function renderCategoriasEvaluacion(alumnoId){
+  const cont = document.getElementById('evalCategorias');
+  cont.innerHTML = [
+    moduloEvalHtml('evalMod-datos', '👤', 'Datos personales', datosPersonalesModuloHtml(alumnoId)),
+    moduloEvalHtml('evalMod-historial', '📋', 'Historial y contexto', historialContextoModuloHtml()),
+    moduloEvalHtml('evalMod-comp', '⚖️', 'Composición Corporal', categoriaGenericaHtml('Composición Corporal', CATALOGO_METRICAS['Composición Corporal'])),
+    moduloEvalHtml('evalMod-perfil', '⭐', 'Perfil de Rendimiento (1-10)', categoriaGenericaHtml('Perfil de Rendimiento', CATALOGO_METRICAS['Perfil de Rendimiento'])),
+    moduloEvalHtml('evalMod-fuerza', '🏋️', 'Tests de Fuerza', testsFuerzaModuloHtml(alumnoId)),
+    moduloEvalHtml('evalMod-capacidad', '⚡', 'Tests de Capacidad Física', categoriaGenericaHtml('Capacidad Física', CATALOGO_METRICAS['Capacidad Física'])),
+    moduloEvalHtml('evalMod-movilidad', '🤸', 'Movilidad (ROM)', categoriaGenericaHtml('Movilidad (ROM)', CATALOGO_METRICAS['Movilidad (ROM)'])),
+    moduloEvalHtml('evalMod-plan', '📝', 'Observaciones y plan de acción', planAccionModuloHtml()),
+  ].join('');
 }
 
 function agregarMetricaPersonalizada(){
@@ -5451,10 +5663,10 @@ function agregarMetricaPersonalizada(){
     <div class="field" style="min-width:160px;"><label>Categoría</label>
       <select class="eval-extra-categoria">
         <option value="Composición Corporal">Composición Corporal</option>
+        <option value="Perfil de Rendimiento">Perfil de Rendimiento</option>
         <option value="Fuerza">Fuerza</option>
-        <option value="Potencia">Potencia</option>
-        <option value="Velocidad">Velocidad</option>
-        <option value="Movilidad">Movilidad</option>
+        <option value="Capacidad Física">Capacidad Física</option>
+        <option value="Movilidad (ROM)">Movilidad (ROM)</option>
         <option value="Otro" selected>Otro</option>
       </select>
     </div>
@@ -5479,6 +5691,15 @@ async function guardarEvaluacion(){
       metricas.push({ categoria: inp.dataset.categoria, metrica: inp.dataset.metrica, valor: Number(inp.value), unidad: inp.dataset.unidad || null });
     }
   });
+  // (24/9) Tests de fuerza: peso (obligatorio para que cuente) + reps (opcional).
+  document.querySelectorAll('.eval-fuerza-peso').forEach(inp => {
+    if (inp.value === '') return;
+    const idx = inp.dataset.idx;
+    const ejercicio = TESTS_FUERZA[idx];
+    metricas.push({ categoria: 'Fuerza', metrica: `${ejercicio} - Peso`, valor: Number(inp.value), unidad: 'kg' });
+    const reps = document.querySelector(`.eval-fuerza-reps[data-idx="${idx}"]`).value;
+    if (reps !== '') metricas.push({ categoria: 'Fuerza', metrica: `${ejercicio} - Reps`, valor: Number(reps), unidad: 'reps' });
+  });
   document.querySelectorAll('#evalMetricasExtra > .row').forEach(row => {
     const nombre = row.querySelector('.eval-extra-nombre').value.trim();
     const valor = row.querySelector('.eval-extra-valor').value;
@@ -5492,20 +5713,49 @@ async function guardarEvaluacion(){
     }
   });
 
-  if (!metricas.length){ toast('Cargá al menos una métrica.', true); return; }
+  // (24/9) Historial y contexto / Observaciones y plan de acción — módulos de
+  // texto libre, se guardan junto con la evaluación (columnas jsonb).
+  const campoOTexto = id => { const el = document.getElementById(id); const v = el ? el.value.trim() : ''; return v || null; };
+  const historial_contexto = {
+    anios_entrenando: campoOTexto('evalHistAnios'),
+    lesiones_pasadas: campoOTexto('evalHistLesionesPasadas'),
+    lesiones_activas: campoOTexto('evalHistLesionesActivas'),
+    limitaciones_fisicas: campoOTexto('evalHistLimitaciones'),
+    medicacion_relevante: campoOTexto('evalHistMedicacion'),
+    cirugias_previas: campoOTexto('evalHistCirugias'),
+    deporte_previo_anios: campoOTexto('evalHistDeportePrevio'),
+    frecuencia_sem: campoOTexto('evalHistFrecuencia'),
+    ultima_competencia: campoOTexto('evalHistUltimaComp'),
+    objetivo_principal: campoOTexto('evalHistObjetivo'),
+  };
+  const plan_accion = {
+    fortalezas: campoOTexto('evalPlanFortalezas'),
+    debilidades: campoOTexto('evalPlanDebilidades'),
+    prioridades: campoOTexto('evalPlanPrioridades'),
+    restricciones: campoOTexto('evalPlanRestricciones'),
+    objetivos_12sem: campoOTexto('evalPlanObjetivos12'),
+    fecha_reevaluacion: campoOTexto('evalPlanFechaReeval'),
+  };
+  const hayHistorial = Object.values(historial_contexto).some(v => v != null);
+  const hayPlan = Object.values(plan_accion).some(v => v != null);
+
+  if (!metricas.length && !hayHistorial && !hayPlan){ toast('Cargá al menos un dato en algún módulo.', true); return; }
 
   try{
     const creadas = await sb('evaluaciones', {
       method: 'POST',
       headers: { Prefer: 'return=representation' },
-      body: JSON.stringify([{ alumno_id: alumnoId, profesor_id: profesorId, gimnasio_id: PERFIL_ACTUAL?.gimnasio_id || null, fecha, notas }]),
+      body: JSON.stringify([{ alumno_id: alumnoId, profesor_id: profesorId, gimnasio_id: PERFIL_ACTUAL?.gimnasio_id || null, fecha, notas, historial_contexto, plan_accion }]),
     });
     const ev = creadas[0];
-    const filas = metricas.map(m => ({ evaluacion_id: ev.id, ...m }));
-    await sb('evaluacion_metricas', { method: 'POST', headers: { Prefer: 'return=minimal' }, body: JSON.stringify(filas) });
+    if (metricas.length){
+      const filas = metricas.map(m => ({ evaluacion_id: ev.id, ...m }));
+      await sb('evaluacion_metricas', { method: 'POST', headers: { Prefer: 'return=minimal' }, body: JSON.stringify(filas) });
+    }
     toast('Evaluación guardada ✓');
     document.getElementById('evalNotas').value = '';
     document.querySelectorAll('.eval-metrica-input').forEach(i => i.value = '');
+    document.querySelectorAll('.eval-fuerza-peso, .eval-fuerza-reps').forEach(i => i.value = '');
     document.getElementById('evalMetricasExtra').innerHTML = '';
     onCambiarEvalAlumno();
   }catch(e){ toast('Error guardando la evaluación: ' + e.message, true); }
