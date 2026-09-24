@@ -7728,11 +7728,17 @@ async function intentarAsignarRutina(turnoId, alumnoId, fecha){
     }
 
     // 2) Biblioteca por tipo de alumno.
-    const alumno = ALUMNOS_CACHE.find(a => a.id === alumnoId);
-    const tipoAlumnoId = alumno?.tipo_alumno_id;
+    // Ojo: se pide FRESCO a la base (no de ALUMNOS_CACHE, que se carga una sola vez
+    // al abrir la app). Bug real encontrado (24/9): si el alumno ya tenía la app
+    // abierta en el celu de antes, y el profe recién ahora le asigna/cambia el tipo
+    // de alumno o crea la rutina, el caché en memoria del alumno queda viejo — esta
+    // función fallaba en silencio (sin error, sin toast) porque tipoAlumnoId daba
+    // vacío aunque en la base ya estuviera bien cargado.
+    const [alumnoFresco] = await sb(`alumnos?select=tipo_alumno_id,gimnasio_id&id=eq.${alumnoId}`);
+    const tipoAlumnoId = alumnoFresco?.tipo_alumno_id;
     if (!tipoAlumnoId) return false;
 
-    const gimnasioIdAlumno = alumno?.gimnasio_id;
+    const gimnasioIdAlumno = alumnoFresco?.gimnasio_id;
     // Con RLS estricta, un alumno solo puede leer sus PROPIAS filas de rutina_asignaciones
     // (no las de otros), así que para saber "cuáles ya tienen dueño" en todo el gimnasio
     // se usa esta vista, que expone solo rutina_id+gimnasio_id (sin alumno_id).
