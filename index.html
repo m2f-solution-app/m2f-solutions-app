@@ -7119,8 +7119,13 @@ async function cargarEdicionDia(diaId, contId){
   const div = document.getElementById(contId);
   div.innerHTML = 'Cargando...';
   try{
-    const items = await sb(`rutina_ejercicios?select=id,orden,bloque,series,repeticiones,peso_sugerido,tiempo_trabajo_seg,descanso_seg,rir,notas,unilateral,peso_corporal,variante,ejercicios(id,nombre,grupo_muscular,provider_ref_id,video_provider,video_url_propio)&rutina_dia_id=eq.${diaId}&order=orden.asc`);
-    EDICION_DIAS[diaId] = { items, contId };
+    // (24/9) Pedido de Martin: poder corregir la fecha de un día ya cargado si se
+    // equivocó al armar la rutina — antes no había forma de cambiarla desde acá.
+    const [items, diaRows] = await Promise.all([
+      sb(`rutina_ejercicios?select=id,orden,bloque,series,repeticiones,peso_sugerido,tiempo_trabajo_seg,descanso_seg,rir,notas,unilateral,peso_corporal,variante,ejercicios(id,nombre,grupo_muscular,provider_ref_id,video_provider,video_url_propio)&rutina_dia_id=eq.${diaId}&order=orden.asc`),
+      sb(`rutina_dias?id=eq.${diaId}&select=fecha,nombre_dia`),
+    ]);
+    EDICION_DIAS[diaId] = { items, contId, fecha: diaRows[0]?.fecha || '' };
     renderEdicionDia(diaId);
   }catch(e){ div.innerHTML = 'Error: ' + e.message; }
 }
@@ -7132,6 +7137,13 @@ function renderEdicionDia(diaId){
     ? items.map(item => filaEdicionHtml(diaId, item)).join('')
     : '<div class="muted" style="padding:8px 0;">Sin ejercicios en este día.</div>';
   div.innerHTML = `
+    <div class="row" style="margin-bottom:12px; align-items:flex-end;">
+      <div class="field" style="min-width:170px;">
+        <label>📅 Fecha planificada de este día</label>
+        <input type="date" id="fechaEdicionDia-${diaId}" value="${EDICION_DIAS[diaId].fecha}" onchange="cambiarFechaEdicionDia('${diaId}', this.value)">
+      </div>
+      <div class="muted" style="font-size:12px; max-width:320px;">Si te equivocaste de fecha al cargar la rutina, cambiala acá — se corrige sola, sin tener que recrear el día.</div>
+    </div>
     ${filas}
     <div style="margin-top:10px;">
       <input id="buscadorEdicion-${diaId}" placeholder="Escribí para agregar un ejercicio: bíceps, glúteos, press banca..." oninput="buscarParaAgregarEdicion(this.value,'${diaId}')" style="width:100%;" />
@@ -7142,6 +7154,23 @@ function renderEdicionDia(diaId){
       <button onclick="guardarEdicionDia('${diaId}')">Guardar cambios</button>
     </div>
   `;
+}
+
+async function cambiarFechaEdicionDia(diaId, nuevaFecha){
+  if (!nuevaFecha) return;
+  try{
+    await sb(`rutina_dias?id=eq.${diaId}`, { method:'PATCH', headers:{Prefer:'return=minimal'}, body: JSON.stringify({ fecha: nuevaFecha }) });
+    if (EDICION_DIAS[diaId]) EDICION_DIAS[diaId].fecha = nuevaFecha;
+    RUTINAS_CACHE.forEach(r => (r.dias||[]).forEach(d => { if (d.id === diaId) d.fecha = nuevaFecha; }));
+    // Si algún turno había quedado enganchado a este día con la fecha vieja, ese
+    // enganche ya no corresponde (el matcheo automático es siempre por fecha
+    // igual) — se desengancha para que se pueda volver a asignar bien.
+    const turnosDesactualizados = await sb(`turnos?select=id&rutina_dia_id=eq.${diaId}&fecha=neq.${nuevaFecha}`);
+    if (turnosDesactualizados.length){
+      await sb(`turnos?rutina_dia_id=eq.${diaId}&fecha=neq.${nuevaFecha}`, { method:'PATCH', headers:{Prefer:'return=minimal'}, body: JSON.stringify({ rutina_dia_id: null }) });
+    }
+    toast(`Fecha corregida ✓${turnosDesactualizados.length ? ' Se desenganchó de '+turnosDesactualizados.length+' turno(s) que ya no correspondían a esa fecha — se vuelven a asignar solos, o el alumno puede tocar "Reintentar".' : ''}`);
+  }catch(e){ toast('Error corrigiendo la fecha: ' + e.message, true); }
 }
 
 function filaEdicionHtml(diaId, item){
