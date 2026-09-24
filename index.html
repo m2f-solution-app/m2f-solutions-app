@@ -131,6 +131,9 @@
   .search-item.vacio{grid-column:1/-1; cursor:default; background:transparent; border:none;}
   .search-item.crear{border:1px dashed var(--border); cursor:pointer; justify-content:center;}
   .media-placeholder{display:flex; align-items:center; justify-content:center; background:var(--panel2); border:1px dashed var(--border); font-size:22px; opacity:.6;}
+  .btn-crear-rapido{font-size:12.5px; padding:5px 10px; margin:6px 0; background:transparent; border:1px dashed var(--accent); color:var(--accent); border-radius:8px; cursor:pointer; width:auto;}
+  .btn-crear-rapido:hover{background:rgba(255,122,48,.1);}
+  .nota-profesor{margin-top:6px; padding:8px 10px; background:rgba(90,160,255,.12); border-left:3px solid #5aa0ff; border-radius:6px; font-size:13px; color:var(--text);}
   .lista-busqueda{
     max-height:220px; overflow-y:auto; border:1px solid var(--border); border-radius:10px;
     background:#10131a;
@@ -836,6 +839,29 @@
             <div id="dashboardOcupacion"></div>
           </div>
         </div>
+
+        <div class="card">
+          <h2 style="margin-top:0;">💰 Ganancias del mes</h2>
+          <div class="row" style="flex-wrap:wrap; gap:12px;">
+            <div class="card" style="flex:1; min-width:170px; margin:0;">
+              <div class="muted" style="font-size:12px;">Facturado a alumnos</div>
+              <div style="font-size:22px; font-weight:800; color:var(--accent2);" id="ganFacturado">-</div>
+            </div>
+            <div class="card" style="flex:1; min-width:170px; margin:0;">
+              <div class="muted" style="font-size:12px;">Gastos de infraestructura</div>
+              <div style="font-size:22px; font-weight:800; color:var(--danger);" id="ganGastosInfra">-</div>
+            </div>
+            <div class="card" style="flex:1; min-width:170px; margin:0;">
+              <div class="muted" style="font-size:12px;">Pago a profesores</div>
+              <div style="font-size:22px; font-weight:800; color:var(--danger);" id="ganGastosProf">-</div>
+            </div>
+            <div class="card" style="flex:1; min-width:170px; margin:0; background:rgba(61,220,132,.08); border-color:rgba(61,220,132,.4);">
+              <div class="muted" style="font-size:12px;">Ganancia neta</div>
+              <div style="font-size:26px; font-weight:800;" id="ganNeta">-</div>
+            </div>
+          </div>
+          <div class="muted" style="margin-top:8px; font-size:12px;">Del mes en curso. El pago a profesores solo cuenta una vez confirmada la liquidación (pestaña "💵 Facturar horas" en Horarios).</div>
+        </div>
       </div>
 
       <!-- ---- SUBVISTA: ARMADOR DE RUTINA (estándar, planificación quincenal) ---- -->
@@ -851,6 +877,10 @@
             <div class="field" style="flex:1; min-width:220px;">
               <label>Nombre de la rutina</label>
               <input id="profNombreRutina" placeholder="Ej: Fuerza - Fase 1, Fútbol - Sub15, Funcional..." />
+            </div>
+            <div class="field" style="min-width:200px;">
+              <label>Tipo de alumno</label>
+              <select id="profTipoAlumno"></select>
             </div>
           </div>
         </div>
@@ -1031,8 +1061,7 @@
             <div class="field">
               <label>Tipo</label>
               <select id="nuevoAlumnoTipo">
-                <option value="estandar">Estándar</option>
-                <option value="especial">Especial</option>
+                <option value="">-- sin definir --</option>
               </select>
             </div>
             <button onclick="crearAlumno()" id="btnCrearAlumno" style="align-self:end;">Agregar alumno</button>
@@ -1216,6 +1245,7 @@
           <div class="row" style="gap:8px;">
             <button class="ghost active" id="horTabBtnEditar" onclick="horCambiarTab('editar')">✎ Editar horario</button>
             <button class="ghost" id="horTabBtnCuadro" onclick="horCambiarTab('cuadro')">🗓️ Ver cuadro de todos</button>
+            <button class="ghost" id="horTabBtnFacturar" onclick="horCambiarTab('facturar')">💵 Facturar horas</button>
           </div>
         </div>
 
@@ -1259,6 +1289,29 @@
           <div class="card">
             <h2 style="margin-top:0; font-size:14px;">Excepciones cargadas esta semana</h2>
             <div id="cuadroListaExcepciones" class="muted">Sin excepciones esta semana.</div>
+          </div>
+        </div>
+
+        <div id="horTabFacturar" style="display:none;">
+          <div class="card">
+            <div class="field" style="margin-bottom:0;">
+              <label>Profesor</label>
+              <select id="factProfesor" onchange="cargarHistorialLiquidaciones()"></select>
+            </div>
+          </div>
+          <div class="card">
+            <h2 style="margin-top:0">Calcular horas trabajadas</h2>
+            <div class="muted" style="font-size:12px; margin-bottom:8px;">Se calcula a partir del horario semanal asignado (pestaña "Editar horario") + las excepciones de cobertura/ausencia cargadas en el rango. No hace falta fichar entrada y salida.</div>
+            <div class="row">
+              <div class="field"><label>Desde</label><input type="date" id="factDesde"></div>
+              <div class="field"><label>Hasta</label><input type="date" id="factHasta"></div>
+              <button onclick="calcularFacturadorHoras()" style="align-self:end;">Calcular</button>
+            </div>
+            <div id="factResultado" class="muted" style="margin-top:10px;">Elegí un profesor y un rango de fechas.</div>
+          </div>
+          <div class="card">
+            <h2 style="margin-top:0; font-size:14px;">Liquidaciones ya pagadas</h2>
+            <div id="factHistorial" class="muted">Elegí un profesor.</div>
           </div>
         </div>
       </div>
@@ -1308,7 +1361,53 @@
       <!-- ---- SUBVISTA: COBRANZAS (vencimientos de cuota) ---- -->
       <div id="subvistaCobranzas" style="display:none;">
         <div class="card">
-          <div id="listaCobranzas" class="muted">Cargando...</div>
+          <div class="tabs" style="margin-bottom:0;">
+            <div class="tab active" id="cobTabBtnCobros" onclick="cobCambiarTab('cobros')" style="flex:1; text-align:center;">Cobros</div>
+            <div class="tab" id="cobTabBtnGastos" onclick="cobCambiarTab('gastos')" style="flex:1; text-align:center;">Gastos</div>
+          </div>
+        </div>
+
+        <div id="cobTabCobros">
+          <div class="card">
+            <div id="listaCobranzas" class="muted">Cargando...</div>
+          </div>
+        </div>
+
+        <div id="cobTabGastos" style="display:none;">
+          <div class="card">
+            <h2 style="margin-top:0">Nuevo gasto</h2>
+            <div class="row">
+              <div class="field" style="min-width:150px;">
+                <label>Categoría</label>
+                <select id="gastoCategoria">
+                  <option value="alquiler">Alquiler</option>
+                  <option value="servicios">Servicios</option>
+                  <option value="insumos">Insumos</option>
+                  <option value="otro">Otro</option>
+                </select>
+              </div>
+              <div class="field" style="flex:1; min-width:180px;">
+                <label>Concepto</label>
+                <input id="gastoConcepto" placeholder="Ej: Alquiler de septiembre">
+              </div>
+              <div class="field" style="min-width:120px;">
+                <label>Monto</label>
+                <input type="number" min="0" step="0.01" id="gastoMonto">
+              </div>
+              <div class="field" style="min-width:150px;">
+                <label>Fecha</label>
+                <input type="date" id="gastoFecha">
+              </div>
+              <button onclick="agregarGasto()" id="btnAgregarGasto" style="align-self:end;">Agregar</button>
+            </div>
+          </div>
+          <div class="card">
+            <div class="row" style="justify-content:space-between; align-items:center;">
+              <h2 style="margin-top:0; margin-bottom:0;">Gastos cargados</h2>
+              <div style="font-weight:700;" id="gastosTotal"></div>
+            </div>
+            <div id="listaGastos" class="muted" style="margin-top:10px;">Cargando...</div>
+          </div>
         </div>
       </div>
 
@@ -1397,6 +1496,18 @@
             <button onclick="guardarGimnasio()" style="align-self:end;">Guardar</button>
           </div>
           <div class="muted" style="margin-top:6px;">Se aplica a todos los planes del gimnasio cuando el alumno paga en efectivo.</div>
+        </div>
+
+        <div class="card">
+          <h2 style="margin-top:0">Tipos de alumno</h2>
+          <div class="muted" style="margin-bottom:10px;">Ej: Fitness, Rendimiento específico, Readaptación, Salud. Reemplaza a "Estándar/Especial": cada alumno tiene un tipo, y en el Armador elegís para qué tipo (y en qué día, por la fecha del día planificado) es cada rutina — se asigna sola al reservar turno.</div>
+          <div class="row">
+            <div class="field" style="flex:1; min-width:200px;">
+              <input id="nuevoTipoAlumnoNombre" placeholder="Ej: Rendimiento específico" onkeydown="if(event.key==='Enter') crearTipoAlumno();">
+            </div>
+            <button onclick="crearTipoAlumno()">+ Agregar tipo</button>
+          </div>
+          <div id="listaTiposAlumno" class="muted" style="margin-top:10px;">Cargando...</div>
         </div>
 
         <div class="card">
@@ -2542,10 +2653,35 @@ async function cargarDashboardAdmin(){
     kpis.style.display = '';
     cargarOcupacionSemanalDashboard(gimId);
     cargarMetricasMembresia(gimId);
+    cargarGananciasDashboard(gimId, d.facturado_mes);
   }catch(e){
     estado.textContent = 'Error cargando el dashboard: ' + e.message;
     estado.style.display = '';
     kpis.style.display = 'none';
+  }
+}
+
+// ---------- Ganancias del mes: facturado - gastos infra - pago a profesores (pedido 24/9) ----------
+async function cargarGananciasDashboard(gimId, facturadoMes){
+  try{
+    const hoy = new Date();
+    const desdeMes = `${hoy.getFullYear()}-${String(hoy.getMonth()+1).padStart(2,'0')}-01`;
+    const hastaMes = dateAIso(hoy);
+    const [gastos, liquidaciones] = await Promise.all([
+      sb(`gastos_gimnasio?select=monto&gimnasio_id=eq.${gimId}&fecha=gte.${desdeMes}&fecha=lte.${hastaMes}`),
+      sb(`liquidaciones_profesor?select=monto_total&gimnasio_id=eq.${gimId}&fecha_pago=gte.${desdeMes}&fecha_pago=lte.${hastaMes}`),
+    ]);
+    const totalGastos = gastos.reduce((a,r)=>a+Number(r.monto),0);
+    const totalProf = liquidaciones.reduce((a,r)=>a+Number(r.monto_total),0);
+    const neta = (Number(facturadoMes)||0) - totalGastos - totalProf;
+    document.getElementById('ganFacturado').textContent = formatearMonto(facturadoMes||0);
+    document.getElementById('ganGastosInfra').textContent = formatearMonto(totalGastos);
+    document.getElementById('ganGastosProf').textContent = formatearMonto(totalProf);
+    const netaEl = document.getElementById('ganNeta');
+    netaEl.textContent = formatearMonto(neta);
+    netaEl.style.color = neta >= 0 ? 'var(--accent2)' : 'var(--danger)';
+  }catch(e){
+    ['ganFacturado','ganGastosInfra','ganGastosProf','ganNeta'].forEach(id => { const el = document.getElementById(id); if (el) el.textContent = '-'; });
   }
 }
 
@@ -2984,21 +3120,26 @@ async function guardarGimnasio(){
 // ---------- Categorías/disciplinas y Equipos (21/9, pedido de Martin) ----------
 let CATEGORIAS_CACHE = [];
 let EQUIPOS_CACHE = [];
+let TIPOS_ALUMNO_CACHE = [];
 
 async function cargarCategoriasYEquipos(){
   if (!PERFIL_ACTUAL) return;
   try{
-    const [categorias, equipos] = await Promise.all([
+    const [categorias, equipos, tiposAlumno] = await Promise.all([
       sb(`categorias?select=id,nombre,activa&gimnasio_id=eq.${PERFIL_ACTUAL.gimnasio_id}&activa=eq.true&order=nombre.asc`),
       sb(`equipos?select=id,nombre,activo&gimnasio_id=eq.${PERFIL_ACTUAL.gimnasio_id}&activo=eq.true&order=nombre.asc`),
+      sb(`tipos_alumno?select=id,nombre,activo&gimnasio_id=eq.${PERFIL_ACTUAL.gimnasio_id}&activo=eq.true&order=orden.asc,nombre.asc`),
     ]);
     CATEGORIAS_CACHE = categorias;
     EQUIPOS_CACHE = equipos;
+    TIPOS_ALUMNO_CACHE = tiposAlumno;
   }catch(e){ /* si falla, se queda con lo que ya tenía en caché */ }
   renderListaCategorias();
   renderListaEquipos();
+  renderListaTiposAlumno();
   poblarSelectEquipoEsp();
   poblarSelectEquipoVista();
+  poblarSelectsTipoAlumno();
 }
 
 function renderListaCategorias(){
@@ -3023,6 +3164,57 @@ function renderListaEquipos(){
         </span>
       `).join('')
     : '<div class="empty">Todavía no cargaste ningún equipo.</div>';
+}
+
+// ---------- Tipos de alumno (pedido 24/9, reemplaza estándar/especial) ----------
+function renderListaTiposAlumno(){
+  const cont = document.getElementById('listaTiposAlumno');
+  if (!cont) return;
+  cont.innerHTML = TIPOS_ALUMNO_CACHE.length
+    ? TIPOS_ALUMNO_CACHE.map(t => `
+        <span class="pill" style="margin:0 6px 6px 0;">${t.nombre}
+          <span style="cursor:pointer; margin-left:6px;" title="Eliminar tipo" onclick="eliminarTipoAlumno('${t.id}','${t.nombre.replace(/'/g,"&apos;")}')">✕</span>
+        </span>
+      `).join('')
+    : '<div class="empty">Todavía no cargaste ningún tipo de alumno.</div>';
+}
+
+function poblarSelectsTipoAlumno(){
+  const optsConVacio = `<option value="">-- sin definir --</option>` + TIPOS_ALUMNO_CACHE.map(t => `<option value="${t.id}">${t.nombre}</option>`).join('');
+  const selAlta = document.getElementById('nuevoAlumnoTipo');
+  if (selAlta) selAlta.innerHTML = optsConVacio;
+  const selArmador = document.getElementById('profTipoAlumno');
+  if (selArmador){
+    const actual = selArmador.value;
+    selArmador.innerHTML = `<option value="">-- elegir --</option>` + TIPOS_ALUMNO_CACHE.map(t => `<option value="${t.id}">${t.nombre}</option>`).join('');
+    if (actual) selArmador.value = actual;
+  }
+}
+
+async function crearTipoAlumno(){
+  const input = document.getElementById('nuevoTipoAlumnoNombre');
+  const nombre = input.value.trim();
+  if (!nombre) return;
+  try{
+    await sb('tipos_alumno', { method:'POST', headers:{Prefer:'return=minimal'}, body: JSON.stringify([{ gimnasio_id: PERFIL_ACTUAL.gimnasio_id, nombre }]) });
+    input.value = '';
+    toast('Tipo de alumno agregado ✓');
+    await cargarCategoriasYEquipos();
+  }catch(e){
+    const dup = /duplicate key|unique constraint/i.test(e.message || '');
+    toast(dup ? `Ya existe un tipo llamado "${nombre}".` : 'Error agregando el tipo: ' + extraerMensajeError(e), true);
+  }
+}
+
+async function eliminarTipoAlumno(id, nombre){
+  if (!confirm(`¿Eliminar el tipo "${nombre}"? Los alumnos y rutinas que lo tengan asignado van a quedar sin tipo.`)) return;
+  try{
+    await sb(`tipos_alumno?id=eq.${id}`, { method:'DELETE', headers:{Prefer:'return=minimal'} });
+    toast('Tipo eliminado ✓');
+    await cargarCategoriasYEquipos();
+    await cargarPersonas();
+    cargarListaAlumnos();
+  }catch(e){ toast('Error eliminando el tipo: ' + extraerMensajeError(e), true); }
 }
 
 async function crearCategoria(){
@@ -3164,8 +3356,8 @@ async function cargarPersonas(){
   // esto devuelve listas vacías directamente desde la base (ya no hay acceso anónimo).
   const filtroGym = PERFIL_ACTUAL ? `&gimnasio_id=eq.${PERFIL_ACTUAL.gimnasio_id}` : '';
   const [alumnos, profesores] = await Promise.all([
-    sb(`alumnos?select=id,nombre,tipo,gimnasio_id,plan_id,altura_cm,peso_kg,objetivo,telefono,email,direccion,dni,perfil_id,equipo_id,posicion,foto_url,equipos(nombre),alumno_categorias(categoria_id,categorias(nombre))&activo=eq.true${filtroGym}&order=nombre.asc`),
-    sb(`profesores?select=id,nombre,perfil_id,gimnasio_id,dni,perfiles(rol)&activo=eq.true${filtroGym}&order=nombre.asc`),
+    sb(`alumnos?select=id,nombre,tipo,tipo_alumno_id,gimnasio_id,plan_id,altura_cm,peso_kg,objetivo,telefono,email,direccion,dni,perfil_id,equipo_id,posicion,foto_url,equipos(nombre),alumno_categorias(categoria_id,categorias(nombre))&activo=eq.true${filtroGym}&order=nombre.asc`),
+    sb(`profesores?select=id,nombre,perfil_id,gimnasio_id,dni,tarifa_hora,impuesto_pct,perfiles(rol)&activo=eq.true${filtroGym}&order=nombre.asc`),
   ]);
   const optsAlu = alumnos.map(a=>`<option value="${a.id}">${a.nombre}</option>`).join('');
   const optsProf = profesores.map(p=>`<option value="${p.id}">${p.nombre}</option>`).join('');
@@ -3175,6 +3367,7 @@ async function cargarPersonas(){
   document.getElementById('profProfesor').innerHTML = optsProf;
   document.getElementById('espProfesor').innerHTML = optsProf;
   document.getElementById('horProfesor').innerHTML = optsProf;
+  document.getElementById('factProfesor').innerHTML = optsProf;
   ALUMNOS_CACHE = alumnos;
   PROFESORES_CACHE = profesores;
   // Si el que se logueó tiene su propia fila en `profesores`, se preselecciona
@@ -3244,12 +3437,31 @@ function cargarListaProfesores(){
         </select>`
       : '<span class="pill">sin cuenta (cargado antes del login)</span>';
     return `
-      <div class="row" style="justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid var(--border); flex-wrap:wrap; gap:8px;">
-        <div style="font-weight:600;">${p.nombre}${p.dni ? ` <span class="muted" style="font-weight:400;">· DNI ${p.dni}</span>` : ''}</div>
-        ${controlRol}
+      <div style="padding:8px 0; border-bottom:1px solid var(--border);">
+        <div class="row" style="justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+          <div style="font-weight:600;">${p.nombre}${p.dni ? ` <span class="muted" style="font-weight:400;">· DNI ${p.dni}</span>` : ''}</div>
+          ${controlRol}
+        </div>
+        <div class="row" style="gap:14px; flex-wrap:wrap; align-items:center; margin-top:6px;">
+          <label class="muted" style="font-size:12px; display:flex; align-items:center; gap:4px;">Tarifa/hora $<input type="number" step="0.01" min="0" value="${p.tarifa_hora ?? ''}" style="width:90px;" onchange="actualizarTarifaProfesor('${p.id}','tarifa_hora',this.value)"></label>
+          <label class="muted" style="font-size:12px; display:flex; align-items:center; gap:4px;">Impuesto/carga %<input type="number" step="0.1" min="0" value="${p.impuesto_pct ?? 0}" style="width:60px;" onchange="actualizarTarifaProfesor('${p.id}','impuesto_pct',this.value)"></label>
+        </div>
       </div>
     `;
   }).join('');
+}
+
+// Edición inline de tarifa horaria e impuesto/carga del profesor, usadas por
+// el Facturador de horas (pedido 24/9). Pantalla admin-only; RLS
+// profesores_admin_write igual lo exige del lado de la base.
+async function actualizarTarifaProfesor(profesorId, campo, valor){
+  const num = valor === '' ? null : Number(valor);
+  try{
+    await sb(`profesores?id=eq.${profesorId}`, { method:'PATCH', headers:{Prefer:'return=minimal'}, body: JSON.stringify({ [campo]: num }) });
+    const p = PROFESORES_CACHE.find(pr => pr.id === profesorId);
+    if (p) p[campo] = num;
+    toast('Guardado ✓');
+  }catch(e){ toast('Error guardando: ' + extraerMensajeError(e), true); cargarListaProfesores(); }
 }
 
 // Cambiar entre "Profesor" y "Administrador" (pedido de Martin, 21/9): solo
@@ -3310,12 +3522,117 @@ function onCambiarHorProfesor(){
 
 // ---------- Tabs dentro de "🕒 Horarios": editar (por profesor) vs. cuadro (todos) ----------
 function horCambiarTab(tab){
-  const esCuadro = tab === 'cuadro';
-  document.getElementById('horTabEditar').style.display = esCuadro ? 'none' : '';
-  document.getElementById('horTabCuadro').style.display = esCuadro ? '' : 'none';
-  document.getElementById('horTabBtnEditar').classList.toggle('active', !esCuadro);
-  document.getElementById('horTabBtnCuadro').classList.toggle('active', esCuadro);
-  if (esCuadro) cargarCuadroHorarios();
+  document.getElementById('horTabEditar').style.display = tab==='editar' ? '' : 'none';
+  document.getElementById('horTabCuadro').style.display = tab==='cuadro' ? '' : 'none';
+  document.getElementById('horTabFacturar').style.display = tab==='facturar' ? '' : 'none';
+  document.getElementById('horTabBtnEditar').classList.toggle('active', tab==='editar');
+  document.getElementById('horTabBtnCuadro').classList.toggle('active', tab==='cuadro');
+  document.getElementById('horTabBtnFacturar').classList.toggle('active', tab==='facturar');
+  if (tab==='cuadro') cargarCuadroHorarios();
+  if (tab==='facturar'){
+    if (!document.getElementById('factDesde').value){
+      const hoy = new Date();
+      document.getElementById('factDesde').value = `${hoy.getFullYear()}-${String(hoy.getMonth()+1).padStart(2,'0')}-01`;
+      document.getElementById('factHasta').value = dateAIso(hoy);
+    }
+    if (!document.getElementById('factProfesor').value && document.getElementById('factProfesor').options.length){
+      document.getElementById('factProfesor').selectedIndex = 0;
+    }
+    cargarHistorialLiquidaciones();
+  }
+}
+
+// ---------- Facturador de horas de profesores (pedido 24/9) ----------
+// No usa fichaje real: calcula a partir de horarios_trabajo (el horario
+// semanal ya asignado a cada profesor) + horarios_excepciones (tipo
+// 'cobertura' suma horas extra, 'ausencia' resta). El resultado se puede
+// confirmar como liquidaciones_profesor, que es lo único que después
+// impacta el Dashboard como gasto (así no se resta un cálculo teórico que
+// todavía no se pagó).
+let FACTURADOR_CALC = null;
+
+async function calcularFacturadorHoras(){
+  const profesorId = document.getElementById('factProfesor').value;
+  const desde = document.getElementById('factDesde').value;
+  const hasta = document.getElementById('factHasta').value;
+  const cont = document.getElementById('factResultado');
+  if (!profesorId){ toast('Elegí un profesor.', true); return; }
+  if (!desde || !hasta || desde > hasta){ toast('Elegí un rango de fechas válido.', true); return; }
+  cont.innerHTML = 'Calculando...';
+  try{
+    const [horarios, excepciones] = await Promise.all([
+      sb(`horarios_trabajo?select=dia_semana,hora_inicio,hora_fin&profesor_id=eq.${profesorId}&activo=eq.true`),
+      sb(`horarios_excepciones?select=fecha,tipo,hora_inicio,hora_fin&profesor_id=eq.${profesorId}&activo=eq.true&fecha=gte.${desde}&fecha=lte.${hasta}`),
+    ]);
+    const excepcionesPorFecha = {};
+    excepciones.forEach(e => { (excepcionesPorFecha[e.fecha] = excepcionesPorFecha[e.fecha] || []).push(e); });
+    let totalHoras = 0;
+    const detalle = [];
+    const d0 = new Date(desde + 'T00:00:00');
+    const d1 = new Date(hasta + 'T00:00:00');
+    for (let d = new Date(d0); d <= d1; d.setDate(d.getDate()+1)){
+      const iso = dateAIso(d);
+      const diaSemana = d.getDay();
+      let horasDia = 0;
+      horarios.filter(h => h.dia_semana === diaSemana).forEach(h => {
+        horasDia += horaADecimal(h.hora_fin) - horaADecimal(h.hora_inicio);
+      });
+      (excepcionesPorFecha[iso] || []).forEach(e => {
+        const horasExc = horaADecimal(e.hora_fin) - horaADecimal(e.hora_inicio);
+        if (e.tipo === 'ausencia') horasDia = Math.max(0, horasDia - horasExc);
+        else if (e.tipo === 'cobertura') horasDia += horasExc;
+      });
+      if (horasDia > 0){ detalle.push({ fecha: iso, horas: horasDia }); totalHoras += horasDia; }
+    }
+    const p = PROFESORES_CACHE.find(pr => pr.id === profesorId);
+    const tarifa = Number(p?.tarifa_hora) || 0;
+    const impuesto = Number(p?.impuesto_pct) || 0;
+    const monto = totalHoras * tarifa * (1 + impuesto/100);
+    FACTURADOR_CALC = { profesorId, desde, hasta, totalHoras, tarifa, impuesto, monto };
+    cont.innerHTML = `
+      <table style="width:100%; border-collapse:collapse; font-size:13px;">
+        ${detalle.length ? detalle.map(x => `<tr><td style="padding:3px 0; border-bottom:1px solid var(--border);">${formatearFechaCorta(x.fecha)}</td><td style="text-align:right; border-bottom:1px solid var(--border);">${x.horas.toFixed(1)}h</td></tr>`).join('') : '<tr><td class="muted">Sin horas asignadas en el rango.</td></tr>'}
+      </table>
+      <div class="row" style="justify-content:space-between; margin-top:10px; font-weight:700; flex-wrap:wrap; gap:8px;">
+        <div>Total: ${totalHoras.toFixed(1)} horas</div>
+        ${tarifa ? `<div>${formatearMonto(monto)}</div>` : `<div class="muted" style="font-weight:400;">Cargá la tarifa/hora del profesor en "Profesores" para calcular el monto.</div>`}
+      </div>
+      ${(tarifa && totalHoras > 0) ? `<button style="margin-top:10px;" onclick="confirmarLiquidacion()">Confirmar y registrar pago</button>` : ''}
+    `;
+  }catch(e){ cont.innerHTML = 'Error: ' + e.message; }
+}
+
+async function confirmarLiquidacion(){
+  if (!FACTURADOR_CALC) return;
+  const { profesorId, desde, hasta, totalHoras, tarifa, impuesto, monto } = FACTURADOR_CALC;
+  if (!confirm(`¿Confirmar liquidación de ${totalHoras.toFixed(1)}hs por ${formatearMonto(monto)}? Va a quedar registrado como gasto del gimnasio.`)) return;
+  try{
+    await sb('liquidaciones_profesor', { method:'POST', headers:{Prefer:'return=minimal'}, body: JSON.stringify({
+      gimnasio_id: GIMNASIO_ACTUAL.id, profesor_id: profesorId,
+      periodo_desde: desde, periodo_hasta: hasta,
+      horas_totales: totalHoras, tarifa_hora_aplicada: tarifa, impuesto_pct_aplicado: impuesto,
+      monto_total: monto,
+    })});
+    toast('Liquidación registrada ✓');
+    FACTURADOR_CALC = null;
+    cargarHistorialLiquidaciones();
+  }catch(e){ toast('Error registrando la liquidación: ' + extraerMensajeError(e), true); }
+}
+
+async function cargarHistorialLiquidaciones(){
+  const profesorId = document.getElementById('factProfesor').value;
+  const cont = document.getElementById('factHistorial');
+  if (!profesorId){ cont.innerHTML = 'Elegí un profesor.'; return; }
+  cont.innerHTML = 'Cargando...';
+  try{
+    const rows = await sb(`liquidaciones_profesor?select=periodo_desde,periodo_hasta,horas_totales,monto_total,fecha_pago&profesor_id=eq.${profesorId}&order=fecha_pago.desc&limit=12`);
+    cont.innerHTML = rows.length ? rows.map(r => `
+      <div class="row" style="justify-content:space-between; padding:4px 0; border-bottom:1px solid var(--border); font-size:13px;">
+        <div>${formatearFechaCorta(r.periodo_desde)} al ${formatearFechaCorta(r.periodo_hasta)} · ${Number(r.horas_totales).toFixed(1)}hs</div>
+        <div style="font-weight:600;">${formatearMonto(r.monto_total)}</div>
+      </div>
+    `).join('') : '<div class="empty">Todavía no hay liquidaciones pagadas.</div>';
+  }catch(e){ cont.innerHTML = 'Error: ' + e.message; }
 }
 
 // ---------- Cuadro semanal con TODOS los profesores del gimnasio (pedido 22/9) ----------
@@ -4319,6 +4636,75 @@ async function cargarCobranzas(){
   }catch(e){ cont.innerHTML = 'Error: ' + e.message; }
 }
 
+function cobCambiarTab(tab){
+  const esGastos = tab === 'gastos';
+  document.getElementById('cobTabCobros').style.display = esGastos ? 'none' : '';
+  document.getElementById('cobTabGastos').style.display = esGastos ? '' : 'none';
+  document.getElementById('cobTabBtnCobros').classList.toggle('active', !esGastos);
+  document.getElementById('cobTabBtnGastos').classList.toggle('active', esGastos);
+  if (esGastos){
+    if (!document.getElementById('gastoFecha').value) document.getElementById('gastoFecha').value = dateAIso(new Date());
+    cargarGastos();
+  }
+}
+
+// ---------- Gastos de infraestructura del gimnasio (pedido 24/9) ----------
+// Alimenta el bloque "Ganancias del mes" del Dashboard junto con el pago a
+// profesores (liquidaciones_profesor) y lo facturado a alumnos.
+async function agregarGasto(){
+  const categoria = document.getElementById('gastoCategoria').value;
+  const concepto = document.getElementById('gastoConcepto').value.trim();
+  const monto = Number(document.getElementById('gastoMonto').value);
+  const fecha = document.getElementById('gastoFecha').value || dateAIso(new Date());
+  if (!concepto || !monto){ toast('Completá concepto y monto.', true); return; }
+  const btn = document.getElementById('btnAgregarGasto');
+  btn.disabled = true;
+  try{
+    await sb('gastos_gimnasio', { method:'POST', headers:{Prefer:'return=minimal'}, body: JSON.stringify({
+      gimnasio_id: GIMNASIO_ACTUAL.id, categoria, concepto, monto, fecha,
+    })});
+    toast('Gasto agregado ✓');
+    document.getElementById('gastoConcepto').value = '';
+    document.getElementById('gastoMonto').value = '';
+    cargarGastos();
+  }catch(e){ toast('Error agregando el gasto: ' + extraerMensajeError(e), true); }
+  finally { btn.disabled = false; }
+}
+
+async function cargarGastos(){
+  const cont = document.getElementById('listaGastos');
+  const totalEl = document.getElementById('gastosTotal');
+  const gimId = GIMNASIO_ACTUAL?.id;
+  if (!gimId){ cont.innerHTML = '<div class="empty">Necesitás estar logueado.</div>'; return; }
+  cont.innerHTML = 'Cargando...';
+  try{
+    const rows = await sb(`gastos_gimnasio?select=id,categoria,concepto,monto,fecha&gimnasio_id=eq.${gimId}&order=fecha.desc&limit=100`);
+    const total = rows.reduce((acc,r) => acc + Number(r.monto), 0);
+    totalEl.textContent = formatearMonto(total);
+    const CATEGORIAS_LABEL = { alquiler:'Alquiler', servicios:'Servicios', insumos:'Insumos', otro:'Otro' };
+    cont.innerHTML = rows.length ? rows.map(r => `
+      <div class="row" style="justify-content:space-between; padding:6px 0; border-bottom:1px solid var(--border);">
+        <div>
+          <div style="font-weight:600;">${r.concepto}</div>
+          <div class="muted" style="font-size:12px;">${CATEGORIAS_LABEL[r.categoria]||r.categoria} · ${formatearFechaCorta(r.fecha)}</div>
+        </div>
+        <div class="row" style="gap:8px; align-items:center;">
+          <div style="font-weight:700;">${formatearMonto(r.monto)}</div>
+          <button class="ghost" style="color:var(--danger); padding:4px 8px;" onclick="eliminarGasto('${r.id}')">🗑️</button>
+        </div>
+      </div>
+    `).join('') : '<div class="empty">Todavía no cargaste ningún gasto.</div>';
+  }catch(e){ cont.innerHTML = 'Error: ' + e.message; }
+}
+
+async function eliminarGasto(id){
+  if (!confirm('¿Eliminar este gasto?')) return;
+  try{
+    await sb(`gastos_gimnasio?id=eq.${id}`, { method:'DELETE', headers:{Prefer:'return=minimal'} });
+    cargarGastos();
+  }catch(e){ toast('Error eliminando: ' + extraerMensajeError(e), true); }
+}
+
 function toggleCobrar(alumnoId){
   const div = document.getElementById(`cobrarForm${alumnoId}`);
   const abrir = div.style.display === 'none';
@@ -4480,7 +4866,7 @@ async function cargarPlanesEnSelectAlumno(){
 async function crearAlumno(){
   const nombre = document.getElementById('nuevoAlumnoNombre').value.trim();
   const dni = document.getElementById('nuevoAlumnoDni').value.trim() || null;
-  const tipo = document.getElementById('nuevoAlumnoTipo').value;
+  const tipoAlumnoId = document.getElementById('nuevoAlumnoTipo').value || null;
   if (!nombre){ toast('Ponele un nombre al alumno.', true); return; }
   const objetivoSel = document.getElementById('nuevoAlumnoObjetivo').value;
   const objetivo = objetivoSel === 'otro' ? document.getElementById('nuevoAlumnoObjetivoOtroTexto').value.trim() : objetivoSel;
@@ -4496,7 +4882,7 @@ async function crearAlumno(){
     await sb('alumnos', {
       method:'POST', headers:{Prefer:'return=minimal'},
       body: JSON.stringify([{
-        nombre, tipo, gimnasio_id: PERFIL_ACTUAL?.gimnasio_id || null,
+        nombre, tipo_alumno_id: tipoAlumnoId, gimnasio_id: PERFIL_ACTUAL?.gimnasio_id || null,
         altura_cm, peso_kg, objetivo: objetivo || null, telefono, email, direccion,
         plan_id: planId, dni
       }])
@@ -4545,7 +4931,7 @@ async function cargarListaAlumnos(){
   const filtroEstado = FILTRO_ESTADO_ALUMNOS === 'activos' ? '&activo=eq.true'
     : FILTRO_ESTADO_ALUMNOS === 'inactivos' ? '&activo=eq.false' : '';
   try{
-    ALUMNOS_LISTA_CACHE = await sb(`alumnos?select=id,nombre,tipo,gimnasio_id,plan_id,altura_cm,peso_kg,objetivo,telefono,email,direccion,dni,perfil_id,equipo_id,posicion,foto_url,activo,equipos(nombre),alumno_categorias(categoria_id,categorias(nombre))${filtroEstado}${filtroGym}&order=nombre.asc`);
+    ALUMNOS_LISTA_CACHE = await sb(`alumnos?select=id,nombre,tipo,tipo_alumno_id,gimnasio_id,plan_id,altura_cm,peso_kg,objetivo,telefono,email,direccion,dni,perfil_id,equipo_id,posicion,foto_url,activo,equipos(nombre),alumno_categorias(categoria_id,categorias(nombre))${filtroEstado}${filtroGym}&order=nombre.asc`);
   }catch(e){
     cont.innerHTML = `<div class="empty">Error cargando alumnos: ${e.message}</div>`;
     return;
@@ -4597,8 +4983,8 @@ async function cargarListaAlumnos(){
         <div style="font-weight:600; display:flex; align-items:center;">${fotoChica}${a.nombre}${a.dni ? ` <span class="muted" style="font-weight:400;">· DNI ${a.dni}</span>` : ''}</div>
         <div class="row" style="gap:8px; flex-wrap:wrap;">
           <select onchange="cambiarTipoAlumno('${a.id}', this.value)">
-            <option value="estandar" ${a.tipo==='estandar'?'selected':''}>Estándar</option>
-            <option value="especial" ${a.tipo==='especial'?'selected':''}>Especial</option>
+            <option value="">-- sin tipo --</option>
+            ${TIPOS_ALUMNO_CACHE.map(t => `<option value="${t.id}" ${a.tipo_alumno_id===t.id?'selected':''}>${t.nombre}</option>`).join('')}
           </select>
           <select onchange="cambiarPlanAlumno('${a.id}', this.value)">
             <option value="">-- sin plan --</option>
@@ -4776,11 +5162,12 @@ async function guardarDatosAlumno(alumnoId){
   }catch(e){ toast('Error guardando datos: ' + extraerMensajeError(e), true); }
 }
 
-async function cambiarTipoAlumno(alumnoId, tipo){
+async function cambiarTipoAlumno(alumnoId, tipoAlumnoId){
+  const valor = tipoAlumnoId || null;
   try{
-    await sb(`alumnos?id=eq.${alumnoId}`, { method:'PATCH', headers:{Prefer:'return=minimal'}, body: JSON.stringify({ tipo }) });
-    const a = ALUMNOS_CACHE.find(x => x.id === alumnoId);
-    if (a) a.tipo = tipo;
+    await sb(`alumnos?id=eq.${alumnoId}`, { method:'PATCH', headers:{Prefer:'return=minimal'}, body: JSON.stringify({ tipo_alumno_id: valor }) });
+    const a = ALUMNOS_CACHE.find(x => x.id === alumnoId) || ALUMNOS_LISTA_CACHE.find(x => x.id === alumnoId);
+    if (a) a.tipo_alumno_id = valor;
     toast('Tipo actualizado ✓');
   }catch(e){ toast('Error actualizando tipo: ' + e.message, true); }
 }
@@ -5471,6 +5858,7 @@ function crearConstructorDeDias(prefijo, containerId){
               </div>
             </div>
             <input id="buscador-${diaId}" placeholder="Escribí para filtrar: bíceps, glúteos, press banca..." oninput="CONS['${prefijo}'].buscar(this.value,'${diaId}')" style="width:100%;" />
+            <button type="button" class="btn-crear-rapido" onclick="CONTEXTOS_EJ['${prefijo}-${diaId}']=(nuevo)=>CONS['${prefijo}'].agregarEjercicio('${diaId}', nuevo); mostrarFormularioNuevoEjercicio('${prefijo}-${diaId}', this, document.getElementById('buscador-${diaId}').value.trim())">➕ Agregar ejercicio nuevo</button>
             <div class="search-results" id="resultados-${diaId}" style="display:none;"></div>
           </div>
         </div>
@@ -5534,15 +5922,17 @@ function agregarDiaEsp(){ CONS['esp'].agregarDia(); }
 async function guardarRutina(){
   const profesorId = document.getElementById('profProfesor').value;
   const nombre = document.getElementById('profNombreRutina').value.trim();
+  const tipoAlumnoId = document.getElementById('profTipoAlumno').value;
   await guardarRutinaGenerica({
-    constructor: CONS['dia'], nombre, profesorId,
+    constructor: CONS['dia'], nombre, profesorId, tipoAlumnoId,
     alumnosDestino: [],
     btnId: 'btnGuardarRutina',
     onOk: () => {
       document.getElementById('profNombreRutina').value = '';
+      document.getElementById('profTipoAlumno').value = '';
       cargarGrillaRutinas();
     },
-    msgOk: 'Rutina guardada ✓ Se va a asignar sola cuando alguien reserve turno para esas fechas.',
+    msgOk: 'Rutina guardada ✓ Se va a asignar sola a los alumnos de ese tipo cuando reserven turno para esas fechas.',
   });
 }
 
@@ -6171,12 +6561,13 @@ async function descargarReportePdf(){
 
 // Lógica compartida: crea la rutina, sus días (con fecha), sus ejercicios, y la
 // asigna (rutina_asignaciones) a la lista de alumnos indicada (puede ser vacía).
-async function guardarRutinaGenerica({ constructor, nombre, profesorId, alumnosDestino, btnId, onOk, msgOk }){
+async function guardarRutinaGenerica({ constructor, nombre, profesorId, tipoAlumnoId, alumnosDestino, btnId, onOk, msgOk }){
   const idsDias = Object.keys(constructor.estado.dias);
 
   if (!nombre){ toast('Ponele un nombre a la rutina.', true); return; }
   if (!idsDias.length || idsDias.every(d => !constructor.estado.dias[d].ejercicios.length)){ toast('Agregá al menos un ejercicio.', true); return; }
   if (idsDias.some(d => !constructor.estado.dias[d].fecha)){ toast('Todos los días necesitan una fecha.', true); return; }
+  if ((!alumnosDestino || !alumnosDestino.length) && !tipoAlumnoId){ toast('Elegí para qué tipo de alumno es esta rutina.', true); return; }
   // Chequeo defensivo (19/9): si por haber tocado la pestaña "Alumno" en el medio
   // la sesión real ya no es de staff, cortar acá con un mensaje claro en vez de
   // dejar que el POST falle más abajo con un 403 críptico de RLS.
@@ -6190,7 +6581,7 @@ async function guardarRutinaGenerica({ constructor, nombre, profesorId, alumnosD
   try{
     const [rutina] = await sb('rutinas', {
       method:'POST', headers:{Prefer:'return=representation'},
-      body: JSON.stringify([{ profesor_id: profesorId || null, nombre, gimnasio_id: PERFIL_ACTUAL?.gimnasio_id || null }])
+      body: JSON.stringify([{ profesor_id: profesorId || null, nombre, gimnasio_id: PERFIL_ACTUAL?.gimnasio_id || null, tipo_alumno_id: tipoAlumnoId || null }])
     });
 
     const diasPayload = idsDias.map((diaId, i) => {
@@ -6419,6 +6810,7 @@ function renderEdicionDia(diaId){
     ${filas}
     <div style="margin-top:10px;">
       <input id="buscadorEdicion-${diaId}" placeholder="Escribí para agregar un ejercicio: bíceps, glúteos, press banca..." oninput="buscarParaAgregarEdicion(this.value,'${diaId}')" style="width:100%;" />
+      <button type="button" class="btn-crear-rapido" onclick="CONTEXTOS_EJ['edicion-${diaId}']=(nuevo)=>agregarEjercicioEdicion('${diaId}', nuevo); mostrarFormularioNuevoEjercicio('edicion-${diaId}', this, document.getElementById('buscadorEdicion-${diaId}').value.trim())">➕ Agregar ejercicio nuevo</button>
       <div class="search-results" id="resEdicion-${diaId}" style="display:none;"></div>
     </div>
     <div class="row" style="margin-top:12px; justify-content:flex-end;">
@@ -6925,16 +7317,19 @@ async function irEntrenamientoHoy(){
 
 // Busca la rutina que le corresponde al alumno para esa fecha y linkea el turno.
 // Prioridad:
-//   1) Especial: una rutina asignada directamente a este alumno (rutina_asignaciones)
-//      que tenga un día con esa fecha exacta. Vale para cualquier alumno.
-//   2) Estándar: solo si el alumno es de tipo "estandar" — cualquier rutina
-//      "libre" (sin ninguna fila en rutina_asignaciones) con un día para esa
-//      fecha. Los alumnos "especial" NUNCA caen acá: si no tienen una rutina
-//      especial armada para esa fecha, el turno queda sin rutina hasta que el
-//      profesor se la arme en "Rutinas especiales por alumno".
+//   1) Asignación directa: una rutina asignada a este alumno puntual
+//      (rutina_asignaciones — por persona, o por equipo: cada miembro tiene su
+//      propia fila) que tenga un día con esa fecha exacta. Siempre gana, sin
+//      importar el tipo del alumno.
+//   2) Biblioteca por tipo (pedido 24/9, reemplaza estándar/especial): entre las
+//      rutinas de biblioteca (sin ninguna asignación directa) cuyo tipo_alumno_id
+//      coincide con el tipo del alumno, la que tenga un día para esa fecha. Un
+//      alumno sin tipo asignado, o si ninguna rutina de su tipo tiene día para
+//      esa fecha, queda sin rutina hasta que el profesor se la arme (biblioteca
+//      de ese tipo, o una especial asignada directamente).
 async function intentarAsignarRutina(turnoId, alumnoId, fecha){
   try{
-    // 1) Especial: rutinas asignadas a este alumno puntual.
+    // 1) Asignación directa.
     const asignacionesAlumno = await sb(`rutina_asignaciones?select=rutina_id&alumno_id=eq.${alumnoId}`);
     const rutinaIdsAlumno = asignacionesAlumno.map(a => a.rutina_id);
     if (rutinaIdsAlumno.length){
@@ -6945,25 +7340,28 @@ async function intentarAsignarRutina(turnoId, alumnoId, fecha){
       }
     }
 
-    // Los alumnos "especial" no reciben rutinas estándar automáticamente.
+    // 2) Biblioteca por tipo de alumno.
     const alumno = ALUMNOS_CACHE.find(a => a.id === alumnoId);
-    const tipo = alumno ? alumno.tipo : 'estandar';
-    if (tipo === 'especial') return false;
+    const tipoAlumnoId = alumno?.tipo_alumno_id;
+    if (!tipoAlumnoId) return false;
 
-    // 2) Estándar: rutinas sin ninguna asignación directa a nadie.
+    const gimnasioIdAlumno = alumno?.gimnasio_id;
     // Con RLS estricta, un alumno solo puede leer sus PROPIAS filas de rutina_asignaciones
     // (no las de otros), así que para saber "cuáles ya tienen dueño" en todo el gimnasio
     // se usa esta vista, que expone solo rutina_id+gimnasio_id (sin alumno_id).
-    const gimnasioIdAlumno = alumno?.gimnasio_id;
-    const todasAsignaciones = gimnasioIdAlumno
-      ? await sb(`v_rutinas_asignadas_gimnasio?select=rutina_id&gimnasio_id=eq.${gimnasioIdAlumno}`)
-      : [];
-    const idsConAsignacion = [...new Set(todasAsignaciones.map(a => a.rutina_id))];
-    const filtroSinAsignar = idsConAsignacion.length ? `&rutina_id=not.in.(${idsConAsignacion.join(',')})` : '';
-    const diasEstandar = await sb(`rutina_dias?select=id,fecha,rutina_id&fecha=eq.${fecha}${filtroSinAsignar}`);
-    if (!diasEstandar.length) return false;
+    const [rutinasDelTipo, todasAsignaciones] = await Promise.all([
+      sb(`rutinas?select=id&gimnasio_id=eq.${gimnasioIdAlumno}&tipo_alumno_id=eq.${tipoAlumnoId}`),
+      gimnasioIdAlumno ? sb(`v_rutinas_asignadas_gimnasio?select=rutina_id&gimnasio_id=eq.${gimnasioIdAlumno}`) : Promise.resolve([]),
+    ]);
+    if (!rutinasDelTipo.length) return false;
+    const idsConAsignacion = new Set(todasAsignaciones.map(a => a.rutina_id));
+    const idsRutinasLibres = rutinasDelTipo.map(r => r.id).filter(id => !idsConAsignacion.has(id));
+    if (!idsRutinasLibres.length) return false;
 
-    await sb(`turnos?id=eq.${turnoId}`, { method:'PATCH', headers:{Prefer:'return=minimal'}, body: JSON.stringify({ rutina_dia_id: diasEstandar[0].id }) });
+    const diasPorTipo = await sb(`rutina_dias?select=id,fecha,rutina_id&fecha=eq.${fecha}&rutina_id=in.(${idsRutinasLibres.join(',')})`);
+    if (!diasPorTipo.length) return false;
+
+    await sb(`turnos?id=eq.${turnoId}`, { method:'PATCH', headers:{Prefer:'return=minimal'}, body: JSON.stringify({ rutina_dia_id: diasPorTipo[0].id }) });
     return true;
   }catch(e){ console.error(e); return false; }
 }
@@ -7267,8 +7665,8 @@ function bloqueHtml(b, idx){
         ${mediaTagHtml(b.ejercicioActual, '')}
         <div style="flex:1;">
           <div style="font-weight:700;">${b.ejercicioActual.nombre} ${b.ejercicioActual.id !== p.ejercicios.id ? '<span class="badge-sub">Sustituido</span>' : ''}</div>
-          <div class="muted">${b.ejercicioActual.grupo_muscular} · ${detalleSets} ${p.notas ? '· '+p.notas : ''}</div>
-          ${p.unilateral ? '<div class="pill" style="margin-top:4px; background:rgba(255,122,48,.15); color:#ffb37a; display:inline-block;">🔁 Alternar lado en cada serie</div>' : ''}
+          <div class="muted">${b.ejercicioActual.grupo_muscular} · ${detalleSets}</div>
+          ${p.notas ? `<div class="nota-profesor">📋 ${p.notas}</div>` : ''}
         </div>
         ${esPorTiempo ? `<button class="ghost" onclick="cronoParaEjercicio(${idx})" ${b.finalizado?'disabled':''}>⏱️ Usar cronómetro</button>` : ''}
         <button class="ghost" onclick="abrirSustitucion(${idx})" ${b.finalizado?'disabled':''}>No puedo hacer este ejercicio</button>
