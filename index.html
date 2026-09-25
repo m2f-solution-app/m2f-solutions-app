@@ -867,6 +867,27 @@
               El monto pendiente por cobrar es estimado: toma el precio del plan de cada socio vencido, no una factura real.
             </div>
 
+            <h2 style="margin-top:22px;">💰 Ganancias del mes</h2>
+            <div class="row" style="flex-wrap:wrap; gap:12px;">
+              <div class="card" style="flex:1; min-width:170px; margin:0;">
+                <div class="muted" style="font-size:12px;">Facturado a alumnos</div>
+                <div style="font-size:22px; font-weight:800; color:var(--accent2);" id="ganFacturado">-</div>
+              </div>
+              <div class="card" style="flex:1; min-width:170px; margin:0;">
+                <div class="muted" style="font-size:12px;">Gastos de infraestructura</div>
+                <div style="font-size:22px; font-weight:800; color:var(--danger);" id="ganGastosInfra">-</div>
+              </div>
+              <div class="card" style="flex:1; min-width:170px; margin:0;">
+                <div class="muted" style="font-size:12px;">Pago a profesores</div>
+                <div style="font-size:22px; font-weight:800; color:var(--danger);" id="ganGastosProf">-</div>
+              </div>
+              <div class="card" style="flex:1; min-width:170px; margin:0; background:rgba(61,220,132,.08); border-color:rgba(61,220,132,.4);">
+                <div class="muted" style="font-size:12px;">Ganancia neta</div>
+                <div style="font-size:26px; font-weight:800;" id="ganNeta">-</div>
+              </div>
+            </div>
+            <div class="muted" style="margin-top:8px; font-size:12px;">Del mes en curso. El pago a profesores solo cuenta una vez confirmada la liquidación (pestaña "💵 Facturar horas" en Horarios).</div>
+
             <h2 style="margin-top:22px;">📈 Membresía</h2>
             <div class="row" style="flex-wrap:wrap; gap:12px; align-items:stretch;">
               <div class="card" style="flex:1; min-width:230px; margin:0;">
@@ -896,29 +917,6 @@
             <div class="muted" style="font-size:12px; margin-bottom:10px;">% de cupos reservados sobre la capacidad total de horarios de trabajo cargados, promediado por día de la semana.</div>
             <div id="dashboardOcupacion"></div>
           </div>
-        </div>
-
-        <div class="card">
-          <h2 style="margin-top:0;">💰 Ganancias del mes</h2>
-          <div class="row" style="flex-wrap:wrap; gap:12px;">
-            <div class="card" style="flex:1; min-width:170px; margin:0;">
-              <div class="muted" style="font-size:12px;">Facturado a alumnos</div>
-              <div style="font-size:22px; font-weight:800; color:var(--accent2);" id="ganFacturado">-</div>
-            </div>
-            <div class="card" style="flex:1; min-width:170px; margin:0;">
-              <div class="muted" style="font-size:12px;">Gastos de infraestructura</div>
-              <div style="font-size:22px; font-weight:800; color:var(--danger);" id="ganGastosInfra">-</div>
-            </div>
-            <div class="card" style="flex:1; min-width:170px; margin:0;">
-              <div class="muted" style="font-size:12px;">Pago a profesores</div>
-              <div style="font-size:22px; font-weight:800; color:var(--danger);" id="ganGastosProf">-</div>
-            </div>
-            <div class="card" style="flex:1; min-width:170px; margin:0; background:rgba(61,220,132,.08); border-color:rgba(61,220,132,.4);">
-              <div class="muted" style="font-size:12px;">Ganancia neta</div>
-              <div style="font-size:26px; font-weight:800;" id="ganNeta">-</div>
-            </div>
-          </div>
-          <div class="muted" style="margin-top:8px; font-size:12px;">Del mes en curso. El pago a profesores solo cuenta una vez confirmada la liquidación (pestaña "💵 Facturar horas" en Horarios).</div>
         </div>
       </div>
 
@@ -6610,7 +6608,7 @@ async function cargarSeguimiento(alumnoId){
   const cont = document.getElementById('seguimientoContenido');
   cont.innerHTML = '<div class="muted">Cargando...</div>';
   try{
-    const rows = await sb(`ejecuciones?select=id,fecha,estado,rutina_dias(nombre_dia,rutinas(nombre)),ejecucion_ejercicios(id,finalizado,omitido,motivo_omision,sustituido,ejercicios(nombre,grupo_muscular),series_registradas(numero_serie,peso_realizado,repeticiones_realizadas,rir_realizado,tonelaje))&alumno_id=eq.${alumnoId}&order=fecha.desc&limit=20`);
+    const rows = await sb(`ejecuciones?select=id,fecha,estado,rpe,rutina_dias(nombre_dia,rutinas(nombre)),ejecucion_ejercicios(id,finalizado,omitido,motivo_omision,sustituido,ejercicios(nombre,grupo_muscular),series_registradas(numero_serie,peso_realizado,repeticiones_realizadas,rir_realizado,tonelaje))&alumno_id=eq.${alumnoId}&order=fecha.desc&limit=20`);
     SEGUIMIENTO_CACHE = rows;
     if (!rows.length){ cont.innerHTML = '<div class="empty">Este alumno todavía no registró entrenamientos.</div>'; return; }
     cont.innerHTML = rows.map((r, i) => {
@@ -6621,7 +6619,7 @@ async function cargarSeguimiento(alumnoId){
           <div class="row" style="justify-content:space-between; align-items:center;">
             <div>
               <div style="font-weight:600;">${r.rutina_dias?.rutinas?.nombre || '-'} · ${r.rutina_dias?.nombre_dia || '-'}</div>
-              <div class="muted">${new Date(r.fecha).toLocaleString('es-AR')}${tonelajeSesion > 0 ? ' · Tonelaje de la sesión: <strong>'+Math.round(tonelajeSesion).toLocaleString('es-AR')+' kg</strong>' : ''}</div>
+              <div class="muted">${new Date(r.fecha).toLocaleString('es-AR')}${tonelajeSesion > 0 ? ' · Tonelaje de la sesión: <strong>'+Math.round(tonelajeSesion).toLocaleString('es-AR')+' kg</strong>' : ''}${r.rpe != null ? ' · RPE: <strong>'+r.rpe+'/10</strong>' : ''}</div>
             </div>
             <span class="${r.estado==='finalizada' ? 'badge-ok' : 'pill'}">${r.estado}</span>
           </div>
