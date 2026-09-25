@@ -1762,6 +1762,16 @@
         <h2 style="margin-top:0">Mis evaluaciones</h2>
         <div id="aluEvalHistorial" class="muted">Elegí tu nombre arriba.</div>
       </div>
+
+      <!-- (25/9) Pedido de Martin: acá abajo, en la propia pestaña "Evolución" del alumno,
+           el mismo detalle sesión por sesión (peso/reps/RIR/tonelaje/RPE) que ya tiene el
+           profesor en su panel "Seguimiento" — pero directo del alumno logueado, sin elegir
+           a nadie. Reutiliza cargarSeguimiento/toggleSeguimientoSesion con su propio contId. -->
+      <div class="card">
+        <h2 style="margin-top:0">🏋️ Mi seguimiento de entrenamientos</h2>
+        <div class="muted" style="margin-bottom:10px;">Peso, repeticiones, RIR y tonelaje de cada sesión, ejercicio por ejercicio.</div>
+        <div id="aluSeguimientoContenido" class="muted">Elegí tu nombre arriba.</div>
+      </div>
     </div>
 
     <div id="subvistaAluLogros" style="display:none;">
@@ -3043,7 +3053,7 @@ function cambiarSubvistaAlu(v){
   const alumnoId = document.getElementById('aluAlumno')?.value;
   if (alumnoId){
     if (v === 'logros') renderLogros('aluLogrosContenido', alumnoId);
-    else if (v === 'evolucion') cargarEvaluacionesAlu(alumnoId);
+    else if (v === 'evolucion'){ cargarEvaluacionesAlu(alumnoId); cargarSeguimiento('aluSeguimientoContenido', alumnoId); }
     else if (v === 'historial') cargarHistorial(alumnoId);
   }
 }
@@ -6673,6 +6683,11 @@ async function renderLogros(contId, alumnoId){
 // no solo Admin. No hace falta ninguna vista nueva en la base: se arma con embeds de
 // PostgREST sobre ejecuciones → ejecucion_ejercicios → series_registradas, y las
 // políticas RLS ya dejan que cualquier staff del gimnasio lea eso de sus alumnos.
+// (25/9) Pedido de Martin: el propio alumno logueado también lo quiere ver, en su
+// pestaña "Evolución" — mismo bloque para Profesor (por alumno elegido, contId
+// 'seguimientoContenido') y Alumno (su propio perfil, contId 'aluSeguimientoContenido'),
+// igual que ya se hace con Logros/evolución de peso: todo namespaceado por contId para
+// que ambos paneles convivan en el DOM sin chocar, aunque solo uno esté visible a la vez.
 // =====================================================================
 function iniciarSeguimiento(){
   const sel = document.getElementById('seguimientoAlumno');
@@ -6683,25 +6698,25 @@ function iniciarSeguimiento(){
 
 function onCambiarSeguimientoAlumno(){
   const alumnoId = document.getElementById('seguimientoAlumno').value;
-  if (alumnoId) cargarSeguimiento(alumnoId);
+  if (alumnoId) cargarSeguimiento('seguimientoContenido', alumnoId);
   else document.getElementById('seguimientoContenido').innerHTML = 'Elegí un alumno arriba.';
 }
 
-let SEGUIMIENTO_CACHE = []; // últimas sesiones ya traídas para el alumno elegido, para poder
-                            // abrir/cerrar el detalle de cada una sin volver a pedirlas.
+let SEGUIMIENTO_CACHE = {}; // { [contId]: últimas sesiones ya traídas para ese panel/alumno,
+                            // para poder abrir/cerrar el detalle de cada una sin volver a pedirlas }
 
-async function cargarSeguimiento(alumnoId){
-  const cont = document.getElementById('seguimientoContenido');
+async function cargarSeguimiento(contId, alumnoId){
+  const cont = document.getElementById(contId);
   cont.innerHTML = '<div class="muted">Cargando...</div>';
   try{
     const rows = await sb(`ejecuciones?select=id,fecha,estado,rpe,rutina_dias(nombre_dia,rutinas(nombre)),ejecucion_ejercicios(id,finalizado,omitido,motivo_omision,sustituido,ejercicios(nombre,grupo_muscular),series_registradas(numero_serie,peso_realizado,repeticiones_realizadas,rir_realizado,tonelaje))&alumno_id=eq.${alumnoId}&order=fecha.desc&limit=20`);
-    SEGUIMIENTO_CACHE = rows;
-    if (!rows.length){ cont.innerHTML = '<div class="empty">Este alumno todavía no registró entrenamientos.</div>'; return; }
+    SEGUIMIENTO_CACHE[contId] = rows;
+    if (!rows.length){ cont.innerHTML = '<div class="empty">Todavía no hay entrenamientos registrados.</div>'; return; }
     cont.innerHTML = rows.map((r, i) => {
       const tonelajeSesion = (r.ejecucion_ejercicios||[]).reduce((acc, ee) =>
         acc + (ee.series_registradas||[]).reduce((a,s) => a + (Number(s.tonelaje)||0), 0), 0);
       return `
-        <div class="card" style="margin-bottom:10px; cursor:pointer;" onclick="toggleSeguimientoSesion(${i})">
+        <div class="card" style="margin-bottom:10px; cursor:pointer;" onclick="toggleSeguimientoSesion('${contId}', ${i})">
           <div class="row" style="justify-content:space-between; align-items:center;">
             <div>
               <div style="font-weight:600;">${r.rutina_dias?.rutinas?.nombre || '-'} · ${r.rutina_dias?.nombre_dia || '-'}</div>
@@ -6709,22 +6724,22 @@ async function cargarSeguimiento(alumnoId){
             </div>
             <span class="${r.estado==='finalizada' ? 'badge-ok' : 'pill'}">${r.estado}</span>
           </div>
-          <div id="seguimientoDetalle-${i}" style="display:none; margin-top:10px;" onclick="event.stopPropagation()"></div>
+          <div id="seguimientoDetalle-${contId}-${i}" style="display:none; margin-top:10px;" onclick="event.stopPropagation()"></div>
         </div>
       `;
     }).join('');
   }catch(e){ cont.innerHTML = `<div class="empty">Error: ${e.message}</div>`; }
 }
 
-function toggleSeguimientoSesion(i){
-  const div = document.getElementById(`seguimientoDetalle-${i}`);
+function toggleSeguimientoSesion(contId, i){
+  const div = document.getElementById(`seguimientoDetalle-${contId}-${i}`);
   const yaAbierto = div.dataset.open === '1';
   div.style.display = yaAbierto ? 'none' : '';
   div.dataset.open = yaAbierto ? '0' : '1';
   if (yaAbierto || div.dataset.armado === '1') return; // ya armado antes, no hace falta reconstruirlo
   div.dataset.armado = '1';
 
-  const sesion = SEGUIMIENTO_CACHE[i];
+  const sesion = SEGUIMIENTO_CACHE[contId][i];
   const ejercicios = (sesion.ejecucion_ejercicios||[]).filter(ee => ee.ejercicios);
   if (!ejercicios.length){ div.innerHTML = '<div class="muted">Sin ejercicios registrados en esta sesión.</div>'; return; }
 
@@ -8120,6 +8135,7 @@ function onCambiarAluAlumno(){
     cargarVigenciaPlanAlu(alumnoId);
     cargarEvaluacionesAlu(alumnoId);
     renderLogros('aluLogrosContenido', alumnoId);
+    cargarSeguimiento('aluSeguimientoContenido', alumnoId);
   } else {
     document.getElementById('listaTurnosAlu').innerHTML = 'Elegí tu nombre arriba.';
     document.getElementById('historialAlu').innerHTML = 'Elegí tu nombre arriba.';
@@ -8132,6 +8148,7 @@ function onCambiarAluAlumno(){
     document.getElementById('aluEvalChartCont').innerHTML = 'Elegí tu nombre arriba.';
     document.getElementById('aluEvalHistorial').innerHTML = 'Elegí tu nombre arriba.';
     document.getElementById('aluLogrosContenido').innerHTML = 'Elegí tu nombre arriba.';
+    document.getElementById('aluSeguimientoContenido').innerHTML = 'Elegí tu nombre arriba.';
   }
 }
 
@@ -8424,12 +8441,15 @@ function salirEjecucion(){
   // desde otra pestaña/dispositivo, o vuelve con "Volver a mi panel" sin re-clickear el menú),
   // se quedaba mostrando el render viejo — racha/constancia/evolución de peso desactualizados,
   // aunque Turnos sí se veía bien porque era el único que se refrescaba acá. Ahora, al volver de
-  // entrenar, se refrescan las 4 secciones del alumno de una, sin importar cuál esté visible.
+  // entrenar, se refrescan las secciones del alumno de una, sin importar cuál esté visible.
+  // (25/9) Sumado "Mi seguimiento" a este mismo refresco: es la sesión recién finalizada, así
+  // que tiene que aparecer de una en la pestaña Evolución sin que haga falta salir y reentrar.
   if (alumnoId){
     cargarTurnos(alumnoId);
     cargarHistorial(alumnoId);
     cargarEvaluacionesAlu(alumnoId);
     renderLogros('aluLogrosContenido', alumnoId);
+    cargarSeguimiento('aluSeguimientoContenido', alumnoId);
   }
 }
 
