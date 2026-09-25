@@ -1704,6 +1704,11 @@
       <div class="side-item" id="menuAluRutinas" onclick="cambiarSubvistaAlu('rutinas')">🗂️ Mis rutinas</div>
       <div class="side-item" id="menuAluHistorial" onclick="cambiarSubvistaAlu('historial')">📜 Historial</div>
       <div class="side-item" id="menuAluEvolucion" onclick="cambiarSubvistaAlu('evolucion')">📈 Evolución</div>
+      <!-- (25/9) Pedido de Martin: "Seguimiento" separado de "Evolución", no metido adentro
+           como una tarjeta más — con su propio lugar en el menú y reemplazando a Evolución
+           en la barra inferior (ver bottom-nav más abajo). Evolución sigue estando, pero
+           solo acá en el menú hamburguesa. -->
+      <div class="side-item" id="menuAluSeguimiento" onclick="cambiarSubvistaAlu('seguimiento')">📈 Seguimiento</div>
       <div class="side-item" id="menuAluLogros" onclick="cambiarSubvistaAlu('logros')">🏆 Logros</div>
     </div>
 
@@ -1762,11 +1767,13 @@
         <h2 style="margin-top:0">Mis evaluaciones</h2>
         <div id="aluEvalHistorial" class="muted">Elegí tu nombre arriba.</div>
       </div>
+    </div>
 
-      <!-- (25/9) Pedido de Martin: acá abajo, en la propia pestaña "Evolución" del alumno,
-           el mismo detalle sesión por sesión (peso/reps/RIR/tonelaje/RPE) que ya tiene el
-           profesor en su panel "Seguimiento" — pero directo del alumno logueado, sin elegir
-           a nadie. Reutiliza cargarSeguimiento/toggleSeguimientoSesion con su propio contId. -->
+    <!-- (25/9) Pedido de Martin: "no me gustó cómo quedó el seguimiento dentro de la
+         evaluación" — separado en su propia subvista, con su propio botón (que reemplaza
+         a Evolución en la barra inferior; Evolución sigue en el menú hamburguesa). Mismo
+         contenido de antes, solo que ya no vive adentro de subvistaAluEvolucion. -->
+    <div id="subvistaAluSeguimiento" style="display:none;">
       <div class="card">
         <h2 style="margin-top:0">🏋️ Mi seguimiento de entrenamientos</h2>
         <div class="muted" style="margin-bottom:10px;">Peso, repeticiones, RIR y tonelaje de cada sesión, ejercicio por ejercicio.</div>
@@ -1788,7 +1795,9 @@
       <button class="bottom-nav-item" id="bnavTurnos" onclick="cambiarSubvistaAlu('turnos')"><span class="ico">📅</span>Turnos</button>
       <button class="bottom-nav-item" id="bnavRutinas" onclick="cambiarSubvistaAlu('rutinas')"><span class="ico">🗂️</span>Rutinas</button>
       <button class="bottom-nav-item principal" id="bnavHoy" onclick="irEntrenamientoHoy()"><span class="ico">🏋️</span>Hoy</button>
-      <button class="bottom-nav-item" id="bnavEvolucion" onclick="cambiarSubvistaAlu('evolucion')"><span class="ico">📈</span>Evolución</button>
+      <!-- (25/9) Pedido de Martin: Seguimiento reemplaza a Evolución acá abajo (Evolución
+           sigue disponible desde el menú ☰). -->
+      <button class="bottom-nav-item" id="bnavSeguimiento" onclick="cambiarSubvistaAlu('seguimiento')"><span class="ico">📈</span>Seguimiento</button>
       <button class="bottom-nav-item" id="bnavMenu" onclick="abrirMenuAlu()"><span class="ico">☰</span>Menú</button>
     </div>
   </div>
@@ -3033,15 +3042,17 @@ function cambiarSubvistaAlu(v){
   document.getElementById('subvistaAluRutinas').style.display = v==='rutinas' ? '' : 'none';
   document.getElementById('subvistaAluHistorial').style.display = v==='historial' ? '' : 'none';
   document.getElementById('subvistaAluEvolucion').style.display = v==='evolucion' ? '' : 'none';
+  document.getElementById('subvistaAluSeguimiento').style.display = v==='seguimiento' ? '' : 'none';
   document.getElementById('subvistaAluLogros').style.display = v==='logros' ? '' : 'none';
   document.getElementById('menuAluTurnos').classList.toggle('active', v==='turnos');
   document.getElementById('menuAluRutinas').classList.toggle('active', v==='rutinas');
   document.getElementById('menuAluHistorial').classList.toggle('active', v==='historial');
   document.getElementById('menuAluEvolucion').classList.toggle('active', v==='evolucion');
+  document.getElementById('menuAluSeguimiento').classList.toggle('active', v==='seguimiento');
   document.getElementById('menuAluLogros').classList.toggle('active', v==='logros');
   document.getElementById('bnavTurnos').classList.toggle('active', v==='turnos');
   document.getElementById('bnavRutinas').classList.toggle('active', v==='rutinas');
-  document.getElementById('bnavEvolucion').classList.toggle('active', v==='evolucion');
+  document.getElementById('bnavSeguimiento').classList.toggle('active', v==='seguimiento');
   cerrarMenuAlu();
 
   // (v50, 22/9) Bug encontrado por Martin: entrenaba y después iba a "Logros"/"Evolución"/
@@ -3053,7 +3064,8 @@ function cambiarSubvistaAlu(v){
   const alumnoId = document.getElementById('aluAlumno')?.value;
   if (alumnoId){
     if (v === 'logros') renderLogros('aluLogrosContenido', alumnoId);
-    else if (v === 'evolucion'){ cargarEvaluacionesAlu(alumnoId); cargarSeguimiento('aluSeguimientoContenido', alumnoId); }
+    else if (v === 'evolucion') cargarEvaluacionesAlu(alumnoId);
+    else if (v === 'seguimiento') cargarSeguimiento('aluSeguimientoContenido', alumnoId);
     else if (v === 'historial') cargarHistorial(alumnoId);
   }
 }
