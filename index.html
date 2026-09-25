@@ -951,7 +951,7 @@
               <select id="profProfesor"></select>
             </div>
             <div class="field" style="flex:1; min-width:200px;">
-              <label>Tipo de alumno</label>
+              <label>Tipo de entrenamiento</label>
               <select id="profTipoAlumno"></select>
             </div>
           </div>
@@ -1131,7 +1131,7 @@
               <input id="nuevoAlumnoDni" placeholder="Ej: 30123456" />
             </div>
             <div class="field">
-              <label>Tipo</label>
+              <label>Tipo de entrenamiento</label>
               <select id="nuevoAlumnoTipo">
                 <option value="">-- sin definir --</option>
               </select>
@@ -1597,8 +1597,8 @@
         </div>
 
         <div class="card">
-          <h2 style="margin-top:0">Tipos de alumno</h2>
-          <div class="muted" style="margin-bottom:10px;">Ej: Fitness, Rendimiento específico, Readaptación, Salud. Reemplaza a "Estándar/Especial": cada alumno tiene un tipo, y en el Armador elegís para qué tipo (y en qué día, por la fecha del día planificado) es cada rutina — se asigna sola al reservar turno.</div>
+          <h2 style="margin-top:0">Tipos de entrenamiento</h2>
+          <div class="muted" style="margin-bottom:10px;">Ej: Fitness, Rendimiento específico, Readaptación, Salud. Reemplaza a "Estándar/Especial": cada alumno tiene un tipo de entrenamiento, y en el Armador elegís para qué tipo (y en qué día, por la fecha del día planificado) es cada rutina — se asigna sola al reservar turno.</div>
           <div class="row">
             <div class="field" style="flex:1; min-width:200px;">
               <input id="nuevoTipoAlumnoNombre" placeholder="Ej: Rendimiento específico" onkeydown="if(event.key==='Enter') crearTipoAlumno();">
@@ -3494,7 +3494,7 @@ function renderListaTiposAlumno(){
           <span style="cursor:pointer; margin-left:6px;" title="Eliminar tipo" onclick="eliminarTipoAlumno('${t.id}','${t.nombre.replace(/'/g,"&apos;")}')">✕</span>
         </span>
       `).join('')
-    : '<div class="empty">Todavía no cargaste ningún tipo de alumno.</div>';
+    : '<div class="empty">Todavía no cargaste ningún tipo de entrenamiento.</div>';
 }
 
 function poblarSelectsTipoAlumno(){
@@ -3516,7 +3516,7 @@ async function crearTipoAlumno(){
   try{
     await sb('tipos_alumno', { method:'POST', headers:{Prefer:'return=minimal'}, body: JSON.stringify([{ gimnasio_id: PERFIL_ACTUAL.gimnasio_id, nombre }]) });
     input.value = '';
-    toast('Tipo de alumno agregado ✓');
+    toast('Tipo de entrenamiento agregado ✓');
     await cargarCategoriasYEquipos();
   }catch(e){
     const dup = /duplicate key|unique constraint/i.test(e.message || '');
@@ -7672,7 +7672,7 @@ async function guardarRutinaGenerica({ constructor, nombre, profesorId, tipoAlum
   if (!nombre){ toast('Ponele un nombre a la rutina.', true); return; }
   if (!idsDias.length || idsDias.every(d => !constructor.estado.dias[d].ejercicios.length)){ toast('Agregá al menos un ejercicio.', true); return; }
   if (idsDias.some(d => !constructor.estado.dias[d].fecha)){ toast('Todos los días necesitan una fecha.', true); return; }
-  if ((!alumnosDestino || !alumnosDestino.length) && !tipoAlumnoId){ toast('Elegí para qué tipo de alumno es esta rutina.', true); return; }
+  if ((!alumnosDestino || !alumnosDestino.length) && !tipoAlumnoId){ toast('Elegí para qué tipo de entrenamiento es esta rutina.', true); return; }
   // Chequeo defensivo (19/9): si por haber tocado la pestaña "Alumno" en el medio
   // la sesión real ya no es de staff, cortar acá con un mensaje claro en vez de
   // dejar que el POST falle más abajo con un 403 críptico de RLS.
