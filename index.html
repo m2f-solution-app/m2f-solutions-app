@@ -805,7 +805,7 @@
     <button class="tt-btn" id="ttProfesores" onclick="cambiarSubvista('profesores')" style="display:none;" title="Profesores"><span class="tt-ico">🧑‍🏫</span><span class="tt-lbl">Profesores</span></button>
     <button class="tt-btn" id="ttHorarios" onclick="cambiarSubvista('horarios')" style="display:none;" title="Horarios"><span class="tt-ico">🕒</span><span class="tt-lbl">Horarios</span></button>
     <button class="tt-btn" id="ttPlanes" onclick="cambiarSubvista('planes')" style="display:none;" title="Planes"><span class="tt-ico">💳</span><span class="tt-lbl">Planes</span></button>
-    <button class="tt-btn" id="ttCobranzas" onclick="cambiarSubvista('cobranzas')" style="display:none;" title="Cobranzas"><span class="tt-ico">🧾</span><span class="tt-lbl">Cobranzas</span></button>
+    <button class="tt-btn" id="ttCobranzas" onclick="cambiarSubvista('cobranzas')" style="display:none;" title="Finanzas"><span class="tt-ico">💰</span><span class="tt-lbl">Finanzas</span></button>
     <button class="tt-btn" id="ttEjercicios" onclick="cambiarSubvista('ejercicios')" title="Ejercicios"><span class="tt-ico">🆕</span><span class="tt-lbl">Ejercicios</span></button>
     <button class="tt-btn" id="ttGimnasio" onclick="cambiarSubvista('gimnasio')" style="display:none;" title="Mi gimnasio"><span class="tt-ico">🏢</span><span class="tt-lbl">Mi gimnasio</span></button>
   </div>
@@ -832,7 +832,7 @@
     <div class="side-item" id="menuProfesores" onclick="cambiarSubvista('profesores')" title="Profesores"><span class="side-ico">🧑‍🏫</span><span class="side-label">Profesores</span></div>
     <div class="side-item" id="menuHorarios" onclick="cambiarSubvista('horarios')" title="Horarios"><span class="side-ico">🕒</span><span class="side-label">Horarios</span></div>
     <div class="side-item" id="menuPlanes" onclick="cambiarSubvista('planes')" title="Planes"><span class="side-ico">💳</span><span class="side-label">Planes</span></div>
-    <div class="side-item" id="menuCobranzas" onclick="cambiarSubvista('cobranzas')" title="Cobranzas"><span class="side-ico">🧾</span><span class="side-label">Cobranzas</span></div>
+    <div class="side-item" id="menuCobranzas" onclick="cambiarSubvista('cobranzas')" title="Finanzas"><span class="side-ico">💰</span><span class="side-label">Finanzas</span></div>
     <div class="side-item" id="menuEjercicios" onclick="cambiarSubvista('ejercicios')" title="Ejercicios"><span class="side-ico">🆕</span><span class="side-label">Ejercicios</span></div>
     <div class="side-item" id="menuGimnasio" onclick="cambiarSubvista('gimnasio')" title="Mi gimnasio"><span class="side-ico">🏢</span><span class="side-label">Mi gimnasio</span></div>
   </div>
@@ -1180,7 +1180,7 @@
                   <option value="">-- sin plan por ahora --</option>
                 </select>
               </div>
-              <div class="muted" style="align-self:end; padding-bottom:10px;">La forma de pago y el monto se cargan aparte, en "🧾 Cobranzas", el día que el alumno pague.</div>
+              <div class="muted" style="align-self:end; padding-bottom:10px;">La forma de pago y el monto se cargan aparte, en "💰 Finanzas", el día que el alumno pague.</div>
             </div>
           </div>
         </div>
@@ -1597,6 +1597,11 @@
         </div>
 
         <div class="card">
+          <h2 style="margin-top:0">Cobros online</h2>
+          <div id="cobrosOnlineGimnasio" class="muted">Cargando...</div>
+        </div>
+
+        <div class="card">
           <h2 style="margin-top:0">Tipos de entrenamiento</h2>
           <div class="muted" style="margin-bottom:10px;">Ej: Fitness, Rendimiento específico, Readaptación, Salud. Reemplaza a "Estándar/Especial": cada alumno tiene un tipo de entrenamiento, y en el Armador elegís para qué tipo (y en qué día, por la fecha del día planificado) es cada rutina — se asigna sola al reservar turno.</div>
           <div class="row">
@@ -1994,6 +1999,12 @@
 <script>
 const SUPABASE_URL = "https://wlgjhqdvpkofglxznvec.supabase.co";
 const ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndsZ2pocWR2cGtvZmdseHpudmVjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk0MDI5NDQsImV4cCI6MjEwNDk3ODk0NH0.L_6hpnDoeUGbT-00o-wa3zLtPy5jiyjZmjFXTilc9pU";
+// Client ID de la app de Mercado Pago (NO es secreto, es el mismo que viaja en la URL de
+// autorización que ve el navegador — el client_secret sí es secreto y vive solo en el
+// servidor, como variable de entorno de la Edge Function). Lo completa Martin acá una vez
+// que crea la aplicación en https://www.mercadopago.com.ar/developers/panel — hasta entonces
+// el botón de conectar queda deshabilitado con un aviso.
+const MP_CLIENT_ID = "650850110386620";
 const BUCKET = "Ejercicios";
 // Se sube a GitHub siempre como el mismo index.html (mismo link para todos), así que la
 // "versión" de la app queda marcada acá adentro en vez de en la URL. Cada vez que se entrega
@@ -2316,6 +2327,28 @@ async function sb(path, opts = {}, _retry){
   try { return JSON.parse(text); } catch { return null; }
 }
 
+// Igual que sb(), pero para invocar las Supabase Edge Functions (en vez de la
+// REST API de PostgREST) — hoy usado para todo lo de Mercado Pago (conectar
+// la cuenta del gimnasio, crear el link de pago). Manda el mismo token que sb()
+// (sesión real si hay, si no el anon key), así que las funciones del lado del
+// servidor pueden confiar en quién está llamando igual que con cualquier otra
+// tabla protegida por RLS.
+async function sbFn(nombre, body){
+  const token = (SESION_ACTUAL && SESION_ACTUAL.access_token) || ANON_KEY;
+  const resp = await fetch(`${SUPABASE_URL}/functions/v1/${nombre}`, {
+    method: 'POST',
+    headers: { apikey: ANON_KEY, Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify(body || {}),
+  });
+  const text = await resp.text().catch(()=> '');
+  let data = null;
+  try { data = text ? JSON.parse(text) : null; } catch { data = null; }
+  if (!resp.ok){
+    throw new Error((data && data.error) || `${resp.status} ${nombre}: ${text.slice(0,300)}`);
+  }
+  return data;
+}
+
 function toast(msg, isError){
   const t = document.getElementById('toast');
   t.textContent = msg;
@@ -2635,7 +2668,10 @@ async function entrarComoAlumnoLogueado(){
     document.body.classList.add('tiene-bottom-nav');
     sincronizarTabsRol();
     registrarActividadGimnasio();
-    await cargarPersonas(); // re-scopea ALUMNOS_CACHE/PROFESORES_CACHE al gimnasio de esta sesión
+    // Re-scopea al gimnasio de ESTA sesión (si venía de la carga anónima previa al
+    // login, GIMNASIO_ACTUAL todavía podía tener el de otro gimnasio) — importante
+    // para que "mp_conectado" (botón de pagar con Mercado Pago) sea el correcto.
+    await Promise.all([cargarPersonas(), cargarGimnasioActual()]);
     mostrarModoAlumnoLogueado(ficha);
     revisarNotificacionesAlumno(ficha.id);
   }catch(e){ msg.textContent = 'Error entrando: ' + e.message; }
@@ -3270,11 +3306,12 @@ function cargarListaEjerciciosPersonalizados(){
 let GIMNASIO_ACTUAL = null;
 async function cargarGimnasioActual(){
   const query = PERFIL_ACTUAL
-    ? `gimnasios?select=id,nombre,logo_url,tipo,descuento_efectivo_pct,color_primario,color_secundario&id=eq.${PERFIL_ACTUAL.gimnasio_id}`
-    : 'gimnasios?select=id,nombre,logo_url,tipo,descuento_efectivo_pct,color_primario,color_secundario&order=creado_en.asc&limit=1';
+    ? `gimnasios?select=id,nombre,logo_url,tipo,descuento_efectivo_pct,color_primario,color_secundario,mp_conectado,mp_email,recargo_mercadopago_pct&id=eq.${PERFIL_ACTUAL.gimnasio_id}`
+    : 'gimnasios?select=id,nombre,logo_url,tipo,descuento_efectivo_pct,color_primario,color_secundario,mp_conectado,mp_email,recargo_mercadopago_pct&order=creado_en.asc&limit=1';
   const [g] = await sb(query);
   GIMNASIO_ACTUAL = g || null;
   renderMarcaGimnasio();
+  renderCobrosOnlineGimnasio();
 }
 
 // ---------- Tema por gimnasio: cada gym puede elegir su color principal y
@@ -3393,6 +3430,105 @@ async function guardarGimnasio(){
     toast('Datos del gimnasio guardados ✓');
   }catch(e){ toast('Error guardando el gimnasio: ' + e.message, true); }
   finally{ btn.disabled = false; }
+}
+
+// ---------- Mercado Pago (26/9, pedido de Martin) ----------
+// Marketplace/OAuth: cada gimnasio (o profesor independiente) conecta SU PROPIA
+// cuenta de Mercado Pago desde acá. M2F Solutions nunca ve ni guarda su usuario/
+// contraseña de Mercado Pago — solo lo manda a la pantalla de autorización de MP
+// y recibe de vuelta un código que la Edge Function "mp-oauth-callback" cambia
+// por un token, ya del lado del servidor. El dinero de cada cobro va directo a
+// la cuenta del gimnasio; nunca pasa por una cuenta de M2F Solutions.
+function urlRetornoMercadoPago(){
+  // Misma URL de la app, sin query params propios (evita arrastrar basura de
+  // navegaciones previas) — tiene que coincidir EXACTO con el redirect_uri
+  // cargado como secreto (MP_REDIRECT_URI) y con el configurado en el panel
+  // de Mercado Pago.
+  return window.location.origin + window.location.pathname;
+}
+
+function renderCobrosOnlineGimnasio(){
+  const cont = document.getElementById('cobrosOnlineGimnasio');
+  if (!cont) return;
+  if (!GIMNASIO_ACTUAL){ cont.textContent = 'Guardá primero los datos del gimnasio de arriba.'; return; }
+  if (!MP_CLIENT_ID){
+    cont.innerHTML = `<div class="muted">Todavía no está configurada la conexión con Mercado Pago de M2F Solutions (falta el Client ID). Avisale a soporte.</div>`;
+    return;
+  }
+  const conexion = GIMNASIO_ACTUAL.mp_conectado ? `
+      <div class="row" style="justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+        <span class="pill" style="background:rgba(61,220,132,.15); color:var(--accent2); border-color:rgba(61,220,132,.4);">🟢 Conectado${GIMNASIO_ACTUAL.mp_email ? ' · ' + GIMNASIO_ACTUAL.mp_email : ''}</span>
+        <button class="ghost" onclick="desconectarMercadoPago()">Desconectar</button>
+      </div>
+      <div class="muted" style="margin-top:8px;">Tus alumnos ya pueden pagar la cuota desde la app con Mercado Pago. El dinero va directo a esta cuenta.</div>
+    ` : `
+      <div class="muted" style="margin-bottom:10px;">Conectá tu cuenta de Mercado Pago (la del gimnasio, o la tuya si sos profesor independiente) para que tus alumnos puedan pagar la cuota desde la app. Es un paso único — no hace falta cargar ningún token ni clave, solo iniciar sesión en Mercado Pago y autorizar.</div>
+      <button onclick="conectarMercadoPago()">💳 Conectar con Mercado Pago</button>
+    `;
+  cont.innerHTML = `
+    ${conexion}
+    <div style="margin-top:16px; padding-top:14px; border-top:1px solid var(--border);">
+      <div class="row">
+        <div class="field">
+          <label>Recargo por pagar con Mercado Pago (%)</label>
+          <input type="number" min="0" max="100" step="0.1" id="gimRecargoMP" value="${GIMNASIO_ACTUAL.recargo_mercadopago_pct ?? 0}">
+        </div>
+        <button onclick="guardarRecargoMercadoPago()" style="align-self:end;">Guardar</button>
+      </div>
+      <div class="muted" style="margin-top:6px;">Se le suma al precio del plan cuando el alumno paga con Mercado Pago, para que la comisión la absorba el alumno y no el gimnasio. Fijate el % que te cobra Mercado Pago en tu propia cuenta (varía según el medio de pago) para cargarlo acá.</div>
+    </div>
+  `;
+}
+
+async function guardarRecargoMercadoPago(){
+  if (!GIMNASIO_ACTUAL) return;
+  const pct = parseFloat(document.getElementById('gimRecargoMP').value);
+  try{
+    await sb(`gimnasios?id=eq.${GIMNASIO_ACTUAL.id}`, { method:'PATCH', headers:{Prefer:'return=minimal'}, body: JSON.stringify({ recargo_mercadopago_pct: isNaN(pct) ? 0 : pct }) });
+    await cargarGimnasioActual();
+    toast('Recargo guardado ✓');
+  }catch(e){ toast('Error guardando el recargo: ' + extraerMensajeError(e), true); }
+}
+
+function conectarMercadoPago(){
+  if (!GIMNASIO_ACTUAL || !MP_CLIENT_ID) return;
+  try{ localStorage.setItem('m2f_mp_conectando', '1'); }catch(e){}
+  const params = new URLSearchParams({
+    client_id: MP_CLIENT_ID,
+    response_type: 'code',
+    platform_id: 'mp',
+    redirect_uri: urlRetornoMercadoPago(),
+  });
+  window.location.href = `https://auth.mercadopago.com/authorization?${params.toString()}`;
+}
+
+async function desconectarMercadoPago(){
+  if (!GIMNASIO_ACTUAL) return;
+  if (!confirm('¿Desconectar Mercado Pago? Tus alumnos no van a poder pagar la cuota online hasta que la vuelvas a conectar.')) return;
+  try{
+    await sb(`gimnasios?id=eq.${GIMNASIO_ACTUAL.id}`, { method:'PATCH', headers:{Prefer:'return=minimal'}, body: JSON.stringify({ mp_conectado:false, mp_email:null }) });
+    await cargarGimnasioActual();
+    toast('Mercado Pago desconectado');
+  }catch(e){ toast('Error desconectando: ' + extraerMensajeError(e), true); }
+}
+
+// Se llama una sola vez al arrancar la app: si venimos de autorizar en Mercado
+// Pago, la URL trae "?code=...". Lo canjeamos por el token (del lado del
+// servidor, en mp-oauth-callback) y limpiamos la URL para que un refresh no
+// intente canjearlo de nuevo (el código solo sirve una vez).
+async function manejarRetornoOAuthMercadoPago(){
+  const params = new URLSearchParams(window.location.search);
+  const code = params.get('code');
+  if (!code) return;
+  history.replaceState({}, '', window.location.pathname);
+  let conectando = false;
+  try{ conectando = localStorage.getItem('m2f_mp_conectando') === '1'; localStorage.removeItem('m2f_mp_conectando'); }catch(e){}
+  if (!conectando) return; // "code" en la URL por otra razón (o recarga vieja): lo ignoramos
+  try{
+    const data = await sbFn('mp-oauth-callback', { code, redirect_uri: urlRetornoMercadoPago() });
+    toast(`Mercado Pago conectado ✓${data && data.mp_email ? ' (' + data.mp_email + ')' : ''}`);
+    await cargarGimnasioActual();
+  }catch(e){ toast('No se pudo conectar Mercado Pago: ' + e.message, true); }
 }
 
 // ---------- Categorías/disciplinas y Equipos (21/9, pedido de Martin) ----------
@@ -5588,7 +5724,7 @@ async function crearAlumno(){
     document.getElementById('nuevoAlumnoEmail').value = '';
     document.getElementById('nuevoAlumnoDireccion').value = '';
     document.getElementById('nuevoAlumnoPlan').value = '';
-    toast('Alumno agregado ✓' + (planId ? ' con plan asignado (falta registrar el primer pago en Cobranzas).' : '.'));
+    toast('Alumno agregado ✓' + (planId ? ' con plan asignado (falta registrar el primer pago en Finanzas).' : '.'));
     await cargarPersonas();
     cargarListaAlumnos();
   }catch(e){ toast('Error agregando alumno: ' + extraerMensajeError(e), true); }
@@ -8205,8 +8341,32 @@ async function cargarBannerCuota(alumnoId){
         ? `Todavía no registramos ningún pago de tu plan "${plan.plan_nombre}". Coordinalo con tu profesor.`
         : `Tu cuota vence el ${formatearFechaCorta(plan.vigencia_hasta)} (en ${plan.dias_para_vencer} día${plan.dias_para_vencer===1?'':'s'}).`;
     const color = esVencido ? 'rgba(255,93,93,.12); border-color:rgba(255,93,93,.4); color:#ff8a8a;' : 'rgba(255,210,61,.12); border-color:rgba(255,210,61,.4); color:var(--warn);';
-    cont.innerHTML = `<div class="warn-banner" style="background:${color}">${esVencido?'⚠️':'⏰'} ${texto}</div>`;
+    const botonMP = GIMNASIO_ACTUAL && GIMNASIO_ACTUAL.mp_conectado
+      ? `<div style="margin-top:8px;"><button id="btnPagarMP${alumnoId}" onclick="pagarConMercadoPago('${alumnoId}')">💳 Pagar con Mercado Pago</button></div>`
+      : '';
+    cont.innerHTML = `<div class="warn-banner" style="background:${color}">${esVencido?'⚠️':'⏰'} ${texto}${botonMP}</div>`;
   }catch(e){ cont.innerHTML = ''; }
+}
+
+// Un solo toque: pide el link de pago (ya con el monto de SU plan resuelto del
+// lado del servidor) y manda al alumno directo al checkout de Mercado Pago del
+// gimnasio. No hace falta avisarle al profesor ni que él haga nada antes —
+// Mercado Pago le avisa solo a M2F Solutions (webhook) cuando el pago se aprueba.
+async function pagarConMercadoPago(alumnoId){
+  const btn = document.getElementById(`btnPagarMP${alumnoId}`);
+  if (btn) btn.disabled = true;
+  try{
+    const data = await sbFn('mp-crear-preferencia', {});
+    if (!data || !data.init_point) throw new Error('Mercado Pago no devolvió un link de pago.');
+    const aviso = data.recargo > 0
+      ? `Vas a pagar $${data.monto.toFixed(2)} con Mercado Pago (cuota $${data.monto_base.toFixed(2)} + recargo $${data.recargo.toFixed(2)}). ¿Continuar?`
+      : `Vas a pagar $${data.monto.toFixed(2)} con Mercado Pago. ¿Continuar?`;
+    if (!confirm(aviso)){ if (btn) btn.disabled = false; return; }
+    window.location.href = data.init_point;
+  }catch(e){
+    toast('No se pudo iniciar el pago: ' + e.message, true);
+    if (btn) btn.disabled = false;
+  }
 }
 
 // ---------- Notificaciones al entrar: aviso de cuota (en vivo, no bloquea) +
@@ -9451,6 +9611,7 @@ if ('serviceWorker' in navigator){
       cambiarVista('profesor');
       sincronizarTabsRol();
       cambiarSubvista('agenda'); // lo primero que ve el profesor al entrar es la agenda del día, no el armador
+      if (PERFIL_ACTUAL.rol === 'admin') manejarRetornoOAuthMercadoPago();
     } else {
       let tipoGuardado = null;
       try{ tipoGuardado = localStorage.getItem('m2f_tipo'); }catch(e){}
