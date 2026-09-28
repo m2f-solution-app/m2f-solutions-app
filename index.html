@@ -1310,6 +1310,11 @@
           <h2 style="margin-top:0">Profesores de tu gimnasio</h2>
           <div id="listaProfesores" class="muted">Cargando...</div>
         </div>
+
+        <div class="card" id="wrapProfesoresInactivos" style="display:none;">
+          <h2 style="margin-top:0">Dados de baja</h2>
+          <div id="listaProfesoresInactivos" class="muted">Cargando...</div>
+        </div>
       </div>
 
       <!-- ---- SUBVISTA: AGENDA (turnos agendados por horario, día a día) ---- -->
@@ -2025,6 +2030,14 @@
     <div id="modalAsistenciaQuitarWrap" style="text-align:center; margin-top:8px;"></div>
     <div style="border-top:1px solid var(--border); margin:14px 0;"></div>
     <button style="width:100%;" onclick="verRutinaDelTurno()">📋 Ver rutina de este turno</button>
+    <button id="btnAbrirReasignarTurno" class="ghost" style="width:100%; margin-top:8px;" onclick="toggleReasignarTurno()">🔁 Reasignar a otro profesor</button>
+    <div id="reasignarTurnoWrap" style="display:none; margin-top:10px; padding-top:10px; border-top:1px solid var(--border);">
+      <div class="field">
+        <label>Nuevo profesor</label>
+        <select id="reasignarTurnoSelect"></select>
+      </div>
+      <button style="width:100%;" onclick="confirmarReasignarTurno()">Confirmar reasignación</button>
+    </div>
     <div class="row" style="justify-content:flex-end; margin-top:12px;">
       <button class="ghost" onclick="cerrarModalAsistencia()">Cerrar</button>
     </div>
@@ -2091,7 +2104,7 @@
     <h3>Nueva excepción</h3>
     <div class="field">
       <label>Profesor</label>
-      <select id="excProfesor"></select>
+      <select id="excProfesor" onchange="actualizarProfesorOriginalOptions()"></select>
     </div>
     <div class="field">
       <label>Fecha</label>
@@ -2111,6 +2124,19 @@
       <div class="field" style="flex:1;"><label>Desde</label><input type="time" id="excDesde" value="08:00"></div>
       <div class="field" style="flex:1;"><label>Hasta</label><input type="time" id="excHasta" value="12:00"></div>
     </div>
+    <div class="row" id="excCoberturaWrap" style="display:none; gap:10px;">
+      <div class="field" style="flex:1;">
+        <label>Profesor que falta (a quién cubre)</label>
+        <select id="excProfesorOriginal"><option value="">— Sin vincular a un profesor —</option></select>
+      </div>
+      <div class="field" style="flex:1;">
+        <label>Cupo para esta cobertura</label>
+        <input type="number" id="excCupoCobertura" value="1" min="1" step="1">
+      </div>
+    </div>
+    <div class="field" id="excCoberturaAvisoWrap" style="display:none;">
+      <div class="muted" style="font-size:12px;">Si elegís a quién cubre, los turnos que ya tenían reservados con ese profesor en ese horario se reasignan solos a este profesor, y el alumno recibe un aviso.</div>
+    </div>
     <div class="field">
       <label>Nota (opcional)</label>
       <input type="text" id="excNota" placeholder="Ej: cubre a Diego, de vacaciones">
@@ -2118,6 +2144,36 @@
     <div class="row" style="justify-content:flex-end; margin-top:6px;">
       <button class="ghost" onclick="cerrarModalExcepcion()">Cancelar</button>
       <button onclick="guardarExcepcionHorario()">Guardar excepción</button>
+    </div>
+  </div>
+</div>
+
+<!-- ---- Dar de baja a un profesor (28/9, pedido de Martin): asistido, no manual —
+     si tiene turnos pendientes, resuelve reasignación o cancelación en el mismo
+     paso, nunca deja al admin "elegir no hacer nada" con turnos huérfanos. ---- -->
+<div class="modal-overlay" id="modalBajaProfesor">
+  <div class="modal-box">
+    <h3>Dar de baja</h3>
+    <p id="bajaProfesorNombre" class="muted" style="margin-top:-8px; font-weight:700;"></p>
+    <div id="bajaProfesorCargando">Consultando turnos pendientes...</div>
+    <div id="bajaProfesorSinPendientes" style="display:none;">
+      <p>No tiene turnos pendientes — se puede dar de baja directamente.</p>
+    </div>
+    <div id="bajaProfesorConPendientes" style="display:none;">
+      <p id="bajaProfesorAviso" class="muted"></p>
+      <div class="field">
+        <label><input type="radio" name="bajaProfesorModo" value="reasignar" checked onchange="actualizarModoBajaProfesor()"> Reasignar esos turnos a otro profesor</label>
+      </div>
+      <div class="field" id="bajaProfesorSelectorWrap" style="margin-left:22px;">
+        <select id="bajaProfesorDestino"></select>
+      </div>
+      <div class="field">
+        <label><input type="radio" name="bajaProfesorModo" value="cancelar" onchange="actualizarModoBajaProfesor()"> Cancelar esos turnos y avisar a los alumnos</label>
+      </div>
+    </div>
+    <div class="row" style="justify-content:flex-end; margin-top:12px;">
+      <button class="ghost" onclick="cerrarModalBajaProfesor()">Cancelar</button>
+      <button class="danger" id="btnConfirmarBajaProfesor" onclick="confirmarBajaProfesor()">Dar de baja</button>
     </div>
   </div>
 </div>
@@ -3238,7 +3294,7 @@ function cambiarSubvista(v){
   if (v==='evaluaciones') iniciarEvaluaciones();
   if (v==='seguimiento') iniciarSeguimiento();
   if (v==='logros') iniciarLogros();
-  if (v==='profesores') cargarListaProfesores();
+  if (v==='profesores'){ cargarListaProfesores(); cargarListaProfesoresInactivos(); }
   if (v==='agenda') iniciarAgenda();
   if (v==='horarios'){ horCambiarTab('editar'); cargarHorarioProfesorActual(); }
   if (v==='planes') cargarPlanes();
@@ -4561,10 +4617,108 @@ function cargarListaProfesores(){
         <div class="row" style="gap:14px; flex-wrap:wrap; align-items:center; margin-top:6px;">
           <label class="muted" style="font-size:12px; display:flex; align-items:center; gap:4px;">Tarifa/hora $<input type="number" step="0.01" min="0" value="${p.tarifa_hora ?? ''}" style="width:90px;" onchange="actualizarTarifaProfesor('${p.id}','tarifa_hora',this.value)"></label>
           <label class="muted" style="font-size:12px; display:flex; align-items:center; gap:4px;">Impuesto/carga %<input type="number" step="0.1" min="0" value="${p.impuesto_pct ?? 0}" style="width:60px;" onchange="actualizarTarifaProfesor('${p.id}','impuesto_pct',this.value)"></label>
+          <span style="color:#ff6b6b; font-size:12px; cursor:pointer; font-weight:700; margin-left:auto;" onclick="abrirModalBajaProfesor('${p.id}','${(p.nombre||'').replace(/'/g,"&apos;")}')">Dar de baja</span>
         </div>
       </div>
     `;
   }).join('');
+}
+
+// Lista de profesores inactivos (dados de baja), con opción de reactivar sin
+// tener que tocar la base a mano — carga aparte, no forma parte de PROFESORES_CACHE
+// (que sigue trayendo solo activo=true, a propósito, para no ensuciar el resto
+// de la app con gente que ya no trabaja en el gimnasio).
+async function cargarListaProfesoresInactivos(){
+  const wrap = document.getElementById('wrapProfesoresInactivos');
+  const cont = document.getElementById('listaProfesoresInactivos');
+  try{
+    const filtroGym = PERFIL_ACTUAL ? `&gimnasio_id=eq.${PERFIL_ACTUAL.gimnasio_id}` : '';
+    const inactivos = await sb(`profesores?select=id,nombre,dni&activo=eq.false${filtroGym}&order=nombre.asc`);
+    if (!inactivos.length){ wrap.style.display = 'none'; return; }
+    wrap.style.display = '';
+    cont.innerHTML = inactivos.map(p => `
+      <div class="row" style="justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px solid var(--border);">
+        <span>${p.nombre}${p.dni ? ` <span class="muted">· DNI ${p.dni}</span>` : ''}</span>
+        <button class="ghost" onclick="reactivarProfesor('${p.id}')">Reactivar</button>
+      </div>
+    `).join('');
+  }catch(e){ wrap.style.display = 'none'; }
+}
+async function reactivarProfesor(profesorId){
+  try{
+    await sb('rpc/reactivar_profesor', { method:'POST', body: JSON.stringify({ p_profesor_id: profesorId }) });
+    toast('Profesor reactivado ✓');
+    await cargarPersonas();
+    cargarListaProfesores();
+    cargarListaProfesoresInactivos();
+  }catch(e){ toast('Error reactivando: ' + extraerMensajeError(e), true); }
+}
+
+// Dar de baja a un profesor (28/9): asistido, nunca deja turnos huérfanos. Si
+// tiene turnos futuros pendientes, el admin tiene que elegir reasignarlos o
+// cancelarlos ANTES de poder confirmar la baja — la función de base
+// dar_de_baja_profesor() además lo bloquea igual del lado del servidor si se
+// saltea este paso.
+let BAJA_PROFESOR_CTX = null; // {profesorId, nombre, pendientes: [...]}
+async function abrirModalBajaProfesor(profesorId, nombre){
+  BAJA_PROFESOR_CTX = { profesorId, nombre, pendientes: [] };
+  document.getElementById('bajaProfesorNombre').textContent = nombre;
+  document.getElementById('bajaProfesorCargando').style.display = '';
+  document.getElementById('bajaProfesorSinPendientes').style.display = 'none';
+  document.getElementById('bajaProfesorConPendientes').style.display = 'none';
+  document.getElementById('modalBajaProfesor').classList.add('show');
+  try{
+    const hoy = dateAIso(new Date());
+    const pendientes = await sb(`turnos?select=id&profesor_id=eq.${profesorId}&fecha=gte.${hoy}&estado=neq.cancelado`);
+    BAJA_PROFESOR_CTX.pendientes = pendientes;
+    document.getElementById('bajaProfesorCargando').style.display = 'none';
+    if (!pendientes.length){
+      document.getElementById('bajaProfesorSinPendientes').style.display = '';
+    } else {
+      document.getElementById('bajaProfesorAviso').textContent = `Tiene ${pendientes.length} turno(s) reservado(s) todavía. Elegí qué hacer con ellos antes de dar de baja:`;
+      document.getElementById('bajaProfesorDestino').innerHTML = PROFESORES_CACHE.filter(p => p.id !== profesorId).map(p => `<option value="${p.id}">${p.nombre}</option>`).join('');
+      document.getElementById('bajaProfesorConPendientes').style.display = '';
+      actualizarModoBajaProfesor();
+    }
+  }catch(e){
+    toast('Error consultando turnos pendientes: ' + extraerMensajeError(e), true);
+    cerrarModalBajaProfesor();
+  }
+}
+function cerrarModalBajaProfesor(){
+  document.getElementById('modalBajaProfesor').classList.remove('show');
+  BAJA_PROFESOR_CTX = null;
+}
+function actualizarModoBajaProfesor(){
+  const modo = document.querySelector('input[name="bajaProfesorModo"]:checked')?.value;
+  document.getElementById('bajaProfesorSelectorWrap').style.display = modo === 'reasignar' ? '' : 'none';
+}
+async function confirmarBajaProfesor(){
+  if (!BAJA_PROFESOR_CTX) return;
+  const { profesorId, pendientes } = BAJA_PROFESOR_CTX;
+  const btn = document.getElementById('btnConfirmarBajaProfesor');
+  btn.disabled = true;
+  try{
+    if (pendientes.length){
+      const modo = document.querySelector('input[name="bajaProfesorModo"]:checked')?.value;
+      if (modo === 'reasignar'){
+        const destino = document.getElementById('bajaProfesorDestino').value;
+        if (!destino){ toast('Elegí a qué profesor reasignar.', true); btn.disabled = false; return; }
+        const r = await sb('rpc/reasignar_turnos_profesor', { method:'POST', body: JSON.stringify({ p_profesor_origen_id: profesorId, p_profesor_destino_id: destino }) });
+        toast(`${r?.reasignados ?? 0} turno(s) reasignado(s) ✓`);
+      } else {
+        const r = await sb('rpc/cancelar_turnos_profesor', { method:'POST', body: JSON.stringify({ p_profesor_id: profesorId }) });
+        toast(`${r?.cancelados ?? 0} turno(s) cancelado(s) ✓`);
+      }
+    }
+    await sb('rpc/dar_de_baja_profesor', { method:'POST', body: JSON.stringify({ p_profesor_id: profesorId }) });
+    toast('Profesor dado de baja ✓');
+    cerrarModalBajaProfesor();
+    await cargarPersonas();
+    cargarListaProfesores();
+    cargarListaProfesoresInactivos();
+  }catch(e){ toast('Error dando de baja: ' + extraerMensajeError(e), true); }
+  finally{ btn.disabled = false; }
 }
 
 // Edición inline de tarifa horaria e impuesto/carga del profesor, usadas por
@@ -4845,7 +4999,7 @@ async function cargarCuadroHorarios(){
   try{
     const [horarios, excepciones] = await Promise.all([
       sb(`horarios_trabajo?select=id,profesor_id,dia_semana,hora_inicio,hora_fin,activo&profesor_id=in.(${idsProf.join(',')})&activo=eq.true&order=dia_semana.asc,hora_inicio.asc`),
-      sb(`horarios_excepciones?select=id,profesor_id,fecha,tipo,hora_inicio,hora_fin,nota,activo&profesor_id=in.(${idsProf.join(',')})&activo=eq.true&fecha=gte.${CUADRO_SEMANA_DIAS[0].iso}&fecha=lte.${CUADRO_SEMANA_DIAS[6].iso}&order=fecha.asc`),
+      sb(`horarios_excepciones?select=id,profesor_id,profesor_original_id,fecha,tipo,hora_inicio,hora_fin,nota,activo&profesor_id=in.(${idsProf.join(',')})&activo=eq.true&fecha=gte.${CUADRO_SEMANA_DIAS[0].iso}&fecha=lte.${CUADRO_SEMANA_DIAS[6].iso}&order=fecha.asc`),
     ]);
     CUADRO_HORARIOS_CACHE = horarios;
     CUADRO_EXCEPCIONES_CACHE = excepciones;
@@ -5013,10 +5167,11 @@ function renderListaExcepcionesSemana(){
   cont.innerHTML = CUADRO_EXCEPCIONES_CACHE.slice().sort((a,b) => a.fecha.localeCompare(b.fecha)).map(e => {
     const prof = PROFESORES_CACHE.find(p => p.id === e.profesor_id);
     const nombre = prof ? prof.nombre : '—';
+    const profOriginal = e.profesor_original_id ? PROFESORES_CACHE.find(p => p.id === e.profesor_original_id) : null;
     const diaInfo = CUADRO_SEMANA_DIAS.find(d => d.iso === e.fecha);
     const detalle = e.tipo === 'ausencia'
       ? (e.hora_inicio ? `ausente de ${formatearHoraCorta(e.hora_inicio)} a ${formatearHoraCorta(e.hora_fin)}` : 'ausente todo el día')
-      : `cubre ${formatearHoraCorta(e.hora_inicio)}-${formatearHoraCorta(e.hora_fin)}`;
+      : `cubre ${formatearHoraCorta(e.hora_inicio)}-${formatearHoraCorta(e.hora_fin)}${profOriginal ? ` (cubre a ${profOriginal.nombre})` : ''}`;
     const icono = e.tipo === 'ausencia' ? '🚫' : '🔁';
     return `
       <div class="row" style="justify-content:space-between; padding:8px 10px; border-radius:8px; background:var(--panel2); margin-bottom:6px; font-size:13px;">
@@ -5038,17 +5193,30 @@ function abrirModalExcepcion(){
   fechaInput.value = CUADRO_SEMANA_DIAS[0].iso;
   document.getElementById('excNota').value = '';
   document.getElementById('excTodoElDia').checked = true;
+  document.getElementById('excCupoCobertura').value = 1;
+  actualizarProfesorOriginalOptions();
   excCambiarTipo('ausencia');
   document.getElementById('modalExcepcion').classList.add('show');
 }
 function cerrarModalExcepcion(){
   document.getElementById('modalExcepcion').classList.remove('show');
 }
+// El "profesor que falta" nunca puede ser el mismo que va a cubrir.
+function actualizarProfesorOriginalOptions(){
+  const sel = document.getElementById('excProfesorOriginal');
+  const actual = document.getElementById('excProfesor').value;
+  const valorPrevio = sel.value;
+  sel.innerHTML = '<option value="">— Sin vincular a un profesor —</option>'
+    + PROFESORES_CACHE.filter(p => p.id !== actual).map(p => `<option value="${p.id}">${p.nombre}</option>`).join('');
+  if ([...sel.options].some(o => o.value === valorPrevio)) sel.value = valorPrevio;
+}
 function excCambiarTipo(tipo){
   EXC_TIPO_ACTUAL = tipo;
   document.getElementById('excBtnAusencia').classList.toggle('active', tipo==='ausencia');
   document.getElementById('excBtnCobertura').classList.toggle('active', tipo==='cobertura');
   document.getElementById('excTodoElDiaWrap').style.display = tipo==='ausencia' ? '' : 'none';
+  document.getElementById('excCoberturaWrap').style.display = tipo==='cobertura' ? 'flex' : 'none';
+  document.getElementById('excCoberturaAvisoWrap').style.display = tipo==='cobertura' ? '' : 'none';
   actualizarVisibilidadHorarioExc();
 }
 // Cobertura siempre necesita Desde/Hasta; una ausencia solo los muestra si se
@@ -5066,16 +5234,41 @@ async function guardarExcepcionHorario(){
   const nota = document.getElementById('excNota').value.trim() || null;
   const body = { profesor_id: profesorId, fecha, tipo: EXC_TIPO_ACTUAL, nota, activo: true };
   const todoElDia = EXC_TIPO_ACTUAL === 'ausencia' && document.getElementById('excTodoElDia').checked;
+  let desde = null, hasta = null;
   if (!todoElDia){
-    const desde = document.getElementById('excDesde').value;
-    const hasta = document.getElementById('excHasta').value;
+    desde = document.getElementById('excDesde').value;
+    hasta = document.getElementById('excHasta').value;
     if (!desde || !hasta || hasta <= desde){ toast('Revisá el horario: "Hasta" debe ser después de "Desde".', true); return; }
     body.hora_inicio = desde + ':00';
     body.hora_fin = hasta + ':00';
   }
+  let profesorOriginalId = null;
+  if (EXC_TIPO_ACTUAL === 'cobertura'){
+    const cupo = parseInt(document.getElementById('excCupoCobertura').value, 10);
+    if (!cupo || cupo < 1){ toast('Ingresá un cupo válido para la cobertura.', true); return; }
+    body.cupo_por_turno = cupo;
+    profesorOriginalId = document.getElementById('excProfesorOriginal').value || null;
+    body.profesor_original_id = profesorOriginalId;
+  }
   try{
     await sb('horarios_excepciones', { method:'POST', headers:{Prefer:'return=minimal'}, body: JSON.stringify(body) });
-    toast('Excepción guardada ✓');
+    if (profesorOriginalId && desde && hasta){
+      try{
+        const resultado = await sb('rpc/reasignar_turnos_bloque', { method:'POST', body: JSON.stringify({
+          p_profesor_origen_id: profesorOriginalId,
+          p_profesor_destino_id: profesorId,
+          p_fecha: fecha,
+          p_hora_desde: desde + ':00',
+          p_hora_hasta: hasta + ':00'
+        }) });
+        const n = resultado && typeof resultado.reasignados === 'number' ? resultado.reasignados : 0;
+        toast(n > 0 ? `Excepción guardada ✓ — ${n} turno(s) reasignado(s) automáticamente` : 'Excepción guardada ✓');
+      }catch(e){
+        toast('Excepción guardada, pero falló la reasignación automática de turnos: ' + extraerMensajeError(e), true);
+      }
+    } else {
+      toast('Excepción guardada ✓');
+    }
     cerrarModalExcepcion();
     cargarCuadroHorarios();
   }catch(e){ toast('Error guardando la excepción: ' + extraerMensajeError(e), true); }
@@ -5502,7 +5695,7 @@ async function renderAgenda(){
                 progresoHtml = `<div class="chip-progreso en-curso">🏋️ ${r.progreso.hechos}/${r.progreso.total} ejercicios</div>`;
               }
             }
-            return `<div class="alumno-chip asistencia-${estado} ${esAuto?'asistencia-auto':''}" onclick="abrirModalAsistencia('${r.id}', ${asistioArg}, '${fecha}', '${horaStr}', '${r.alumnoId}', '${nombreEscapado}', ${rutinaDiaArg}, '${nombreDiaEscapado}')">
+            return `<div class="alumno-chip asistencia-${estado} ${esAuto?'asistencia-auto':''}" onclick="abrirModalAsistencia('${r.id}', ${asistioArg}, '${fecha}', '${horaStr}', '${r.alumnoId}', '${nombreEscapado}', ${rutinaDiaArg}, '${nombreDiaEscapado}', '${prof.id}')">
               <span class="avatar">${iniciales(r.nombre)}</span>
               <div class="chip-info">
                 <div class="chip-nombre">${r.nombre}${icono}</div>
@@ -5565,10 +5758,10 @@ function asistenciaEfectiva(asistioRaw, fecha, horaStr){
 // sin ningún indicio de que se podía tocar (Martin: "nada le indica que tiene
 // que tocar en el alumno"). Ahora tocarlo abre un popup explícito con las dos
 // opciones (presente/ausente) y un acceso directo a la rutina de esa persona.
-let ASISTENCIA_MODAL_CTX = null; // {turnoId, asistioRawActual, fecha, horaStr, alumnoId, nombre, rutinaDiaId, nombreDia}
+let ASISTENCIA_MODAL_CTX = null; // {turnoId, asistioRawActual, fecha, horaStr, alumnoId, nombre, rutinaDiaId, nombreDia, profesorId}
 
-function abrirModalAsistencia(turnoId, asistioRawActual, fecha, horaStr, alumnoId, nombre, rutinaDiaId, nombreDia){
-  ASISTENCIA_MODAL_CTX = { turnoId, asistioRawActual, fecha, horaStr, alumnoId, nombre, rutinaDiaId, nombreDia };
+function abrirModalAsistencia(turnoId, asistioRawActual, fecha, horaStr, alumnoId, nombre, rutinaDiaId, nombreDia, profesorId){
+  ASISTENCIA_MODAL_CTX = { turnoId, asistioRawActual, fecha, horaStr, alumnoId, nombre, rutinaDiaId, nombreDia, profesorId };
   const yaPaso = new Date(`${fecha}T${horaStr}`) <= new Date();
   const efectivo = asistenciaEfectiva(asistioRawActual, fecha, horaStr);
   document.getElementById('modalAsistenciaNombre').textContent = nombre;
@@ -5582,12 +5775,44 @@ function abrirModalAsistencia(turnoId, asistioRawActual, fecha, horaStr, alumnoI
   wrapQuitar.innerHTML = (!yaPaso && asistioRawActual !== null)
     ? `<span class="muted" style="cursor:pointer; text-decoration:underline;" onclick="quitarMarcaAsistenciaDesdeModal()">Quitar marca (dejar sin marcar)</span>`
     : '';
+  // Cierra y resetea el panel de reasignación cada vez que se abre el popup de nuevo.
+  document.getElementById('reasignarTurnoWrap').style.display = 'none';
   document.getElementById('modalAsistencia').classList.add('show');
 }
 
 function cerrarModalAsistencia(){
   document.getElementById('modalAsistencia').classList.remove('show');
   ASISTENCIA_MODAL_CTX = null;
+}
+
+// Opción 1 (respaldo manual): reasignar un único turno puntual a otro profesor,
+// para casos sueltos que no pasen por una excepción de "cobertura" en el cuadro
+// semanal (pedido de Martin, 28/9).
+function toggleReasignarTurno(){
+  if (!ASISTENCIA_MODAL_CTX) return;
+  const wrap = document.getElementById('reasignarTurnoWrap');
+  const mostrar = wrap.style.display === 'none';
+  if (mostrar){
+    const sel = document.getElementById('reasignarTurnoSelect');
+    sel.innerHTML = PROFESORES_CACHE.filter(p => p.id !== ASISTENCIA_MODAL_CTX.profesorId)
+      .map(p => `<option value="${p.id}">${p.nombre}</option>`).join('');
+  }
+  wrap.style.display = mostrar ? '' : 'none';
+}
+
+async function confirmarReasignarTurno(){
+  if (!ASISTENCIA_MODAL_CTX) return;
+  const nuevoProfesorId = document.getElementById('reasignarTurnoSelect').value;
+  if (!nuevoProfesorId){ toast('Elegí a qué profesor reasignar.', true); return; }
+  try{
+    await sb('rpc/reasignar_turno', { method:'POST', body: JSON.stringify({
+      p_turno_id: ASISTENCIA_MODAL_CTX.turnoId,
+      p_nuevo_profesor_id: nuevoProfesorId,
+    }) });
+    toast('Turno reasignado ✓');
+    cerrarModalAsistencia();
+    renderAgenda();
+  }catch(e){ toast('Error reasignando el turno: ' + extraerMensajeError(e), true); }
 }
 
 async function marcarAsistenciaDesdeModal(valor){
@@ -5610,7 +5835,7 @@ async function guardarAsistencia(turnoId, valor){
     // "Ver rutina de este turno" sin tener que volver a abrirlo de cero.
     if (ASISTENCIA_MODAL_CTX && ASISTENCIA_MODAL_CTX.turnoId === turnoId){
       const ctx = ASISTENCIA_MODAL_CTX;
-      abrirModalAsistencia(ctx.turnoId, valor, ctx.fecha, ctx.horaStr, ctx.alumnoId, ctx.nombre, ctx.rutinaDiaId, ctx.nombreDia);
+      abrirModalAsistencia(ctx.turnoId, valor, ctx.fecha, ctx.horaStr, ctx.alumnoId, ctx.nombre, ctx.rutinaDiaId, ctx.nombreDia, ctx.profesorId);
     }
     renderAgenda();
     toast(valor === null ? 'Marca quitada ✓' : valor ? 'Presente ✓' : 'Ausente ✓');
