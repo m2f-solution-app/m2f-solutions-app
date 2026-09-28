@@ -787,6 +787,7 @@
         <span class="muted" style="cursor:pointer; text-decoration:underline; font-size:12px;" onclick="document.getElementById('staffCambiarPasswordWrap').style.display = document.getElementById('staffCambiarPasswordWrap').style.display==='none' ? '' : 'none';">Cambiar contraseña</span>
         <span id="linkCodigosActivacion" style="display:none; margin-left:8px;">· <span class="muted" style="cursor:pointer; text-decoration:underline; font-size:12px; color:var(--accent);" onclick="abrirPanelCodigos()">🔑 Códigos</span></span>
         <span id="linkPanelGimnasios" style="display:none; margin-left:8px;">· <span class="muted" style="cursor:pointer; text-decoration:underline; font-size:12px; color:var(--accent);" onclick="abrirPanelGimnasiosAdmin()">🏋️ Gimnasios</span></span>
+        <button class="ghost btn-push" onclick="activarNotificacionesPush()" style="margin-top:4px;">🔔 Activar notificaciones</button>
         <button class="ghost" onclick="hacerLogout()" style="margin-top:4px;">Salir</button>
       </div>
     </div>
@@ -2276,7 +2277,7 @@ const BUCKET = "Ejercicios";
 // un cambio, se incrementa este número — el chequeo de actualización (más abajo) lo compara
 // contra lo que hay publicado y avisa si están desactualizados, sin que nadie tenga que
 // cambiar ningún link a mano.
-const APP_VERSION = 54;
+const APP_VERSION = 55;
 
 // ---------- Instalar como app (PWA): acceso directo en escritorio/celular ----------
 // Chrome/Edge/Android disparan "beforeinstallprompt" cuando el manifest + service worker
@@ -2293,6 +2294,83 @@ window.addEventListener('appinstalled', () => {
   deferredInstallPrompt = null;
   document.querySelectorAll('.btn-instalar-app').forEach(b => b.style.display = 'none');
 });
+
+// ---------- Notificaciones push (28/9, pedido de Martin — parte 1: suscripción) ----------
+// Esto deja el "cableado" listo: pedir permiso, suscribir el navegador a través del
+// Service Worker y guardar esa suscripción en push_suscripciones. Falta la parte 2 —
+// la Edge Function que realmente las envía (enganchada a cuota por vencer, turno
+// confirmado, rutina asignada, etc.) — queda para la próxima vuelta.
+// OJO iPhone (anotar en el manual): Apple solo permite push si la app está agregada a
+// la pantalla de inicio (Compartir → Agregar a inicio) y con iOS 16.4 o más nuevo — no
+// alcanza con tenerla abierta en Safari. En Android/Chrome funciona directo, sin instalar.
+const VAPID_PUBLIC_KEY = 'BPtPbjq6WDJ5j-76xe17mccxg4zalLLxejs2PVFL4TKlb-ODWnEhye24WayZzpBpG7Bp-r--WZD3JzsNW7AIs5I';
+
+function urlBase64ToUint8Array(base64String){
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const raw = atob(base64);
+  const output = new Uint8Array(raw.length);
+  for (let i = 0; i < raw.length; i++) output[i] = raw.charCodeAt(i);
+  return output;
+}
+
+function soportaPush(){
+  return 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+}
+
+async function activarNotificacionesPush(){
+  if (!soportaPush()){
+    toast('Este navegador no soporta notificaciones. Si estás en iPhone, primero agregá la app a tu pantalla de inicio (Compartir → Agregar a inicio).', true);
+    return;
+  }
+  if (!PERFIL_ACTUAL){ toast('Necesitás estar logueado.', true); return; }
+  try{
+    const permiso = await Notification.requestPermission();
+    if (permiso !== 'granted'){
+      toast('No se activaron las notificaciones — el permiso quedó ' + (permiso === 'denied' ? 'denegado' : 'sin responder') + '.', true);
+      return;
+    }
+    const registro = await navigator.serviceWorker.ready;
+    let suscripcion = await registro.pushManager.getSubscription();
+    if (!suscripcion){
+      suscripcion = await registro.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+      });
+    }
+    const json = suscripcion.toJSON();
+    await sb('push_suscripciones?on_conflict=endpoint', {
+      method: 'POST',
+      headers: { Prefer: 'resolution=merge-duplicates,return=minimal' },
+      body: JSON.stringify([{
+        perfil_id: PERFIL_ACTUAL.id,
+        gimnasio_id: PERFIL_ACTUAL.gimnasio_id,
+        endpoint: json.endpoint,
+        p256dh: json.keys.p256dh,
+        auth: json.keys.auth,
+        user_agent: navigator.userAgent,
+      }]),
+    });
+    toast('Notificaciones activadas ✓');
+    actualizarBotonesPush();
+  }catch(e){ toast('No se pudieron activar las notificaciones: ' + e.message, true); }
+}
+
+// Refleja en los botones "🔔 Activar notificaciones" si ya están activadas en este
+// navegador, para no invitar de nuevo a quien ya aceptó.
+async function actualizarBotonesPush(){
+  if (!soportaPush()) return;
+  try{
+    const registro = await navigator.serviceWorker.ready;
+    const suscripcion = await registro.pushManager.getSubscription();
+    const activas = !!suscripcion && Notification.permission === 'granted';
+    document.querySelectorAll('.btn-push').forEach(b => {
+      b.textContent = activas ? '🔔 Notificaciones activadas' : '🔔 Activar notificaciones';
+      b.disabled = activas;
+    });
+  }catch(e){}
+}
+
 // ---------- Soporte por WhatsApp ----------
 // Reemplazá este número por el tuyo (con código de país, sin +, sin espacios ni guiones,
 // ej: Argentina 11-1234-5678 -> "5491112345678"). Con esto el botón "💬 Soporte" del
@@ -2999,6 +3077,7 @@ async function entrarComoStaff(){
   await Promise.all([cargarPersonas(), cargarCatalogoEjercicios(), cargarGimnasioActual(), cargarCategoriasYEquipos()]);
   cambiarSubvista('agenda'); // lo primero que ve el profesor al entrar es la agenda del día, no el armador
   if (PERFIL_ACTUAL.rol === 'admin') revisarNotificacionesStaff();
+  actualizarBotonesPush();
 }
 
 async function hacerLogin(){
@@ -3181,7 +3260,12 @@ async function entrarComoAlumnoLogueado(){
     // Re-scopea al gimnasio de ESTA sesión (si venía de la carga anónima previa al
     // login, GIMNASIO_ACTUAL todavía podía tener el de otro gimnasio) — importante
     // para que "mp_conectado" (botón de pagar con Mercado Pago) sea el correcto.
-    await Promise.all([cargarPersonas(), cargarGimnasioActual()]);
+    // (28/9) cargarCatalogoEjercicios() también se re-ejecuta acá: antes del login solo
+    // se cargaba el catálogo global anónimo (gym_id IS NULL, sin patrón de movimiento
+    // asignado); sin este re-fetch, el buscador de sustitución del alumno se quedaba
+    // para siempre con esa foto vieja — nunca veía los ejercicios propios del gimnasio
+    // (que son los que sí tienen patrón cargado), y el filtro por patrón no traía nada.
+    await Promise.all([cargarPersonas(), cargarGimnasioActual(), cargarCatalogoEjercicios()]);
     mostrarModoAlumnoLogueado(ficha);
     revisarNotificacionesAlumno(ficha.id);
   }catch(e){ msg.textContent = 'Error entrando: ' + e.message; }
@@ -3201,6 +3285,7 @@ function mostrarModoAlumnoLogueado(ficha){
     <div class="row" style="gap:8px;">
       <span class="muted" style="cursor:pointer; text-decoration:underline;" onclick="document.getElementById('miFotoInputAlu').click();">📷 Cambiar foto</span>
       <span class="muted" style="cursor:pointer; text-decoration:underline;" onclick="document.getElementById('alumnoCambiarPasswordWrap').style.display = document.getElementById('alumnoCambiarPasswordWrap').style.display==='none' ? '' : 'none';">Cambiar contraseña</span>
+      <button class="ghost btn-push" onclick="activarNotificacionesPush()">🔔 Activar notificaciones</button>
       <button class="ghost" onclick="hacerLogoutAlumno()">Cerrar sesión</button>
     </div>
   </div>
@@ -3220,6 +3305,7 @@ function mostrarModoAlumnoLogueado(ficha){
   sel.value = ficha.id;
   sel.disabled = true;
   onCambiarAluAlumno();
+  actualizarBotonesPush();
 }
 
 // Foto de perfil cargada por el propio alumno (pedido de Martin, 21/9). Sube el
@@ -10659,9 +10745,19 @@ function abrirSustitucion(idx){
         <option value="otro">Otro</option>
       </select>
       <button class="danger" style="width:100%;" onclick="marcarEjercicioOmitido(${idx})">No pude hacer este ejercicio</button>
+      <button class="ghost" style="width:100%; margin-top:8px;" onclick="cerrarSustitucion(${idx})">Cancelar y hacer el ejercicio planificado</button>
     </div>
   `;
   armarComboBuscable(`patronSust-${idx}`, 'Patrón...', { maxWidth: '140px' });
+}
+
+// (28/9) Pedido de Martin: si abrís "No puedo hacer este ejercicio" para mirar las
+// opciones pero al final querés hacer el que ya estaba planificado, tenía que quedar
+// una forma explícita de cerrar el cuadro sin verse obligado a sustituir ni a omitir.
+function cerrarSustitucion(idx){
+  const cont = document.getElementById(`sustitucion-${idx}`);
+  cont.innerHTML = '';
+  cont.dataset.open = '0';
 }
 
 function buscarSustituto(q, idx){
@@ -11132,6 +11228,7 @@ if ('serviceWorker' in navigator){
       sincronizarTabsRol();
       cambiarSubvista('agenda'); // lo primero que ve el profesor al entrar es la agenda del día, no el armador
       if (PERFIL_ACTUAL.rol === 'admin') { manejarRetornoOAuthMercadoPago(); revisarNotificacionesStaff(); }
+      actualizarBotonesPush();
     } else {
       let tipoGuardado = null;
       try{ tipoGuardado = localStorage.getItem('m2f_tipo'); }catch(e){}
