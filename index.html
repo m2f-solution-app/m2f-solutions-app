@@ -1597,6 +1597,17 @@
         </div>
 
         <div class="card">
+          <h2 style="margin-top:0">Planes de pago adelantado</h2>
+          <div class="muted" style="margin-bottom:10px;">Opciones para cobrarle a un alumno varios meses juntos con descuento (ej: "3 meses -10%"). Aparecen como alternativa al mes normal en el botón "💰 Cobrar" de Cobranzas.</div>
+          <div class="row">
+            <div class="field" style="width:110px;"><label>Meses</label><input type="number" min="2" step="1" id="nuevoPrepagoMeses" placeholder="Ej: 3"></div>
+            <div class="field" style="width:140px;"><label>Descuento (%)</label><input type="number" min="0" max="100" step="0.1" id="nuevoPrepagoDescuento" placeholder="Ej: 10"></div>
+            <button onclick="crearPlanPrepago()" style="align-self:end;">+ Agregar</button>
+          </div>
+          <div id="listaPlanesPrepago" class="muted" style="margin-top:10px;">Cargando...</div>
+        </div>
+
+        <div class="card">
           <h2 style="margin-top:0">Cobros online</h2>
           <div id="cobrosOnlineGimnasio" class="muted">Cargando...</div>
         </div>
@@ -3323,6 +3334,7 @@ async function cargarGimnasioActual(){
   GIMNASIO_ACTUAL = g || null;
   renderMarcaGimnasio();
   renderCobrosOnlineGimnasio();
+  cargarPlanesPrepago();
 }
 
 // ---------- Tema por gimnasio: cada gym puede elegir su color principal y
@@ -3443,6 +3455,62 @@ async function guardarGimnasio(){
   finally{ btn.disabled = false; }
 }
 
+// ---------- Planes de pago adelantado (pedido de Martin, 28/9): opciones para
+// cobrarle a un alumno varios meses juntos con su propio % de descuento, sin
+// tocar el descuento por efectivo de 1 mes que ya existía. Se usan desde el
+// selector "Meses a pagar" del botón 💰 Cobrar, en Cobranzas. ----------
+let PLANES_PREPAGO_CACHE = [];
+
+async function cargarPlanesPrepago(){
+  const gimId = GIMNASIO_ACTUAL?.id;
+  const cont = document.getElementById('listaPlanesPrepago');
+  if (!gimId) return;
+  try{
+    const planes = await sb(`gimnasios_planes_prepago?gimnasio_id=eq.${gimId}&order=meses.asc`);
+    PLANES_PREPAGO_CACHE = planes || [];
+    if (!cont) return; // se puede llamar sin estar en la pantalla de Mi Gimnasio
+    if (!planes.length){ cont.innerHTML = 'Todavía no configuraste ninguno — por ahora se cobra mes a mes.'; return; }
+    cont.innerHTML = planes.map(p => `
+      <div class="row" style="justify-content:space-between; padding:4px 0;">
+        <div>${p.nombre}${p.activo ? '' : ' <span class="muted">(inactivo)</span>'}</div>
+        <div class="row" style="gap:8px;">
+          <button class="ghost" onclick="togglePlanPrepago('${p.id}', ${!p.activo})">${p.activo ? 'Desactivar' : 'Activar'}</button>
+          <button class="ghost" onclick="borrarPlanPrepago('${p.id}')">Eliminar</button>
+        </div>
+      </div>`).join('');
+  }catch(e){ if (cont) cont.innerHTML = 'Error: ' + e.message; }
+}
+
+async function crearPlanPrepago(){
+  const meses = parseInt(document.getElementById('nuevoPrepagoMeses').value, 10);
+  const descuento = parseFloat(document.getElementById('nuevoPrepagoDescuento').value);
+  if (!meses || meses < 2){ toast('Poné una cantidad de meses de 2 o más (para 1 mes ya está el descuento por efectivo de arriba).', true); return; }
+  if (isNaN(descuento) || descuento < 0 || descuento > 100){ toast('El descuento tiene que ser un % entre 0 y 100.', true); return; }
+  const nombre = `${meses} meses${descuento > 0 ? ` (-${descuento}%)` : ''}`;
+  try{
+    await sb('gimnasios_planes_prepago', { method:'POST', headers:{Prefer:'return=minimal'}, body: JSON.stringify({ gimnasio_id: GIMNASIO_ACTUAL.id, nombre, meses, descuento_pct: descuento }) });
+    document.getElementById('nuevoPrepagoMeses').value = '';
+    document.getElementById('nuevoPrepagoDescuento').value = '';
+    toast('Plan agregado ✓');
+    await cargarPlanesPrepago();
+  }catch(e){ toast('Error agregando el plan: ' + extraerMensajeError(e), true); }
+}
+
+async function togglePlanPrepago(id, activo){
+  try{
+    await sb(`gimnasios_planes_prepago?id=eq.${id}`, { method:'PATCH', headers:{Prefer:'return=minimal'}, body: JSON.stringify({ activo }) });
+    await cargarPlanesPrepago();
+  }catch(e){ toast('Error: ' + extraerMensajeError(e), true); }
+}
+
+async function borrarPlanPrepago(id){
+  if (!confirm('¿Eliminar esta opción de pago adelantado?')) return;
+  try{
+    await sb(`gimnasios_planes_prepago?id=eq.${id}`, { method:'DELETE' });
+    await cargarPlanesPrepago();
+  }catch(e){ toast('Error: ' + extraerMensajeError(e), true); }
+}
+
 // ---------- Mercado Pago (26/9, pedido de Martin) ----------
 // Marketplace/OAuth: cada gimnasio (o profesor independiente) conecta SU PROPIA
 // cuenta de Mercado Pago desde acá. M2F Solutions nunca ve ni guarda su usuario/
@@ -3486,7 +3554,10 @@ function renderCobrosOnlineGimnasio(){
         </div>
         <button onclick="guardarRecargoMercadoPago()" style="align-self:end;">Guardar</button>
       </div>
-      <div class="muted" style="margin-top:6px;">Se le suma al precio del plan cuando el alumno paga con Mercado Pago, para que la comisión la absorba el alumno y no el gimnasio. Fijate el % que te cobra Mercado Pago en tu propia cuenta (varía según el medio de pago) para cargarlo acá.</div>
+      <div class="muted" style="margin-top:6px;">Se le suma al precio del plan cuando el alumno paga con Mercado Pago, para que la comisión la absorba el alumno y no el gimnasio.
+        Fijate el % que te cobra Mercado Pago en tu propia cuenta (varía según el medio de pago) para cargarlo acá —
+        <a href="https://www.mercadopago.com.ar/ayuda/recibir-pagos-costos_220" target="_blank" rel="noopener">ver mis comisiones en Mercado Pago ↗</a>.
+      </div>
     </div>
   `;
 }
@@ -5227,6 +5298,13 @@ async function cargarCobranzas(){
                 <option value="efectivo">Efectivo (con descuento)</option>
               </select>
             </div>
+            <div class="field">
+              <label>Meses a pagar</label>
+              <select id="cobrarMeses${alumno.id}" onchange="previewMontoCobro('${alumno.id}')">
+                <option value="">1 mes</option>
+                ${PLANES_PREPAGO_CACHE.filter(p => p.activo).map(p => `<option value="${p.id}">${p.nombre}</option>`).join('')}
+              </select>
+            </div>
             <div class="field"><label>Monto a pagar</label><input disabled id="cobrarMonto${alumno.id}"></div>
             <button style="align-self:end;" onclick="confirmarCobro('${alumno.id}')">Confirmar pago</button>
           </div>
@@ -5555,19 +5633,30 @@ function previewMontoCobro(alumnoId){
   const plan = COBRANZAS_CACHE[alumnoId];
   if (!plan) return;
   const metodo = document.getElementById(`cobrarMetodo${alumnoId}`).value;
-  const pct = GIMNASIO_ACTUAL?.descuento_efectivo_pct ?? 10;
-  const monto = metodo === 'efectivo' ? plan.precio_transferencia * (1 - pct/100) : plan.precio_transferencia;
-  document.getElementById(`cobrarMonto${alumnoId}`).value = `$${monto.toFixed(2)}` + (metodo==='efectivo' ? ` (-${pct}%)` : '');
+  const formaPagoId = document.getElementById(`cobrarMeses${alumnoId}`).value;
+  const prepago = formaPagoId ? PLANES_PREPAGO_CACHE.find(p => p.id === formaPagoId) : null;
+  let monto, etiqueta;
+  if (prepago){
+    // Un plan de prepago pisa el descuento por efectivo: tiene su propio %.
+    monto = plan.precio_transferencia * prepago.meses * (1 - prepago.descuento_pct/100);
+    etiqueta = ` (${prepago.nombre})`;
+  } else {
+    const pct = GIMNASIO_ACTUAL?.descuento_efectivo_pct ?? 10;
+    monto = metodo === 'efectivo' ? plan.precio_transferencia * (1 - pct/100) : plan.precio_transferencia;
+    etiqueta = metodo === 'efectivo' ? ` (-${pct}%)` : '';
+  }
+  document.getElementById(`cobrarMonto${alumnoId}`).value = `$${monto.toFixed(2)}${etiqueta}`;
 }
 
 async function confirmarCobro(alumnoId){
   const metodo = document.getElementById(`cobrarMetodo${alumnoId}`).value;
+  const formaPagoId = document.getElementById(`cobrarMeses${alumnoId}`).value || null;
   const alumnoNombre = ALUMNOS_CACHE.find(a => a.id === alumnoId)?.nombre || 'Alumno';
   const planNombre = COBRANZAS_CACHE[alumnoId]?.plan_nombre || 'Plan';
   try{
     const resp = await sb('rpc/registrar_pago', {
       method: 'POST',
-      body: JSON.stringify({ p_alumno_id: alumnoId, p_metodo_pago: metodo })
+      body: JSON.stringify({ p_alumno_id: alumnoId, p_metodo_pago: metodo, p_forma_pago_id: formaPagoId })
     });
     const pago = Array.isArray(resp) ? resp[0] : resp;
     toast('Pago registrado ✓');
@@ -8392,14 +8481,17 @@ async function revisarNotificacionesAlumno(alumnoId){
     const bloques = [];
 
     const [plan] = await sb(`v_plan_vigente_alumno?alumno_id=eq.${alumnoId}`);
-    if (plan && (plan.estado_pago === 'vencido' || plan.estado_pago === 'por_vencer')){
-      const esVencido = plan.estado_pago === 'vencido';
-      const texto = esVencido
-        ? `Tu cuota está <strong>vencida</strong> desde el ${formatearFechaCorta(plan.vigencia_hasta)}. Regularizala con tu profesor para poder seguir sacando turnos.`
-        : `Tu cuota vence el <strong>${formatearFechaCorta(plan.vigencia_hasta)}</strong> (en ${plan.dias_para_vencer} día${plan.dias_para_vencer===1?'':'s'}).`;
-      bloques.push(`<div class="warn-banner" style="${esVencido
-        ? 'background:rgba(255,93,93,.12); border-color:rgba(255,93,93,.4); color:#ff8a8a;'
-        : 'background:rgba(255,210,61,.12); border-color:rgba(255,210,61,.4); color:var(--warn);'}">${esVencido?'⚠️':'⏰'} ${texto}</div>`);
+    if (plan && plan.estado_pago === 'vencido'){
+      // Vencida: se avisa SIEMPRE que entra, es urgente.
+      bloques.push(`<div class="warn-banner" style="background:rgba(255,93,93,.12); border-color:rgba(255,93,93,.4); color:#ff8a8a;">⚠️ Tu cuota está <strong>vencida</strong> desde el ${formatearFechaCorta(plan.vigencia_hasta)}. Regularizala con tu profesor para poder seguir sacando turnos.</div>`);
+    } else if (plan && plan.estado_pago === 'por_vencer'){
+      // Todavía no venció: para no ser pesados, este solo se muestra una vez por
+      // día (pedido de Martin, 28/9) — no en cada login mientras dure la ventana.
+      const hoyIso = dateAIso(new Date());
+      if (plan.ultimo_aviso_por_vencer !== hoyIso){
+        bloques.push(`<div class="warn-banner" style="background:rgba(255,210,61,.12); border-color:rgba(255,210,61,.4); color:var(--warn);">⏰ Tu cuota vence el <strong>${formatearFechaCorta(plan.vigencia_hasta)}</strong> (en ${plan.dias_para_vencer} día${plan.dias_para_vencer===1?'':'s'}).</div>`);
+        sb('rpc/marcar_aviso_por_vencer_visto', { method: 'POST', body: JSON.stringify({}) }).catch(()=>{});
+      }
     }
 
     const pendientes = await sb(`notificaciones_alumno?alumno_id=eq.${alumnoId}&leida=eq.false&order=creado_en.asc`);
