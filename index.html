@@ -114,6 +114,11 @@
   .grid-exercise img, .grid-exercise video, .grid-exercise iframe, .grid-exercise .media-wrap{width:56px;height:56px;object-fit:cover;border-radius:8px;background:#000;border:none;}
   .muted{color:var(--muted); font-size:13px;}
   .pill{display:inline-block; background:var(--panel2); border:1px solid var(--border); border-radius:999px; padding:2px 10px; font-size:12px; color:var(--muted);}
+  .chip-toggle{display:inline-block; font-size:12.5px; font-weight:600; padding:6px 13px; border-radius:999px; background:var(--panel2); border:1px solid var(--border); color:var(--muted); cursor:pointer; user-select:none;}
+  .chip-toggle.active{background:var(--accent); border-color:var(--accent); color:#1a0e00;}
+  .tabla-semanas th{font-size:11px; text-transform:uppercase; letter-spacing:.03em; color:var(--muted);}
+  .tabla-semanas td, .tabla-semanas th{border-bottom:1px solid var(--border);}
+  .tabla-semanas input{width:100%;}
   .search-results{
     display:grid; grid-template-columns:repeat(auto-fill, minmax(150px,1fr)); gap:10px;
     max-height:560px; overflow-y:auto; margin-top:10px; padding:10px;
@@ -154,6 +159,7 @@
   .btn-crear-rapido{font-size:12.5px; padding:5px 10px; margin:6px 0; background:transparent; border:1px dashed var(--accent); color:var(--accent); border-radius:8px; cursor:pointer; width:auto;}
   .btn-crear-rapido:hover{background:rgba(255,122,48,.1);}
   .nota-profesor{margin-top:6px; padding:8px 10px; background:rgba(90,160,255,.12); border-left:3px solid #5aa0ff; border-radius:6px; font-size:13px; color:var(--text);}
+  .nota-progresion{margin-top:6px; padding:8px 10px; background:var(--accent-soft, rgba(255,122,48,.12)); border-left:3px solid var(--accent); border-radius:6px; font-size:13px; color:var(--text);}
   .lista-busqueda{
     max-height:220px; overflow-y:auto; border:1px solid var(--border); border-radius:10px;
     background:#10131a;
@@ -223,6 +229,7 @@
     .set-row .set-sug{font-size:9px; line-height:1.15;}
     .bloque-titulo{font-size:10px;}
     .nota-profesor{font-size:11.5px; padding:6px 8px;}
+    .nota-progresion{font-size:11.5px; padding:6px 8px;}
     /* En pantallas angostas, el cluster de acciones se apila en columna: cada botón
        ocupa todo el ancho, así ninguno queda apretado ni con el texto cortado. */
     .ex-acciones{flex-direction:column; align-items:stretch;}
@@ -960,6 +967,27 @@
               <select id="profTipoAlumno"></select>
             </div>
           </div>
+          <div class="row" style="margin-top:14px;">
+            <div class="field">
+              <label>Modo de rutina</label>
+              <select id="profModoDias" onchange="CONS['dia'].setModoDias(this.value)">
+                <option value="fecha_fija">Fecha fija</option>
+                <option value="rotativa">Rotativa (sin días fijos, se repite sola)</option>
+              </select>
+            </div>
+            <div class="field" id="profDiasObjetivoWrap" style="display:none;">
+              <label>Días por semana (objetivo)</label>
+              <select id="profDiasObjetivo" onchange="CONS['dia'].estado.diasPorSemanaObjetivo=this.value||null">
+                <option value="">-- elegir --</option>
+                <option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="libre">Libre</option>
+              </select>
+            </div>
+            <div class="field" id="profDuracionWrap" style="display:none; min-width:130px;">
+              <label>Duración (semanas)</label>
+              <input type="number" min="1" id="profDuracionSemanas" onchange="CONS['dia'].estado.duracionSemanas=this.value?parseInt(this.value):null">
+            </div>
+          </div>
+          <div class="muted" id="profModoDiasHint" style="font-size:12px; margin-top:6px; display:none;">Rotativa: no hace falta cargar fecha en los días. Se van a repetir solos, en el orden en que los agregues, según lo que el alumno ya entrenó — el "días por semana" y la "duración" son solo orientativos, no se fuerzan.</div>
         </div>
 
         <div class="card">
@@ -1039,6 +1067,27 @@
             </div>
           </div>
           <div id="espEquipoInfo" class="muted" style="margin-top:6px;"></div>
+          <div class="row" style="margin-top:14px;">
+            <div class="field">
+              <label>Modo de rutina</label>
+              <select id="espModoDias" onchange="CONS['esp'].setModoDias(this.value)">
+                <option value="fecha_fija">Fecha fija</option>
+                <option value="rotativa">Rotativa (sin días fijos, se repite sola)</option>
+              </select>
+            </div>
+            <div class="field" id="espDiasObjetivoWrap" style="display:none;">
+              <label>Días por semana (objetivo)</label>
+              <select id="espDiasObjetivo" onchange="CONS['esp'].estado.diasPorSemanaObjetivo=this.value||null">
+                <option value="">-- elegir --</option>
+                <option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="libre">Libre</option>
+              </select>
+            </div>
+            <div class="field" id="espDuracionWrap" style="display:none; min-width:130px;">
+              <label>Duración (semanas)</label>
+              <input type="number" min="1" id="espDuracionSemanas" onchange="CONS['esp'].estado.duracionSemanas=this.value?parseInt(this.value):null">
+            </div>
+          </div>
+          <div class="muted" id="espModoDiasHint" style="font-size:12px; margin-top:6px; display:none;">Rotativa: no hace falta cargar fecha en los días. Sirve tanto para el que también usa turno (por cupo/aforo) como para el que entrena a distancia sin reservar nada — el turno es un tema aparte.</div>
         </div>
 
         <div class="card">
@@ -2072,6 +2121,30 @@
     <div class="row" style="gap:8px; margin-top:18px;">
       <button class="btn-cancelar" style="flex:1;" onclick="cerrarModalRpe()">Cancelar</button>
       <button class="btn-confirmar" style="flex:1;" id="btnConfirmarRpe" disabled onclick="confirmarRpeYFinalizar()">Finalizar entrenamiento</button>
+    </div>
+  </div>
+</div>
+
+<!-- (28/9) Ayuda RIR — tabla de equivalencia RPE↔RIR, para que el alumno la consulte
+     desde la pantalla de entrenamiento al cargar el RIR de cada serie. -->
+<div class="modal-overlay" id="modalAyudaRir">
+  <div class="modal-box" style="max-width:480px; text-align:left;">
+    <h3 style="text-align:center;">RIR — ¿cuánto te quedó en el tanque?</h3>
+    <p style="text-align:center;">RIR = repeticiones en reserva: cuántas más podrías haber hecho antes de fallar. Referencia con el RPE (percepción de esfuerzo), por si te ayuda a ubicarte:</p>
+    <div style="max-height:50vh; overflow:auto; border:1px solid var(--border); border-radius:10px;">
+      <table style="width:100%; border-collapse:collapse; font-size:12.5px;">
+        <thead>
+          <tr>
+            <th style="text-align:left; padding:7px 9px; border-bottom:1px solid var(--border); color:var(--muted); font-size:10.5px; text-transform:uppercase; letter-spacing:.03em; position:sticky; top:0; background:var(--panel);">RPE</th>
+            <th style="text-align:left; padding:7px 9px; border-bottom:1px solid var(--border); color:var(--muted); font-size:10.5px; text-transform:uppercase; letter-spacing:.03em; position:sticky; top:0; background:var(--panel);">Significado</th>
+            <th style="text-align:left; padding:7px 9px; border-bottom:1px solid var(--border); color:var(--muted); font-size:10.5px; text-transform:uppercase; letter-spacing:.03em; position:sticky; top:0; background:var(--panel);">RIR</th>
+          </tr>
+        </thead>
+        <tbody id="tablaAyudaRirBody"></tbody>
+      </table>
+    </div>
+    <div class="row" style="margin-top:14px;">
+      <button class="ghost" style="flex:1;" onclick="cerrarModalAyudaRir()">Cerrar</button>
     </div>
   </div>
 </div>
@@ -7897,8 +7970,14 @@ function toggleSeguimientoSesion(contId, i){
 // días (Armador normal y Rutinas especiales/equipo), es opcional.
 const OBJETIVOS_ENTRENAMIENTO = ['Fuerza','Resistencia','Velocidad','Potencia','Técnica','Táctica','Movilidad','Recuperación'];
 
-function crearConstructorDeDias(prefijo, containerId){
-  const estado = { dias: {}, contador: 0 };
+function crearConstructorDeDias(prefijo, containerId, headerPrefix){
+  headerPrefix = headerPrefix || prefijo;
+  // (28/9) Rutinas rotativas: modoDias define si los días de esta rutina van con
+  // fecha fija (como siempre) o rotan solos (A→B→C→A…) sin fecha ni turno de por
+  // medio. diasPorSemanaObjetivo/duracionSemanas son solo informativos — nunca se
+  // validan ni se fuerzan, quedan para orientar al alumno y como recordatorio de
+  // revisión para el profesor.
+  const estado = { dias: {}, contador: 0, modoDias: 'fecha_fija', diasPorSemanaObjetivo: null, duracionSemanas: null };
 
   function agregarDia(){
     estado.contador++;
@@ -7912,8 +7991,47 @@ function crearConstructorDeDias(prefijo, containerId){
     render();
   }
 
+  function setModoDias(valor){
+    estado.modoDias = valor;
+    const esRotativa = valor === 'rotativa';
+    const objetivoWrap = document.getElementById(`${headerPrefix}DiasObjetivoWrap`);
+    const duracionWrap = document.getElementById(`${headerPrefix}DuracionWrap`);
+    const hint = document.getElementById(`${headerPrefix}ModoDiasHint`);
+    if (objetivoWrap) objetivoWrap.style.display = esRotativa ? '' : 'none';
+    if (duracionWrap) duracionWrap.style.display = esRotativa ? '' : 'none';
+    if (hint) hint.style.display = esRotativa ? '' : 'none';
+    render();
+  }
+
+  function setNombreDia(diaId, valor){
+    estado.dias[diaId].nombre_dia = valor;
+  }
+
+  function setModoProgresion(diaId, idx, valor){
+    estado.dias[diaId].ejercicios[idx].modo_progresion = valor;
+    render();
+  }
+
+  function agregarSemana(diaId, idx){
+    const ex = estado.dias[diaId].ejercicios[idx];
+    ex.semanas.push({ semana: ex.semanas.length + 1, series: ex.series || null, repeticiones: ex.repeticiones || '', peso_sugerido: ex.peso_sugerido ?? null });
+    render();
+  }
+
+  function quitarSemana(diaId, idx, semIdx){
+    const semanas = estado.dias[diaId].ejercicios[idx].semanas;
+    semanas.splice(semIdx, 1);
+    semanas.forEach((s,i) => s.semana = i + 1);
+    render();
+  }
+
+  function setSemanaCampo(diaId, idx, semIdx, campo, valor){
+    estado.dias[diaId].ejercicios[idx].semanas[semIdx][campo] = valor;
+  }
+
   function filaHtml(diaId, idx){
     const ex = estado.dias[diaId].ejercicios[idx];
+    const prog = ex.modo_progresion || 'fijo';
     return `
       <div class="grid-exercise">
         ${mediaTagHtml(ex.ejercicio, '')}
@@ -7933,6 +8051,39 @@ function crearConstructorDeDias(prefijo, containerId){
             <div class="field" style="min-width:130px;"><label>Variante</label><input placeholder="Ej: Con banda" value="${ex.variante ?? ''}" onchange="CONS['${prefijo}'].estado.dias['${diaId}'].ejercicios[${idx}].variante=this.value"></div>
             <button class="danger" style="align-self:end;" onclick="CONS['${prefijo}'].quitarEjercicio('${diaId}',${idx})">Quitar</button>
           </div>
+          <div class="row" style="margin-top:10px; align-items:center; gap:6px;">
+            <span class="muted" style="font-size:12px; font-weight:600;">Progresión:</span>
+            <span class="chip-toggle ${prog==='fijo'?'active':''}" onclick="CONS['${prefijo}'].setModoProgresion('${diaId}',${idx},'fijo')">Fijo</span>
+            <span class="chip-toggle ${prog==='autoregulada'?'active':''}" onclick="CONS['${prefijo}'].setModoProgresion('${diaId}',${idx},'autoregulada')">Autoregulada</span>
+            <span class="chip-toggle ${prog==='por_semana'?'active':''}" onclick="CONS['${prefijo}'].setModoProgresion('${diaId}',${idx},'por_semana')">Por semana</span>
+          </div>
+          ${prog==='autoregulada' ? `
+            <div class="row" style="margin-top:8px;">
+              <div class="field" style="min-width:120px;"><label>RIR objetivo</label><input type="number" min="0" max="5" value="${ex.progresion_rir_objetivo ?? ''}" onchange="CONS['${prefijo}'].estado.dias['${diaId}'].ejercicios[${idx}].progresion_rir_objetivo=this.value?parseInt(this.value):null"></div>
+              <div class="field" style="min-width:140px;"><label>Incremento (kg)</label><input type="number" step="0.5" min="0" value="${ex.progresion_incremento_kg ?? ''}" onchange="CONS['${prefijo}'].estado.dias['${diaId}'].ejercicios[${idx}].progresion_incremento_kg=this.value?parseFloat(this.value):null"></div>
+              <div class="muted" style="font-size:12px; align-self:end; padding-bottom:9px; max-width:260px;">Si completa todas las series con ese RIR o menos, se le suma el incremento la próxima vez que le toque este día.</div>
+            </div>
+          ` : ''}
+          ${prog==='por_semana' ? `
+            <div style="margin-top:8px;">
+              <table class="tabla-semanas" style="width:100%; border-collapse:collapse;">
+                <thead><tr><th style="text-align:left; padding:4px 6px;">Semana</th><th style="text-align:left; padding:4px 6px;">Series</th><th style="text-align:left; padding:4px 6px;">Reps</th><th style="text-align:left; padding:4px 6px;">Peso (kg)</th><th></th></tr></thead>
+                <tbody>
+                  ${(ex.semanas||[]).map((s,si) => `
+                    <tr>
+                      <td style="padding:4px 6px;">${s.semana}</td>
+                      <td style="padding:4px 6px;"><input type="number" min="1" value="${s.series ?? ''}" onchange="CONS['${prefijo}'].setSemanaCampo('${diaId}',${idx},${si},'series',this.value?parseInt(this.value):null)"></td>
+                      <td style="padding:4px 6px;"><input value="${s.repeticiones ?? ''}" onchange="CONS['${prefijo}'].setSemanaCampo('${diaId}',${idx},${si},'repeticiones',this.value)"></td>
+                      <td style="padding:4px 6px;"><input type="number" step="0.5" value="${s.peso_sugerido ?? ''}" onchange="CONS['${prefijo}'].setSemanaCampo('${diaId}',${idx},${si},'peso_sugerido',this.value?parseFloat(this.value):null)"></td>
+                      <td style="padding:4px 6px;"><button type="button" class="danger" style="padding:2px 9px;" onclick="CONS['${prefijo}'].quitarSemana('${diaId}',${idx},${si})">✕</button></td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+              <button type="button" class="secondary" style="margin-top:6px;" onclick="CONS['${prefijo}'].agregarSemana('${diaId}',${idx})">+ Agregar semana</button>
+              ${!(ex.semanas||[]).length ? '<div class="muted" style="font-size:12px; margin-top:4px;">Todavía sin semanas — hasta que agregues la primera se usa Series/Reps/Peso de arriba.</div>' : ''}
+            </div>
+          ` : ''}
         </div>
       </div>
     `;
@@ -7955,7 +8106,8 @@ function crearConstructorDeDias(prefijo, containerId){
       cont.innerHTML = '<div class="empty">Todavía no agregaste ningún día. Tocá "+ Agregar día".</div>';
       return;
     }
-    cont.innerHTML = ids.map(diaId => {
+    const esRotativa = estado.modoDias === 'rotativa';
+    cont.innerHTML = ids.map((diaId, posicion) => {
       const dia = estado.dias[diaId];
       const bloquesOrden = [];
       const indicesPorBloque = {};
@@ -7968,15 +8120,21 @@ function crearConstructorDeDias(prefijo, containerId){
         <div class="bloque-titulo">${bloque}</div>
         ${indicesPorBloque[bloque].map(idx => filaHtml(diaId, idx)).join('')}
       `).join('');
+      const campoDiaHtml = esRotativa
+        ? `<div class="field" style="min-width:220px;">
+             <label>Nombre del día <span class="pill">Posición ${posicion+1} en la rotación</span></label>
+             <input type="text" value="${dia.nombre_dia}" placeholder="Día ${posicion+1}" onchange="CONS['${prefijo}'].setNombreDia('${diaId}',this.value)">
+           </div>`
+        : `<div class="field" style="min-width:150px;">
+             <label>📅 Fecha (tocá para elegir del calendario)</label>
+             <input type="date" value="${dia.fecha}" onchange="CONS['${prefijo}'].setFecha('${diaId}',this.value)">
+           </div>`;
 
       return `
         <div class="day-block">
           <div class="row" style="justify-content:space-between; align-items:flex-end;">
             <div class="row">
-              <div class="field" style="min-width:150px;">
-                <label>📅 Fecha (tocá para elegir del calendario)</label>
-                <input type="date" value="${dia.fecha}" onchange="CONS['${prefijo}'].setFecha('${diaId}',this.value)">
-              </div>
+              ${campoDiaHtml}
             </div>
             <button class="danger" onclick="if(confirm('¿Eliminar este día de la rutina?')) CONS['${prefijo}'].eliminarDia('${diaId}')">🗑️ Eliminar día</button>
           </div>
@@ -8035,23 +8193,38 @@ function crearConstructorDeDias(prefijo, containerId){
   function agregarEjercicio(diaId, ejercicioJson){
     const ejercicio = typeof ejercicioJson === 'string' ? JSON.parse(ejercicioJson) : ejercicioJson;
     const bloque = (estado.dias[diaId].bloqueActual || '').trim() || 'General';
-    estado.dias[diaId].ejercicios.push({ ejercicio, bloque, series:3, repeticiones:'10-12', peso_sugerido:null, tiempo_trabajo_seg:null, descanso_seg:60, rir:null, notas:'', unilateral:false, peso_corporal:false, variante:'' });
+    estado.dias[diaId].ejercicios.push({ ejercicio, bloque, series:3, repeticiones:'10-12', peso_sugerido:null, tiempo_trabajo_seg:null, descanso_seg:60, rir:null, notas:'', unilateral:false, peso_corporal:false, variante:'', modo_progresion:'fijo', progresion_incremento_kg:null, progresion_rir_objetivo:null, semanas:[] });
     document.getElementById(`resultados-${diaId}`).style.display='none';
     render();
   }
 
   function limpiar(){
     Object.keys(estado.dias).forEach(k => delete estado.dias[k]);
+    estado.modoDias = 'fecha_fija';
+    estado.diasPorSemanaObjetivo = null;
+    estado.duracionSemanas = null;
+    const modoSel = document.getElementById(`${headerPrefix}ModoDias`);
+    if (modoSel) modoSel.value = 'fecha_fija';
+    const objetivoSel = document.getElementById(`${headerPrefix}DiasObjetivo`);
+    if (objetivoSel) objetivoSel.value = '';
+    const duracionInput = document.getElementById(`${headerPrefix}DuracionSemanas`);
+    if (duracionInput) duracionInput.value = '';
+    const objetivoWrap = document.getElementById(`${headerPrefix}DiasObjetivoWrap`);
+    const duracionWrap = document.getElementById(`${headerPrefix}DuracionWrap`);
+    const hint = document.getElementById(`${headerPrefix}ModoDiasHint`);
+    if (objetivoWrap) objetivoWrap.style.display = 'none';
+    if (duracionWrap) duracionWrap.style.display = 'none';
+    if (hint) hint.style.display = 'none';
     render();
   }
 
   render();
-  return { estado, agregarDia, eliminarDia, setFecha, setBloque, quitarEjercicio, render, buscar, agregarEjercicio, limpiar };
+  return { estado, agregarDia, eliminarDia, setFecha, setBloque, quitarEjercicio, render, buscar, agregarEjercicio, limpiar, setModoDias, setNombreDia, setModoProgresion, agregarSemana, quitarSemana, setSemanaCampo };
 }
 
 const CONS = {}; // 'dia' -> constructor del Armador estándar, 'esp' -> constructor de Especiales
-CONS['dia'] = crearConstructorDeDias('dia', 'diasContainer');
-CONS['esp'] = crearConstructorDeDias('esp', 'diasContainerEsp');
+CONS['dia'] = crearConstructorDeDias('dia', 'diasContainer', 'prof');
+CONS['esp'] = crearConstructorDeDias('esp', 'diasContainerEsp', 'esp');
 function agregarDia(){ CONS['dia'].agregarDia(); }
 function agregarDiaEsp(){ CONS['esp'].agregarDia(); }
 
@@ -8773,9 +8946,13 @@ async function descargarReportePdf(){
 async function guardarRutinaGenerica({ constructor, nombre, profesorId, tipoAlumnoId, alumnosDestino, btnId, onOk, msgOk }){
   const idsDias = Object.keys(constructor.estado.dias);
 
+  const modoDias = constructor.estado.modoDias === 'rotativa' ? 'rotativa' : 'fecha_fija';
+
   if (!nombre){ toast('Ponele un nombre a la rutina.', true); return; }
   if (!idsDias.length || idsDias.every(d => !constructor.estado.dias[d].ejercicios.length)){ toast('Agregá al menos un ejercicio.', true); return; }
-  if (idsDias.some(d => !constructor.estado.dias[d].fecha)){ toast('Todos los días necesitan una fecha.', true); return; }
+  // (28/9) Rotinas rotativas no llevan fecha por día — se recorren solas. La
+  // fecha solo es obligatoria en modo fecha_fija, como siempre.
+  if (modoDias === 'fecha_fija' && idsDias.some(d => !constructor.estado.dias[d].fecha)){ toast('Todos los días necesitan una fecha.', true); return; }
   if ((!alumnosDestino || !alumnosDestino.length) && !tipoAlumnoId){ toast('Elegí para qué tipo de entrenamiento es esta rutina.', true); return; }
   // Chequeo defensivo (19/9): si por haber tocado la pestaña "Alumno" en el medio
   // la sesión real ya no es de staff, cortar acá con un mensaje claro en vez de
@@ -8790,20 +8967,36 @@ async function guardarRutinaGenerica({ constructor, nombre, profesorId, tipoAlum
   try{
     const [rutina] = await sb('rutinas', {
       method:'POST', headers:{Prefer:'return=representation'},
-      body: JSON.stringify([{ profesor_id: profesorId || null, nombre, gimnasio_id: PERFIL_ACTUAL?.gimnasio_id || null, tipo_alumno_id: tipoAlumnoId || null }])
+      body: JSON.stringify([{
+        profesor_id: profesorId || null, nombre, gimnasio_id: PERFIL_ACTUAL?.gimnasio_id || null, tipo_alumno_id: tipoAlumnoId || null,
+        modo_dias: modoDias,
+        dias_por_semana_objetivo: modoDias === 'rotativa' ? (constructor.estado.diasPorSemanaObjetivo || null) : null,
+        duracion_semanas: modoDias === 'rotativa' ? (constructor.estado.duracionSemanas || null) : null,
+      }])
     });
 
     const diasPayload = idsDias.map((diaId, i) => {
       const dia = constructor.estado.dias[diaId];
-      return { rutina_id: rutina.id, fecha: dia.fecha, nombre_dia: dia.nombre_dia.trim() || fechaLegible(dia.fecha), orden: i, objetivo: dia.objetivo || null };
+      return {
+        rutina_id: rutina.id,
+        fecha: dia.fecha || null,
+        nombre_dia: dia.nombre_dia.trim() || (dia.fecha ? fechaLegible(dia.fecha) : `Día ${i+1}`),
+        orden: i,
+        objetivo: dia.objetivo || null,
+      };
     });
     const diasCreados = await sb('rutina_dias', {
       method:'POST', headers:{Prefer:'return=representation'}, body: JSON.stringify(diasPayload)
     });
 
     const ejerciciosPayload = [];
+    // (28/9) Guardamos con qué ejercicio-índice y día-índice se corresponde cada
+    // fila para poder, después de crearlas, mandar las semanas de progresión
+    // "por semana" contra el id real que Postgres le asignó a cada fila.
+    const semanasPorPosicion = [];
     idsDias.forEach((diaId, i) => {
       constructor.estado.dias[diaId].ejercicios.forEach((ex, j) => {
+        const posicion = ejerciciosPayload.length;
         ejerciciosPayload.push({
           rutina_dia_id: diasCreados[i].id,
           ejercicio_id: ex.ejercicio.id,
@@ -8819,11 +9012,38 @@ async function guardarRutinaGenerica({ constructor, nombre, profesorId, tipoAlum
           unilateral: !!ex.unilateral,
           peso_corporal: !!ex.peso_corporal,
           variante: ex.variante || null,
+          modo_progresion: ex.modo_progresion || 'fijo',
+          progresion_incremento_kg: ex.modo_progresion === 'autoregulada' ? (ex.progresion_incremento_kg ?? null) : null,
+          progresion_rir_objetivo: ex.modo_progresion === 'autoregulada' ? (ex.progresion_rir_objetivo ?? null) : null,
         });
+        if (ex.modo_progresion === 'por_semana' && ex.semanas && ex.semanas.length){
+          semanasPorPosicion[posicion] = ex.semanas;
+        }
       });
     });
     if (ejerciciosPayload.length){
-      await sb('rutina_ejercicios', { method:'POST', headers:{Prefer:'return=minimal'}, body: JSON.stringify(ejerciciosPayload) });
+      // return=representation (antes 'minimal'): necesitamos los ids reales para
+      // poder colgarles la tabla de semanas de progresión. Postgres devuelve las
+      // filas en el mismo orden del INSERT (mismo supuesto que ya se usa arriba
+      // con diasCreados[i].id).
+      const ejerciciosCreados = await sb('rutina_ejercicios', { method:'POST', headers:{Prefer:'return=representation'}, body: JSON.stringify(ejerciciosPayload) });
+      const semanasPayload = [];
+      semanasPorPosicion.forEach((semanas, posicion) => {
+        const rutinaEjercicioId = ejerciciosCreados[posicion]?.id;
+        if (!rutinaEjercicioId) return;
+        semanas.forEach(s => {
+          semanasPayload.push({
+            rutina_ejercicio_id: rutinaEjercicioId,
+            semana: s.semana,
+            series: s.series ?? null,
+            repeticiones: s.repeticiones || null,
+            peso_sugerido: s.peso_sugerido ?? null,
+          });
+        });
+      });
+      if (semanasPayload.length){
+        await sb('rutina_ejercicio_semanas', { method:'POST', headers:{Prefer:'return=minimal'}, body: JSON.stringify(semanasPayload) });
+      }
     }
 
     if (alumnosDestino && alumnosDestino.length){
@@ -9204,6 +9424,51 @@ async function guardarEdicionDia(diaId){
 // turnos.rutina_dia_id, la completa intentarAsignarRutina() sea rutina de biblioteca o
 // especial) — antes acá solo se veían las especiales (via rutina_asignaciones), y un alumno
 // con rutina de biblioteca general veía esto vacío aunque sí tuviera rutina para sus turnos.
+// (28/9) Rutinas rotativas, asignadas al alumno (directo o por tipo) — nunca pasan
+// por turno, así que sin esto no aparecían en ningún lado para un alumno que
+// entrena a distancia. Devuelve, por cada una, el día que le toca AHORA según el
+// cursor de rotación (resolverDiaRutinaRotativa).
+async function listarRutinasRotativasDeAlumno(alumnoId){
+  const resultado = [];
+  try{
+    const idsYaListados = new Set();
+    const asignaciones = await sb(`rutina_asignaciones?select=rutina_id&alumno_id=eq.${alumnoId}`);
+    const rutinaIdsAlumno = asignaciones.map(a => a.rutina_id);
+    if (rutinaIdsAlumno.length){
+      const rutinas = await sb(`rutinas?select=id,nombre&id=in.(${rutinaIdsAlumno.join(',')})&modo_dias=eq.rotativa`);
+      for (const r of rutinas){
+        const diaCursor = await resolverDiaRutinaRotativa(r.id, alumnoId);
+        if (!diaCursor) continue;
+        const totalDias = (await sb(`rutina_dias?select=id&rutina_id=eq.${r.id}`)).length;
+        resultado.push({ rutina: r, diaCursor, totalDias, origen: 'especial' });
+        idsYaListados.add(r.id);
+      }
+    }
+    const [alumnoFresco] = await sb(`alumnos?select=tipo_alumno_id,gimnasio_id&id=eq.${alumnoId}`);
+    const gimnasioIdAlumno = alumnoFresco?.gimnasio_id;
+    if (gimnasioIdAlumno){
+      const tipoAlumnoId = alumnoFresco?.tipo_alumno_id;
+      const todasAsignaciones = await sb(`v_rutinas_asignadas_gimnasio?select=rutina_id&gimnasio_id=eq.${gimnasioIdAlumno}`);
+      const idsConAsignacion = new Set(todasAsignaciones.map(a => a.rutina_id));
+      const filtrosTipo = tipoAlumnoId
+        ? [`tipo_alumno_id=eq.${tipoAlumnoId}`, `tipo_alumno_id=is.null`]
+        : [`tipo_alumno_id=is.null`];
+      for (const filtroTipo of filtrosTipo){
+        const candidatas = await sb(`rutinas?select=id,nombre&gimnasio_id=eq.${gimnasioIdAlumno}&modo_dias=eq.rotativa&${filtroTipo}`);
+        for (const r of candidatas){
+          if (idsConAsignacion.has(r.id) || idsYaListados.has(r.id)) continue;
+          const diaCursor = await resolverDiaRutinaRotativa(r.id, alumnoId);
+          if (!diaCursor) continue;
+          const totalDias = (await sb(`rutina_dias?select=id&rutina_id=eq.${r.id}`)).length;
+          resultado.push({ rutina: r, diaCursor, totalDias, origen: 'biblioteca' });
+          idsYaListados.add(r.id);
+        }
+      }
+    }
+  }catch(e){ console.error('No se pudieron listar las rutinas rotativas del alumno:', e); }
+  return resultado;
+}
+
 async function cargarRutinasDeAlumno(selectId, contenedorId){
   const alumnoId = document.getElementById(selectId).value;
   const cont = document.getElementById(contenedorId);
@@ -9212,11 +9477,26 @@ async function cargarRutinasDeAlumno(selectId, contenedorId){
   cont.innerHTML = 'Cargando...';
   try{
     const hoy = new Date().toISOString().slice(0,10);
-    const rows = await sb(`turnos?select=id,fecha,hora,rutina_dia_id,rutina_dias(id,nombre_dia,rutinas(nombre))&alumno_id=eq.${alumnoId}&estado=neq.cancelado&rutina_dia_id=not.is.null&order=fecha.desc,hora.desc&limit=30`);
-    // Sin ninguna rutina enganchada a ningún turno: no tiene sentido mostrar la sección, la ocultamos del menú.
-    if (menuItem) menuItem.style.display = rows.length ? '' : 'none';
-    if (!rows.length){ cont.innerHTML = '<div class="empty">Todavía no tenés ninguna rutina asignada — se engancha sola apenas reservás un turno.</div>'; return; }
-    cont.innerHTML = rows.map(t => {
+    const [rows, rotativas] = await Promise.all([
+      sb(`turnos?select=id,fecha,hora,rutina_dia_id,rutina_dias(id,nombre_dia,rutinas(nombre))&alumno_id=eq.${alumnoId}&estado=neq.cancelado&rutina_dia_id=not.is.null&order=fecha.desc,hora.desc&limit=30`),
+      listarRutinasRotativasDeAlumno(alumnoId),
+    ]);
+    // Sin ninguna rutina enganchada (ni por turno ni rotativa): ocultamos la sección del menú.
+    if (menuItem) menuItem.style.display = (rows.length || rotativas.length) ? '' : 'none';
+    if (!rows.length && !rotativas.length){ cont.innerHTML = '<div class="empty">Todavía no tenés ninguna rutina asignada.</div>'; return; }
+
+    // Rotativas primero: no dependen de turno, son la rutina "de fondo" del alumno.
+    const htmlRotativas = rotativas.map(x => `
+      <div class="row" style="justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--border);">
+        <div>
+          <div style="font-weight:600;">${x.rutina.nombre} <span class="pill">Rotativa</span></div>
+          <div class="muted">Te toca: ${x.diaCursor.nombre_dia} (día ${(x.diaCursor.orden ?? 0) + 1} de ${x.totalDias})</div>
+        </div>
+        <button class="secondary" onclick="comenzarEntrenamiento('${x.diaCursor.id}','${alumnoId}','${(x.diaCursor.nombre_dia||'').replace(/'/g,"&apos;")}')">Ver / Empezar</button>
+      </div>
+    `).join('');
+
+    const htmlTurnos = rows.map(t => {
       // (v54, 24/9) Antes acá se ofrecía "Ver / Empezar" incluso para turnos futuros (marcados
       // "Próximo") — eso era justo lo que dejaba arrancar hoy la rutina de un día que todavía
       // no llegó. Ahora un turno futuro no tiene botón de empezar, solo la fecha en la que va
@@ -9235,6 +9515,8 @@ async function cargarRutinasDeAlumno(selectId, contenedorId){
         </div>
       `;
     }).join('');
+
+    cont.innerHTML = htmlRotativas + htmlTurnos;
   }catch(e){ cont.innerHTML = 'Error: ' + e.message; }
 }
 
@@ -9681,10 +9963,24 @@ async function irEntrenamientoHoy(){
       comenzarEntrenamiento(t.rutina_dia_id, alumnoId, t.rutina_dias?.nombre_dia || 'Hoy');
       return;
     }
+    // (28/9) Sin turno hoy (o con turno pero todavía sin rutina enganchada): antes
+    // de rendirse, probamos directo una rutina asignada sin pasar por turno —
+    // cubre rotativa (nunca usa turno) y fecha fija entrenada a distancia.
+    const diaSinTurno = await resolverDiaSinTurno(alumnoId, hoy);
+    if (diaSinTurno){
+      const yaHecho = await sb(`ejecuciones?select=id&alumno_id=eq.${alumnoId}&rutina_dia_id=eq.${diaSinTurno.id}&estado=eq.finalizada&limit=1`);
+      if (yaHecho.length){
+        toast('Ya completaste el entrenamiento de hoy ✓');
+        cambiarSubvistaAlu('turnos');
+        return;
+      }
+      comenzarEntrenamiento(diaSinTurno.id, alumnoId, diaSinTurno.nombre_dia || 'Hoy');
+      return;
+    }
     if (t && !t.rutina_dia_id){
       toast('Tenés turno hoy pero todavía no hay una rutina enganchada. Probá "Reintentar" en Mis turnos.', true);
     } else {
-      toast('No tenés ningún turno reservado para hoy.', true);
+      toast('No tenés ningún turno ni rutina planificada para hoy.', true);
     }
     cambiarSubvistaAlu('turnos');
   }catch(e){ toast('Error buscando el entrenamiento de hoy: ' + e.message, true); }
@@ -9757,6 +10053,115 @@ async function intentarAsignarRutina(turnoId, alumnoId, fecha){
     }
     return false;
   }catch(e){ console.error(e); return false; }
+}
+
+// (28/9) Rutinas rotativas — Módulo 2, resolución del lado del alumno.
+//
+// Cursor de rotación: sin fecha, el día que toca se determina por lo que el
+// alumno ya entrenó, no por el calendario.
+//   1) Ejecución en curso (no finalizada) de CUALQUIER día de esta rutina → retomar ese día.
+//   2) Si no, la última ejecución FINALIZADA de esta rutina → el siguiente día en `orden`
+//      (da la vuelta al llegar al final).
+//   3) Si nunca la entrenó → el día de `orden` mínimo.
+async function resolverDiaRutinaRotativa(rutinaId, alumnoId){
+  try{
+    const dias = await sb(`rutina_dias?select=id,nombre_dia,orden&rutina_id=eq.${rutinaId}&order=orden.asc`);
+    if (!dias.length) return null;
+    const idsDias = dias.map(d => d.id);
+    const ejecs = await sb(`ejecuciones?select=id,rutina_dia_id,estado,fecha&alumno_id=eq.${alumnoId}&rutina_dia_id=in.(${idsDias.join(',')})&order=fecha.desc`);
+    const enCurso = ejecs.find(e => e.estado !== 'finalizada');
+    if (enCurso) return dias.find(d => d.id === enCurso.rutina_dia_id) || dias[0];
+    const ultimaFinalizada = ejecs.find(e => e.estado === 'finalizada');
+    if (ultimaFinalizada){
+      const idx = dias.findIndex(d => d.id === ultimaFinalizada.rutina_dia_id);
+      return dias[idx === -1 ? 0 : (idx + 1) % dias.length];
+    }
+    return dias[0];
+  }catch(e){ console.error('No se pudo resolver el día de la rutina rotativa:', e); return null; }
+}
+
+// Camino "sin turno": busca directo una rutina asignada al alumno sin pasar por
+// `turnos` — cubre rotativa (siempre, vía cursor) y fecha fija entrenada a
+// distancia (busca el día con fecha de hoy). Mismo orden de prioridad que
+// intentarAsignarRutina (especial por alumno primero, biblioteca por tipo
+// después), sin exigir fecha para el caso rotativa.
+async function resolverDiaSinTurno(alumnoId, fecha){
+  try{
+    const asignaciones = await sb(`rutina_asignaciones?select=rutina_id&alumno_id=eq.${alumnoId}`);
+    const rutinaIdsAlumno = asignaciones.map(a => a.rutina_id);
+    if (rutinaIdsAlumno.length){
+      const rutinas = await sb(`rutinas?select=id,modo_dias&id=in.(${rutinaIdsAlumno.join(',')})`);
+      for (const r of rutinas.filter(r => r.modo_dias === 'rotativa')){
+        const dia = await resolverDiaRutinaRotativa(r.id, alumnoId);
+        if (dia) return dia;
+      }
+      for (const r of rutinas.filter(r => r.modo_dias !== 'rotativa')){
+        const [dia] = await sb(`rutina_dias?select=id,nombre_dia&rutina_id=eq.${r.id}&fecha=eq.${fecha}`);
+        if (dia) return dia;
+      }
+    }
+
+    const [alumnoFresco] = await sb(`alumnos?select=tipo_alumno_id,gimnasio_id&id=eq.${alumnoId}`);
+    const tipoAlumnoId = alumnoFresco?.tipo_alumno_id;
+    const gimnasioIdAlumno = alumnoFresco?.gimnasio_id;
+    if (!gimnasioIdAlumno) return null;
+    const todasAsignaciones = await sb(`v_rutinas_asignadas_gimnasio?select=rutina_id&gimnasio_id=eq.${gimnasioIdAlumno}`);
+    const idsConAsignacion = new Set(todasAsignaciones.map(a => a.rutina_id));
+    const filtrosTipo = tipoAlumnoId
+      ? [`tipo_alumno_id=eq.${tipoAlumnoId}`, `tipo_alumno_id=is.null`]
+      : [`tipo_alumno_id=is.null`];
+    for (const filtroTipo of filtrosTipo){
+      const candidatas = await sb(`rutinas?select=id,modo_dias&gimnasio_id=eq.${gimnasioIdAlumno}&${filtroTipo}`);
+      const libres = candidatas.filter(r => !idsConAsignacion.has(r.id));
+      if (!libres.length) continue;
+      for (const r of libres.filter(r => r.modo_dias === 'rotativa')){
+        const dia = await resolverDiaRutinaRotativa(r.id, alumnoId);
+        if (dia) return dia;
+      }
+      for (const r of libres.filter(r => r.modo_dias !== 'rotativa')){
+        const [dia] = await sb(`rutina_dias?select=id,nombre_dia&rutina_id=eq.${r.id}&fecha=eq.${fecha}`);
+        if (dia) return dia;
+      }
+    }
+    return null;
+  }catch(e){ console.error('No se pudo resolver una rutina sin turno:', e); return null; }
+}
+
+// "Semana actual" de una rutina (para progresión "por semana"): se calcula por
+// ciclos completados, no por calendario — cuántas veces el alumno ya terminó
+// una vuelta completa a los días de esta rutina, +1. Funciona igual para
+// rotativa (no tiene fechas) y para fecha fija.
+async function contarSemanaActualRutina(rutinaId, alumnoId){
+  try{
+    const dias = await sb(`rutina_dias?select=id&rutina_id=eq.${rutinaId}`);
+    const idsDias = dias.map(d => d.id);
+    if (!idsDias.length) return 1;
+    const finalizadas = await sb(`ejecuciones?select=id&alumno_id=eq.${alumnoId}&rutina_dia_id=in.(${idsDias.join(',')})&estado=eq.finalizada`);
+    return Math.floor(finalizadas.length / idsDias.length) + 1;
+  }catch(e){ console.error('No se pudo calcular la semana actual de la rutina:', e); return 1; }
+}
+
+// Última vez que el alumno finalizó ESTE MISMO día (no la sesión en curso, que
+// puede ser la de hoy) — sirve de base para la progresión autoregulada: subir
+// peso según si la vez pasada completó todas las series en el RIR objetivo.
+async function cargarSeriesUltimaVezDelDia(rutinaDiaId, alumnoId){
+  try{
+    const [prev] = await sb(`ejecuciones?select=id&alumno_id=eq.${alumnoId}&rutina_dia_id=eq.${rutinaDiaId}&estado=eq.finalizada&order=fecha.desc&limit=1`);
+    if (!prev) return {};
+    const eeRows = await sb(`ejecucion_ejercicios?select=id,rutina_ejercicio_id,finalizado&ejecucion_id=eq.${prev.id}`);
+    const finalizadosIds = eeRows.filter(e => e.finalizado).map(e => e.id);
+    if (!finalizadosIds.length) return {};
+    const series = await sb(`series_registradas?select=ejecucion_ejercicio_id,peso_realizado,repeticiones_realizadas,rir_realizado&ejecucion_ejercicio_id=in.(${finalizadosIds.join(',')})`);
+    const rutinaEjercicioPorEe = {};
+    eeRows.forEach(e => { rutinaEjercicioPorEe[e.id] = e.rutina_ejercicio_id; });
+    const resultado = {}; // rutina_ejercicio_id -> series[]
+    series.forEach(s => {
+      const rutEjId = rutinaEjercicioPorEe[s.ejecucion_ejercicio_id];
+      if (!rutEjId) return;
+      (resultado[rutEjId] = resultado[rutEjId] || []).push(s);
+    });
+    return resultado;
+  }catch(e){ console.error('No se pudo cargar la sesión anterior para la progresión autoregulada:', e); return {}; }
 }
 
 async function reintentarAsignacion(turnoId, alumnoId, fecha){
@@ -9870,13 +10275,15 @@ async function comenzarEntrenamiento(rutinaDiaId, alumnoId, nombreDia){
   // la fecha de HOY pero con los ejercicios de la rutina de OTRO día — mezclando datos.
   // Se valida acá, en el único punto de entrada real a "empezar un entrenamiento" (lo llaman
   // las 3 pantallas), así que ninguna pantalla puede saltearlo aunque no oculte bien el botón.
+  let rutinaIdDelDia = null;
   try{
-    const [diaInfo] = await sb(`rutina_dias?id=eq.${rutinaDiaId}&select=fecha`);
+    const [diaInfo] = await sb(`rutina_dias?id=eq.${rutinaDiaId}&select=fecha,rutina_id`);
     const hoy = new Date().toISOString().slice(0,10);
     if (diaInfo && diaInfo.fecha > hoy){
       toast(`Esa rutina es del ${formatearFechaCorta(diaInfo.fecha)}, todavía no llegó ese día — vas a poder empezarla recién ese día.`, true);
       return;
     }
+    rutinaIdDelDia = diaInfo?.rutina_id || null;
   }catch(e){ console.error('No se pudo validar la fecha de la rutina antes de empezar:', e); }
 
   document.getElementById('alumnoHome').style.display = 'none';
@@ -9885,7 +10292,7 @@ async function comenzarEntrenamiento(rutinaDiaId, alumnoId, nombreDia){
   cont.style.display = '';
   cont.innerHTML = '<div class="card">Iniciando entrenamiento...</div>';
   try{
-    const rows = await sb(`rutina_ejercicios?select=id,orden,bloque,series,repeticiones,peso_sugerido,tiempo_trabajo_seg,descanso_seg,rir,notas,unilateral,peso_corporal,variante,ejercicios(id,nombre,grupo_muscular,provider_ref_id,video_provider,video_url_propio)&rutina_dia_id=eq.${rutinaDiaId}&order=orden.asc`);
+    const rows = await sb(`rutina_ejercicios?select=id,orden,bloque,series,repeticiones,peso_sugerido,tiempo_trabajo_seg,descanso_seg,rir,notas,unilateral,peso_corporal,variante,modo_progresion,progresion_incremento_kg,progresion_rir_objetivo,ejercicios(id,nombre,grupo_muscular,provider_ref_id,video_provider,video_url_propio)&rutina_dia_id=eq.${rutinaDiaId}&order=orden.asc`);
 
     // (24/9) Feedback de Martin: si ya había un entrenamiento sin terminar para este
     // mismo día (salió y volvió a entrar), retomarlo en vez de crear uno nuevo — así
@@ -9950,15 +10357,62 @@ async function comenzarEntrenamiento(rutinaDiaId, alumnoId, nombreDia){
     const porRutinaEjercicioId = {};
     eeFilas.forEach(e => { porRutinaEjercicioId[e.rutina_ejercicio_id] = e; });
 
+    // (28/9) Progresión por ejercicio — solo se consulta lo que hace falta: la
+    // "semana actual" de la rutina si algún ejercicio usa "por semana", y la
+    // última sesión finalizada de este mismo día si alguno usa "autoregulada".
+    const usaPorSemana = rows.some(r => r.modo_progresion === 'por_semana');
+    const usaAutoregulada = rows.some(r => r.modo_progresion === 'autoregulada');
+    const [semanaActual, semanasPorEjercicio, seriesUltimaVez] = await Promise.all([
+      (usaPorSemana && rutinaIdDelDia) ? contarSemanaActualRutina(rutinaIdDelDia, alumnoId) : Promise.resolve(1),
+      usaPorSemana
+        ? sb(`rutina_ejercicio_semanas?select=rutina_ejercicio_id,semana,series,repeticiones,peso_sugerido&rutina_ejercicio_id=in.(${rows.filter(r=>r.modo_progresion==='por_semana').map(r=>r.id).join(',')})&order=semana.asc`).catch(()=>[])
+        : Promise.resolve([]),
+      usaAutoregulada ? cargarSeriesUltimaVezDelDia(rutinaDiaId, alumnoId) : Promise.resolve({}),
+    ]);
+    const semanasPorRutinaEjercicio = {};
+    semanasPorEjercicio.forEach(s => { (semanasPorRutinaEjercicio[s.rutina_ejercicio_id] = semanasPorRutinaEjercicio[s.rutina_ejercicio_id] || []).push(s); });
+
     let tonelajeAcumulado = 0;
     const bloques = rows.map(r => {
       const ee = porRutinaEjercicioId[r.id];
       const seriesPrevias = seriesPorEjecucionEjercicio[ee.id] || [];
       let tonelajeEjercicio = 0;
       seriesPrevias.forEach(s => { const t = Number(s.tonelaje || 0); tonelajeAcumulado += t; tonelajeEjercicio += t; });
+
+      // Prescripción "efectiva": la base de la rutina, salvo que la progresión
+      // (autoregulada o por semana) sugiera otra cosa para hoy. El resto de la
+      // pantalla (inputs, defaults) no necesita saber nada de progresión — solo
+      // lee series/repeticiones/peso_sugerido como siempre.
+      let prescripcionEfectiva = r;
+      let notaProgresion = null;
+      if (r.modo_progresion === 'autoregulada'){
+        const anteriores = seriesUltimaVez[r.id] || [];
+        if (anteriores.length){
+          const rirObj = r.progresion_rir_objetivo != null ? r.progresion_rir_objetivo : 2;
+          const inc = r.progresion_incremento_kg != null ? r.progresion_incremento_kg : 2.5;
+          const completo = anteriores.length >= r.series && anteriores.every(s => s.peso_realizado != null && s.repeticiones_realizadas != null && s.rir_realizado != null && s.rir_realizado <= rirObj);
+          const pesoBaseAnterior = Math.max(...anteriores.map(s => Number(s.peso_realizado) || 0));
+          const pesoSugerido = completo ? Math.round((pesoBaseAnterior + inc) * 100) / 100 : pesoBaseAnterior;
+          prescripcionEfectiva = { ...r, peso_sugerido: pesoSugerido };
+          notaProgresion = completo
+            ? `⬆️ Subiste a ${pesoSugerido}kg — la vez pasada completaste todas las series con RIR ${rirObj} o menos.`
+            : `Repetimos ${pesoSugerido}kg — la vez pasada no llegaste a completar todas las series en RIR ${rirObj} o menos.`;
+        }
+      } else if (r.modo_progresion === 'por_semana'){
+        const semanas = semanasPorRutinaEjercicio[r.id] || [];
+        if (semanas.length){
+          const maxSemana = Math.max(...semanas.map(s => s.semana));
+          const semanaUsar = Math.min(semanaActual, maxSemana);
+          const fila = semanas.find(s => s.semana === semanaUsar) || semanas[semanas.length - 1];
+          prescripcionEfectiva = { ...r, series: fila.series ?? r.series, repeticiones: fila.repeticiones ?? r.repeticiones, peso_sugerido: fila.peso_sugerido ?? r.peso_sugerido };
+          notaProgresion = `📅 Semana ${semanaUsar} de tu plan${semanaActual > maxSemana ? ' (repitiendo la última semana cargada)' : ''}: ${prescripcionEfectiva.series} × ${prescripcionEfectiva.repeticiones}${prescripcionEfectiva.peso_sugerido != null ? ` · ${prescripcionEfectiva.peso_sugerido}kg` : ''}.`;
+        }
+      }
+
       return {
         ejecucionEjercicioId: ee.id,
-        prescripcion: r,
+        prescripcion: prescripcionEfectiva,
+        notaProgresion,
         ejercicioActual: ee.sustituido ? (sustituidosMap[ee.ejercicio_efectivo_id] || r.ejercicios) : r.ejercicios,
         finalizado: !!ee.finalizado,
         omitido: !!ee.omitido,
@@ -10142,7 +10596,7 @@ function bloqueHtml(b, idx){
       <div class="muted set-head">#</div>
       <div class="muted set-head">${p.peso_corporal ? 'Extra' : 'Peso'}</div>
       <div class="muted set-head">Reps</div>
-      <div class="muted set-head">RIR</div>
+      <div class="muted set-head">RIR <span onclick="abrirModalAyudaRir()" style="cursor:pointer; display:inline-flex; align-items:center; justify-content:center; width:14px; height:14px; border-radius:50%; background:var(--panel2); border:1px solid var(--border); font-size:10px; font-weight:700; color:var(--muted); vertical-align:middle;">?</span></div>
       <div class="muted set-head">Sug.</div>
     </div>
   `;
@@ -10161,6 +10615,7 @@ function bloqueHtml(b, idx){
           <div class="ex-nombre" style="font-weight:700;">${b.ejercicioActual.nombre} ${p.unilateral ? '<span class="badge-sub">🔄 Unilateral</span>' : ''} ${b.ejercicioActual.id !== p.ejercicios.id ? '<span class="badge-sub">Sustituido</span>' : ''} ${p.variante ? `<span class="badge-sub">${p.variante}</span>` : ''}</div>
           <div class="muted">${b.ejercicioActual.grupo_muscular} · ${detalleSets}</div>
           ${p.notas ? `<div class="nota-profesor">📋 ${p.notas}</div>` : ''}
+          ${b.notaProgresion ? `<div class="nota-progresion">${b.notaProgresion}</div>` : ''}
         </div>
       </div>
       <div id="sustitucion-${idx}"></div>
@@ -10338,6 +10793,36 @@ function abrirModalRpe(ejecucionId){
 function cerrarModalRpe(){
   document.getElementById('modalRpe').classList.remove('show');
   RPE_EJECUCION_ID = null;
+}
+
+// (28/9) Tabla de ayuda RPE↔RIR para que el alumno la consulte al cargar el RIR
+// de cada serie — pedido de Martin, misma tabla que ya usa como referencia.
+const TABLA_RPE_RIR = [
+  { rpe:'10',  sig:'Esfuerzo máximo. No se podía hacer más peso ni repeticiones.', rir:'RIR 0 (Cero en reserva / Fallo)' },
+  { rpe:'9.5', sig:'Esfuerzo casi máximo. No entraba otra repetición, pero quizás un poco más de peso sí.', rir:'RIR 0.5' },
+  { rpe:'9',   sig:'Esfuerzo muy duro. Podías hacer exactamente una repetición más.', rir:'RIR 1 (1 en reserva)' },
+  { rpe:'8.5', sig:'Podías hacer una repetición más con total seguridad, tal vez dos.', rir:'RIR 1.5' },
+  { rpe:'8',   sig:'Esfuerzo duro. Podías hacer exactamente dos repeticiones más.', rir:'RIR 2 (2 en reserva)' },
+  { rpe:'7.5', sig:'Podías hacer dos repeticiones más con seguridad, tal vez tres.', rir:'RIR 2.5' },
+  { rpe:'7',   sig:'Esfuerzo moderado/pesado. Podías hacer tres repeticiones más.', rir:'RIR 3 (3 en reserva)' },
+  { rpe:'6',   sig:'Esfuerzo moderado. La barra se mueve rápido. Podías hacer 4 o más repeticiones.', rir:'RIR 4+' },
+];
+function abrirModalAyudaRir(){
+  const tbody = document.getElementById('tablaAyudaRirBody');
+  if (tbody && !tbody.dataset.armada){
+    tbody.innerHTML = TABLA_RPE_RIR.map(f => `
+      <tr>
+        <td style="padding:7px 9px; border-bottom:1px solid var(--border); font-weight:700; white-space:nowrap; vertical-align:top;">${f.rpe}</td>
+        <td style="padding:7px 9px; border-bottom:1px solid var(--border); color:var(--text); vertical-align:top;">${f.sig}</td>
+        <td style="padding:7px 9px; border-bottom:1px solid var(--border); font-weight:600; white-space:nowrap; vertical-align:top;">${f.rir}</td>
+      </tr>
+    `).join('');
+    tbody.dataset.armada = '1';
+  }
+  document.getElementById('modalAyudaRir').classList.add('show');
+}
+function cerrarModalAyudaRir(){
+  document.getElementById('modalAyudaRir').classList.remove('show');
 }
 function onRpeInput(v){
   document.getElementById('rpeValor').textContent = v;
