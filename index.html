@@ -1882,6 +1882,16 @@
   </div>
 </div>
 
+<div class="modal-overlay" id="modalNotificacionesStaff">
+  <div class="modal-box">
+    <h3>Novedades</h3>
+    <div id="modalNotifStaffContenido" style="display:flex; flex-direction:column; gap:8px;"></div>
+    <div class="row" style="justify-content:flex-end; margin-top:12px;">
+      <button class="btn-confirmar" onclick="cerrarModalNotificacionesStaff()">Entendido</button>
+    </div>
+  </div>
+</div>
+
 <!-- HU10 UX (19/9): tocar un alumno en la Agenda ya no cicla el estado directo
      (nada avisaba que se podía tocar) — ahora abre este popup con opciones
      explícitas: marcar presente/ausente, o ir directo a su rutina. -->
@@ -2489,6 +2499,7 @@ async function entrarComoStaff(){
   sincronizarTabsRol();
   await Promise.all([cargarPersonas(), cargarCatalogoEjercicios(), cargarGimnasioActual(), cargarCategoriasYEquipos()]);
   cambiarSubvista('agenda'); // lo primero que ve el profesor al entrar es la agenda del día, no el armador
+  if (PERFIL_ACTUAL.rol === 'admin') revisarNotificacionesStaff();
 }
 
 async function hacerLogin(){
@@ -5204,6 +5215,7 @@ async function cargarCobranzas(){
           <div class="row" style="gap:8px;">
             <span class="pill" style="${colores[plan.estado_pago]}">${etiqueta(plan)}</span>
             <button onclick="toggleCobrar('${alumno.id}')">💰 Cobrar</button>
+            <button onclick="toggleHistorialPagos('${alumno.id}')">🧾 Historial</button>
           </div>
         </div>
         <div id="cobrarForm${alumno.id}" style="display:none; margin-top:10px;">
@@ -5219,6 +5231,7 @@ async function cargarCobranzas(){
             <button style="align-self:end;" onclick="confirmarCobro('${alumno.id}')">Confirmar pago</button>
           </div>
         </div>
+        <div id="historialPagos${alumno.id}" style="display:none; margin-top:10px;"></div>
       </div>`;
     }).join('');
   }catch(e){ cont.innerHTML = 'Error: ' + e.message; }
@@ -8415,6 +8428,65 @@ async function cerrarModalNotificacionesAlu(){
   }
 }
 
+// ---------- Notificaciones para el admin (pedido de Martin, 28/9): un aviso
+// cuando llega un pago por Mercado Pago. Solo para esos pagos — a los que el
+// propio profesor carga a mano en efectivo/transferencia ya los ve al toque
+// porque los registra él mismo, no hace falta avisarle de nuevo. ----------
+let NOTIF_STAFF_PENDIENTES = [];
+
+async function revisarNotificacionesStaff(){
+  try{
+    const gimId = GIMNASIO_ACTUAL?.id;
+    if (!gimId) return;
+    const pendientes = await sb(`notificaciones_staff?gimnasio_id=eq.${gimId}&leida=eq.false&order=creado_en.asc`);
+    NOTIF_STAFF_PENDIENTES = pendientes || [];
+    if (!NOTIF_STAFF_PENDIENTES.length) return; // nada para avisar, no molestamos al admin
+    document.getElementById('modalNotifStaffContenido').innerHTML = NOTIF_STAFF_PENDIENTES.map(n =>
+      `<div class="warn-banner" style="background:rgba(61,220,132,.12); border-color:rgba(61,220,132,.4); color:var(--accent2);"><strong>${n.titulo}</strong><br>${n.mensaje}</div>`
+    ).join('');
+    document.getElementById('modalNotificacionesStaff').classList.add('show');
+  }catch(e){ /* aviso best-effort: si falla, no corta el ingreso */ }
+}
+
+async function cerrarModalNotificacionesStaff(){
+  document.getElementById('modalNotificacionesStaff').classList.remove('show');
+  if (NOTIF_STAFF_PENDIENTES.length){
+    const ids = NOTIF_STAFF_PENDIENTES.map(n => n.id);
+    NOTIF_STAFF_PENDIENTES = [];
+    try{
+      await sb(`notificaciones_staff?id=in.(${ids.join(',')})`, {
+        method: 'PATCH', headers: { Prefer: 'return=minimal' },
+        body: JSON.stringify({ leida: true })
+      });
+    }catch(e){ /* si falla el marcado, se vuelve a mostrar en el próximo ingreso */ }
+  }
+}
+
+// ---------- Historial de pagos por alumno, en Cobranzas (pedido de Martin,
+// 28/9): la pantalla de Cobranzas solo mostraba el estado ACTUAL de la cuota
+// (al día / vencido), nunca un registro de los pagos ya hechos. ----------
+async function toggleHistorialPagos(alumnoId){
+  const cont = document.getElementById(`historialPagos${alumnoId}`);
+  if (!cont) return;
+  const yaAbierto = cont.style.display !== 'none';
+  if (yaAbierto){ cont.style.display = 'none'; return; }
+  cont.style.display = '';
+  cont.innerHTML = 'Cargando...';
+  try{
+    const pagos = await sb(`pagos?alumno_id=eq.${alumnoId}&order=creado_en.desc&limit=8`);
+    if (!pagos.length){ cont.innerHTML = '<div class="muted" style="padding:6px 0;">Todavía no hay pagos registrados.</div>'; return; }
+    const etiquetaMetodo = { mercado_pago: '💳 Mercado Pago', transferencia: '🏦 Transferencia', efectivo: '💵 Efectivo' };
+    cont.innerHTML = pagos.map(p => `
+      <div style="padding:6px 0; border-bottom:1px solid var(--border); font-size:.9em;">
+        <div class="row" style="justify-content:space-between;">
+          <div>${etiquetaMetodo[p.metodo_pago] || p.metodo_pago}</div>
+          <div style="font-weight:600;">$${Number(p.monto).toFixed(2)}</div>
+        </div>
+        <div class="muted">${formatearFechaCorta((p.creado_en || '').slice(0,10))} · cubre hasta ${formatearFechaCorta(p.vigencia_hasta)}${p.metodo_pago === 'mercado_pago' && p.comision_mp != null ? ` · comisión $${Number(p.comision_mp).toFixed(2)} · neto $${Number(p.monto_neto).toFixed(2)}` : ''}</div>
+      </div>`).join('');
+  }catch(e){ cont.innerHTML = 'Error: ' + e.message; }
+}
+
 // El profesor filter solo muestra profesores del mismo gimnasio que el alumno.
 function poblarFiltroProfesorAlumno(alumnoId){
   const alumno = ALUMNOS_CACHE.find(a => a.id === alumnoId);
@@ -9611,7 +9683,7 @@ if ('serviceWorker' in navigator){
       cambiarVista('profesor');
       sincronizarTabsRol();
       cambiarSubvista('agenda'); // lo primero que ve el profesor al entrar es la agenda del día, no el armador
-      if (PERFIL_ACTUAL.rol === 'admin') manejarRetornoOAuthMercadoPago();
+      if (PERFIL_ACTUAL.rol === 'admin') { manejarRetornoOAuthMercadoPago(); revisarNotificacionesStaff(); }
     } else {
       let tipoGuardado = null;
       try{ tipoGuardado = localStorage.getItem('m2f_tipo'); }catch(e){}
