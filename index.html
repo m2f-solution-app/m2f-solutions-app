@@ -415,12 +415,12 @@
   }
   .tt-btn{
     background:var(--panel2); border:1px solid var(--border); color:var(--text);
-    width:68px; height:68px; border-radius:11px; cursor:pointer;
+    width:76px; min-height:68px; border-radius:11px; cursor:pointer;
     display:flex; flex-direction:column; align-items:center; justify-content:center;
-    gap:3px; flex-shrink:0; padding:6px 2px;
+    gap:3px; flex-shrink:0; padding:6px 3px;
   }
   .tt-btn span.tt-ico{font-size:22px; line-height:1;}
-  .tt-btn span.tt-lbl{font-size:9.5px; font-weight:600; color:var(--muted); line-height:1.1; text-align:center; white-space:nowrap;}
+  .tt-btn span.tt-lbl{font-size:9.5px; font-weight:600; color:var(--muted); line-height:1.15; text-align:center;}
   .tt-btn:hover{border-color:var(--accent);}
   .tt-btn.active{background:var(--accent); color:#1a1000; border-color:var(--accent);}
   .tt-btn.active span.tt-lbl{color:#1a1000;}
@@ -796,11 +796,11 @@
 
   <div class="top-toolbar" id="topToolbarProf">
     <button class="tt-btn" id="ttDashboard" onclick="cambiarSubvista('dashboard')" style="display:none;" title="Dashboard"><span class="tt-ico">📊</span><span class="tt-lbl">Dashboard</span></button>
-    <button class="tt-btn" id="ttArmador" onclick="cambiarSubvista('armador')" title="Armador de Rutina"><span class="tt-ico">🏋️</span><span class="tt-lbl">Armador</span></button>
+    <button class="tt-btn" id="ttArmador" onclick="cambiarSubvista('armador')" title="Armador de Rutina"><span class="tt-ico">🏋️</span><span class="tt-lbl">Armador de rutinas</span></button>
     <button class="tt-btn" id="ttRutinas" onclick="cambiarSubvista('rutinas')" title="Rutinas"><span class="tt-ico">🗂️</span><span class="tt-lbl">Rutinas</span></button>
     <button class="tt-btn active" id="ttAgenda" onclick="cambiarSubvista('agenda')" title="Agenda"><span class="tt-ico">📋</span><span class="tt-lbl">Agenda</span></button>
-    <button class="tt-btn" id="ttEspeciales" onclick="cambiarSubvista('especiales')" title="Rutinas especiales por alumno"><span class="tt-ico">⭐</span><span class="tt-lbl">Especiales</span></button>
-    <button class="tt-btn" id="ttEquipo" onclick="cambiarSubvista('equipo')" title="Equipo"><span class="tt-ico">⚽</span><span class="tt-lbl">Equipo</span></button>
+    <button class="tt-btn" id="ttEspeciales" onclick="cambiarSubvista('especiales')" title="Rutinas especiales por alumno"><span class="tt-ico">⭐</span><span class="tt-lbl">Rutinas especiales</span></button>
+    <button class="tt-btn" id="ttEquipo" onclick="cambiarSubvista('equipo')" title="Seguimiento Equipo"><span class="tt-ico">⚽</span><span class="tt-lbl">Seguimiento Equipo</span></button>
     <button class="tt-btn" id="ttAlumnos" onclick="cambiarSubvista('alumnos')" style="display:none;" title="Alumnos"><span class="tt-ico">👤</span><span class="tt-lbl">Alumnos</span></button>
     <button class="tt-btn" id="ttEvaluaciones" onclick="cambiarSubvista('evaluaciones')" title="Evaluaciones"><span class="tt-ico">📏</span><span class="tt-lbl">Evaluaciones</span></button>
     <button class="tt-btn" id="ttSeguimiento" onclick="cambiarSubvista('seguimiento')" title="Seguimiento de entrenamientos"><span class="tt-ico">📈</span><span class="tt-lbl">Seguimiento</span></button>
