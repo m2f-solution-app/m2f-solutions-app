@@ -809,6 +809,7 @@
     <button class="tt-btn" id="ttHorarios" onclick="cambiarSubvista('horarios')" style="display:none;" title="Horarios"><span class="tt-ico">🕒</span><span class="tt-lbl">Horarios</span></button>
     <button class="tt-btn" id="ttPlanes" onclick="cambiarSubvista('planes')" style="display:none;" title="Planes"><span class="tt-ico">💳</span><span class="tt-lbl">Planes</span></button>
     <button class="tt-btn" id="ttCobranzas" onclick="cambiarSubvista('cobranzas')" style="display:none;" title="Finanzas"><span class="tt-ico">💰</span><span class="tt-lbl">Finanzas</span></button>
+    <button class="tt-btn" id="ttAlertas" onclick="cambiarSubvista('alertas')" style="display:none;" title="Alertas"><span class="tt-ico">🔔</span><span class="tt-lbl">Alertas</span></button>
     <button class="tt-btn" id="ttEjercicios" onclick="cambiarSubvista('ejercicios')" title="Ejercicios"><span class="tt-ico">🆕</span><span class="tt-lbl">Ejercicios</span></button>
     <button class="tt-btn" id="ttGimnasio" onclick="cambiarSubvista('gimnasio')" style="display:none;" title="Mi gimnasio"><span class="tt-ico">🏢</span><span class="tt-lbl">Mi gimnasio</span></button>
   </div>
@@ -836,6 +837,7 @@
     <div class="side-item" id="menuHorarios" onclick="cambiarSubvista('horarios')" title="Horarios"><span class="side-ico">🕒</span><span class="side-label">Horarios</span></div>
     <div class="side-item" id="menuPlanes" onclick="cambiarSubvista('planes')" title="Planes"><span class="side-ico">💳</span><span class="side-label">Planes</span></div>
     <div class="side-item" id="menuCobranzas" onclick="cambiarSubvista('cobranzas')" title="Finanzas"><span class="side-ico">💰</span><span class="side-label">Finanzas</span></div>
+    <div class="side-item" id="menuAlertas" onclick="cambiarSubvista('alertas')" title="Alertas"><span class="side-ico">🔔</span><span class="side-label">Alertas</span></div>
     <div class="side-item" id="menuEjercicios" onclick="cambiarSubvista('ejercicios')" title="Ejercicios"><span class="side-ico">🆕</span><span class="side-label">Ejercicios</span></div>
     <div class="side-item" id="menuGimnasio" onclick="cambiarSubvista('gimnasio')" title="Mi gimnasio"><span class="side-ico">🏢</span><span class="side-label">Mi gimnasio</span></div>
   </div>
@@ -1509,6 +1511,109 @@
             <div id="gastoGraficoTabla" style="display:none; margin-top:10px;"></div>
             <button class="ghost" id="btnToggleTablaGasto" style="display:none; margin-top:10px; font-size:12px;" onclick="toggleTablaGasto()">Ver como tabla</button>
           </div>
+        </div>
+      </div>
+
+      <!-- ---- SUBVISTA: ALERTAS (seguimiento cercano de clientes, solo admin) ---- -->
+      <div id="subvistaAlertas" style="display:none;">
+        <div id="alertasEstado" class="muted" style="display:none;">Cargando...</div>
+        <div id="alertasWrap" style="display:none;">
+
+          <div class="row" style="justify-content:space-between; align-items:flex-start; gap:10px;">
+            <div>
+              <h2 style="margin:0;">🔔 Alertas</h2>
+              <div class="muted" style="margin-top:2px;">Seguimiento cercano de clientes</div>
+            </div>
+            <div class="row" style="background:var(--panel2); border:1px solid var(--border); border-radius:999px; padding:6px 8px 6px 14px; gap:8px; font-size:12.5px; color:var(--muted);">
+              ⚙️ Días sin turno para "inactivo":
+              <input type="number" min="1" max="90" id="alertasUmbralInput" style="width:52px; padding:3px 4px; text-align:center; font-size:12.5px;" onchange="guardarUmbralInactivo()">
+              días
+            </div>
+          </div>
+
+          <div class="row" style="margin:12px 0 4px;">
+            <div class="pill" id="alertasStatContactados">💬 Contactados esta semana: 0</div>
+            <div class="pill" id="alertasStatReactivados">📈 Reactivados este mes: 0</div>
+          </div>
+
+          <div class="card">
+            <div class="row" style="justify-content:space-between; align-items:center;">
+              <h2 style="margin:0;">🆕 Nuevos con poca asistencia</h2>
+              <div class="row" style="gap:6px;">
+                <span class="badge-sub" id="alertasCountOnboarding">0</span>
+                <button class="ghost" style="font-size:12px; padding:3px 8px;" title="Copiar teléfonos de este grupo" onclick="exportarTelefonosGrupo('onboarding')">📤</button>
+              </div>
+            </div>
+            <div class="muted" style="margin:4px 0 6px; font-size:.85em;">Se anotaron hace menos de 30 días y vinieron poco — el momento de mayor riesgo de abandono.</div>
+            <div id="alertasOnboarding" class="muted" style="margin-top:6px;">Cargando...</div>
+          </div>
+
+          <div class="card">
+            <div class="row" style="justify-content:space-between; align-items:center;">
+              <h2 style="margin:0;">🔴 Cuotas vencidas</h2>
+              <div class="row" style="gap:6px;">
+                <span class="badge-sub" id="alertasCountVencidos">0</span>
+                <button class="ghost" style="font-size:12px; padding:3px 8px;" title="Copiar teléfonos de este grupo" onclick="exportarTelefonosGrupo('vencidos')">📤</button>
+              </div>
+            </div>
+            <div id="alertasVencidos" class="muted" style="margin-top:6px;">Cargando...</div>
+          </div>
+
+          <div class="card">
+            <div class="row" style="justify-content:space-between; align-items:center;">
+              <h2 style="margin:0;">🟡 Por vencer (próximos 30 días)</h2>
+              <div class="row" style="gap:6px;">
+                <span class="badge-sub" id="alertasCountPorVencer">0</span>
+                <button class="ghost" style="font-size:12px; padding:3px 8px;" title="Copiar teléfonos de este grupo" onclick="exportarTelefonosGrupo('por_vencer')">📤</button>
+              </div>
+            </div>
+            <div id="alertasPorVencer" class="muted" style="margin-top:6px;">Cargando...</div>
+          </div>
+
+          <div class="card">
+            <div class="row" style="justify-content:space-between; align-items:center;">
+              <h2 style="margin:0;">⚪ Sin plan o sin pagos registrados</h2>
+              <div class="row" style="gap:6px;">
+                <span class="badge-sub" id="alertasCountSinPago">0</span>
+                <button class="ghost" style="font-size:12px; padding:3px 8px;" title="Copiar teléfonos de este grupo" onclick="exportarTelefonosGrupo('sin_pago')">📤</button>
+              </div>
+            </div>
+            <div id="alertasSinPago" class="muted" style="margin-top:6px;">Cargando...</div>
+          </div>
+
+          <div class="card">
+            <div class="row" style="justify-content:space-between; align-items:center;">
+              <h2 style="margin:0;">🟠 Al día pero sin venir hace días</h2>
+              <div class="row" style="gap:6px;">
+                <span class="badge-sub" id="alertasCountInactivos">0</span>
+                <button class="ghost" style="font-size:12px; padding:3px 8px;" title="Copiar teléfonos de este grupo" onclick="exportarTelefonosGrupo('inactivo')">📤</button>
+              </div>
+            </div>
+            <div id="alertasInactivos" class="muted" style="margin-top:6px;">Cargando...</div>
+          </div>
+
+          <div class="card">
+            <div class="row" style="justify-content:space-between; align-items:center;">
+              <h2 style="margin:0;">⚫ Ex-clientes (dados de baja)</h2>
+              <div class="row" style="gap:6px;">
+                <span class="badge-sub" id="alertasCountBajas">0</span>
+                <button class="ghost" style="font-size:12px; padding:3px 8px;" title="Copiar teléfonos de este grupo" onclick="exportarTelefonosGrupo('baja')">📤</button>
+              </div>
+            </div>
+            <div id="alertasBajas" class="muted" style="margin-top:6px;">Cargando...</div>
+          </div>
+
+          <div class="card">
+            <div class="row" style="justify-content:space-between; align-items:center;">
+              <h2 style="margin:0;">🟣 Sin rutina asignada</h2>
+              <div class="row" style="gap:6px;">
+                <span class="badge-sub" id="alertasCountSinRutina">0</span>
+                <button class="ghost" style="font-size:12px; padding:3px 8px;" title="Copiar teléfonos de este grupo" onclick="exportarTelefonosGrupo('sin_rutina')">📤</button>
+              </div>
+            </div>
+            <div id="alertasSinRutina" class="muted" style="margin-top:6px;">Cargando...</div>
+          </div>
+
         </div>
       </div>
 
@@ -3079,6 +3184,7 @@ function cambiarSubvista(v){
   document.getElementById('subvistaHorarios').style.display = v==='horarios' ? '' : 'none';
   document.getElementById('subvistaPlanes').style.display = v==='planes' ? '' : 'none';
   document.getElementById('subvistaCobranzas').style.display = v==='cobranzas' ? '' : 'none';
+  document.getElementById('subvistaAlertas').style.display = v==='alertas' ? '' : 'none';
   document.getElementById('subvistaEjercicios').style.display = v==='ejercicios' ? '' : 'none';
   document.getElementById('subvistaGimnasio').style.display = v==='gimnasio' ? '' : 'none';
   document.getElementById('menuDashboard').classList.toggle('active', v==='dashboard');
@@ -3095,6 +3201,7 @@ function cambiarSubvista(v){
   document.getElementById('menuHorarios').classList.toggle('active', v==='horarios');
   document.getElementById('menuPlanes').classList.toggle('active', v==='planes');
   document.getElementById('menuCobranzas').classList.toggle('active', v==='cobranzas');
+  document.getElementById('menuAlertas').classList.toggle('active', v==='alertas');
   document.getElementById('menuEjercicios').classList.toggle('active', v==='ejercicios');
   document.getElementById('menuGimnasio').classList.toggle('active', v==='gimnasio');
   document.getElementById('ttDashboard').classList.toggle('active', v==='dashboard');
@@ -3111,6 +3218,7 @@ function cambiarSubvista(v){
   document.getElementById('ttHorarios').classList.toggle('active', v==='horarios');
   document.getElementById('ttPlanes').classList.toggle('active', v==='planes');
   document.getElementById('ttCobranzas').classList.toggle('active', v==='cobranzas');
+  document.getElementById('ttAlertas').classList.toggle('active', v==='alertas');
   document.getElementById('ttEjercicios').classList.toggle('active', v==='ejercicios');
   document.getElementById('ttGimnasio').classList.toggle('active', v==='gimnasio');
   document.getElementById('bnavProfRutinas').classList.toggle('active', v==='rutinas');
@@ -3128,6 +3236,7 @@ function cambiarSubvista(v){
   if (v==='horarios'){ horCambiarTab('editar'); cargarHorarioProfesorActual(); }
   if (v==='planes') cargarPlanes();
   if (v==='cobranzas') cargarCobranzas();
+  if (v==='alertas') cargarSeguimientoAlumnos();
   if (v==='ejercicios') cargarListaEjerciciosPersonalizados();
   if (v==='equipo'){ poblarSelectEquipoVista(); cargarVistaEquipo(); }
   if (v==='gimnasio'){
@@ -3331,6 +3440,161 @@ function formatearFechaCorta(fechaISO){
   if (!m) return fechaISO;
   const [, anio, mes, dia] = m;
   return `${dia}/${mes}/${anio.slice(2)}`;
+}
+
+// ---------- Alertas: seguimiento cercano de clientes (solo admin) ----------
+// Trae de una sola RPC los siete grupos de alumnos que el admin quiere vigilar de cerca:
+// nuevos con poca asistencia, cuotas vencidas, por vencer, sin pago registrado, alumnos al
+// día que dejaron de venir, bajas recientes y alumnos sin rutina asignada. Cada fila tiene
+// un botón directo a WhatsApp con un mensaje pre-armado según el motivo del aviso — al
+// tocarlo, además, queda registrado como "contactado" (historial de contacto).
+let SEGUIMIENTO_ALUMNOS_CACHE = null; // último resultado de la RPC, para "exportar teléfonos"
+
+async function cargarSeguimientoAlumnos(){
+  const estado = document.getElementById('alertasEstado');
+  const wrap = document.getElementById('alertasWrap');
+  const gimId = GIMNASIO_ACTUAL?.id;
+  if (!gimId){ estado.textContent = 'No se pudo identificar el gimnasio.'; estado.style.display=''; wrap.style.display='none'; return; }
+  estado.textContent = 'Cargando...'; estado.style.display=''; wrap.style.display='none';
+  try{
+    const d = await sb('rpc/obtener_seguimiento_alumnos', {
+      method: 'POST',
+      body: JSON.stringify({ p_gimnasio_id: gimId })
+    });
+    SEGUIMIENTO_ALUMNOS_CACHE = d;
+    estado.style.display = 'none'; wrap.style.display = '';
+    document.getElementById('alertasUmbralInput').value = d.umbral_dias_inactivo ?? 7;
+    document.getElementById('alertasStatContactados').textContent = `💬 Contactados esta semana: ${d.contactados_semana ?? 0}`;
+    document.getElementById('alertasStatReactivados').textContent = `📈 Reactivados este mes: ${d.reactivados_mes ?? 0}`;
+    renderGrupoAlertas('alertasOnboarding', 'alertasCountOnboarding', d.onboarding, 'onboarding');
+    renderGrupoAlertas('alertasVencidos', 'alertasCountVencidos', d.vencidos, 'vencido');
+    renderGrupoAlertas('alertasPorVencer', 'alertasCountPorVencer', d.por_vencer, 'por_vencer');
+    renderGrupoAlertas('alertasSinPago', 'alertasCountSinPago', d.sin_pago, 'sin_pago');
+    renderGrupoAlertas('alertasInactivos', 'alertasCountInactivos', d.inactivos_al_dia, 'inactivo');
+    renderGrupoAlertas('alertasBajas', 'alertasCountBajas', d.bajas, 'baja');
+    renderGrupoAlertas('alertasSinRutina', 'alertasCountSinRutina', d.sin_rutina, 'sin_rutina');
+  }catch(e){
+    estado.textContent = 'Error al cargar: ' + (e.message || e); estado.style.display=''; wrap.style.display='none';
+  }
+}
+
+// Guarda el umbral de "días sin turno" configurable por gimnasio (pedido de Martín, 28/9) y
+// refresca la pantalla para que el grupo de "inactivos" se recalcule con el nuevo valor.
+async function guardarUmbralInactivo(){
+  const input = document.getElementById('alertasUmbralInput');
+  const dias = parseInt(input.value, 10);
+  if (!dias || dias < 1){ toast('Ingresá un número de días válido', true); if (SEGUIMIENTO_ALUMNOS_CACHE) input.value = SEGUIMIENTO_ALUMNOS_CACHE.umbral_dias_inactivo ?? 7; return; }
+  try{
+    await sb(`gimnasios?id=eq.${GIMNASIO_ACTUAL.id}`, { method:'PATCH', headers:{Prefer:'return=minimal'}, body: JSON.stringify({ umbral_dias_inactivo: dias }) });
+    if (GIMNASIO_ACTUAL) GIMNASIO_ACTUAL.umbral_dias_inactivo = dias;
+    toast('Umbral actualizado');
+    cargarSeguimientoAlumnos();
+  }catch(e){ toast('No se pudo guardar: ' + e.message, true); }
+}
+
+// Copia al portapapeles "Nombre: teléfono" de todos los alumnos de un grupo, para pegar en
+// una lista de difusión de WhatsApp en vez de escribirle a cada uno por separado.
+function exportarTelefonosGrupo(tipo){
+  if (!SEGUIMIENTO_ALUMNOS_CACHE) return;
+  const claves = { onboarding:'onboarding', vencidos:'vencidos', por_vencer:'por_vencer', sin_pago:'sin_pago', inactivo:'inactivos_al_dia', baja:'bajas', sin_rutina:'sin_rutina' };
+  const lista = SEGUIMIENTO_ALUMNOS_CACHE[claves[tipo]] || [];
+  const conTelefono = lista.filter(a => a.telefono);
+  if (!conTelefono.length){ toast('Nadie en este grupo tiene teléfono cargado', true); return; }
+  const texto = conTelefono.map(a => `${a.nombre}: ${a.telefono}`).join('\n');
+  const hacerCopia = () => {
+    if (navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(texto).then(
+        () => toast(`${conTelefono.length} teléfono(s) copiados`),
+        () => alert(texto)
+      );
+    } else { alert(texto); }
+  };
+  hacerCopia();
+}
+
+function renderGrupoAlertas(contId, countId, lista, tipo){
+  const cont = document.getElementById(contId);
+  const countEl = document.getElementById(countId);
+  if (countEl) countEl.textContent = (lista || []).length;
+  if (!cont) return;
+  if (!lista || !lista.length){
+    cont.innerHTML = `<div class="muted">Sin novedades por acá. 👍</div>`;
+    return;
+  }
+  cont.innerHTML = lista.map(a => filaAlertaAlumno(a, tipo)).join('');
+}
+
+function whatsappUrlAlumno(telefono, mensaje){
+  if (!telefono) return null;
+  const digits = String(telefono).replace(/\D/g, '');
+  if (!digits) return null;
+  return `https://wa.me/${digits}?text=${encodeURIComponent(mensaje)}`;
+}
+
+// Marca a un alumno como "contactado" (queda en seguimiento_contactos) y actualiza en el
+// momento la etiqueta verde de su fila, sin tener que recargar toda la pantalla.
+async function marcarContactoAlumno(alumnoId, tipo){
+  try{
+    await sb('rpc/marcar_contacto_alumno', { method:'POST', body: JSON.stringify({ p_alumno_id: alumnoId, p_grupo: tipo }) });
+    const tag = document.getElementById(`contactoTag-${alumnoId}-${tipo}`);
+    if (tag) tag.outerHTML = `<span class="badge-verde" id="contactoTag-${alumnoId}-${tipo}" style="background:rgba(61,220,132,.15); color:var(--accent2); border:1px solid rgba(61,220,132,.35); padding:2px 9px; border-radius:999px; font-size:11px; font-weight:700;">✓ Contactado hoy</span>`;
+  }catch(e){ /* no bloquea el envío de WhatsApp si esto falla */ }
+}
+
+function etiquetaUltimoContacto(fechaISO){
+  if (!fechaISO) return '';
+  const dias = Math.max(0, Math.round((Date.now() - new Date(fechaISO).getTime()) / 86400000));
+  const texto = dias === 0 ? 'hoy' : `hace ${dias} día${dias===1?'':'s'}`;
+  return `<span class="badge-verde" style="background:rgba(61,220,132,.15); color:var(--accent2); border:1px solid rgba(61,220,132,.35); padding:2px 9px; border-radius:999px; font-size:11px; font-weight:700;">✓ Contactado ${texto}</span>`;
+}
+
+function filaAlertaAlumno(a, tipo){
+  const gimNombre = GIMNASIO_ACTUAL?.nombre || 'el gimnasio';
+  let detalle = '', mensaje = '';
+  if (tipo === 'onboarding'){
+    const dias = a.dias_desde_alta != null ? Math.round(Number(a.dias_desde_alta)) : null;
+    detalle = `Alta hace ${dias ?? '?'} día${dias===1?'':'s'} · ${a.turnos_realizados ?? 0} turno${(a.turnos_realizados ?? 0)===1?'':'s'} en total`;
+    mensaje = `Hola ${a.nombre}! Te escribo de ${gimNombre} para ver cómo te fue arrancando y si necesitás algo para seguir entrenando con nosotros.`;
+  } else if (tipo === 'vencido'){
+    detalle = `${a.plan_nombre || 'Sin plan'} · venció el ${formatearFechaCorta(a.vigencia_hasta)}`;
+    mensaje = `Hola ${a.nombre}! Te escribo de ${gimNombre} porque tu cuota venció el ${formatearFechaCorta(a.vigencia_hasta)}. ¿Coordinamos el pago para que sigas entrenando sin problemas?`;
+  } else if (tipo === 'por_vencer'){
+    const dias = a.dias != null ? Math.round(Number(a.dias)) : null;
+    detalle = `${a.plan_nombre || 'Plan'} · vence el ${formatearFechaCorta(a.vigencia_hasta)}${dias!=null ? ` (en ${dias} día${dias===1?'':'s'})` : ''}`;
+    mensaje = `Hola ${a.nombre}! Te escribo de ${gimNombre} para avisarte que tu cuota vence el ${formatearFechaCorta(a.vigencia_hasta)}. ¡Cualquier cosa avisame!`;
+  } else if (tipo === 'sin_pago'){
+    detalle = 'Sin plan o pagos registrados';
+    mensaje = `Hola ${a.nombre}! Te escribo de ${gimNombre} para coordinar tu plan y el pago de la cuota.`;
+  } else if (tipo === 'inactivo'){
+    const dias = a.dias_sin_turno != null ? Math.round(Number(a.dias_sin_turno)) : null;
+    detalle = `${a.plan_nombre || 'Plan'} · sin sacar turno hace ${dias ?? '?'} día${dias===1?'':'s'}`;
+    mensaje = `Hola ${a.nombre}! Te extrañamos en ${gimNombre} 💪 ¿Todo bien? Te escribo para ver si querés retomar los entrenamientos.`;
+  } else if (tipo === 'baja'){
+    const dias = a.dias_de_baja != null ? Math.round(Number(a.dias_de_baja)) : null;
+    detalle = `Baja hace ${dias ?? '?'} día${dias===1?'':'s'}`;
+    mensaje = `Hola ${a.nombre}! Te escribo de ${gimNombre}. ¡Te extrañamos! Si en algún momento querés volver a entrenar con nosotros, contanos y te ayudamos a arrancar de nuevo.`;
+  } else if (tipo === 'sin_rutina'){
+    detalle = 'Sin rutina activa asignada';
+    mensaje = `Hola ${a.nombre}! Te escribo de ${gimNombre} para coordinar y armarte tu rutina de entrenamiento.`;
+  }
+  const waUrl = whatsappUrlAlumno(a.telefono, mensaje);
+  const waBtn = waUrl
+    ? `<button class="ghost" style="font-size:12px; padding:3px 8px;" onclick='window.open(${JSON.stringify(waUrl)}, "_blank"); marcarContactoAlumno(${JSON.stringify(a.id)}, ${JSON.stringify(tipo)});' title="Escribir por WhatsApp">💬 WhatsApp</button>`
+    : `<span class="muted" style="font-size:11px;">Sin teléfono</span>`;
+  const contactoTag = a.ultimo_contacto
+    ? etiquetaUltimoContacto(a.ultimo_contacto).replace('<span class="badge-verde"', `<span class="badge-verde" id="contactoTag-${a.id}-${tipo}"`)
+    : `<span id="contactoTag-${a.id}-${tipo}"></span>`;
+  return `
+    <div class="row" style="justify-content:space-between; align-items:center; padding:7px 0; border-bottom:1px solid var(--border); gap:8px; flex-wrap:wrap;">
+      <div>
+        <div style="font-weight:600;">${a.nombre || '(sin nombre)'}</div>
+        <div class="muted" style="font-size:.85em;">${detalle}</div>
+      </div>
+      <div class="row" style="gap:8px; align-items:center;">
+        ${contactoTag}
+        ${waBtn}
+      </div>
+    </div>`;
 }
 
 // ---------- Menú del Alumno (drawer, igual mecánica que el del Profesor) ----------
@@ -3685,7 +3949,7 @@ function renderMarcaGimnasio(){
 // UI; el bloqueo real está en las políticas de RLS (ver migración
 // rbac_admin_vs_profesor) — aunque alguien llame a la API directo sin pasar
 // por estos botones, la base igual lo rechaza si no es admin.
-const MENU_SOLO_ADMIN = ['menuDashboard', 'menuAlumnos', 'menuLogros', 'menuProfesores', 'menuHorarios', 'menuPlanes', 'menuCobranzas', 'menuGimnasio', 'ttDashboard', 'ttAlumnos', 'ttLogros', 'ttProfesores', 'ttHorarios', 'ttPlanes', 'ttCobranzas', 'ttGimnasio'];
+const MENU_SOLO_ADMIN = ['menuDashboard', 'menuAlumnos', 'menuLogros', 'menuProfesores', 'menuHorarios', 'menuPlanes', 'menuCobranzas', 'menuAlertas', 'menuGimnasio', 'ttDashboard', 'ttAlumnos', 'ttLogros', 'ttProfesores', 'ttHorarios', 'ttPlanes', 'ttCobranzas', 'ttAlertas', 'ttGimnasio'];
 const BNAV_SOLO_ADMIN = ['bnavProfAlumnos'];
 
 function aplicarPermisosPorRol(){
