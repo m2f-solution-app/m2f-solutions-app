@@ -2125,6 +2125,10 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <!-- Para exportar la ficha/reporte del alumno como PDF (pedido de Martin, 21/9) -->
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
+<!-- Para dibujar el QR de cobro presencial de Mercado Pago (28/9, pedido de Martin) —
+     Mercado Pago devuelve el "qr_data" como texto, no como imagen: esta librería lo
+     convierte en el dibujo del código QR, acá del lado del cliente. -->
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
 <script>
 const SUPABASE_URL = "https://wlgjhqdvpkofglxznvec.supabase.co";
 const ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndsZ2pocWR2cGtvZmdseHpudmVjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk0MDI5NDQsImV4cCI6MjEwNDk3ODk0NH0.L_6hpnDoeUGbT-00o-wa3zLtPy5jiyjZmjFXTilc9pU";
@@ -5844,6 +5848,7 @@ async function cargarCobranzas(){
           <div class="row" style="gap:8px;">
             <span class="pill" style="${colores[plan.estado_pago]}">${etiqueta(plan)}</span>
             <button onclick="toggleCobrar('${alumno.id}')">💰 Cobrar</button>
+            ${GIMNASIO_ACTUAL?.mp_conectado ? `<button class="ghost" onclick="abrirModalCobrarQR('${alumno.id}')">📲 Cobrar con QR</button>` : ''}
             <button onclick="toggleHistorialPagos('${alumno.id}')">🧾 Historial</button>
           </div>
         </div>
@@ -6222,6 +6227,70 @@ async function confirmarCobro(alumnoId){
     cargarCobranzas();
     cargarListaAlumnos();
   }catch(e){ toast('Error registrando el pago: ' + extraerMensajeError(e), true); }
+}
+
+// ---------- Cobro presencial con QR de Mercado Pago (28/9, pedido de Martin) ----------
+// El staff genera un QR con el monto exacto de la cuota del alumno (misma lógica de
+// descuento por efectivo que ya existe — sin recargo, porque acá la comisión de MP es
+// baja y la absorbe el gimnasio, igual que con efectivo). El alumno lo escanea con la
+// app de Mercado Pago y paga ahí mismo; mientras el modal está abierto, se consulta cada
+// pocos segundos si ya llegó el pago (mismo webhook que ya usa Checkout Pro) — apenas
+// aparece, se muestra el éxito y se puede descargar/compartir el recibo, igual que con
+// cualquier otro cobro.
+let QR_COBRO_POLL_TIMER = null;
+let QR_COBRO_ALUMNO_ID = null;
+let QR_COBRO_DESDE = null;
+
+async function abrirModalCobrarQR(alumnoId){
+  QR_COBRO_ALUMNO_ID = alumnoId;
+  QR_COBRO_DESDE = new Date().toISOString();
+  document.getElementById('modalCobrarQR').classList.add('show');
+  document.getElementById('qrCobroEstado').style.display = '';
+  document.getElementById('qrCobroEstado').textContent = 'Generando QR...';
+  document.getElementById('qrCobroContenido').style.display = 'none';
+  clearInterval(QR_COBRO_POLL_TIMER);
+  try{
+    const r = await sbFn('mp-generar-qr', { alumno_id: alumnoId });
+    document.getElementById('qrCobroEstado').style.display = 'none';
+    document.getElementById('qrCobroContenido').style.display = '';
+    document.getElementById('qrCobroAlumno').textContent = `${r.alumno_nombre} · ${r.plan_nombre}`;
+    document.getElementById('qrCobroMonto').textContent = `$${Number(r.monto).toFixed(2)}`;
+    document.getElementById('qrCobroEsperando').style.display = '';
+    if (window.QRCode && window.QRCode.toCanvas){
+      window.QRCode.toCanvas(document.getElementById('qrCobroCanvas'), r.qr_data, { width: 220, margin: 1 }, (err) => {
+        if (err) console.error('Error dibujando el QR', err);
+      });
+    }
+    QR_COBRO_POLL_TIMER = setInterval(() => chequearPagoQR(alumnoId), 4000);
+  }catch(e){
+    document.getElementById('qrCobroEstado').textContent = 'No se pudo generar el QR: ' + (e.message || e);
+  }
+}
+
+async function chequearPagoQR(alumnoId){
+  try{
+    const pagos = await sb(`pagos?alumno_id=eq.${alumnoId}&metodo_pago=eq.mercado_pago&order=creado_en.desc&limit=1`);
+    const ultimo = pagos && pagos[0];
+    if (ultimo && QR_COBRO_DESDE && ultimo.creado_en > QR_COBRO_DESDE){
+      clearInterval(QR_COBRO_POLL_TIMER);
+      const alumnoNombre = ALUMNOS_CACHE.find(a => a.id === alumnoId)?.nombre || 'Alumno';
+      const planNombre = COBRANZAS_CACHE[alumnoId]?.plan_nombre || 'Plan';
+      document.getElementById('qrCobroContenido').innerHTML = `
+        <div style="background:rgba(61,220,132,.1); border:1px solid rgba(61,220,132,.35); border-radius:10px; padding:14px;">
+          <div style="font-weight:700; color:var(--accent2); margin-bottom:8px;">✅ ¡Pago recibido! — $${Number(ultimo.monto).toFixed(2)}</div>
+          <button onclick='descargarReciboPago(${JSON.stringify(ultimo)}, ${JSON.stringify(alumnoNombre)}, ${JSON.stringify(planNombre)})'>🧾 Descargar recibo</button>
+        </div>`;
+      toast('¡Pago con QR recibido! ✓');
+      cargarCobranzas();
+      cargarListaAlumnos();
+    }
+  }catch(e){ /* silencioso — se reintenta solo en el próximo poll */ }
+}
+
+function cerrarModalCobrarQR(){
+  document.getElementById('modalCobrarQR').classList.remove('show');
+  clearInterval(QR_COBRO_POLL_TIMER);
+  QR_COBRO_POLL_TIMER = null;
 }
 
 // ---------- Recibo de pago en PDF (pedido de Martin, 22/9) ----------
@@ -10448,6 +10517,28 @@ if ('serviceWorker' in navigator){
     <div class="row" style="justify-content:flex-end; gap:8px; margin-top:14px;">
       <button class="ghost" onclick="cerrarModalActivarSuscripcion()">Cerrar</button>
       <button id="btnConfirmarActivarSuscripcion" onclick="confirmarActivarSuscripcion()">Activar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Cobro presencial con QR de Mercado Pago (28/9, pedido de Martin) -->
+<div class="modal-overlay" id="modalCobrarQR">
+  <div class="modal-box" style="text-align:center;">
+    <h3 style="margin-top:0;">📲 Cobrar con QR</h3>
+    <div id="qrCobroEstado" class="muted">Generando QR...</div>
+    <div id="qrCobroContenido" style="display:none;">
+      <div class="muted" id="qrCobroAlumno" style="margin-bottom:2px;"></div>
+      <div style="font-size:22px; font-weight:800; margin-bottom:10px;" id="qrCobroMonto"></div>
+      <div style="background:#fff; border-radius:12px; padding:12px; display:inline-block;">
+        <canvas id="qrCobroCanvas"></canvas>
+      </div>
+      <div class="muted" style="margin-top:12px; font-size:12.5px;">El alumno escanea este código desde la app de Mercado Pago. Apenas paga, se refleja solo acá — no hace falta tocar nada más.</div>
+      <div class="row" style="justify-content:center; gap:6px; margin-top:10px;" id="qrCobroEsperando">
+        <span class="muted" style="font-size:12.5px;">⏳ Esperando el pago...</span>
+      </div>
+    </div>
+    <div class="row" style="justify-content:center; margin-top:14px;">
+      <button class="ghost" onclick="cerrarModalCobrarQR()">Cerrar</button>
     </div>
   </div>
 </div>
