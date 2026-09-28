@@ -742,7 +742,8 @@
         <div class="field" style="margin-bottom:10px;" id="campoNombreGimnasio"><label>Nombre de tu gimnasio</label><input id="signupGimnasio" placeholder="Ej: PowerZone Fitness" /></div>
         <div class="field" style="margin-bottom:10px;"><label>Email</label><input type="email" id="signupEmail" /></div>
         <div class="field" style="margin-bottom:14px;"><label>Contraseña</label><div class="password-wrap"><input type="password" id="signupPassword" placeholder="Mínimo 6 caracteres" /><button type="button" class="toggle-pass" onclick="togglePasswordVisibility('signupPassword', this)">👁️</button></div></div>
-        <div class="field" style="margin-bottom:14px;"><label>Código de activación</label><input id="signupCodigo" placeholder="Te lo pasa quien te vendió la app" /></div>
+        <div class="field" style="margin-bottom:6px;"><label>Código de activación (opcional)</label><input id="signupCodigo" placeholder="Si no tenés uno, dejalo vacío" /></div>
+        <p class="muted" style="font-size:12px; margin:0 0 14px;">Sin código arrancás con <strong>14 días de prueba gratis</strong>, sin compromiso.</p>
         <button onclick="hacerSignup()" id="btnSignup" style="width:100%;">Crear cuenta</button>
       </div>
 
@@ -765,6 +766,8 @@
 
   <!-- ---- APP DEL PROFESOR: recién visible con sesión activa ---- -->
   <div id="profesorApp" style="display:none;">
+
+  <div id="bannerSuscripcion" style="display:none; margin-bottom:12px;"></div>
 
   <div class="card" style="margin-bottom:12px;">
     <div class="row" style="justify-content:space-between; align-items:center;">
@@ -2054,12 +2057,12 @@ window.addEventListener('appinstalled', () => {
 // ej: Argentina 11-1234-5678 -> "5491112345678"). Con esto el botón "💬 Soporte" del
 // topbar (visible siempre, staff o alumno, logueado o no) ya queda funcionando.
 const SOPORTE_WHATSAPP_NUMERO = '5493417219828';
-function abrirSoporteWhatsapp(){
+function abrirSoporteWhatsapp(mensajePersonalizado){
   if (!SOPORTE_WHATSAPP_NUMERO || SOPORTE_WHATSAPP_NUMERO === 'PONE_TU_NUMERO_ACA'){
     alert('Falta configurar el número de WhatsApp de soporte (SOPORTE_WHATSAPP_NUMERO en el código).');
     return;
   }
-  const msg = encodeURIComponent('Hola! Te escribo por soporte de M2F Solutions.');
+  const msg = encodeURIComponent(mensajePersonalizado || 'Hola! Te escribo por soporte de M2F Solutions.');
   window.open(`https://wa.me/${SOPORTE_WHATSAPP_NUMERO}?text=${msg}`, '_blank');
 }
 
@@ -2103,22 +2106,247 @@ function semaforoActividad(fechaIso){
   if (dias <= 30) return '🟡 Poco uso';
   return '🔴 Inactivo';
 }
+let GIMNASIOS_ADMIN_CACHE = [];
+function etiquetaEstadoSuscripcion(f){
+  if (f.estado_suscripcion === 'activa'){
+    return `🟢 Activa${f.suscripcion_vence_en ? ' · hasta ' + formatearFechaCorta(f.suscripcion_vence_en) : ''}`;
+  }
+  if (f.estado_suscripcion === 'trial'){
+    const dias = Math.max(0, Math.ceil((new Date(f.prueba_vence_en).getTime() - Date.now()) / 86400000));
+    return `🟡 Prueba · ${dias} día${dias===1?'':'s'}`;
+  }
+  return '🔴 Bloqueada';
+}
+function etiquetaMedioPagoSuscripcion(medio){
+  return { transferencia:'Transferencia', efectivo:'Efectivo', mercado_pago:'Mercado Pago', otro:'Otro' }[medio] || 'Sin especificar';
+}
 async function cargarGimnasiosAdmin(){
   const tbody = document.getElementById('gimnasiosAdminTbody');
-  tbody.innerHTML = '<tr><td colspan="5" class="muted" style="padding:10px;">Cargando...</td></tr>';
+  tbody.innerHTML = '<tr><td colspan="6" class="muted" style="padding:10px;">Cargando...</td></tr>';
   try{
     const filas = await sb('rpc/listar_gimnasios_admin', { method:'POST', body: JSON.stringify({}) });
-    if (!filas || !filas.length){ tbody.innerHTML = '<tr><td colspan="5" class="muted" style="padding:10px;">Todavía no hay gimnasios dados de alta.</td></tr>'; return; }
-    tbody.innerHTML = filas.map(f => `
+    GIMNASIOS_ADMIN_CACHE = filas || [];
+    if (!GIMNASIOS_ADMIN_CACHE.length){ tbody.innerHTML = '<tr><td colspan="6" class="muted" style="padding:10px;">Todavía no hay gimnasios dados de alta.</td></tr>'; return; }
+    tbody.innerHTML = GIMNASIOS_ADMIN_CACHE.map(f => `
       <tr style="border-bottom:1px solid var(--border);">
         <td style="padding:6px;">${f.nombre}</td>
         <td style="padding:6px;">${semaforoActividad(f.ultima_actividad)}</td>
         <td style="padding:6px;">${f.ultima_actividad ? formatearFechaCorta(f.ultima_actividad) : '—'}</td>
         <td style="padding:6px;">${f.socios_activos ?? 0}</td>
-        <td style="padding:6px;">${f.creado_en ? formatearFechaCorta(f.creado_en) : '—'}</td>
+        <td style="padding:6px;">${etiquetaEstadoSuscripcion(f)}</td>
+        <td style="padding:6px; white-space:nowrap;">
+          <button class="ghost" style="font-size:11px; padding:2px 6px;" onclick="activarSuscripcionUI('${f.id}')">💳 Activar</button>
+          <button class="ghost" style="font-size:11px; padding:2px 6px;" onclick="toggleHistorialSuscripcion('${f.id}')">🧾 Historial</button>
+        </td>
+      </tr>
+      <tr id="historialSus${f.id}" style="display:none; border-bottom:1px solid var(--border);">
+        <td colspan="6" style="padding:6px 10px 12px;"></td>
       </tr>`).join('');
   }catch(e){
-    tbody.innerHTML = `<tr><td colspan="5" class="muted" style="padding:10px;">Error: ${e.message}</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="6" class="muted" style="padding:10px;">Error: ${e.message}</td></tr>`;
+  }
+}
+async function toggleHistorialSuscripcion(gimnasioId){
+  const fila = document.getElementById(`historialSus${gimnasioId}`);
+  if (!fila) return;
+  const abierta = fila.style.display !== 'none';
+  if (abierta){ fila.style.display = 'none'; return; }
+  fila.style.display = '';
+  const celda = fila.querySelector('td');
+  celda.innerHTML = 'Cargando...';
+  try{
+    const pagos = await sb('rpc/listar_pagos_suscripcion', { method:'POST', body: JSON.stringify({ p_gimnasio_id: gimnasioId }) });
+    if (!pagos || !pagos.length){ celda.innerHTML = '<span class="muted">Todavía no hay pagos de suscripción registrados.</span>'; return; }
+    const f = GIMNASIOS_ADMIN_CACHE.find(g => g.id === gimnasioId);
+    celda.innerHTML = pagos.map(p => `
+      <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; padding:4px 0; border-bottom:1px solid var(--border); font-size:12px;">
+        <span>${formatearFechaCorta((p.creado_en||'').slice(0,10))}${p.plan_nombre ? ' · '+p.plan_nombre : ''} · ${p.meses} mes${p.meses===1?'':'es'}${p.monto!=null ? ' · $'+Number(p.monto).toFixed(2) : ''}${p.medio_pago ? ' · '+etiquetaMedioPagoSuscripcion(p.medio_pago) : ''}</span>
+        <button class="ghost" style="font-size:11px; padding:2px 6px;" onclick='descargarComprobanteSuscripcion(${JSON.stringify(p)}, ${JSON.stringify(f ? f.nombre : "")})'>🧾</button>
+      </div>`).join('');
+  }catch(e){ celda.innerHTML = `Error: ${e.message}`; }
+}
+
+// ---------- Tabla de precios de M2F Solutions por cantidad de alumnos
+// (28/9, pedido de Martin) — solo se usa acá, para autocompletar el monto
+// al activar una suscripción. Si cambiás tus precios, actualizá esta lista.
+const PLANES_SUSCRIPCION_M2F = [
+  { nombre: 'Inicial',      hasta: 5,   precio: 9999 },
+  { nombre: 'Crecimiento',  hasta: 15,  precio: 18999 },
+  { nombre: 'Avanzado',     hasta: 30,  precio: 32999 },
+  { nombre: 'Pro',          hasta: 50,  precio: 49999 },
+  { nombre: 'Estudio',      hasta: 60,  precio: 59999 },
+  { nombre: 'Estudio',      hasta: 70,  precio: 69999 },
+  { nombre: 'Estudio',      hasta: 80,  precio: 79999 },
+  { nombre: 'Gimnasio',     hasta: 90,  precio: 89999 },
+  { nombre: 'Gimnasio',     hasta: 100, precio: 99999 },
+  { nombre: 'Gimnasio Pro', hasta: null, precio: 99999, baseAlumnos: 100, extraPorAlumno: 500 },
+];
+function etiquetaPlanSuscripcion(p){
+  const rango = p.hasta ? `hasta ${p.hasta} alumnos` : `más de ${p.baseAlumnos} alumnos`;
+  const precioTxt = p.extraPorAlumno
+    ? `$${p.precio.toLocaleString('es-AR')} + $${p.extraPorAlumno}/alumno extra`
+    : `$${p.precio.toLocaleString('es-AR')}`;
+  return `${p.nombre} — ${rango} — ${precioTxt}`;
+}
+function calcularPrecioPlanSuscripcion(p, sociosActivos){
+  if (!p.extraPorAlumno) return p.precio;
+  const extra = Math.max(0, (sociosActivos || 0) - p.baseAlumnos);
+  return p.precio + extra * p.extraPorAlumno;
+}
+function poblarSelectPlanSuscripcion(sociosActivos){
+  const sel = document.getElementById('activarSuscripcionPlan');
+  sel.innerHTML = '<option value="">Sin plan (monto libre)</option>' +
+    PLANES_SUSCRIPCION_M2F.map((p, i) => `<option value="${i}">${etiquetaPlanSuscripcion(p)}</option>`).join('');
+  // Precarga el plan que le corresponde según sus socios activos ACTUALES —
+  // es solo una sugerencia, Martin puede elegir cualquier otro.
+  let idx = PLANES_SUSCRIPCION_M2F.findIndex(p => p.hasta && (sociosActivos || 0) <= p.hasta);
+  if (idx === -1) idx = PLANES_SUSCRIPCION_M2F.length - 1;
+  sel.value = String(idx);
+  aplicarPlanSuscripcionSeleccionado();
+}
+function aplicarPlanSuscripcionSeleccionado(){
+  const idx = document.getElementById('activarSuscripcionPlan').value;
+  if (idx === '') return; // "Sin plan": no toca el monto, queda libre para escribir a mano.
+  const plan = PLANES_SUSCRIPCION_M2F[Number(idx)];
+  const f = GIMNASIOS_ADMIN_CACHE.find(g => g.id === ACTIVAR_SUSCRIPCION_GIMNASIO_ID);
+  const meses = Number(document.getElementById('activarSuscripcionMeses').value) || 1;
+  const precioMensual = calcularPrecioPlanSuscripcion(plan, f ? f.socios_activos : 0);
+  document.getElementById('activarSuscripcionMonto').value = precioMensual * meses;
+}
+
+let ACTIVAR_SUSCRIPCION_GIMNASIO_ID = null;
+function activarSuscripcionUI(gimnasioId){
+  const f = GIMNASIOS_ADMIN_CACHE.find(g => g.id === gimnasioId);
+  ACTIVAR_SUSCRIPCION_GIMNASIO_ID = gimnasioId;
+  document.getElementById('activarSuscripcionGimNombre').textContent = f ? `${f.nombre} · ${f.socios_activos ?? 0} socios activos` : '';
+  document.getElementById('activarSuscripcionMeses').value = '1';
+  document.getElementById('activarSuscripcionMedio').value = '';
+  document.getElementById('activarSuscripcionNota').value = '';
+  document.getElementById('activarSuscripcionResultado').innerHTML = '';
+  document.getElementById('btnConfirmarActivarSuscripcion').style.display = '';
+  poblarSelectPlanSuscripcion(f ? f.socios_activos : 0);
+  document.getElementById('modalActivarSuscripcion').classList.add('show');
+}
+function cerrarModalActivarSuscripcion(){
+  document.getElementById('modalActivarSuscripcion').classList.remove('show');
+}
+async function confirmarActivarSuscripcion(){
+  const meses = Number(document.getElementById('activarSuscripcionMeses').value);
+  if (!meses || meses <= 0){ toast('Ingresá una cantidad de meses válida', true); return; }
+  const montoTxt = document.getElementById('activarSuscripcionMonto').value.trim();
+  const monto = montoTxt ? Number(montoTxt) : null;
+  const medio = document.getElementById('activarSuscripcionMedio').value || null;
+  const nota = document.getElementById('activarSuscripcionNota').value.trim() || null;
+  const idxPlan = document.getElementById('activarSuscripcionPlan').value;
+  const planNombre = idxPlan !== '' ? PLANES_SUSCRIPCION_M2F[Number(idxPlan)].nombre : null;
+  const btn = document.getElementById('btnConfirmarActivarSuscripcion');
+  btn.disabled = true;
+  try{
+    const pago = await sb('rpc/activar_suscripcion_gimnasio', { method:'POST', body: JSON.stringify({
+      p_gimnasio_id: ACTIVAR_SUSCRIPCION_GIMNASIO_ID, p_meses: meses, p_monto: monto, p_medio_pago: medio, p_nota: nota, p_plan_nombre: planNombre
+    }) });
+    const f = GIMNASIOS_ADMIN_CACHE.find(g => g.id === ACTIVAR_SUSCRIPCION_GIMNASIO_ID);
+    mostrarExitoActivarSuscripcion(pago, f ? f.nombre : '');
+    toast('Suscripción activada ✓');
+    await cargarGimnasiosAdmin();
+  }catch(e){ toast('Error: ' + e.message, true); }
+  finally{ btn.disabled = false; }
+}
+function mostrarExitoActivarSuscripcion(pago, gimnasioNombre){
+  const cont = document.getElementById('activarSuscripcionResultado');
+  const idBtn = 'comprobanteSuscripcionWA';
+  cont.innerHTML = `
+    <div style="background:rgba(61,220,132,.1); border:1px solid rgba(61,220,132,.35); border-radius:10px; padding:12px; margin-top:6px;">
+      <div style="font-weight:700; color:var(--accent2); margin-bottom:8px;">✅ Suscripción activada hasta ${formatearFechaCorta((pago.vigencia_hasta||'').slice(0,10))}</div>
+      <div class="row" style="gap:8px;">
+        <button onclick='descargarComprobanteSuscripcion(${JSON.stringify(pago)}, ${JSON.stringify(gimnasioNombre)})'>🧾 Descargar comprobante</button>
+        <button id="${idBtn}" style="display:none;" onclick='compartirComprobanteSuscripcion(${JSON.stringify(pago)}, ${JSON.stringify(gimnasioNombre)})'>📲 Enviar por WhatsApp</button>
+      </div>
+    </div>`;
+  document.getElementById('btnConfirmarActivarSuscripcion').style.display = 'none';
+  if (navigator.canShare && navigator.canShare({ files: [new File([''], 'a.pdf', { type: 'application/pdf' })] })){
+    document.getElementById(idBtn).style.display = '';
+  }
+}
+
+// ---------- Comprobante de pago de SUSCRIPCIÓN en PDF (28/9, pedido de Martin) ----------
+// Igual patrón que el recibo de cuota del alumno (armarDocRecibo más abajo),
+// pero acá el que cobra es M2F Solutions y el que paga es el gimnasio: usa la
+// marca de M2F (no la del gimnasio) y los datos de suscripciones_pagos.
+function armarDocComprobanteSuscripcion(pago, gimnasioNombre){
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF('p', 'mm', 'a5');
+  const pageW = 148, marginX = 12;
+  const rgb = hexARgb(COLORES_DEFECTO_TEMA.primario);
+
+  doc.setFillColor(rgb.r, rgb.g, rgb.b);
+  doc.rect(0, 0, pageW, 38, 'F');
+  doc.setTextColor(255,255,255);
+  doc.setFontSize(14); doc.setFont(undefined, 'bold');
+  doc.text('M2F Solutions', marginX, 15);
+  doc.setFontSize(10); doc.setFont(undefined, 'normal');
+  doc.text('Comprobante de pago de suscripción', marginX, 22);
+  doc.setFontSize(8.5);
+  doc.text(`N° ${String(pago.numero_recibo ?? '-').padStart(6,'0')}`, pageW - marginX, 15, { align: 'right' });
+  doc.text(formatearFechaCorta((pago.creado_en || '').slice(0,10)), pageW - marginX, 21, { align: 'right' });
+
+  let y = 52;
+  doc.setTextColor(17,24,39);
+  doc.setFontSize(15); doc.setFont(undefined, 'bold');
+  doc.text(`¡Gracias, ${gimnasioNombre}!`, marginX, y);
+  y += 6;
+  doc.setFontSize(10); doc.setFont(undefined, 'normal'); doc.setTextColor(107,114,128);
+  doc.text('Recibimos tu pago de la suscripción a M2F Solutions.', marginX, y);
+  y += 10;
+
+  const filas = [
+    ...(pago.plan_nombre ? [['Plan', pago.plan_nombre]] : []),
+    ['Medio de pago', etiquetaMedioPagoSuscripcion(pago.medio_pago)],
+    ['Monto pagado', pago.monto != null ? `$${Number(pago.monto).toFixed(2)}` : '—'],
+    ['Período', `${pago.meses} mes${pago.meses===1?'':'es'}`],
+    ['Suscripción vigente hasta', formatearFechaCorta((pago.vigencia_hasta||'').slice(0,10))],
+  ];
+  const boxH = filas.length * 11 + 8;
+  doc.setDrawColor(229,231,235);
+  doc.roundedRect(marginX, y, pageW - marginX*2, boxH, 3, 3, 'S');
+  let fy = y + 10;
+  filas.forEach(([label, valor]) => {
+    doc.setFontSize(9); doc.setTextColor(107,114,128); doc.setFont(undefined,'normal');
+    doc.text(label, marginX + 6, fy);
+    doc.setFontSize(11); doc.setTextColor(17,24,39); doc.setFont(undefined,'bold');
+    doc.text(String(valor), pageW - marginX - 6, fy, { align: 'right' });
+    fy += 11;
+  });
+  y += boxH + 10;
+
+  if (pago.nota){
+    doc.setFontSize(9); doc.setTextColor(107,114,128); doc.setFont(undefined,'normal');
+    doc.text(`Nota: ${pago.nota}`, marginX, y, { maxWidth: pageW - marginX*2 });
+  }
+
+  doc.setFontSize(8); doc.setTextColor(156,163,175); doc.setFont(undefined,'normal');
+  doc.text('Comprobante generado por M2F Solutions.', marginX, 200);
+
+  return doc;
+}
+function nombreArchivoComprobanteSuscripcion(pago, gimnasioNombre){
+  const slug = (gimnasioNombre || 'gimnasio').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');
+  return `suscripcion-${slug}-${(pago.creado_en||'').slice(0,10)}.pdf`;
+}
+function descargarComprobanteSuscripcion(pago, gimnasioNombre){
+  if (!window.jspdf){ toast('No se pudo cargar el generador de PDF (revisá tu conexión a internet).', true); return; }
+  const doc = armarDocComprobanteSuscripcion(pago, gimnasioNombre);
+  doc.save(nombreArchivoComprobanteSuscripcion(pago, gimnasioNombre));
+}
+async function compartirComprobanteSuscripcion(pago, gimnasioNombre){
+  if (!window.jspdf){ toast('No se pudo cargar el generador de PDF (revisá tu conexión a internet).', true); return; }
+  try{
+    const doc = armarDocComprobanteSuscripcion(pago, gimnasioNombre);
+    const blob = doc.output('blob');
+    const archivo = new File([blob], nombreArchivoComprobanteSuscripcion(pago, gimnasioNombre), { type: 'application/pdf' });
+    await navigator.share({ files: [archivo], title: 'Comprobante de pago', text: `Comprobante de pago de suscripción — ${gimnasioNombre}` });
+  }catch(e){
+    if (e.name !== 'AbortError') toast('No se pudo compartir. Probá descargarlo y enviarlo manual.', true);
   }
 }
 
@@ -2305,7 +2533,26 @@ function cerrarModalMediaEjercicio(){
   document.getElementById('modalMediaContenido').innerHTML = '';
 }
 
+// Corta acá cualquier escritura del STAFF (admin/profesor) de un gimnasio con
+// la prueba/suscripción vencida, antes de ni siquiera pegarle a la red — el
+// alumno y las lecturas (GET) nunca pasan por acá. Es un espejo, del lado
+// cliente, del bloqueo real que ya hacen las políticas RLS del servidor: éste
+// solo existe para dar un mensaje en español en vez del error crudo de RLS.
+function chequearBloqueoEscrituraStaff(path, opts){
+  if (!PERFIL_ACTUAL || PERFIL_ACTUAL.rol === 'alumno') return;
+  const metodo = (opts.method || 'GET').toUpperCase();
+  if (metodo === 'GET' || !GIMNASIO_ACTUAL_BLOQUEADO) return;
+  const permitidas = [
+    'rpc/registrar_actividad_gimnasio', 'rpc/listar_gimnasios_admin',
+    'rpc/generar_codigo_activacion', 'rpc/listar_codigos_activacion', 'rpc/actualizar_codigo_activacion',
+    'rpc/activar_suscripcion_gimnasio', 'notificaciones_staff',
+  ];
+  if (permitidas.some(p => path.startsWith(p))) return;
+  throw new Error('Tu período de prueba venció. Activá tu suscripción para poder crear o editar — mientras tanto podés seguir viendo todo.');
+}
+
 async function sb(path, opts = {}, _retry){
+  chequearBloqueoEscrituraStaff(path, opts);
   // Si hay sesión real (login del profesor/admin), mandamos su token en vez del
   // anon key, para que más adelante las políticas de RLS puedan distinguir quién
   // hace cada operación. Sin sesión (ej: vista Alumno, todavía sin login propio)
@@ -2549,8 +2796,8 @@ async function hacerSignup(){
   const codigoActivacion = document.getElementById('signupCodigo').value.trim();
   const msg = document.getElementById('authMsg');
   msg.textContent = '';
-  if (!nombre || (!esIndependiente && !nombreGimnasio) || !email || !password || !codigoActivacion){
-    msg.textContent = 'Completá todos los campos, incluido el código de activación.'; return;
+  if (!nombre || (!esIndependiente && !nombreGimnasio) || !email || !password){
+    msg.textContent = 'Completá todos los campos.'; return;
   }
   const btn = document.getElementById('btnSignup');
   btn.disabled = true;
@@ -3328,13 +3575,60 @@ function cargarListaEjerciciosPersonalizados(){
 let GIMNASIO_ACTUAL = null;
 async function cargarGimnasioActual(){
   const query = PERFIL_ACTUAL
-    ? `gimnasios?select=id,nombre,logo_url,tipo,descuento_efectivo_pct,color_primario,color_secundario,mp_conectado,mp_email,recargo_mercadopago_pct&id=eq.${PERFIL_ACTUAL.gimnasio_id}`
-    : 'gimnasios?select=id,nombre,logo_url,tipo,descuento_efectivo_pct,color_primario,color_secundario,mp_conectado,mp_email,recargo_mercadopago_pct&order=creado_en.asc&limit=1';
+    ? `gimnasios?select=id,nombre,logo_url,tipo,descuento_efectivo_pct,color_primario,color_secundario,mp_conectado,mp_email,recargo_mercadopago_pct,prueba_vence_en,suscripcion_vence_en&id=eq.${PERFIL_ACTUAL.gimnasio_id}`
+    : 'gimnasios?select=id,nombre,logo_url,tipo,descuento_efectivo_pct,color_primario,color_secundario,mp_conectado,mp_email,recargo_mercadopago_pct,prueba_vence_en,suscripcion_vence_en&order=creado_en.asc&limit=1';
   const [g] = await sb(query);
   GIMNASIO_ACTUAL = g || null;
   renderMarcaGimnasio();
   renderCobrosOnlineGimnasio();
+  renderBannerSuscripcion();
   cargarPlanesPrepago();
+}
+
+// ---------- Prueba gratuita de 14 días / suscripción (28/9, pedido de Martin) ----------
+// El gimnasio arranca con gimnasios.prueba_vence_en = alta + 14 días. Si Martin
+// activa la suscripción a mano (panel "🏋️ Gimnasios" -> RPC
+// activar_suscripcion_gimnasio), se carga/extiende gimnasios.suscripcion_vence_en.
+// Mientras CUALQUIERA de las dos fechas esté vigente el gimnasio está "activo".
+// Si las dos vencieron queda "bloqueado": el staff (admin/profesor) sigue
+// viendo todo (la lectura no se toca, ni acá ni en RLS) pero no puede crear
+// ni editar nada — el bloqueo real vive en las políticas RLS del servidor;
+// el chequeo de sb() de abajo es solo para no ni intentar la llamada y dar
+// un mensaje claro en español. El alumno NUNCA se ve afectado por esto.
+let GIMNASIO_ACTUAL_ESTADO = 'activa'; // 'trial' | 'activa' | 'bloqueada'
+let GIMNASIO_ACTUAL_BLOQUEADO = false;
+
+function calcularEstadoSuscripcion(g){
+  if (!g) return 'activa';
+  const ahora = Date.now();
+  if (g.suscripcion_vence_en && new Date(g.suscripcion_vence_en).getTime() > ahora) return 'activa';
+  if (g.prueba_vence_en && new Date(g.prueba_vence_en).getTime() > ahora) return 'trial';
+  return 'bloqueada';
+}
+
+function renderBannerSuscripcion(){
+  const cont = document.getElementById('bannerSuscripcion');
+  if (!cont) return;
+  GIMNASIO_ACTUAL_ESTADO = calcularEstadoSuscripcion(GIMNASIO_ACTUAL);
+  GIMNASIO_ACTUAL_BLOQUEADO = GIMNASIO_ACTUAL_ESTADO === 'bloqueada';
+  if (!PERFIL_ACTUAL || PERFIL_ACTUAL.rol === 'alumno' || !GIMNASIO_ACTUAL || GIMNASIO_ACTUAL_ESTADO === 'activa'){
+    cont.style.display = 'none';
+    cont.innerHTML = '';
+    return;
+  }
+  cont.style.display = '';
+  if (GIMNASIO_ACTUAL_ESTADO === 'trial'){
+    const diasRestantes = Math.max(0, Math.ceil((new Date(GIMNASIO_ACTUAL.prueba_vence_en).getTime() - Date.now()) / 86400000));
+    cont.innerHTML = `<div class="warn-banner" style="background:rgba(255,210,61,.12); border-color:rgba(255,210,61,.4); color:var(--warn);">
+      ⏳ Estás en tu <strong>prueba gratuita</strong>: te quedan <strong>${diasRestantes} día${diasRestantes===1?'':'s'}</strong>. Después vas a poder seguir viendo todos tus datos, pero no vas a poder crear ni editar nada hasta activar tu suscripción.
+      <span style="cursor:pointer; text-decoration:underline; margin-left:6px; white-space:nowrap;" onclick="abrirSoporteWhatsapp('Hola! Quiero consultar sobre activar la suscripción de mi gimnasio en M2F Solutions.')">Consultar planes →</span>
+    </div>`;
+  } else {
+    cont.innerHTML = `<div class="warn-banner" style="background:rgba(255,93,93,.12); border-color:rgba(255,93,93,.4); color:#ff8a8a;">
+      🔒 Tu período de prueba venció. Podés seguir viendo todos tus datos, pero <strong>no podés crear ni editar nada</strong> hasta activar tu suscripción.
+      <span style="cursor:pointer; text-decoration:underline; margin-left:6px; white-space:nowrap;" onclick="abrirSoporteWhatsapp('Hola! Quiero activar la suscripción de mi gimnasio en M2F Solutions.')">Activar mi suscripción →</span>
+    </div>`;
+  }
 }
 
 // ---------- Tema por gimnasio: cada gym puede elegir su color principal y
@@ -5720,9 +6014,10 @@ function armarDocRecibo(pago, alumnoNombre, planNombre){
   doc.text('Tu pago se registró correctamente. Este es tu comprobante.', marginX, y);
   y += 10;
 
+  const etiquetaMetodoRecibo = { efectivo: 'Efectivo', transferencia: 'Transferencia', mercado_pago: 'Mercado Pago' };
   const filas = [
     ['Plan', planNombre],
-    ['Método de pago', pago.metodo_pago === 'efectivo' ? 'Efectivo' : 'Transferencia'],
+    ['Método de pago', etiquetaMetodoRecibo[pago.metodo_pago] || 'Transferencia'],
     ['Monto pagado', `$${Number(pago.monto).toFixed(2)}`],
     ['Período cubierto', `${formatearFechaCorta(pago.vigencia_desde)} al ${formatearFechaCorta(pago.vigencia_hasta)}`],
     ['Próximo vencimiento', formatearFechaCorta(pago.vigencia_hasta)],
@@ -8568,11 +8863,16 @@ async function toggleHistorialPagos(alumnoId){
     const pagos = await sb(`pagos?alumno_id=eq.${alumnoId}&order=creado_en.desc&limit=8`);
     if (!pagos.length){ cont.innerHTML = '<div class="muted" style="padding:6px 0;">Todavía no hay pagos registrados.</div>'; return; }
     const etiquetaMetodo = { mercado_pago: '💳 Mercado Pago', transferencia: '🏦 Transferencia', efectivo: '💵 Efectivo' };
+    const alumnoNombre = ALUMNOS_CACHE.find(a => a.id === alumnoId)?.nombre || 'Alumno';
+    const planNombre = COBRANZAS_CACHE[alumnoId]?.plan_nombre || 'Plan';
     cont.innerHTML = pagos.map(p => `
       <div style="padding:6px 0; border-bottom:1px solid var(--border); font-size:.9em;">
-        <div class="row" style="justify-content:space-between;">
+        <div class="row" style="justify-content:space-between; align-items:center;">
           <div>${etiquetaMetodo[p.metodo_pago] || p.metodo_pago}</div>
-          <div style="font-weight:600;">$${Number(p.monto).toFixed(2)}</div>
+          <div class="row" style="gap:8px; align-items:center;">
+            <div style="font-weight:600;">$${Number(p.monto).toFixed(2)}</div>
+            <button class="ghost" style="font-size:11px; padding:2px 6px;" title="Descargar comprobante" onclick='descargarReciboPago(${JSON.stringify(p)}, ${JSON.stringify(alumnoNombre)}, ${JSON.stringify(planNombre)})'>🧾</button>
+          </div>
         </div>
         <div class="muted">${formatearFechaCorta((p.creado_en || '').slice(0,10))} · cubre hasta ${formatearFechaCorta(p.vigencia_hasta)}${p.metodo_pago === 'mercado_pago' && p.comision_mp != null ? ` · comisión $${Number(p.comision_mp).toFixed(2)} · neto $${Number(p.monto_neto).toFixed(2)}` : ''}</div>
       </div>`).join('');
@@ -9829,19 +10129,61 @@ if ('serviceWorker' in navigator){
      socios activos por gimnasio. Depende de listar_gimnasios_admin() y del
      timestamp que pisa registrar_actividad_gimnasio() en cada login (ver JS). -->
 <div id="panelGimnasiosAdmin" style="display:none; position:fixed; inset:0; z-index:500; background:rgba(0,0,0,.6); overflow:auto;">
-  <div class="card" style="max-width:640px; margin:40px auto;">
+  <div class="card" style="max-width:820px; margin:40px auto;">
     <div class="row" style="justify-content:space-between; align-items:center; margin-bottom:10px;">
       <h3 style="margin:0;">🏋️ Mis gimnasios</h3>
       <button class="ghost" onclick="document.getElementById('panelGimnasiosAdmin').style.display='none';">✕ Cerrar</button>
     </div>
-    <p class="muted" style="font-size:13px;">🟢 con actividad en los últimos 7 días · 🟡 entre 8 y 30 días · 🔴 sin actividad hace más de 30 días o nunca entraron.</p>
+    <p class="muted" style="font-size:13px;">🟢 con actividad en los últimos 7 días · 🟡 entre 8 y 30 días · 🔴 sin actividad hace más de 30 días o nunca entraron.<br>
+    Suscripción: 🟢 Activa (paga o dada de alta con código) · 🟡 En prueba gratuita de 14 días · 🔴 Bloqueada (solo lectura hasta que actives) — tocá "💳 Activar" para cargar/extender la suscripción a mano.</p>
     <div style="margin-top:10px; overflow-x:auto;">
       <table style="width:100%; border-collapse:collapse; font-size:13px;">
         <thead><tr style="text-align:left; border-bottom:1px solid var(--border);">
-          <th style="padding:6px;">Gimnasio</th><th style="padding:6px;">Estado</th><th style="padding:6px;">Última actividad</th><th style="padding:6px;">Socios activos</th><th style="padding:6px;">Alta</th>
+          <th style="padding:6px;">Gimnasio</th><th style="padding:6px;">Actividad</th><th style="padding:6px;">Última actividad</th><th style="padding:6px;">Socios activos</th><th style="padding:6px;">Suscripción</th><th style="padding:6px;"></th>
         </tr></thead>
-        <tbody id="gimnasiosAdminTbody"><tr><td colspan="5" class="muted" style="padding:10px;">Cargando...</td></tr></tbody>
+        <tbody id="gimnasiosAdminTbody"><tr><td colspan="6" class="muted" style="padding:10px;">Cargando...</td></tr></tbody>
       </table>
+    </div>
+  </div>
+</div>
+
+<!-- Modal "Activar suscripción" (28/9, solo Martin) — reemplaza el prompt() de
+     antes: pide monto/medio de pago/nota además de los meses, y al confirmar
+     ofrece descargar o mandar por WhatsApp el comprobante en PDF. -->
+<div class="modal-overlay" id="modalActivarSuscripcion">
+  <div class="modal-box">
+    <h3 style="margin-top:0;">💳 Activar suscripción</h3>
+    <div class="muted" id="activarSuscripcionGimNombre" style="margin-bottom:12px; font-weight:600;"></div>
+    <div class="field" style="margin-bottom:10px;">
+      <label>Plan contratado</label>
+      <select id="activarSuscripcionPlan" onchange="aplicarPlanSuscripcionSeleccionado()"></select>
+    </div>
+    <div class="field" style="margin-bottom:10px;">
+      <label>Meses</label>
+      <input type="number" min="1" step="1" id="activarSuscripcionMeses" value="1" oninput="aplicarPlanSuscripcionSeleccionado()">
+    </div>
+    <div class="field" style="margin-bottom:10px;">
+      <label>Monto cobrado (se autocompleta con el plan, editable)</label>
+      <input type="number" min="0" step="0.01" id="activarSuscripcionMonto" placeholder="Ej: 15000">
+    </div>
+    <div class="field" style="margin-bottom:10px;">
+      <label>Medio de pago</label>
+      <select id="activarSuscripcionMedio">
+        <option value="">Sin especificar</option>
+        <option value="transferencia">Transferencia</option>
+        <option value="efectivo">Efectivo</option>
+        <option value="mercado_pago">Mercado Pago</option>
+        <option value="otro">Otro</option>
+      </select>
+    </div>
+    <div class="field" style="margin-bottom:6px;">
+      <label>Nota (opcional)</label>
+      <input id="activarSuscripcionNota" placeholder="Ej: pago mes de octubre">
+    </div>
+    <div id="activarSuscripcionResultado"></div>
+    <div class="row" style="justify-content:flex-end; gap:8px; margin-top:14px;">
+      <button class="ghost" onclick="cerrarModalActivarSuscripcion()">Cerrar</button>
+      <button id="btnConfirmarActivarSuscripcion" onclick="confirmarActivarSuscripcion()">Activar</button>
     </div>
   </div>
 </div>
