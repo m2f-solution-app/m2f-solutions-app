@@ -2132,6 +2132,9 @@
 <script>
 const SUPABASE_URL = "https://wlgjhqdvpkofglxznvec.supabase.co";
 const ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndsZ2pocWR2cGtvZmdseHpudmVjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk0MDI5NDQsImV4cCI6MjEwNDk3ODk0NH0.L_6hpnDoeUGbT-00o-wa3zLtPy5jiyjZmjFXTilc9pU";
+// Guías descargables de Mercado Pago (PDF), subidas manualmente al bucket público
+// "guias-mp" en Supabase Storage — ver "Mi gimnasio" y el modal de "Cobrar con QR".
+const MP_GUIAS_BASE_URL = `${SUPABASE_URL}/storage/v1/object/public/guias-mp`;
 // Client ID de la app de Mercado Pago (NO es secreto, es el mismo que viaja en la URL de
 // autorización que ve el navegador — el client_secret sí es secreto y vive solo en el
 // servidor, como variable de entorno de la Edge Function). Lo completa Martin acá una vez
@@ -4119,6 +4122,13 @@ function renderCobrosOnlineGimnasio(){
       <div class="muted" style="margin-top:6px;">Se le suma al precio del plan cuando el alumno paga con Mercado Pago, para que la comisión la absorba el alumno y no el gimnasio.
         Fijate el % que te cobra Mercado Pago en tu propia cuenta (varía según el medio de pago) para cargarlo acá —
         <a href="https://www.mercadopago.com.ar/ayuda/recibir-pagos-costos_220" target="_blank" rel="noopener">ver mis comisiones en Mercado Pago ↗</a>.
+      </div>
+    </div>
+    <div style="margin-top:14px; padding-top:14px; border-top:1px solid var(--border);">
+      <div class="muted" style="margin-bottom:8px;">Guías paso a paso, para vos o para quien administre la cuenta de Mercado Pago del gimnasio:</div>
+      <div class="row" style="gap:8px;">
+        <a href="${MP_GUIAS_BASE_URL}/guia-local-caja-qr.pdf" target="_blank" rel="noopener" class="ghost" style="display:inline-flex; align-items:center; gap:6px; padding:8px 14px; border-radius:10px; text-decoration:none; font-size:13px;">📄 Configurar local y caja (QR) ↗</a>
+        <a href="${MP_GUIAS_BASE_URL}/guia-costos-plazos.pdf" target="_blank" rel="noopener" class="ghost" style="display:inline-flex; align-items:center; gap:6px; padding:8px 14px; border-radius:10px; text-decoration:none; font-size:13px;">📄 Costos y plazos de tu dinero ↗</a>
       </div>
     </div>
   `;
@@ -6263,7 +6273,10 @@ async function abrirModalCobrarQR(alumnoId){
     }
     QR_COBRO_POLL_TIMER = setInterval(() => chequearPagoQR(alumnoId), 4000);
   }catch(e){
-    document.getElementById('qrCobroEstado').textContent = 'No se pudo generar el QR: ' + (e.message || e);
+    const msg = e.message || String(e);
+    const esOnboarding = /local configurado|caja \(POS\)/i.test(msg);
+    document.getElementById('qrCobroEstado').innerHTML = 'No se pudo generar el QR: ' + msg
+      + (esOnboarding ? `<div style="margin-top:12px;"><a href="${MP_GUIAS_BASE_URL}/guia-local-caja-qr.pdf" target="_blank" rel="noopener" style="color:var(--accent); font-weight:700; text-decoration:none;">📄 Ver instructivo para configurarlo ↗</a></div>` : '');
   }
 }
 
