@@ -779,7 +779,7 @@
   <div class="card" style="margin-bottom:12px;">
     <div class="row" style="justify-content:space-between; align-items:center;">
       <div class="field" style="min-width:220px;">
-        <label>Profesor (autoría de rutinas)</label>
+        <label>Profesor</label>
         <select id="profActual" onchange="onCambiarProfesorActual()"></select>
       </div>
       <div class="muted" style="text-align:right;">
@@ -960,10 +960,6 @@
         <div class="card">
           <h2 style="margin-top:0">Nueva rutina</h2>
           <div class="row">
-            <div class="field">
-              <label>Profesor</label>
-              <select id="profProfesor"></select>
-            </div>
             <div class="field" style="flex:1; min-width:200px;">
               <label>Tipo de entrenamiento</label>
               <select id="profTipoAlumno"></select>
@@ -1058,10 +1054,6 @@
             <div class="field" id="espEquipoWrap" style="display:none;">
               <label>Equipo</label>
               <select id="espEquipo" onchange="onCambiarEspEquipo()"></select>
-            </div>
-            <div class="field">
-              <label>Profesor</label>
-              <select id="espProfesor"></select>
             </div>
             <div class="field" style="flex:1; min-width:200px;">
               <label>Nombre de la rutina</label>
@@ -2074,6 +2066,7 @@
   <div class="modal-box">
     <h3 id="modalAsistenciaNombre">Alumno</h3>
     <p id="modalAsistenciaSub" class="muted" style="margin-top:-8px;"></p>
+    <div id="modalAsistenciaWellness"></div>
     <div class="row" style="gap:8px;">
       <button id="btnMarcarPresente" class="btn-confirmar" style="flex:1;" onclick="marcarAsistenciaDesdeModal(true)">✅ Presente</button>
       <button id="btnMarcarAusente" class="btn-cancelar" style="flex:1;" onclick="marcarAsistenciaDesdeModal(false)">❌ Ausente</button>
@@ -2278,7 +2271,7 @@ const BUCKET = "Ejercicios";
 // un cambio, se incrementa este número — el chequeo de actualización (más abajo) lo compara
 // contra lo que hay publicado y avisa si están desactualizados, sin que nadie tenga que
 // cambiar ningún link a mano.
-const APP_VERSION = 56;
+const APP_VERSION = 57;
 
 // ---------- Instalar como app (PWA): acceso directo en escritorio/celular ----------
 // Chrome/Edge/Android disparan "beforeinstallprompt" cuando el manifest + service worker
@@ -3603,6 +3596,7 @@ async function entrarComoAlumnoLogueado(){
     await Promise.all([cargarPersonas(), cargarGimnasioActual(), cargarCatalogoEjercicios()]);
     mostrarModoAlumnoLogueado(ficha);
     revisarNotificacionesAlumno(ficha.id);
+    revisarWellnessPendiente(ficha.id);
   }catch(e){ msg.textContent = 'Error entrando: ' + e.message; }
 }
 
@@ -5031,8 +5025,6 @@ async function cargarPersonas(){
   document.getElementById('aluAlumno').innerHTML = `<option value="">-- elegir --</option>` + optsAlu;
   document.getElementById('espAlumno').innerHTML = `<option value="">-- elegir --</option>` + optsAlu;
   document.getElementById('profActual').innerHTML = optsProf;
-  document.getElementById('profProfesor').innerHTML = optsProf;
-  document.getElementById('espProfesor').innerHTML = optsProf;
   document.getElementById('horProfesor').innerHTML = optsProf;
   document.getElementById('factProfesor').innerHTML = optsProf;
   ALUMNOS_CACHE = alumnos;
@@ -5047,8 +5039,6 @@ async function cargarPersonas(){
     }
   }
   armarComboBuscable('profActual', 'Buscar profesor...');
-  armarComboBuscable('profProfesor', 'Buscar profesor...');
-  armarComboBuscable('espProfesor', 'Buscar profesor...');
   armarComboBuscable('horProfesor', 'Buscar profesor...');
   armarComboBuscable('espAlumno', 'Buscar alumno por nombre...');
   onCambiarProfesorActual();
@@ -5248,13 +5238,11 @@ async function cambiarRolProfesor(perfilId, nombre, nuevoRol){
   }catch(e){ toast('Error cambiando el rol: ' + extraerMensajeError(e), true); cargarListaProfesores(); }
 }
 
-// El profesor "logueado" (elegido arriba de todo) es el que se precarga por
-// defecto en el Armador y en Especiales, para no tener que elegirlo cada vez.
+// El profesor elegido arriba de todo se usa para Horarios y Facturación. Las rutinas
+// ya NO dependen de él: pertenecen al gimnasio (30/9).
 function onCambiarProfesorActual(){
   const profesorId = document.getElementById('profActual').value;
   if (!profesorId) return;
-  document.getElementById('profProfesor').value = profesorId;
-  document.getElementById('espProfesor').value = profesorId;
   const horSel = document.getElementById('horProfesor');
   if (horSel){
     horSel.value = profesorId;
@@ -5273,8 +5261,6 @@ function onCambiarHorProfesor(){
   if (!profesorId) return;
   document.getElementById('profActual').value = profesorId;
   sincronizarComboBuscable('profActual');
-  document.getElementById('profProfesor').value = profesorId;
-  document.getElementById('espProfesor').value = profesorId;
   cargarHorarioProfesorActual();
 }
 
@@ -6118,6 +6104,7 @@ async function renderAgenda(){
     // ejercicios de SU rutina, que el profesor vea desde la Agenda cuáles ya hizo y
     // cuáles le quedan, sin tener que estar al lado suyo.
     const progresoPorTurno = await cargarProgresoTurnos(turnosDelDia);
+    WELLNESS_DIA = await cargarWellnessDelDia(fecha, turnosDelDia);
 
     // Agrupa las reservas reales por profesor+hora, para pegárselas a cada franja.
     const reservasPorSlot = {}; // `${profesor_id}|${hora}` -> [{id, alumnoId, nombre, asistio, rutinaDiaId, nombreDia, progreso}]
@@ -6128,6 +6115,7 @@ async function renderAgenda(){
         id: t.id, alumnoId: t.alumno_id, nombre: t.alumnos ? t.alumnos.nombre : 'Alumno', asistio: t.asistio,
         rutinaDiaId: t.rutina_dia_id, nombreDia: t.rutina_dias?.nombre_dia || null,
         progreso: progresoPorTurno[t.id] || null,
+        wellness: WELLNESS_DIA[t.alumno_id] || null,
       });
     });
 
@@ -6188,6 +6176,7 @@ async function renderAgenda(){
               <div class="chip-info">
                 <div class="chip-nombre">${r.nombre}${icono}</div>
                 ${progresoHtml}
+                ${wellnessChipHtml(r.wellness, fecha)}
               </div>
               <span class="chip-chevron">›</span>
             </div>`;
@@ -6255,6 +6244,7 @@ function abrirModalAsistencia(turnoId, asistioRawActual, fecha, horaStr, alumnoI
   document.getElementById('modalAsistenciaNombre').textContent = nombre;
   document.getElementById('modalAsistenciaSub').textContent = `Turno de las ${horaStr.slice(0,5)} hs`
     + (efectivo === null ? '' : efectivo ? ' · presente' : asistioRawActual === null ? ' · ausente (sin confirmar)' : ' · ausente');
+  document.getElementById('modalAsistenciaWellness').innerHTML = wellnessDetalleHtml(WELLNESS_DIA[alumnoId] || null, fecha);
   document.getElementById('btnMarcarPresente').classList.toggle('activo', efectivo === true);
   document.getElementById('btnMarcarAusente').classList.toggle('activo', efectivo === false);
   // "Quitar marca" solo tiene sentido en un turno FUTURO que alguien ya marcó a
@@ -8639,7 +8629,6 @@ function agregarDiaEsp(){ CONS['esp'].agregarDia(); }
 // se engancha sola por fecha cuando alguien reserva un turno. Para asignar
 // directo a una persona se usa el panel de "Rutinas especiales por alumno".
 async function guardarRutina(){
-  const profesorId = document.getElementById('profProfesor').value;
   const tipoAlumnoId = document.getElementById('profTipoAlumno').value;
   // (24/9) Pedido de Martin: sacar el campo manual de "nombre de la rutina" en el
   // Armador — ya no hace falta porque ahora se matchea sola por tipo de alumno +
@@ -8650,7 +8639,7 @@ async function guardarRutina(){
   const fechasOrdenadas = Object.values(CONS['dia'].estado.dias).map(d => d.fecha).filter(Boolean).sort();
   const nombre = `${tipoNombre}${fechasOrdenadas.length ? ' · ' + fechaLegible(fechasOrdenadas[0]) : ''}`;
   await guardarRutinaGenerica({
-    constructor: CONS['dia'], nombre, profesorId, tipoAlumnoId,
+    constructor: CONS['dia'], nombre, tipoAlumnoId,
     alumnosDestino: [],
     btnId: 'btnGuardarRutina',
     onOk: () => {
@@ -8696,7 +8685,6 @@ function onCambiarEspEquipo(){
 
 async function guardarRutinaEspecial(){
   const modo = document.getElementById('espModoDestino').value;
-  const profesorId = document.getElementById('espProfesor').value;
   const nombre = document.getElementById('espNombreRutina').value.trim();
   let alumnosDestino = [];
   let msgOk = 'Rutina especial guardada y asignada ✓';
@@ -8715,7 +8703,7 @@ async function guardarRutinaEspecial(){
   }
 
   await guardarRutinaGenerica({
-    constructor: CONS['esp'], nombre, profesorId,
+    constructor: CONS['esp'], nombre,
     alumnosDestino,
     btnId: 'btnGuardarEspecial',
     onOk: () => {
@@ -9349,7 +9337,7 @@ async function descargarReportePdf(){
 
 // Lógica compartida: crea la rutina, sus días (con fecha), sus ejercicios, y la
 // asigna (rutina_asignaciones) a la lista de alumnos indicada (puede ser vacía).
-async function guardarRutinaGenerica({ constructor, nombre, profesorId, tipoAlumnoId, alumnosDestino, btnId, onOk, msgOk }){
+async function guardarRutinaGenerica({ constructor, nombre, tipoAlumnoId, alumnosDestino, btnId, onOk, msgOk }){
   const idsDias = Object.keys(constructor.estado.dias);
 
   const modoDias = constructor.estado.modoDias === 'rotativa' ? 'rotativa' : 'fecha_fija';
@@ -9374,7 +9362,7 @@ async function guardarRutinaGenerica({ constructor, nombre, profesorId, tipoAlum
     const [rutina] = await sb('rutinas', {
       method:'POST', headers:{Prefer:'return=representation'},
       body: JSON.stringify([{
-        profesor_id: profesorId || null, nombre, gimnasio_id: PERFIL_ACTUAL?.gimnasio_id || null, tipo_alumno_id: tipoAlumnoId || null,
+        nombre, gimnasio_id: PERFIL_ACTUAL?.gimnasio_id || null, tipo_alumno_id: tipoAlumnoId || null,
         modo_dias: modoDias,
         dias_por_semana_objetivo: modoDias === 'rotativa' ? (constructor.estado.diasPorSemanaObjetivo || null) : null,
         duracion_semanas: modoDias === 'rotativa' ? (constructor.estado.duracionSemanas || null) : null,
@@ -9481,7 +9469,7 @@ async function cargarGrillaRutinas(){
   try{
     const filtroGym = PERFIL_ACTUAL ? `&gimnasio_id=eq.${PERFIL_ACTUAL.gimnasio_id}` : '';
     const [rutinas, asignaciones] = await Promise.all([
-      sb(`rutinas?select=id,nombre,creado_en,profesores(nombre),rutina_dias(id,fecha,nombre_dia,orden)&activa=eq.true${filtroGym}&order=nombre.asc`),
+      sb(`rutinas?select=id,nombre,creado_en,tipos_alumno(nombre),creador:perfiles(nombre),rutina_dias(id,fecha,nombre_dia,orden)&activa=eq.true${filtroGym}&order=nombre.asc`),
       sb('rutina_asignaciones?select=rutina_id'),
     ]);
     const idsConAsignacion = new Set(asignaciones.map(a => a.rutina_id));
@@ -9494,7 +9482,7 @@ async function cargarGrillaRutinas(){
   }catch(e){ cont.innerHTML = 'Error: ' + e.message; }
 }
 
-// Agrupado por profesor y, adentro de cada uno, por rutina — cada rutina lista
+// Agrupado por tipo de entrenamiento (las rutinas son del gimnasio, no de un profesor) y, adentro de cada uno, por rutina — cada rutina lista
 // sus días uno debajo del otro (nada de tabla ni scroll horizontal). Cada
 // profesor es una sección plegable para no tapar todo de una si hay muchas.
 function renderGrillaRutinas(){
@@ -9508,7 +9496,7 @@ function renderGrillaRutinas(){
 
   const porProfesor = {};
   porRutina.forEach(r => {
-    const nombreProf = r.profesores?.nombre || 'Sin profesor asignado';
+    const nombreProf = r.tipos_alumno?.nombre || 'Sin tipo (para todos)';
     (porProfesor[nombreProf] = porProfesor[nombreProf] || []).push(r);
   });
   const nombresProfesores = Object.keys(porProfesor).sort((a,b)=>a.localeCompare(b));
@@ -9527,14 +9515,14 @@ function renderGrillaRutinas(){
         : '<div class="muted" style="font-size:12px;">Sin días cargados.</div>';
       return `
         <div style="background:var(--panel2); border:1px solid var(--border); border-radius:10px; padding:10px 10px 4px; margin-bottom:10px;">
-          <div style="font-weight:700; margin-bottom:8px;">${r.nombre}</div>
+          <div style="font-weight:700; margin-bottom:8px;">${escaparHtml(r.nombre)}${r.creador?.nombre ? ` <span class="muted" style="font-weight:400; font-size:11px;">· creada por ${escaparHtml(r.creador.nombre)}</span>` : ''}</div>
           ${diasHtml}
         </div>`;
     }).join('');
     return `
       <div style="border:1px solid var(--border); border-radius:10px; margin-bottom:10px; overflow:hidden;">
         <div class="side-item" style="margin:0; border-radius:0; display:flex; justify-content:space-between; align-items:center;" onclick="toggleGrillaProfesor('${idSeccion}')">
-          <span>🧑‍🏫 ${nombreProf}</span>
+          <span>🏷️ ${escaparHtml(nombreProf)}</span>
           <span class="muted" style="font-size:12px;">${rutinasDelProfe.length} rutina${rutinasDelProfe.length===1?'':'s'} <span id="${idSeccion}-caret">${abrirSoloUno?'▾':'▸'}</span></span>
         </div>
         <div id="${idSeccion}" style="display:${abrirSoloUno?'':'none'}; padding:10px;">${rutinasHtml}</div>
@@ -10025,6 +10013,169 @@ async function pagarConMercadoPago(alumnoId){
   }
 }
 
+// ---------- Cuestionario Wellness (30/9, pedido de Martin) ----------
+// Escala 1-5 con la MISMA convención en todos los ítems: 5 = mejor (5 = sin fatiga,
+// durmió muy bien, sin dolor muscular, sin estrés, ánimo muy alto). Así el total (5-25)
+// se lee directo y el semáforo (calculado en la base) es coherente:
+//   rojo: total <= 14 o algún ítem en 1 · amarillo: 15-19 o algún ítem en 2 · verde: >= 20.
+// Se pide por push el día del turno (trigger/cron en la base: wellness_avisar_pendientes)
+// y también al abrir la app si hoy tiene turno y todavía no lo completó.
+const WELLNESS_ITEMS = [
+  { k:'fatiga',         titulo:'Fatiga',            pregunta:'¿Qué tan cansado/a te sentís antes de empezar?',              bajo:'Agotado/a',        alto:'Sin cansancio' },
+  { k:'sueno',          titulo:'Calidad del sueño', pregunta:'¿Descansaste bien anoche?',                                   bajo:'Dormí muy mal',    alto:'Dormí excelente' },
+  { k:'dolor_muscular', titulo:'Dolor muscular',    pregunta:'¿Sentís molestias o agujetas de entrenamientos anteriores?',  bajo:'Mucho dolor',      alto:'Sin molestias' },
+  { k:'estres',         titulo:'Nivel de estrés',   pregunta:'¿Cómo venís de presiones externas (trabajo, estudio, familia)?', bajo:'Muy estresado/a', alto:'Tranquilo/a' },
+  { k:'animo',          titulo:'Estado de ánimo',   pregunta:'¿Cómo está tu ánimo hoy?',                                    bajo:'Muy bajo',         alto:'Muy bien' },
+];
+const WELLNESS_ICONO = { verde:'🟢', amarillo:'🟡', rojo:'🔴' };
+const WELLNESS_COLOR = { verde:'var(--accent2)', amarillo:'var(--warn)', rojo:'#ff8a8a' };
+const WELLNESS_SUGERENCIA = {
+  verde:    'Llega en buen estado: podés sumar intensidad (más carga o menos RIR) si la rutina lo permite.',
+  amarillo: 'Llega con algo de carga acumulada: mantené la sesión como está y mirá cómo responde.',
+  rojo:     'Llega con poca recuperación: considerá bajar volumen/intensidad o pasarlo a una sesión de recovery.',
+};
+let WELLNESS_CTX = { alumnoId: null, valores: {} };
+let WELLNESS_POSPUESTO_HASTA = 0;
+let WELLNESS_DIA = {}; // alumno_id -> respuesta del día que se está viendo en la Agenda
+let WELLNESS_LISTENER_PUESTO = false;
+
+// ----- Lado alumno -----
+async function revisarWellnessPendiente(alumnoId){
+  try{
+    WELLNESS_CTX.alumnoId = alumnoId;
+    if (!WELLNESS_LISTENER_PUESTO){
+      WELLNESS_LISTENER_PUESTO = true;
+      // Al tocar el push la app vuelve a primer plano: ahí se vuelve a chequear.
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible' && WELLNESS_CTX.alumnoId) revisarWellnessPendiente(WELLNESS_CTX.alumnoId);
+      });
+    }
+    if (Date.now() < WELLNESS_POSPUESTO_HASTA) return;
+    if (document.getElementById('modalWellness')?.classList.contains('show')) return;
+    const hoy = dateAIso(new Date());
+    const [turnos, resp] = await Promise.all([
+      sb(`turnos?select=id&alumno_id=eq.${alumnoId}&fecha=eq.${hoy}&estado=neq.cancelado&limit=1`),
+      sb(`wellness_respuestas?select=id&alumno_id=eq.${alumnoId}&fecha=eq.${hoy}&limit=1`),
+    ]);
+    if (!turnos.length || resp.length) return; // sin turno hoy, o ya lo completó
+    abrirWellness();
+  }catch(e){ /* best-effort: nunca corta el ingreso */ }
+}
+
+function abrirWellness(){
+  WELLNESS_CTX.valores = {};
+  let ov = document.getElementById('modalWellness');
+  if (!ov){
+    ov = document.createElement('div');
+    ov.id = 'modalWellness';
+    ov.className = 'modal-overlay';
+    ov.style.zIndex = '1001';
+    ov.innerHTML = '<div class="modal-box" style="max-width:420px; text-align:left; max-height:92vh; overflow-y:auto;"></div>';
+    document.body.appendChild(ov);
+  }
+  const bloques = WELLNESS_ITEMS.map(it => `
+    <div style="margin-bottom:14px;">
+      <div style="font-weight:700;">${it.titulo}</div>
+      <div class="muted" style="font-size:12px; margin-bottom:6px;">${it.pregunta}</div>
+      <div style="display:flex; gap:6px;">
+        ${[1,2,3,4,5].map(n => `<button type="button" class="ghost wl-btn" data-k="${it.k}" data-v="${n}" style="flex:1; padding:10px 0; font-weight:700;" onclick="wellnessElegir('${it.k}',${n})">${n}</button>`).join('')}
+      </div>
+      <div style="display:flex; justify-content:space-between; font-size:11px;" class="muted"><span>1 · ${it.bajo}</span><span>5 · ${it.alto}</span></div>
+    </div>`).join('');
+  ov.querySelector('.modal-box').innerHTML = `
+    <h3 style="margin-top:0;">¿Cómo llegás hoy a entrenar?</h3>
+    <p class="muted" style="margin:0 0 12px;">30 segundos. Tu profe lo usa para ajustar la sesión de hoy.</p>
+    ${bloques}
+    <div class="field" style="margin-bottom:12px;">
+      <label>¿Algo más que quieras contarle a tu profe? (opcional)</label>
+      <textarea id="wellnessNota" maxlength="300" rows="2" placeholder="Ej: me duele la rodilla izquierda"></textarea>
+    </div>
+    <button id="btnEnviarWellness" style="width:100%;" onclick="enviarWellness()">Enviar</button>
+    <button class="ghost" style="width:100%; margin-top:8px;" onclick="posponerWellness()">Ahora no</button>`;
+  ov.classList.add('show');
+}
+
+function wellnessElegir(k, v){
+  WELLNESS_CTX.valores[k] = v;
+  document.querySelectorAll(`#modalWellness .wl-btn[data-k="${k}"]`).forEach(b => {
+    const sel = Number(b.dataset.v) === v;
+    b.style.background = sel ? 'var(--accent)' : '';
+    b.style.color = sel ? '#000' : '';
+    b.style.borderColor = sel ? 'var(--accent)' : '';
+  });
+}
+
+function posponerWellness(){
+  WELLNESS_POSPUESTO_HASTA = Date.now() + 60*60*1000; // no insistir durante 1 hora
+  document.getElementById('modalWellness')?.classList.remove('show');
+}
+
+async function enviarWellness(){
+  const v = WELLNESS_CTX.valores;
+  if (WELLNESS_ITEMS.some(it => !v[it.k])){ toast('Respondé las 5 preguntas para enviar.', true); return; }
+  const btn = document.getElementById('btnEnviarWellness');
+  btn.disabled = true;
+  try{
+    const nota = (document.getElementById('wellnessNota').value || '').trim();
+    await sb('wellness_respuestas?on_conflict=alumno_id,fecha', {
+      method: 'POST', headers: { Prefer: 'resolution=merge-duplicates,return=minimal' },
+      body: JSON.stringify([{
+        alumno_id: WELLNESS_CTX.alumnoId, fecha: dateAIso(new Date()),
+        fatiga: v.fatiga, sueno: v.sueno, dolor_muscular: v.dolor_muscular, estres: v.estres, animo: v.animo,
+        nota: nota || null,
+      }])
+    });
+    // El aviso in-app de "completá tu Wellness" ya no hace falta.
+    sb(`notificaciones_alumno?alumno_id=eq.${WELLNESS_CTX.alumnoId}&tipo=eq.wellness_pendiente&leida=eq.false`, {
+      method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: JSON.stringify({ leida: true })
+    }).catch(() => {});
+    document.getElementById('modalWellness').classList.remove('show');
+    toast('¡Gracias! Tu profe ya lo puede ver ✓');
+  }catch(e){
+    toast('No se pudo enviar: ' + (e.message || e), true);
+  }finally{
+    btn.disabled = false;
+  }
+}
+
+// ----- Lado staff (Agenda) -----
+async function cargarWellnessDelDia(fecha, turnos){
+  try{
+    const ids = [...new Set((turnos || []).map(t => t.alumno_id).filter(Boolean))];
+    if (!ids.length) return {};
+    const rows = await sb(`wellness_respuestas?select=alumno_id,total,semaforo,fatiga,sueno,dolor_muscular,estres,animo,nota&fecha=eq.${fecha}&alumno_id=in.(${ids.join(',')})`);
+    const mapa = {};
+    rows.forEach(r => { mapa[r.alumno_id] = r; });
+    return mapa;
+  }catch(e){ return {}; }
+}
+
+function wellnessChipHtml(w, fecha){
+  if (w) return `<div class="chip-progreso" style="color:${WELLNESS_COLOR[w.semaforo] || 'inherit'};">${WELLNESS_ICONO[w.semaforo] || ''} Wellness ${w.total}/25</div>`;
+  if (fecha === dateAIso(new Date())) return `<div class="chip-progreso sin-empezar">Wellness pendiente</div>`;
+  return '';
+}
+
+function wellnessDetalleHtml(w, fecha){
+  if (!w){
+    return fecha === dateAIso(new Date())
+      ? `<div class="muted" style="margin:8px 0; font-size:13px;">El alumno todavía no completó el Wellness de hoy.</div>`
+      : '';
+  }
+  const filas = WELLNESS_ITEMS.map(it => {
+    const val = w[it.k];
+    const critico = val <= 2;
+    return `<div style="display:flex; justify-content:space-between; font-size:13px; ${critico ? 'color:#ff8a8a; font-weight:700;' : ''}"><span>${it.titulo}</span><span>${val}/5</span></div>`;
+  }).join('');
+  return `
+    <div style="background:var(--panel2); border:1px solid var(--border); border-radius:10px; padding:10px; margin:8px 0;">
+      <div style="font-weight:700; margin-bottom:6px; color:${WELLNESS_COLOR[w.semaforo] || 'inherit'};">${WELLNESS_ICONO[w.semaforo] || ''} Wellness ${w.total}/25</div>
+      ${filas}
+      <div style="margin-top:8px; font-size:13px;">💡 ${WELLNESS_SUGERENCIA[w.semaforo] || ''}</div>
+      ${w.nota ? `<div style="margin-top:6px; font-size:13px;"><span class="muted">Nota del alumno:</span> ${escaparHtml(w.nota)}</div>` : ''}
+    </div>`;
+}
+
 // ---------- Notificaciones al entrar: aviso de cuota (en vivo, no bloquea) +
 // confirmaciones de pago recibido (persistidas, generadas por trigger en la BD
 // cada vez que el profesor carga un pago) ----------
@@ -10048,7 +10199,7 @@ async function revisarNotificacionesAlumno(alumnoId){
       }
     }
 
-    const pendientes = await sb(`notificaciones_alumno?alumno_id=eq.${alumnoId}&leida=eq.false&order=creado_en.asc`);
+    const pendientes = await sb(`notificaciones_alumno?alumno_id=eq.${alumnoId}&leida=eq.false&tipo=neq.wellness_pendiente&order=creado_en.asc`);
     NOTIF_PAGOS_PENDIENTES_ALU = pendientes || [];
     NOTIF_PAGOS_PENDIENTES_ALU.forEach(n => {
       bloques.push(`<div class="warn-banner" style="background:rgba(61,220,132,.12); border-color:rgba(61,220,132,.4); color:var(--accent2);"><strong>${n.titulo}</strong><br>${n.mensaje}</div>`);
