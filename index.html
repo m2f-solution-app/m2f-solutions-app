@@ -181,6 +181,37 @@
     margin:14px 0 8px; padding-bottom:4px; border-bottom:1px solid var(--border);
   }
   .bloque-seccion:first-child .bloque-titulo{margin-top:0;}
+
+  /* ---- Tarjeta de ejercicio plegable + reordenar arrastrando (v65) ---- */
+  .ej-lista{display:flex; flex-direction:column; gap:8px; min-height:24px; border-radius:12px; margin-bottom:6px; transition:background .15s;}
+  .ej-lista.over{background:rgba(255,122,51,.08); outline:2px dashed rgba(255,122,51,.5); outline-offset:2px;}
+  .ej-card{background:var(--panel2); border:1px solid var(--border); border-radius:12px; overflow:hidden;}
+  .ej-card.arrastrando{opacity:.35;}
+  .ej-head{display:flex; align-items:center; gap:8px; padding:8px 8px 8px 2px; user-select:none; -webkit-user-select:none;}
+  .ej-head img, .ej-head video, .ej-head iframe, .ej-head .media-wrap, .ej-head .media-placeholder{width:56px; height:56px; flex:none; object-fit:cover; border-radius:8px; background:#000; border:none;}
+  .ej-head .media-placeholder{display:flex; align-items:center; justify-content:center; font-size:22px; background:var(--panel);}
+  .ej-asa{width:30px; height:44px; flex:none; display:flex; align-items:center; justify-content:center; font-size:20px; color:var(--muted); cursor:grab; touch-action:none; border-radius:8px;}
+  .ej-asa:hover{background:rgba(255,255,255,.06); color:var(--text);}
+  .ej-asa:active{cursor:grabbing;}
+  .ej-info{flex:1; min-width:0; cursor:pointer;}
+  .ej-nom{font-weight:600; font-size:14.5px;}
+  .ej-res{color:var(--muted); font-size:12.5px; margin-top:3px;}
+  .ej-flechas{display:flex; flex-direction:column; gap:2px; flex:none;}
+  .ej-flechas button{background:transparent; border:1px solid var(--border); color:var(--muted); border-radius:6px; width:28px; height:20px; font-size:10px; cursor:pointer; padding:0; line-height:1;}
+  .ej-flechas button:hover{color:var(--text); border-color:var(--muted);}
+  .ej-chev{flex:none; width:30px; height:44px; display:flex; align-items:center; justify-content:center; color:var(--muted); cursor:pointer; transition:transform .2s;}
+  .ej-card.abierto .ej-chev{transform:rotate(180deg);}
+  .ej-body{padding:6px 12px 12px; border-top:1px solid var(--border);}
+  .ej-fantasma{position:fixed; z-index:9999; pointer-events:none; background:var(--panel2); border:1px solid var(--accent); border-radius:12px; padding:10px 14px; box-shadow:0 12px 30px rgba(0,0,0,.5); transform:rotate(1.2deg); opacity:.95;}
+  .ej-linea{height:3px; background:var(--accent); border-radius:3px; margin:-5px 0; box-shadow:0 0 8px var(--accent); flex:none;}
+  @media (max-width:520px){
+    .ej-head img, .ej-head video, .ej-head iframe, .ej-head .media-wrap, .ej-head .media-placeholder{width:48px; height:48px;}
+    .ej-body .row{gap:6px;}
+    .ej-body .field{min-width:56px !important; flex:1 1 56px;}
+    .ej-body .field[style*="flex:1"]{flex-basis:100px !important;}
+    .ej-body .field label{font-size:9px; margin-bottom:2px;}
+    .ej-body select, .ej-body input, .ej-body textarea{padding:6px 6px; font-size:12.5px;}
+  }
   /* Área de toque más generosa (24/9, pedido de Martin: "se puede tocar mal con el
      dedo") — antes el header de cada bloque plegable era casi del alto del texto
      solo, muy angosto para el dedo en el celu. Ahora tiene padding real arriba y
@@ -2417,7 +2448,7 @@ const BUCKET = "Ejercicios";
 // un cambio, se incrementa este número — el chequeo de actualización (más abajo) lo compara
 // contra lo que hay publicado y avisa si están desactualizados, sin que nadie tenga que
 // cambiar ningún link a mano.
-const APP_VERSION = 64;
+const APP_VERSION = 65;
 
 // ---------- Instalar como app (PWA): acceso directo en escritorio/celular ----------
 // Chrome/Edge/Android disparan "beforeinstallprompt" cuando el manifest + service worker
@@ -8848,6 +8879,197 @@ function toggleSeguimientoSesion(contId, i){
 // días (Armador normal y Rutinas especiales/equipo), es opcional.
 const OBJETIVOS_ENTRENAMIENTO = ['Fuerza','Resistencia','Velocidad','Potencia','Técnica','Táctica','Movilidad','Recuperación'];
 
+// ---------- Tarjeta de ejercicio plegable + reordenar arrastrando (v65, pedido de Martin) ----------
+// Vista compacta por ejercicio: asa ⠿ (arrastrar), imagen/video, nombre, resumen
+// (series × reps · peso · RIR · pausa) y flechas ▲▼. Al tocar el nombre o la flecha ▾ se
+// abre el detalle con todos los campos para cargar. Sirve para el Armador/Especiales
+// (ctx 'cons|<prefijo>|<diaId>', en memoria hasta guardar la rutina) y para editar una
+// rutina ya guardada (ctx 'edit|<diaId>', el orden se guarda al soltar).
+const EJ_ABIERTOS = new Set();
+function ejEsc(s){ return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function ejUid(ex){
+  if (ex.id) return 'i' + ex.id;
+  if (!ex._uid) ex._uid = 'x' + Math.random().toString(36).slice(2, 10);
+  return ex._uid;
+}
+function ejResumen(ex){
+  const p = [];
+  const vacio = v => v === null || v === undefined || v === '';
+  if (!vacio(ex.tiempo_trabajo_seg)){
+    p.push(`${ex.series || 1} × ${ex.tiempo_trabajo_seg}s trabajo` + (!vacio(ex.descanso_seg) ? ` / ${ex.descanso_seg}s pausa` : ''));
+  } else {
+    p.push(`${ex.series || 1} × ${ex.repeticiones || '-'}`);
+    if (ex.peso_corporal) p.push('peso corporal');
+    else if (!vacio(ex.peso_sugerido)) p.push(`${ex.peso_sugerido} kg`);
+    if (!vacio(ex.rir)) p.push(`RIR ${ex.rir}`);
+    if (!vacio(ex.descanso_seg)) p.push(`pausa ${ex.descanso_seg}s`);
+  }
+  if (ex.unilateral) p.push('por lado');
+  if (ex.variante) p.push(ejEsc(ex.variante));
+  return p.join(' · ');
+}
+function ejCardHtml(ctx, idx, ex, ejercicio, cuerpoHtml){
+  const uid = ejUid(ex);
+  const abierto = EJ_ABIERTOS.has(uid);
+  return `
+    <div class="ej-card ${abierto ? 'abierto' : ''}" data-ctx="${ctx}" data-idx="${idx}" data-uid="${uid}">
+      <div class="ej-head">
+        <div class="ej-asa" title="Arrastrar para reordenar">⠿</div>
+        ${mediaTagHtml(ejercicio, '')}
+        <div class="ej-info" onclick="ejToggle(this)">
+          <div class="ej-nom">${ejEsc(ejercicio.nombre)} <span class="pill">${ejEsc(ejercicio.grupo_muscular)}</span>${ejercicio.video_provider==='own_video' ? '<span class="pill-propio">Propio</span>' : ''}</div>
+          <div class="ej-res">${ejResumen(ex)}</div>
+        </div>
+        <div class="ej-flechas"><button type="button" title="Subir" onclick="ejPaso('${ctx}',${idx},-1)">▲</button><button type="button" title="Bajar" onclick="ejPaso('${ctx}',${idx},1)">▼</button></div>
+        <div class="ej-chev" onclick="ejToggle(this)" title="Abrir / cerrar detalle">▾</div>
+      </div>
+      <div class="ej-body" style="${abierto ? '' : 'display:none;'}" onchange="ejRefrescarResumen(this)">${cuerpoHtml}</div>
+    </div>`;
+}
+function ejSeccionesHtml(ctx, arr, filaFn){
+  const orden = [], idxs = {};
+  arr.forEach((e, i) => { const b = e.bloque || 'General'; if (!idxs[b]){ idxs[b] = []; orden.push(b); } idxs[b].push(i); });
+  return orden.map(b => `
+    <div class="bloque-titulo">${ejEsc(b)}</div>
+    <div class="ej-lista" data-ctx="${ctx}" data-bloque="${encodeURIComponent(b)}">${idxs[b].map(i => filaFn(i)).join('')}</div>`).join('');
+}
+function ejToggle(el){
+  const card = el.closest('.ej-card');
+  const abierto = card.classList.toggle('abierto');
+  card.querySelector('.ej-body').style.display = abierto ? '' : 'none';
+  if (abierto) EJ_ABIERTOS.add(card.dataset.uid); else EJ_ABIERTOS.delete(card.dataset.uid);
+}
+function ejArr(ctx){
+  const [t, a, b] = ctx.split('|');
+  if (t === 'cons') return CONS[a].estado.dias[b].ejercicios;
+  if (t === 'edit') return EDICION_DIAS[a].items;
+  return [];
+}
+function ejRefrescarResumen(bodyEl){
+  const card = bodyEl.closest('.ej-card');
+  const ex = ejArr(card.dataset.ctx)[+card.dataset.idx];
+  if (ex) card.querySelector('.ej-res').innerHTML = ejResumen(ex);
+}
+function ejGrupos(arr, excluirIdx){
+  const orden = [], g = {};
+  arr.forEach((e, i) => { if (i === excluirIdx) return; const b = e.bloque || 'General'; if (!g[b]){ g[b] = []; orden.push(b); } g[b].push(e); });
+  return { orden, g };
+}
+// Deja el arreglo agrupado por bloque (en orden de aparición), que es como se muestra.
+function ejNormalizar(arr){
+  const { orden, g } = ejGrupos(arr, -1);
+  const nuevo = []; orden.forEach(b => nuevo.push(...g[b]));
+  arr.splice(0, arr.length, ...nuevo);
+}
+// Mueve arr[from] al bloque destB, en la posición pos DENTRO de ese bloque (contada sin el ítem movido).
+function ejReordenar(arr, from, destB, pos){
+  const it = arr[from];
+  const { orden, g } = ejGrupos(arr, from);
+  if (!g[destB]){ g[destB] = []; orden.push(destB); }
+  pos = Math.max(0, Math.min(pos, g[destB].length));
+  it.bloque = destB;
+  g[destB].splice(pos, 0, it);
+  const nuevo = []; orden.forEach(b => nuevo.push(...g[b]));
+  arr.splice(0, arr.length, ...nuevo);
+}
+function ejAplicarMovimiento(ctx, from, destB, pos){
+  const arr = ejArr(ctx);
+  const it = arr[from]; if (!it) return;
+  const { g } = ejGrupos(arr, -1);
+  const bActual = it.bloque || 'General';
+  if (bActual === destB && g[bActual].indexOf(it) === pos) return; // no cambia nada
+  const [t, a, b] = ctx.split('|');
+  if (t === 'cons') CONS[a].moverEjercicio(b, from, destB, pos);
+  else if (t === 'edit') moverEjercicioEdicion(a, from, destB, pos);
+}
+function ejPaso(ctx, idx, dir){
+  const arr = ejArr(ctx); const it = arr[idx]; if (!it) return;
+  const { orden, g } = ejGrupos(arr, -1);
+  const b = it.bloque || 'General', p = g[b].indexOf(it), bi = orden.indexOf(b);
+  let dest = null;
+  if (dir < 0){ if (p > 0) dest = [b, p - 1]; else if (bi > 0){ const pb = orden[bi - 1]; dest = [pb, g[pb].length]; } }
+  else { if (p < g[b].length - 1) dest = [b, p + 1]; else if (bi < orden.length - 1) dest = [orden[bi + 1], 0]; }
+  if (dest) ejAplicarMovimiento(ctx, idx, dest[0], dest[1]);
+}
+function ejConservarFoco(fn){
+  const a = document.activeElement; const id = a && a.id; const s = a && a.selectionStart;
+  fn();
+  if (id){ const n = document.getElementById(id); if (n){ n.focus(); try{ if (s != null) n.setSelectionRange(s, s); }catch(e){} } }
+}
+// Arrastre con pointer events (mouse + dedo), solo desde el asa ⠿ para no pelear con el scroll.
+let EJ_DND = null;
+document.addEventListener('pointerdown', ev => {
+  const asa = ev.target.closest && ev.target.closest('.ej-asa'); if (!asa) return;
+  const card = asa.closest('.ej-card');
+  const r = card.getBoundingClientRect();
+  const g = document.createElement('div'); g.className = 'ej-fantasma';
+  g.style.width = Math.min(r.width, 460) + 'px';
+  g.innerHTML = `<div class="ej-nom">${card.querySelector('.ej-nom').innerHTML}</div><div class="ej-res">${card.querySelector('.ej-res').innerHTML}</div>`;
+  g.style.left = (ev.clientX - 30) + 'px'; g.style.top = (ev.clientY - 24) + 'px';
+  document.body.appendChild(g);
+  card.classList.add('arrastrando');
+  EJ_DND = { card, g, ctx: card.dataset.ctx, from: +card.dataset.idx, dest: null, y: ev.clientY,
+             timer: setInterval(() => { if (!EJ_DND) return; if (EJ_DND.y < 70) window.scrollBy(0, -14); else if (EJ_DND.y > window.innerHeight - 70) window.scrollBy(0, 14); }, 16) };
+  try{ asa.setPointerCapture(ev.pointerId); }catch(e){}
+  ev.preventDefault();
+});
+document.addEventListener('pointermove', ev => {
+  if (!EJ_DND) return;
+  EJ_DND.y = ev.clientY;
+  EJ_DND.g.style.left = (ev.clientX - 30) + 'px'; EJ_DND.g.style.top = (ev.clientY - 24) + 'px';
+  document.querySelectorAll('.ej-linea').forEach(x => x.remove());
+  document.querySelectorAll('.ej-lista.over').forEach(x => x.classList.remove('over'));
+  const listas = [...document.querySelectorAll(`.ej-lista[data-ctx="${EJ_DND.ctx}"]`)];
+  let mejor = null, mejorDy = 61;
+  listas.forEach(l => {
+    const r = l.getBoundingClientRect();
+    if (ev.clientX < r.left - 40 || ev.clientX > r.right + 40) return;
+    const dy = ev.clientY < r.top ? r.top - ev.clientY : (ev.clientY > r.bottom ? ev.clientY - r.bottom : 0);
+    if (dy < mejorDy){ mejorDy = dy; mejor = l; }
+  });
+  if (!mejor){ EJ_DND.dest = null; return; }
+  mejor.classList.add('over');
+  const filas = [...mejor.querySelectorAll('.ej-card')].filter(x => x !== EJ_DND.card);
+  let idx = filas.length;
+  for (let i = 0; i < filas.length; i++){ const r = filas[i].getBoundingClientRect(); if (ev.clientY < r.top + r.height / 2){ idx = i; break; } }
+  const ln = document.createElement('div'); ln.className = 'ej-linea';
+  if (idx < filas.length) mejor.insertBefore(ln, filas[idx]); else mejor.appendChild(ln);
+  EJ_DND.dest = { bloque: decodeURIComponent(mejor.dataset.bloque), pos: idx };
+});
+function ejTerminarArrastre(soltar){
+  if (!EJ_DND) return;
+  const d = EJ_DND; EJ_DND = null;
+  clearInterval(d.timer); d.g.remove();
+  document.querySelectorAll('.ej-linea').forEach(x => x.remove());
+  document.querySelectorAll('.ej-lista.over').forEach(x => x.classList.remove('over'));
+  d.card.classList.remove('arrastrando');
+  if (soltar && d.dest) ejAplicarMovimiento(d.ctx, d.from, d.dest.bloque, d.dest.pos);
+}
+document.addEventListener('pointerup', () => ejTerminarArrastre(true));
+document.addEventListener('pointercancel', () => ejTerminarArrastre(false));
+
+// Edición de una rutina ya guardada: mover persiste bloque + orden al soltar.
+async function moverEjercicioEdicion(diaId, from, bloque, pos){
+  const items = EDICION_DIAS[diaId].items;
+  const antes = new Map(items.map(i => [i.id, [i.orden, i.bloque]]));
+  ejReordenar(items, from, bloque, pos);
+  items.forEach((it, i) => { it.orden = i; });
+  renderEdicionDia(diaId);
+  const cambiados = items.filter(it => { const a = antes.get(it.id); return a[0] !== it.orden || a[1] !== it.bloque; });
+  try{
+    await Promise.all(cambiados.map(it => sb(`rutina_ejercicios?id=eq.${it.id}`, { method:'PATCH', headers:{Prefer:'return=minimal'}, body: JSON.stringify({ orden: it.orden, bloque: it.bloque }) })));
+    toast('Orden guardado ✓');
+  }catch(e){ toast('Error guardando el orden: ' + e.message, true); }
+}
+let EJ_BLOQUE_TIMER = null;
+function cambiarBloqueEdicion(diaId, itemId, valor){
+  const item = EDICION_DIAS[diaId].items.find(i => String(i.id) === String(itemId));
+  if (!item) return;
+  item.bloque = (valor || '').trim() || 'General';
+  clearTimeout(EJ_BLOQUE_TIMER);
+  EJ_BLOQUE_TIMER = setTimeout(() => ejConservarFoco(() => renderEdicionDia(diaId)), 600);
+}
+
 function crearConstructorDeDias(prefijo, containerId, headerPrefix){
   headerPrefix = headerPrefix || prefijo;
   // (28/9) Rutinas rotativas: modoDias define si los días de esta rutina van con
@@ -8927,11 +9149,7 @@ function crearConstructorDeDias(prefijo, containerId, headerPrefix){
     // se entrena UNA sola vez, así que no hay "la próxima vez" sobre la cual progresar.
     const esRot = estado.modoDias === 'rotativa';
     const prog = esRot ? (ex.modo_progresion || 'fijo') : 'fijo';
-    return `
-      <div class="grid-exercise">
-        ${mediaTagHtml(ex.ejercicio, '')}
-        <div>
-          <div style="font-weight:600;">${ex.ejercicio.nombre} <span class="pill">${ex.ejercicio.grupo_muscular}</span>${ex.ejercicio.video_provider==='own_video' ? '<span class="pill-propio">Propio</span>' : ''}</div>
+    const cuerpo = `
           <div class="row" style="margin-top:6px;">
             <div class="field" style="min-width:150px;"><label>Bloque</label>${bloqueFieldHtml(`${prefijo}-${diaId}-${idx}`, ex.bloque, (v)=>CONS[prefijo].setBloque(diaId,idx,v))}</div>
             <div class="field" style="min-width:70px;"><label>Series</label><input type="number" min="1" value="${ex.series}" onchange="CONS['${prefijo}'].estado.dias['${diaId}'].ejercicios[${idx}].series=parseInt(this.value)||1"></div>
@@ -8979,13 +9197,18 @@ function crearConstructorDeDias(prefijo, containerId, headerPrefix){
               ${!(ex.semanas||[]).length ? '<div class="muted" style="font-size:12px; margin-top:4px;">Todavía sin semanas — hasta que agregues la primera se usa Series/Reps/Peso de arriba.</div>' : ''}
             </div>
           ` : ''}
-        </div>
-      </div>
     `;
+    return ejCardHtml(`cons|${prefijo}|${diaId}`, idx, ex, ex.ejercicio, cuerpo);
   }
 
   function setBloque(diaId, idx, valor){
     estado.dias[diaId].ejercicios[idx].bloque = valor.trim() || 'General';
+    ejConservarFoco(render);
+  }
+
+  // Mover un ejercicio (arrastre o flechas): queda en memoria hasta guardar la rutina.
+  function moverEjercicio(diaId, from, bloque, pos){
+    ejReordenar(estado.dias[diaId].ejercicios, from, bloque, pos);
     render();
   }
 
@@ -9012,10 +9235,7 @@ function crearConstructorDeDias(prefijo, containerId, headerPrefix){
         if (!indicesPorBloque[b]){ indicesPorBloque[b] = []; bloquesOrden.push(b); }
         indicesPorBloque[b].push(idx);
       });
-      const seccionesHtml = bloquesOrden.map(bloque => `
-        <div class="bloque-titulo">${bloque}</div>
-        ${indicesPorBloque[bloque].map(idx => filaHtml(diaId, idx)).join('')}
-      `).join('');
+      const seccionesHtml = ejSeccionesHtml(`cons|${prefijo}|${diaId}`, dia.ejercicios, idx => filaHtml(diaId, idx));
       const campoDiaHtml = sinFecha
         ? `<div class="field" style="min-width:220px;">
              <label>Nombre del día ${esRotativa ? `<span class="pill">Posición ${posicion+1} en la rotación</span>` : ''}</label>
@@ -9116,7 +9336,7 @@ function crearConstructorDeDias(prefijo, containerId, headerPrefix){
   }
 
   render();
-  return { estado, agregarDia, eliminarDia, setFecha, setBloque, quitarEjercicio, render, buscar, agregarEjercicio, limpiar, setModoDias, setNombreDia, setModoProgresion, agregarSemana, quitarSemana, setSemanaCampo };
+  return { estado, agregarDia, eliminarDia, setFecha, setBloque, quitarEjercicio, moverEjercicio, render, buscar, agregarEjercicio, limpiar, setModoDias, setNombreDia, setModoProgresion, agregarSemana, quitarSemana, setSemanaCampo };
 }
 
 const CONS = {}; // 'dia' -> constructor del Armador estándar, 'esp' -> constructor de Especiales
@@ -9896,6 +10116,7 @@ async function guardarRutinaGenerica({ constructor, nombre, tipoAlumnoId, etique
     // "por semana" contra el id real que Postgres le asignó a cada fila.
     const semanasPorPosicion = [];
     idsDias.forEach((diaId, i) => {
+      ejNormalizar(constructor.estado.dias[diaId].ejercicios);
       constructor.estado.dias[diaId].ejercicios.forEach((ex, j) => {
         const posicion = ejerciciosPayload.length;
         const modoProg = modoDias === 'rotativa' ? (ex.modo_progresion || 'fijo') : 'fijo';
@@ -10143,7 +10364,7 @@ function renderEdicionDia(diaId){
   const div = document.getElementById(EDICION_DIAS[diaId].contId);
   const items = EDICION_DIAS[diaId].items;
   const filas = items.length
-    ? items.map(item => filaEdicionHtml(diaId, item)).join('')
+    ? ejSeccionesHtml(`edit|${diaId}`, items, idx => filaEdicionHtml(diaId, items[idx], idx))
     : '<div class="muted" style="padding:8px 0;">Sin ejercicios en este día.</div>';
   div.innerHTML = `
     <div class="row" style="margin-bottom:12px; align-items:flex-end;${EDICION_DIAS[diaId].ocultarFecha ? ' display:none;' : ''}">
@@ -10216,14 +10437,10 @@ async function sincronizarNombreRutinaSiEsGenerica(diaId){
   }catch(e){ console.error('No se pudo resincronizar el nombre de la rutina:', e); }
 }
 
-function filaEdicionHtml(diaId, item){
-  return `
-    <div class="grid-exercise">
-      ${mediaTagHtml(item.ejercicios, '')}
-      <div>
-        <div style="font-weight:600;">${item.ejercicios.nombre} <span class="pill">${item.ejercicios.grupo_muscular}</span></div>
+function filaEdicionHtml(diaId, item, idx){
+  const cuerpo = `
         <div class="row" style="margin-top:6px;">
-          <div class="field" style="min-width:150px;"><label>Bloque</label>${bloqueFieldHtml(`edicion-${diaId}-${item.id}`, item.bloque, (v)=>setCampoEdicion(diaId,item.id,'bloque',v))}</div>
+          <div class="field" style="min-width:150px;"><label>Bloque</label>${bloqueFieldHtml(`edicion-${diaId}-${item.id}`, item.bloque, (v)=>cambiarBloqueEdicion(diaId,item.id,v))}</div>
           <div class="field" style="min-width:70px;"><label>Series</label><input type="number" min="1" value="${item.series}" onchange="setCampoEdicion('${diaId}','${item.id}','series',parseInt(this.value)||1)"></div>
           <div class="field" style="min-width:90px;"><label>Reps</label><input value="${item.repeticiones||''}" onchange="setCampoEdicion('${diaId}','${item.id}','repeticiones',this.value)"></div>
           <div class="field" style="min-width:90px;"><label>Peso sug. (kg)</label><input type="number" step="0.5" value="${item.peso_sugerido ?? ''}" onchange="setCampoEdicion('${diaId}','${item.id}','peso_sugerido',this.value?parseFloat(this.value):null)"></div>
@@ -10236,9 +10453,8 @@ function filaEdicionHtml(diaId, item){
           <div class="field" style="min-width:130px;"><label>Variante</label><input placeholder="Ej: Con banda" value="${item.variante ?? ''}" onchange="setCampoEdicion('${diaId}','${item.id}','variante',this.value)"></div>
           <button class="danger" style="align-self:end;" onclick="quitarEjercicioEdicion('${diaId}','${item.id}')">Quitar</button>
         </div>
-      </div>
-    </div>
   `;
+  return ejCardHtml(`edit|${diaId}`, idx, item, item.ejercicios, cuerpo);
 }
 
 function setCampoEdicion(diaId, itemId, campo, valor){
@@ -10306,11 +10522,13 @@ async function agregarEjercicioEdicion(diaId, ejercicioJson){
 
 async function guardarEdicionDia(diaId){
   const items = (EDICION_DIAS[diaId] || {}).items || [];
+  ejNormalizar(items);
+  items.forEach((it, i) => { it.orden = i; });
   try{
     await Promise.all(items.map(item => sb(`rutina_ejercicios?id=eq.${item.id}`, {
       method:'PATCH', headers:{Prefer:'return=minimal'},
       body: JSON.stringify({
-        bloque: item.bloque, series: item.series, repeticiones: item.repeticiones,
+        bloque: item.bloque, orden: item.orden, series: item.series, repeticiones: item.repeticiones,
         peso_sugerido: item.peso_sugerido, tiempo_trabajo_seg: item.tiempo_trabajo_seg,
         descanso_seg: item.descanso_seg, rir: item.rir, notas: item.notas,
         unilateral: !!item.unilateral,
