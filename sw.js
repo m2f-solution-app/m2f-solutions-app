@@ -24,3 +24,35 @@ self.addEventListener('fetch', (event) => {
     fetch(req, { cache: 'no-store' }).catch(() => fetch(req))
   );
 });
+
+// ---------- Notificaciones push (28/9, pedido de Martin — parte 1) ----------
+// Lo único que hace este Service Worker con las notificaciones: mostrarlas cuando
+// llega un push (aunque la app esté cerrada) y, si la tocan, enfocar una pestaña
+// existente de la app o abrir una nueva. El envío en sí (parte 2, pendiente) lo va
+// a hacer una Edge Function del lado del servidor usando las claves VAPID.
+self.addEventListener('push', (event) => {
+  let datos = {};
+  try { datos = event.data ? event.data.json() : {}; }
+  catch (e) { datos = { titulo: 'M2F Solutions', cuerpo: event.data ? event.data.text() : '' }; }
+
+  const titulo = datos.titulo || datos.title || 'M2F Solutions';
+  const opciones = {
+    body: datos.cuerpo || datos.body || '',
+    icon: datos.icon || 'icon-192.png',
+    badge: datos.badge || 'icon-192.png',
+    data: { url: datos.url || './' },
+  };
+  event.waitUntil(self.registration.showNotification(titulo, opciones));
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const url = (event.notification.data && event.notification.data.url) || './';
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((lista) => {
+      const existente = lista.find((c) => 'focus' in c);
+      if (existente) return existente.focus();
+      return self.clients.openWindow(url);
+    })
+  );
+});
