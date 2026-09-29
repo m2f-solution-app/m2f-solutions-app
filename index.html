@@ -941,6 +941,10 @@
             </div>
             <div class="muted" style="margin-top:8px; font-size:12px;">Del mes en curso. El pago a profesores solo cuenta una vez confirmada la liquidación (pestaña "💵 Facturar horas" en Horarios).</div>
 
+            <h2 style="margin-top:22px;">🏦 Cajas</h2>
+            <div id="dashCajas" class="row" style="flex-wrap:wrap; gap:12px;"><div class="muted">Cargando...</div></div>
+            <div style="margin-top:8px;"><button class="ghost" onclick="abrirCajas()" style="font-size:12.5px;">Ver detalle y mover plata entre cajas →</button></div>
+
             <h2 style="margin-top:22px;">📈 Membresía</h2>
             <div class="row" style="flex-wrap:wrap; gap:12px; align-items:stretch;">
               <div class="card" style="flex:1; min-width:230px; margin:0;">
@@ -965,6 +969,44 @@
               </div>
             </div>
             <div class="muted" style="margin-top:10px; font-size:12px;" id="membresiaNota"></div>
+
+            <div id="proyeccionSeccion" style="display:none;">
+              <h2 style="margin-top:22px;">💹 Proyección de ingresos</h2>
+              <div class="card" style="margin:0;">
+                <div class="row" style="justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:10px;">
+                  <div class="muted" style="font-size:12px; flex:1; min-width:220px;" id="proyeccionSub"></div>
+                  <div class="tabs" style="width:auto; margin:0;">
+                    <div class="tab" id="proyTabDevengado" onclick="setProyeccionVista('devengado')">📆 Por mes que corresponde</div>
+                    <div class="tab" id="proyTabCaja" onclick="setProyeccionVista('caja')">💵 Cuando se cobra</div>
+                  </div>
+                </div>
+                <div class="row" style="flex-wrap:wrap; gap:12px; margin-bottom:12px;">
+                  <div class="card" style="flex:1; min-width:150px; margin:0;">
+                    <div class="muted" style="font-size:12px;">Ya pagado · próximos 3 meses</div>
+                    <div style="font-size:22px; font-weight:800; color:var(--accent2);" id="proyKpiAsegurado">-</div>
+                  </div>
+                  <div class="card" style="flex:1; min-width:150px; margin:0;">
+                    <div class="muted" style="font-size:12px;">Renovaciones estimadas · próximos 3 meses</div>
+                    <div style="font-size:22px; font-weight:800;" id="proyKpiEstimado">-</div>
+                  </div>
+                  <div class="card" style="flex:1; min-width:150px; margin:0;">
+                    <div class="muted" style="font-size:12px;">Tasa de renovación histórica</div>
+                    <div style="font-size:22px; font-weight:800;" id="proyKpiTasa">-</div>
+                    <div class="muted" style="font-size:11.5px; margin-top:2px;" id="proyKpiTasaDetalle"></div>
+                  </div>
+                </div>
+                <div class="row" style="gap:16px; font-size:11.5px; color:var(--muted); margin-bottom:6px; flex-wrap:wrap;">
+                  <span class="row" style="gap:5px;"><span style="width:10px;height:10px;border-radius:3px;display:inline-block;background:var(--accent2);"></span>Ya pagado</span>
+                  <span class="row" style="gap:5px;"><span style="width:10px;height:10px;border-radius:3px;display:inline-block;background:rgba(61,220,132,.28);border:1.5px dashed var(--accent2);box-sizing:border-box;"></span>Renovaciones estimadas</span>
+                </div>
+                <div id="proyeccionChart" style="overflow-x:auto;"></div>
+                <details style="margin-top:10px;">
+                  <summary class="muted" style="cursor:pointer; font-size:12.5px;">Ver detalle en tabla</summary>
+                  <div style="overflow-x:auto; margin-top:8px;"><table style="width:100%; border-collapse:collapse; font-size:12.5px;" id="proyeccionTabla"></table></div>
+                </details>
+                <div class="muted" style="margin-top:10px; font-size:12px;" id="proyeccionNota"></div>
+              </div>
+            </div>
 
             <h2 style="margin-top:22px;">📅 Ocupación por día (últimas 4 semanas)</h2>
             <div class="muted" style="font-size:12px; margin-bottom:10px;">% de cupos reservados sobre la capacidad total de horarios de trabajo cargados, promediado por día de la semana.</div>
@@ -1532,6 +1574,7 @@
           <div class="tabs" style="margin-bottom:0;">
             <div class="tab active" id="cobTabBtnCobros" onclick="cobCambiarTab('cobros')" style="flex:1; text-align:center;">Cobros</div>
             <div class="tab" id="cobTabBtnGastos" onclick="cobCambiarTab('gastos')" style="flex:1; text-align:center;">Gastos</div>
+            <div class="tab" id="cobTabBtnCajas" onclick="cobCambiarTab('cajas')" style="flex:1; text-align:center;">Cajas</div>
           </div>
         </div>
 
@@ -1561,6 +1604,14 @@
                 <label>Fecha</label>
                 <input type="date" id="gastoFecha">
               </div>
+              <div class="field" style="min-width:150px;">
+                <label>Pagado desde</label>
+                <select id="gastoCaja">
+                  <option value="">-- elegí la caja --</option>
+                  <option value="efectivo">💵 Efectivo</option>
+                  <option value="banco">🏦 Banco</option>
+                </select>
+              </div>
               <button onclick="agregarGasto()" id="btnAgregarGasto" style="align-self:end;">Agregar</button>
             </div>
             <div id="gastoNuevaCategoriaForm" class="row" style="display:none; margin-top:10px; gap:8px;">
@@ -1585,6 +1636,73 @@
             <div id="gastoGraficoWrap" class="muted" style="margin-top:10px;">Elegí una categoría para ver el gráfico.</div>
             <div id="gastoGraficoTabla" style="display:none; margin-top:10px;"></div>
             <button class="ghost" id="btnToggleTablaGasto" style="display:none; margin-top:10px; font-size:12px;" onclick="toggleTablaGasto()">Ver como tabla</button>
+          </div>
+        </div>
+
+        <div id="cobTabCajas" style="display:none;">
+          <div class="card">
+            <div class="row" style="justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+              <h2 style="margin:0;">🏦 Cajas</h2>
+              <div class="row" style="gap:6px; align-items:center;">
+                <button class="ghost" onclick="cajasCambiarMes(-1)">◀</button>
+                <strong id="cajasMesLabel" style="min-width:120px; text-align:center;"></strong>
+                <button class="ghost" onclick="cajasCambiarMes(1)">▶</button>
+              </div>
+            </div>
+            <div id="cajasAviso" style="margin-top:10px;"></div>
+            <div id="cajasSaldos" class="row" style="flex-wrap:wrap; gap:12px; margin-top:10px;"></div>
+            <div class="muted" style="font-size:12px; margin-top:8px;">Saldo actual = saldo inicial + cobros − gastos − pagos a profesores ± movimientos, desde la fecha de corte. Transferencias, Mercado Pago (neto de comisión) y "otro" van a Banco; efectivo va a Efectivo.</div>
+          </div>
+          <div class="card">
+            <h2 style="margin-top:0;">Resumen del mes por caja</h2>
+            <div id="cajasResumenMes" class="muted">Cargando...</div>
+            <h2 style="margin-top:18px;">Ingresos del mes por método de pago</h2>
+            <div id="cajasMetodos" class="muted">Cargando...</div>
+          </div>
+          <div class="card">
+            <h2 style="margin-top:0;">Mover plata entre cajas</h2>
+            <div class="row">
+              <div class="field" style="min-width:220px;">
+                <label>Movimiento</label>
+                <select id="movCajaDireccion">
+                  <option value="efectivo>banco">Efectivo → Banco (depósito)</option>
+                  <option value="banco>efectivo">Banco → Efectivo (retiro)</option>
+                </select>
+              </div>
+              <div class="field" style="min-width:120px;">
+                <label>Monto</label>
+                <input type="number" min="0" step="0.01" id="movCajaMonto">
+              </div>
+              <div class="field" style="min-width:150px;">
+                <label>Fecha</label>
+                <input type="date" id="movCajaFecha">
+              </div>
+              <div class="field" style="flex:1; min-width:160px;">
+                <label>Nota (opcional)</label>
+                <input id="movCajaNota" placeholder="Ej: depósito de la semana">
+              </div>
+              <button onclick="registrarMovimientoCaja()" id="btnMovCaja" style="align-self:end;">Registrar</button>
+            </div>
+            <div id="cajasMovimientos" class="muted" style="margin-top:12px;">Cargando...</div>
+          </div>
+          <div class="card">
+            <h2 style="margin-top:0;">Saldo inicial</h2>
+            <div class="muted" style="font-size:12.5px; margin-bottom:8px;">Cuánta plata había en cada caja al empezar el día de la fecha de corte. Desde esa fecha se suman cobros y se restan gastos. Si lo cambiás, todos los saldos se recalculan.</div>
+            <div class="row">
+              <div class="field" style="min-width:150px;">
+                <label>Fecha de corte</label>
+                <input type="date" id="cajaCfgFecha">
+              </div>
+              <div class="field" style="min-width:140px;">
+                <label>Efectivo</label>
+                <input type="number" step="0.01" id="cajaCfgEfectivo" placeholder="0">
+              </div>
+              <div class="field" style="min-width:140px;">
+                <label>Banco</label>
+                <input type="number" step="0.01" id="cajaCfgBanco" placeholder="0">
+              </div>
+              <button onclick="guardarCajaConfig()" id="btnCajaCfg" style="align-self:end;">Guardar</button>
+            </div>
           </div>
         </div>
       </div>
@@ -2299,7 +2417,7 @@ const BUCKET = "Ejercicios";
 // un cambio, se incrementa este número — el chequeo de actualización (más abajo) lo compara
 // contra lo que hay publicado y avisa si están desactualizados, sin que nadie tenga que
 // cambiar ningún link a mano.
-const APP_VERSION = 61;
+const APP_VERSION = 64;
 
 // ---------- Instalar como app (PWA): acceso directo en escritorio/celular ----------
 // Chrome/Edge/Android disparan "beforeinstallprompt" cuando el manifest + service worker
@@ -2775,6 +2893,7 @@ function semaforoActividad(fechaIso){
   return '🔴 Inactivo';
 }
 let GIMNASIOS_ADMIN_CACHE = [];
+let MODULOS_GIMNASIOS = []; // [{gimnasio_id, modulo, habilitado}] — solo lo ve Martin
 function etiquetaEstadoSuscripcion(f){
   if (f.estado_suscripcion === 'activa'){
     return `🟢 Activa${f.suscripcion_vence_en ? ' · hasta ' + formatearFechaCorta(f.suscripcion_vence_en) : ''}`;
@@ -2792,7 +2911,11 @@ async function cargarGimnasiosAdmin(){
   const tbody = document.getElementById('gimnasiosAdminTbody');
   tbody.innerHTML = '<tr><td colspan="6" class="muted" style="padding:10px;">Cargando...</td></tr>';
   try{
-    const filas = await sb('rpc/listar_gimnasios_admin', { method:'POST', body: JSON.stringify({}) });
+    const [filas, mods] = await Promise.all([
+      sb('rpc/listar_gimnasios_admin', { method:'POST', body: JSON.stringify({}) }),
+      sb('rpc/listar_modulos_gimnasios', { method:'POST', body: JSON.stringify({}) }).catch(() => []),
+    ]);
+    MODULOS_GIMNASIOS = mods || [];
     GIMNASIOS_ADMIN_CACHE = filas || [];
     if (!GIMNASIOS_ADMIN_CACHE.length){ tbody.innerHTML = '<tr><td colspan="6" class="muted" style="padding:10px;">Todavía no hay gimnasios dados de alta.</td></tr>'; return; }
     tbody.innerHTML = GIMNASIOS_ADMIN_CACHE.map(f => `
@@ -2805,6 +2928,7 @@ async function cargarGimnasiosAdmin(){
         <td style="padding:6px; white-space:nowrap;">
           <button class="ghost" style="font-size:11px; padding:2px 6px;" onclick="activarSuscripcionUI('${f.id}')">💳 Activar</button>
           <button class="ghost" style="font-size:11px; padding:2px 6px;" onclick="toggleHistorialSuscripcion('${f.id}')">🧾 Historial</button>
+          <button class="ghost" style="font-size:11px; padding:2px 6px;" title="Módulo de proyección de ingresos (Dashboard)" onclick="alternarModuloGimnasio('${f.id}','proyeccion_ingresos',${!MODULOS_GIMNASIOS.some(m => m.gimnasio_id === f.id && m.modulo === 'proyeccion_ingresos' && m.habilitado)})">📈 Proyección: ${MODULOS_GIMNASIOS.some(m => m.gimnasio_id === f.id && m.modulo === 'proyeccion_ingresos' && m.habilitado) ? 'ON' : 'OFF'}</button>
         </td>
       </tr>
       <tr id="historialSus${f.id}" style="display:none; border-bottom:1px solid var(--border);">
@@ -2813,6 +2937,13 @@ async function cargarGimnasiosAdmin(){
   }catch(e){
     tbody.innerHTML = `<tr><td colspan="6" class="muted" style="padding:10px;">Error: ${e.message}</td></tr>`;
   }
+}
+async function alternarModuloGimnasio(gimnasioId, modulo, habilitar){
+  try{
+    await sb('rpc/configurar_modulo_gimnasio', { method:'POST', body: JSON.stringify({ p_gimnasio_id: gimnasioId, p_modulo: modulo, p_habilitado: habilitar }) });
+    toast(habilitar ? 'Módulo activado ✓' : 'Módulo desactivado');
+    await cargarGimnasiosAdmin();
+  }catch(e){ toast('No se pudo cambiar el módulo: ' + e.message, true); }
 }
 async function toggleHistorialSuscripcion(gimnasioId){
   const fila = document.getElementById(`historialSus${gimnasioId}`);
@@ -3213,7 +3344,7 @@ function chequearBloqueoEscrituraStaff(path, opts){
   const permitidas = [
     'rpc/registrar_actividad_gimnasio', 'rpc/listar_gimnasios_admin',
     'rpc/generar_codigo_activacion', 'rpc/listar_codigos_activacion', 'rpc/actualizar_codigo_activacion',
-    'rpc/activar_suscripcion_gimnasio', 'notificaciones_staff',
+    'rpc/activar_suscripcion_gimnasio', 'rpc/configurar_modulo_gimnasio', 'notificaciones_staff',
   ];
   if (permitidas.some(p => path.startsWith(p))) return;
   throw new Error('Tu período de prueba venció. Activá tu suscripción para poder crear o editar — mientras tanto podés seguir viendo todo.');
@@ -3890,7 +4021,9 @@ async function cargarDashboardAdmin(){
     document.getElementById('kpiNuevos').textContent = d.nuevos_mes ?? 0;
     document.getElementById('kpiFacturado').textContent = formatearMonto(d.facturado_mes);
     document.getElementById('kpiFacturadoDesglose').textContent =
-      `Efectivo: ${formatearMonto(d.facturado_efectivo)} · Transferencia: ${formatearMonto(d.facturado_transferencia)}`;
+      [`Efectivo: ${formatearMonto(d.facturado_efectivo)}`, `Transferencia: ${formatearMonto(d.facturado_transferencia)}`,
+       ...(Number(d.facturado_mercado_pago) > 0 ? [`Mercado Pago: ${formatearMonto(d.facturado_mercado_pago)}`] : []),
+       ...(Number(d.facturado_otro) > 0 ? [`Otro: ${formatearMonto(d.facturado_otro)}`] : [])].join(' · ');
     document.getElementById('kpiPendiente').textContent = formatearMonto(d.vencidos_monto_estimado);
     document.getElementById('kpiPendienteCount').textContent =
       `${d.vencidos_count ?? 0} socio(s) con la cuota vencida`;
@@ -3899,7 +4032,9 @@ async function cargarDashboardAdmin(){
     kpis.style.display = '';
     cargarOcupacionSemanalDashboard(gimId);
     cargarMetricasMembresia(gimId);
+    cargarProyeccionIngresos(gimId);
     cargarGananciasDashboard(gimId, d.facturado_mes);
+    cargarCajasDashboard(gimId);
   }catch(e){
     estado.textContent = 'Error cargando el dashboard: ' + e.message;
     estado.style.display = '';
@@ -3929,6 +4064,293 @@ async function cargarGananciasDashboard(gimId, facturadoMes){
   }catch(e){
     ['ganFacturado','ganGastosInfra','ganGastosProf','ganNeta'].forEach(id => { const el = document.getElementById(id); if (el) el.textContent = '-'; });
   }
+}
+
+// ---------- Cajas (Efectivo / Banco) + movimientos entre cajas (v64, pedido 29/9) ----------
+// Dos cajas fijas. Ingreso: efectivo -> Efectivo; transferencia / Mercado Pago (neto) / otro -> Banco.
+// Egreso: cada gasto y cada liquidación a profesores lleva la caja de la que salió.
+// Todo el cálculo lo hace el servidor (obtener_cajas), solo admin.
+const CAJA_ETIQ = { efectivo:'💵 Efectivo', banco:'🏦 Banco' };
+const CAJAS_MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+const METODO_ETIQ_CAJAS = { efectivo:'Efectivo', transferencia:'Transferencia', mercado_pago:'Mercado Pago', otro:'Otro' };
+let CAJAS_MES = null; // {y, m} (m: 0-11)
+let CAJAS_DATA = null;
+
+function cajasMesIso(){
+  if (!CAJAS_MES){ const h = new Date(); CAJAS_MES = { y:h.getFullYear(), m:h.getMonth() }; }
+  return `${CAJAS_MES.y}-${String(CAJAS_MES.m+1).padStart(2,'0')}-01`;
+}
+function cajasCambiarMes(delta){
+  cajasMesIso();
+  let m = CAJAS_MES.m + delta, y = CAJAS_MES.y;
+  if (m < 0){ m = 11; y--; } else if (m > 11){ m = 0; y++; }
+  CAJAS_MES = { y, m };
+  cajasCargar();
+}
+function abrirCajas(){ cambiarSubvista('cobranzas'); cobCambiarTab('cajas'); }
+function cajasAbrirTab(){
+  if (!document.getElementById('movCajaFecha').value) document.getElementById('movCajaFecha').value = dateAIso(new Date());
+  if (!document.getElementById('cajaCfgFecha').value) document.getElementById('cajaCfgFecha').value = dateAIso(new Date());
+  cajasCargar();
+}
+function cajasTarjetaSaldo(titulo, valor){
+  return `<div class="card" style="flex:1; min-width:170px; margin:0;">
+    <div class="muted" style="font-size:12px;">${titulo}</div>
+    <div style="font-size:24px; font-weight:800; color:${valor >= 0 ? 'var(--accent2)' : 'var(--danger)'};">${formatearMonto(valor)}</div></div>`;
+}
+async function cajasCargar(){
+  const gimId = GIMNASIO_ACTUAL?.id;
+  if (!gimId) return;
+  document.getElementById('cajasMesLabel').textContent = `${CAJAS_MESES[(CAJAS_MES||{m:new Date().getMonth()}).m]} ${(CAJAS_MES||{y:new Date().getFullYear()}).y}`;
+  try{
+    const mesIso = cajasMesIso();
+    document.getElementById('cajasMesLabel').textContent = `${CAJAS_MESES[CAJAS_MES.m]} ${CAJAS_MES.y}`;
+    const [d, movs] = await Promise.all([
+      sb('rpc/obtener_cajas', { method:'POST', body: JSON.stringify({ p_gimnasio_id: gimId, p_mes: mesIso }) }),
+      sb(`movimientos_caja?select=id,fecha,origen,destino,monto,nota&gimnasio_id=eq.${gimId}&fecha=gte.${mesIso}&fecha=lt.${CAJAS_MES.m===11 ? (CAJAS_MES.y+1)+'-01-01' : CAJAS_MES.y+'-'+String(CAJAS_MES.m+2).padStart(2,'0')+'-01'}&order=fecha.desc,creado_en.desc`),
+    ]);
+    CAJAS_DATA = d;
+    const aviso = document.getElementById('cajasAviso');
+    let avisoHtml = '';
+    if (!d.configurada){
+      avisoHtml = `<div style="background:rgba(255,210,61,.12); border:1px solid rgba(255,210,61,.4); color:var(--warn); border-radius:8px; padding:10px 12px; font-size:13px;">Todavía no cargaste el saldo inicial de tus cajas. Completá "Saldo inicial" abajo para ver cuánta plata hay en cada una.</div>`;
+    } else if (d.egresos_sin_caja && d.egresos_sin_caja.cantidad > 0){
+      avisoHtml = `<div style="background:rgba(255,210,61,.12); border:1px solid rgba(255,210,61,.4); color:var(--warn); border-radius:8px; padding:10px 12px; font-size:13px;">⚠️ ${d.egresos_sin_caja.cantidad} gasto(s) por ${formatearMonto(d.egresos_sin_caja.monto)} desde la fecha de corte no tienen caja asignada, así que no restan de ningún saldo. Asignales una en la pestaña Gastos.</div>`;
+    }
+    aviso.innerHTML = avisoHtml;
+    const cont = document.getElementById('cajasSaldos');
+    if (d.configurada){
+      const ef = Number(d.saldos.efectivo), bn = Number(d.saldos.banco);
+      cont.innerHTML = cajasTarjetaSaldo('💵 Efectivo (saldo actual)', ef) + cajasTarjetaSaldo('🏦 Banco (saldo actual)', bn) + cajasTarjetaSaldo('Total', ef + bn);
+      document.getElementById('cajaCfgFecha').value = d.fecha_corte;
+      document.getElementById('cajaCfgEfectivo').value = d.saldo_inicial_efectivo;
+      document.getElementById('cajaCfgBanco').value = d.saldo_inicial_banco;
+    } else cont.innerHTML = '';
+
+    const m = d.mes_por_caja;
+    const fila = (k) => { const x = m[k]; const neto = Number(x.ingresos) - Number(x.gastos) + Number(x.mov_entrada) - Number(x.mov_salida);
+      return `<tr><td style="padding:6px 4px; border-bottom:1px solid var(--border);">${CAJA_ETIQ[k]}</td>
+        <td style="text-align:right; border-bottom:1px solid var(--border);">${formatearMonto(x.ingresos)}</td>
+        <td style="text-align:right; border-bottom:1px solid var(--border); color:var(--danger);">${formatearMonto(x.gastos)}</td>
+        <td style="text-align:right; border-bottom:1px solid var(--border);">${formatearMonto(x.mov_entrada)}</td>
+        <td style="text-align:right; border-bottom:1px solid var(--border);">${formatearMonto(x.mov_salida)}</td>
+        <td style="text-align:right; border-bottom:1px solid var(--border); font-weight:700; color:${neto>=0?'var(--accent2)':'var(--danger)'};">${formatearMonto(neto)}</td></tr>`; };
+    document.getElementById('cajasResumenMes').innerHTML = `<div style="overflow-x:auto;"><table style="width:100%; border-collapse:collapse; font-size:13px; min-width:460px;">
+      <tr class="muted"><th style="text-align:left; padding:4px;">Caja</th><th style="text-align:right;">Cobros</th><th style="text-align:right;">Gastos</th><th style="text-align:right;">Entra (mov.)</th><th style="text-align:right;">Sale (mov.)</th><th style="text-align:right;">Variación</th></tr>
+      ${fila('efectivo')}${fila('banco')}</table></div>
+      <div class="muted" style="font-size:12px; margin-top:6px;">Gastos incluye los pagos a profesores. Un movimiento suma en una caja y resta en la otra, el total no cambia.</div>`;
+
+    const met = d.ingresos_por_metodo || {};
+    const claves = Object.keys(met);
+    document.getElementById('cajasMetodos').innerHTML = claves.length ? `<div style="overflow-x:auto;"><table style="width:100%; border-collapse:collapse; font-size:13px; min-width:380px;">
+      <tr class="muted"><th style="text-align:left; padding:4px;">Método</th><th style="text-align:right;">Pagos</th><th style="text-align:right;">Cobrado</th><th style="text-align:right;">Neto (sin comisión)</th></tr>
+      ${claves.map(k => `<tr><td style="padding:6px 4px; border-bottom:1px solid var(--border);">${METODO_ETIQ_CAJAS[k] || k}</td>
+        <td style="text-align:right; border-bottom:1px solid var(--border);">${met[k].cantidad}</td>
+        <td style="text-align:right; border-bottom:1px solid var(--border);">${formatearMonto(met[k].monto)}</td>
+        <td style="text-align:right; border-bottom:1px solid var(--border);">${formatearMonto(met[k].neto)}</td></tr>`).join('')}</table></div>` : '<div class="empty">No hubo cobros este mes.</div>';
+
+    document.getElementById('cajasMovimientos').innerHTML = movs.length ? movs.map(x => `
+      <div class="row" style="justify-content:space-between; padding:6px 0; border-bottom:1px solid var(--border);">
+        <div><div style="font-weight:600;">${CAJA_ETIQ[x.origen]} → ${CAJA_ETIQ[x.destino]}</div>
+          <div class="muted" style="font-size:12px;">${formatearFechaCorta(x.fecha)}${x.nota ? ' · ' + String(x.nota).replace(/</g,'&lt;') : ''}</div></div>
+        <div class="row" style="gap:8px; align-items:center;"><div style="font-weight:700;">${formatearMonto(x.monto)}</div>
+          <button class="ghost" style="color:var(--danger); padding:4px 8px;" onclick="eliminarMovimientoCaja('${x.id}')">🗑️</button></div>
+      </div>`).join('') : '<div class="empty">No hay movimientos entre cajas este mes.</div>';
+  }catch(e){
+    document.getElementById('cajasAviso').innerHTML = `<div class="muted">Error cargando las cajas: ${e.message}</div>`;
+  }
+}
+async function guardarCajaConfig(){
+  const fecha = document.getElementById('cajaCfgFecha').value;
+  const ef = Number(document.getElementById('cajaCfgEfectivo').value || 0);
+  const bn = Number(document.getElementById('cajaCfgBanco').value || 0);
+  if (!fecha){ toast('Elegí la fecha de corte.', true); return; }
+  if (CAJAS_DATA?.configurada && !confirm('Ya había un saldo inicial cargado. Si lo cambiás, todos los saldos se recalculan desde la nueva fecha de corte. ¿Continuar?')) return;
+  const btn = document.getElementById('btnCajaCfg'); btn.disabled = true;
+  try{
+    await sb('cajas_config', { method:'POST', headers:{Prefer:'resolution=merge-duplicates,return=minimal'}, body: JSON.stringify({
+      gimnasio_id: GIMNASIO_ACTUAL.id, fecha_corte: fecha, saldo_inicial_efectivo: ef, saldo_inicial_banco: bn, actualizado_en: new Date().toISOString(),
+    })});
+    toast('Saldo inicial guardado ✓');
+    cajasCargar();
+  }catch(e){ toast('Error guardando el saldo inicial: ' + extraerMensajeError(e), true); }
+  finally{ btn.disabled = false; }
+}
+async function registrarMovimientoCaja(){
+  const [origen, destino] = document.getElementById('movCajaDireccion').value.split('>');
+  const monto = Number(document.getElementById('movCajaMonto').value);
+  const fecha = document.getElementById('movCajaFecha').value || dateAIso(new Date());
+  const nota = document.getElementById('movCajaNota').value.trim() || null;
+  if (!monto || monto <= 0){ toast('Poné un monto mayor a cero.', true); return; }
+  const saldoOrigen = CAJAS_DATA?.configurada ? Number(CAJAS_DATA.saldos[origen]) : null;
+  if (saldoOrigen !== null && monto > saldoOrigen && !confirm(`El saldo actual de ${CAJA_ETIQ[origen]} es ${formatearMonto(saldoOrigen)}, menos que el monto a mover. ¿Registrarlo igual?`)) return;
+  const btn = document.getElementById('btnMovCaja'); btn.disabled = true;
+  try{
+    await sb('movimientos_caja', { method:'POST', headers:{Prefer:'return=minimal'}, body: JSON.stringify({
+      gimnasio_id: GIMNASIO_ACTUAL.id, origen, destino, monto, fecha, nota,
+    })});
+    toast('Movimiento registrado ✓');
+    document.getElementById('movCajaMonto').value = ''; document.getElementById('movCajaNota').value = '';
+    cajasCargar();
+  }catch(e){ toast('Error registrando el movimiento: ' + extraerMensajeError(e), true); }
+  finally{ btn.disabled = false; }
+}
+async function eliminarMovimientoCaja(id){
+  if (!confirm('¿Eliminar este movimiento entre cajas? Los saldos se recalculan.')) return;
+  try{
+    await sb(`movimientos_caja?id=eq.${id}`, { method:'DELETE', headers:{Prefer:'return=minimal'} });
+    toast('Movimiento eliminado.');
+    cajasCargar();
+  }catch(e){ toast('Error: ' + extraerMensajeError(e), true); }
+}
+async function asignarCajaEgreso(tipo, id, caja){
+  if (!caja) return;
+  try{
+    const tabla = tipo === 'gasto' ? 'gastos_gimnasio' : 'liquidaciones_profesor';
+    await sb(`${tabla}?id=eq.${id}`, { method:'PATCH', headers:{Prefer:'return=minimal'}, body: JSON.stringify({ caja }) });
+    toast('Caja asignada ✓');
+    cargarGastos();
+  }catch(e){ toast('Error asignando la caja: ' + extraerMensajeError(e), true); }
+}
+async function cargarCajasDashboard(gimId){
+  const cont = document.getElementById('dashCajas');
+  if (!cont) return;
+  try{
+    const d = await sb('rpc/obtener_cajas', { method:'POST', body: JSON.stringify({ p_gimnasio_id: gimId }) });
+    if (!d.configurada){
+      cont.innerHTML = `<div class="muted">Todavía no configuraste el saldo inicial de tus cajas (Efectivo y Banco). Cargalo en Finanzas → Cajas para ver cuánta plata hay en cada una.</div>`;
+      return;
+    }
+    const ef = Number(d.saldos.efectivo), bn = Number(d.saldos.banco);
+    cont.innerHTML = cajasTarjetaSaldo('💵 Efectivo', ef) + cajasTarjetaSaldo('🏦 Banco', bn) + cajasTarjetaSaldo('Total en cajas', ef + bn)
+      + (d.egresos_sin_caja && d.egresos_sin_caja.cantidad > 0 ? `<div class="muted" style="flex-basis:100%; font-size:12px; color:var(--warn);">⚠️ ${d.egresos_sin_caja.cantidad} gasto(s) sin caja asignada no están restando de ningún saldo.</div>` : '');
+  }catch(e){ cont.innerHTML = '<div class="muted">No se pudieron cargar las cajas.</div>'; }
+}
+
+// ---------- Proyección de ingresos (módulo opcional, se habilita por gimnasio) ----------
+// El servidor decide: obtener_proyeccion_ingresos() devuelve MODULO_NO_HABILITADO si Martin
+// no lo activó para este gimnasio (tabla gimnasio_modulos, sin escritura para el admin), y
+// en ese caso la sección simplemente no se muestra.
+let PROYECCION_DATA = null;
+let PROYECCION_VISTA = 'devengado';
+const PROY_MESES = {'01':'Ene','02':'Feb','03':'Mar','04':'Abr','05':'May','06':'Jun','07':'Jul','08':'Ago','09':'Sep','10':'Oct','11':'Nov','12':'Dic'};
+
+async function cargarProyeccionIngresos(gimId){
+  const sec = document.getElementById('proyeccionSeccion');
+  if (!sec) return;
+  try{
+    PROYECCION_DATA = await sb('rpc/obtener_proyeccion_ingresos', {
+      method: 'POST',
+      body: JSON.stringify({ p_gimnasio_id: gimId, p_meses: 6 })
+    });
+    sec.style.display = '';
+    renderProyeccion();
+  }catch(e){
+    sec.style.display = 'none';
+    if (!/MODULO_NO_HABILITADO/.test(e.message)) console.warn('Proyección de ingresos:', e.message);
+  }
+}
+
+function setProyeccionVista(v){
+  PROYECCION_VISTA = v;
+  renderProyeccion();
+}
+
+function proyMontoCompacto(v){
+  const n = Number(v) || 0;
+  if (n >= 1e6) return '$' + (n/1e6).toLocaleString('es-AR', {maximumFractionDigits:1}) + ' M';
+  if (n >= 1e3) return '$' + Math.round(n/1e3).toLocaleString('es-AR') + ' k';
+  return '$' + Math.round(n).toLocaleString('es-AR');
+}
+
+function renderProyeccion(){
+  const d = PROYECCION_DATA;
+  if (!d) return;
+  const meses = d.meses || [];
+  const caja = PROYECCION_VISTA === 'caja';
+  document.getElementById('proyTabCaja').classList.toggle('active', caja);
+  document.getElementById('proyTabDevengado').classList.toggle('active', !caja);
+  document.getElementById('proyeccionSub').textContent = caja
+    ? 'Cuándo entra la plata: un pago de varios meses cuenta entero en el mes en que se cobró.'
+    : 'A qué mes corresponde: un pago de varios meses se reparte entre los meses que cubre. Es la mejor forma de medir si el negocio mejora.';
+
+  const aseg = m => Number(caja ? m.caja : m.devengado) || 0;
+  const est  = m => (caja ? m.caja_estimada : m.devengado_estimado);
+  const estN = m => Number(est(m)) || 0;
+
+  // KPIs: siempre sobre lo "que corresponde" a los próximos 3 meses (no dependen de la vista).
+  const futuros = meses.filter(m => m.tipo === 'futuro').slice(0, 3);
+  const sumAseg = futuros.reduce((a, m) => a + (Number(m.devengado) || 0), 0);
+  document.getElementById('proyKpiAsegurado').textContent = formatearMonto(sumAseg);
+  const tasa = d.tasa_renovacion;
+  const sumEst = futuros.reduce((a, m) => a + (Number(m.devengado_estimado) || 0), 0);
+  document.getElementById('proyKpiEstimado').textContent = tasa == null ? '—' : formatearMonto(sumEst);
+  document.getElementById('proyKpiTasa').textContent = tasa == null ? '—' : tasa.toLocaleString('es-AR', {maximumFractionDigits:1}) + '%';
+  document.getElementById('proyKpiTasaDetalle').textContent = tasa == null
+    ? `Todavía no hay historial suficiente (${d.tasa_base || 0} de 5 períodos vencidos para medirla).`
+    : `Sobre ${d.tasa_base} períodos ya vencidos.`;
+
+  // Gráfico de barras apiladas: ya pagado + renovaciones estimadas.
+  const W = 600, H = 210, padTop = 26, padBot = 28, padX = 10;
+  const n = Math.max(1, meses.length);
+  const slot = (W - padX*2) / n;
+  const barW = Math.min(34, slot * 0.62);
+  const totales = meses.map(m => aseg(m) + estN(m));
+  const max = Math.max(1, ...totales);
+  const base = H - padBot;
+  const alto = v => (base - padTop) * (v / max);
+  const rectTop = (x, y, w, h, r) => h <= 0 ? '' :
+    `<path d="M${x},${y+h} V${y+Math.min(r,h)} Q${x},${y} ${x+Math.min(r,w/2)},${y} H${x+w-Math.min(r,w/2)} Q${x+w},${y} ${x+w},${y+Math.min(r,h)} V${y+h} Z"`;
+  const grid = [0.25, 0.5, 0.75, 1].map(f => {
+    const y = base - (base - padTop) * f;
+    return `<line x1="0" y1="${y.toFixed(1)}" x2="${W}" y2="${y.toFixed(1)}" stroke="var(--border)" stroke-width="1" stroke-dasharray="2 4"/>`;
+  }).join('');
+  const barras = meses.map((m, i) => {
+    const cx = padX + slot * i + slot / 2;
+    const x = cx - barW / 2;
+    const a = aseg(m), e = estN(m);
+    const hA = alto(a), hE = alto(e);
+    const gap = (hA > 0 && hE > 0) ? 2 : 0;           // separación de 2px entre segmentos apilados
+    const yA = base - hA;
+    const yE = yA - gap - hE;
+    const pasado = m.tipo === 'pasado';
+    const opA = pasado ? 0.55 : 1;
+    let seg = '';
+    if (hA > 0){
+      // si arriba no hay segmento estimado, el pagado es el tope y lleva las puntas redondeadas
+      seg += hE > 0
+        ? `<rect x="${x.toFixed(1)}" y="${yA.toFixed(1)}" width="${barW.toFixed(1)}" height="${hA.toFixed(1)}" fill="var(--accent2)" opacity="${opA}"/>`
+        : `${rectTop(x.toFixed(1)*1, yA, barW, hA, 4)} fill="var(--accent2)" opacity="${opA}"/>`;
+    }
+    if (hE > 0){
+      seg += `${rectTop(x.toFixed(1)*1, yE, barW, hE, 4)} fill="rgba(61,220,132,.28)" stroke="var(--accent2)" stroke-width="1.5" stroke-dasharray="4 3"/>`;
+    }
+    const tot = a + e;
+    const yLbl = base - alto(tot) - (hA > 0 && hE > 0 ? gap : 0) - 6;
+    const lbl = tot > 0 ? `<text x="${cx.toFixed(1)}" y="${Math.max(12, yLbl).toFixed(1)}" font-size="11" font-weight="700" fill="var(--text)" text-anchor="middle">${proyMontoCompacto(tot)}</text>` : '';
+    const mm = PROY_MESES[m.mes.slice(5,7)] || m.mes;
+    const esHoy = m.tipo === 'actual';
+    const eje = `<text x="${cx.toFixed(1)}" y="${H-10}" font-size="11" fill="${esHoy ? 'var(--text)' : 'var(--muted)'}" font-weight="${esHoy ? 700 : 400}" text-anchor="middle">${mm}${esHoy ? ' · hoy' : ''}</text>`;
+    const tip = `${mm} ${m.mes.slice(0,4)} · Ya pagado: ${formatearMonto(a)}${m.tipo !== 'pasado' && est(m) != null ? ' · Renovaciones estimadas: ' + formatearMonto(e) : ''}`;
+    return `<g><title>${tip}</title>${seg}${lbl}${eje}</g>`;
+  }).join('');
+  document.getElementById('proyeccionChart').innerHTML =
+    `<svg viewBox="0 0 ${W} ${H}" width="100%" style="min-width:420px; max-height:260px;" role="img" aria-label="Proyección de ingresos por mes">${grid}<line x1="0" y1="${base}" x2="${W}" y2="${base}" stroke="var(--border)" stroke-width="1"/>${barras}</svg>`;
+
+  // Tabla de detalle (mismas cifras, en las dos vistas).
+  const fm = v => v == null ? '—' : formatearMonto(v);
+  document.getElementById('proyeccionTabla').innerHTML =
+    `<thead><tr style="text-align:left; border-bottom:1px solid var(--border);">
+       <th style="padding:5px;">Mes</th><th style="padding:5px;">Cobrado en el mes</th><th style="padding:5px;">Corresponde al mes</th>
+       <th style="padding:5px;">Renov. estimadas (cobro)</th><th style="padding:5px;">Renov. estimadas (corresponde)</th></tr></thead><tbody>` +
+    meses.map(m => `<tr style="border-bottom:1px solid var(--border);">
+       <td style="padding:5px;">${PROY_MESES[m.mes.slice(5,7)] || m.mes} ${m.mes.slice(0,4)}${m.tipo==='actual' ? ' (hoy)' : ''}</td>
+       <td style="padding:5px;">${fm(m.caja)}</td><td style="padding:5px;">${fm(m.devengado)}</td>
+       <td style="padding:5px;">${fm(m.caja_estimada)}</td><td style="padding:5px;">${fm(m.devengado_estimado)}</td></tr>`).join('') + '</tbody>';
+
+  document.getElementById('proyeccionNota').textContent = tasa == null
+    ? 'Por ahora solo se muestra lo ya pagado. Las renovaciones estimadas aparecen cuando haya al menos 5 períodos vencidos para medir cuántos socios renuevan.'
+    : 'Lo estimado supone que cada socio con cuota vigente renueva con la tasa histórica de arriba. No incluye socios nuevos ni los que ya tienen la cuota vencida.';
 }
 
 // ---------- Churn + evolución de membresía (Dashboard admin) ----------
@@ -5404,7 +5826,7 @@ async function calcularFacturadorHoras(){
         <div>Total: ${totalHoras.toFixed(1)} horas</div>
         ${tarifa ? `<div>${formatearMonto(monto)}</div>` : `<div class="muted" style="font-weight:400;">Cargá la tarifa/hora del profesor en "Profesores" para calcular el monto.</div>`}
       </div>
-      ${(!haySolapamiento && tarifa && totalHoras > 0) ? `<button style="margin-top:10px;" onclick="confirmarLiquidacion()">Confirmar y registrar pago</button>` : ''}
+      ${(!haySolapamiento && tarifa && totalHoras > 0) ? `<div class="row" style="margin-top:10px; align-items:end; gap:10px; flex-wrap:wrap;"><div class="field" style="min-width:170px; margin:0;"><label>Pagado desde</label><select id="factCaja"><option value="">-- elegí la caja --</option><option value="efectivo">💵 Efectivo</option><option value="banco">🏦 Banco</option></select></div><button onclick="confirmarLiquidacion()">Confirmar y registrar pago</button></div>` : ''}
       ${(haySolapamiento && tarifa && totalHoras > 0) ? `<div class="muted" style="margin-top:8px; font-size:12px;">No se puede confirmar mientras el rango incluya días ya liquidados.</div>` : ''}
     `;
   }catch(e){ cont.innerHTML = 'Error: ' + e.message; }
@@ -5413,13 +5835,15 @@ async function calcularFacturadorHoras(){
 async function confirmarLiquidacion(){
   if (!FACTURADOR_CALC) return;
   const { profesorId, desde, hasta, totalHoras, tarifa, impuesto, monto } = FACTURADOR_CALC;
+  const cajaLiq = document.getElementById('factCaja')?.value;
+  if (!cajaLiq){ toast('Elegí de qué caja sale el pago (Efectivo o Banco).', true); return; }
   if (!confirm(`¿Confirmar liquidación de ${totalHoras.toFixed(1)}hs por ${formatearMonto(monto)}? Va a quedar registrado como gasto del gimnasio.`)) return;
   try{
     await sb('liquidaciones_profesor', { method:'POST', headers:{Prefer:'return=minimal'}, body: JSON.stringify({
       gimnasio_id: GIMNASIO_ACTUAL.id, profesor_id: profesorId,
       periodo_desde: desde, periodo_hasta: hasta,
       horas_totales: totalHoras, tarifa_hora_aplicada: tarifa, impuesto_pct_aplicado: impuesto,
-      monto_total: monto,
+      monto_total: monto, caja: cajaLiq,
     })});
     toast('Liquidación registrada ✓');
     FACTURADOR_CALC = null;
@@ -6643,10 +7067,14 @@ async function cargarCobranzas(){
 
 function cobCambiarTab(tab){
   const esGastos = tab === 'gastos';
-  document.getElementById('cobTabCobros').style.display = esGastos ? 'none' : '';
+  const esCajas = tab === 'cajas';
+  document.getElementById('cobTabCobros').style.display = (esGastos || esCajas) ? 'none' : '';
   document.getElementById('cobTabGastos').style.display = esGastos ? '' : 'none';
-  document.getElementById('cobTabBtnCobros').classList.toggle('active', !esGastos);
+  document.getElementById('cobTabCajas').style.display = esCajas ? '' : 'none';
+  document.getElementById('cobTabBtnCobros').classList.toggle('active', !esGastos && !esCajas);
   document.getElementById('cobTabBtnGastos').classList.toggle('active', esGastos);
+  document.getElementById('cobTabBtnCajas').classList.toggle('active', esCajas);
+  if (esCajas) cajasAbrirTab();
   if (esGastos){
     if (!document.getElementById('gastoFecha').value) document.getElementById('gastoFecha').value = dateAIso(new Date());
     cargarCategoriasGasto();
@@ -6716,15 +7144,18 @@ async function agregarGasto(){
   const fecha = document.getElementById('gastoFecha').value || dateAIso(new Date());
   if (!categoriaId || categoriaId === '__nueva__'){ toast('Elegí (o creá) una categoría.', true); return; }
   if (!concepto || !monto){ toast('Completá concepto y monto.', true); return; }
+  const caja = document.getElementById('gastoCaja').value;
+  if (!caja){ toast('Elegí de qué caja salió la plata (Efectivo o Banco).', true); return; }
   const btn = document.getElementById('btnAgregarGasto');
   btn.disabled = true;
   try{
     await sb('gastos_gimnasio', { method:'POST', headers:{Prefer:'return=minimal'}, body: JSON.stringify({
-      gimnasio_id: GIMNASIO_ACTUAL.id, categoria_id: categoriaId, concepto, monto, fecha,
+      gimnasio_id: GIMNASIO_ACTUAL.id, categoria_id: categoriaId, concepto, monto, fecha, caja,
     })});
     toast('Gasto agregado ✓');
     document.getElementById('gastoConcepto').value = '';
     document.getElementById('gastoMonto').value = '';
+    document.getElementById('gastoCaja').value = '';
     cargarGastos();
     if (document.getElementById('gastoGraficoCategoria').value === categoriaId) cargarGraficoGastos();
   }catch(e){ toast('Error agregando el gasto: ' + extraerMensajeError(e), true); }
@@ -6746,12 +7177,12 @@ async function cargarGastos(){
     // para borrar una liquidación se sigue usando su propio candado (eliminarLiquidacion),
     // nunca un borrado genérico, para no saltarse esa lógica.
     const [gastos, liquidaciones] = await Promise.all([
-      sb(`gastos_gimnasio?select=id,concepto,monto,fecha,gastos_categorias(nombre)&gimnasio_id=eq.${gimId}&order=fecha.desc&limit=100`),
-      sb(`liquidaciones_profesor?select=id,monto_total,fecha_pago,periodo_desde,periodo_hasta,profesores(nombre)&gimnasio_id=eq.${gimId}&order=fecha_pago.desc&limit=100`),
+      sb(`gastos_gimnasio?select=id,concepto,monto,fecha,caja,gastos_categorias(nombre)&gimnasio_id=eq.${gimId}&order=fecha.desc&limit=100`),
+      sb(`liquidaciones_profesor?select=id,monto_total,fecha_pago,caja,periodo_desde,periodo_hasta,profesores(nombre)&gimnasio_id=eq.${gimId}&order=fecha_pago.desc&limit=100`),
     ]);
     const filas = [
-      ...gastos.map(r => ({ id:r.id, tipo:'gasto', concepto:r.concepto, monto:Number(r.monto), fecha:r.fecha, categoria:r.gastos_categorias?.nombre || 'Sin categoría' })),
-      ...liquidaciones.map(r => ({ id:r.id, tipo:'liquidacion', concepto:`Pago a ${r.profesores?.nombre || 'profesor'} (${formatearFechaCorta(r.periodo_desde)} al ${formatearFechaCorta(r.periodo_hasta)})`, monto:Number(r.monto_total), fecha:r.fecha_pago, categoria:'Pago a profesores' })),
+      ...gastos.map(r => ({ id:r.id, tipo:'gasto', concepto:r.concepto, monto:Number(r.monto), fecha:r.fecha, caja:r.caja, categoria:r.gastos_categorias?.nombre || 'Sin categoría' })),
+      ...liquidaciones.map(r => ({ id:r.id, tipo:'liquidacion', concepto:`Pago a ${r.profesores?.nombre || 'profesor'} (${formatearFechaCorta(r.periodo_desde)} al ${formatearFechaCorta(r.periodo_hasta)})`, monto:Number(r.monto_total), fecha:r.fecha_pago, caja:r.caja, categoria:'Pago a profesores' })),
     ].sort((a,b) => b.fecha.localeCompare(a.fecha));
 
     const total = filas.reduce((acc,r) => acc + r.monto, 0);
@@ -6769,7 +7200,7 @@ async function cargarGastos(){
       <div class="row" style="justify-content:space-between; padding:6px 0; border-bottom:1px solid var(--border);">
         <div>
           <div style="font-weight:600;">${r.concepto}</div>
-          <div class="muted" style="font-size:12px;">${r.categoria} · ${formatearFechaCorta(r.fecha)}</div>
+          <div class="muted" style="font-size:12px;">${r.categoria} · ${formatearFechaCorta(r.fecha)} · ${r.caja ? (r.caja==='efectivo' ? '💵 Efectivo' : '🏦 Banco') : `<select onchange="asignarCajaEgreso('${r.tipo}','${r.id}',this.value)" style="font-size:12px; padding:2px 4px;"><option value="">⚠️ Sin caja — asignar</option><option value="efectivo">💵 Efectivo</option><option value="banco">🏦 Banco</option></select>`}</div>
         </div>
         <div class="row" style="gap:8px; align-items:center;">
           <div style="font-weight:700;">${formatearMonto(r.monto)}</div>
@@ -7198,6 +7629,7 @@ async function crearAlumno(){
   const email = document.getElementById('nuevoAlumnoEmail').value.trim() || null;
   const direccion = document.getElementById('nuevoAlumnoDireccion').value.trim() || null;
   const planId = document.getElementById('nuevoAlumnoPlan').value || null;
+  if (!planId && !confirm('No elegiste un plan para este alumno. Sin plan no va a poder pagar su cuota desde la app ni figurar en cobranzas.\n\n¿Crearlo igual sin plan? (Podés asignárselo después desde su ficha.)')) return;
   const btn = document.getElementById('btnCrearAlumno');
   btn.disabled = true;
   try{
@@ -10053,16 +10485,24 @@ async function cargarBannerCuota(alumnoId){
   const cont = document.getElementById('bannerCuotaAlu');
   try{
     const [plan] = await sb(`v_plan_vigente_alumno?alumno_id=eq.${alumnoId}`);
-    if (!plan || plan.estado_pago === 'sin_plan' || plan.estado_pago === 'al_dia'){ cont.innerHTML = ''; return; } // nada que avisar
+    if (plan && plan.estado_pago === 'al_dia'){ cont.innerHTML = ''; return; } // nada que avisar
+    const mpOk = !!(GIMNASIO_ACTUAL && GIMNASIO_ACTUAL.mp_conectado);
+    if (!plan || plan.estado_pago === 'sin_plan'){
+      // Sin plan asignado no hay monto que cobrar: se avisa en vez de quedar mudo.
+      cont.innerHTML = `<div class="warn-banner" style="background:rgba(255,210,61,.12); border-color:rgba(255,210,61,.4); color:var(--warn);">ℹ️ Todavía no tenés un plan asignado. Pedile a tu profesor que te lo asigne y ahí vas a poder pagar tu cuota desde acá.</div>`;
+      return;
+    }
     const esVencido = plan.estado_pago === 'vencido';
     const esSinPagos = plan.estado_pago === 'sin_pagos';
     const texto = esVencido
-      ? `Tu cuota está vencida desde el ${formatearFechaCorta(plan.vigencia_hasta)}. Regularizala con tu profesor.`
+      ? `Tu cuota está vencida desde el ${formatearFechaCorta(plan.vigencia_hasta)}. ${mpOk ? 'Podés regularizarla ahora mismo.' : 'Regularizala con tu profesor.'}`
       : esSinPagos
-        ? `Todavía no registramos ningún pago de tu plan "${plan.plan_nombre}". Coordinalo con tu profesor.`
+        ? (mpOk
+            ? `¡Bienvenido/a! Tu plan "${plan.plan_nombre}" está listo. Pagá tu primera cuota para activarlo.`
+            : `Todavía no registramos ningún pago de tu plan "${plan.plan_nombre}". Coordinalo con tu profesor.`)
         : `Tu cuota vence el ${formatearFechaCorta(plan.vigencia_hasta)} (en ${plan.dias_para_vencer} día${plan.dias_para_vencer===1?'':'s'}).`;
     const color = esVencido ? 'rgba(255,93,93,.12); border-color:rgba(255,93,93,.4); color:#ff8a8a;' : 'rgba(255,210,61,.12); border-color:rgba(255,210,61,.4); color:var(--warn);';
-    const botonMP = GIMNASIO_ACTUAL && GIMNASIO_ACTUAL.mp_conectado
+    const botonMP = mpOk
       ? `<div style="margin-top:8px;"><button id="btnPagarMP${alumnoId}" onclick="pagarConMercadoPago('${alumnoId}')">💳 Pagar con Mercado Pago</button></div>`
       : '';
     cont.innerHTML = `<div class="warn-banner" style="background:${color}">${esVencido?'⚠️':'⏰'} ${texto}${botonMP}</div>`;
