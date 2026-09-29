@@ -683,6 +683,25 @@
 
 
 <!-- ===================== LANDING: ¿Qué sos? ===================== -->
+<!-- (v61) Pantalla de carga al arrancar con sesión guardada: evita que se vea el selector
+     "¿Qué sos?" mientras se restaura la sesión. z-index 900 < modales de seguridad (1000). -->
+<style>
+  #splashInicio{ position:fixed; inset:0; z-index:900; display:flex; align-items:center; justify-content:center; background:var(--bg); flex-direction:column; gap:14px; color:var(--muted); font-size:14px; }
+  #splashInicio .spin{ width:34px; height:34px; border-radius:50%; border:3px solid var(--border); border-top-color:var(--accent); animation:splashGiro .8s linear infinite; }
+  @keyframes splashGiro{ to{ transform:rotate(360deg); } }
+</style>
+<div id="splashInicio"><div class="spin"></div><div>Cargando...</div></div>
+<script>
+  (function(){
+    // Sin sesión guardada no hay nada que restaurar: se muestra directo el selector.
+    var hay = false;
+    try{ for (var i = 0; i < localStorage.length; i++){ if (/^sb-.*-auth-token$/.test(localStorage.key(i))) { hay = true; break; } } }catch(e){}
+    if (!hay){ var s = document.getElementById('splashInicio'); if (s) s.remove(); }
+    // Red de seguridad: si algo se cuelga, a los 12 s se muestra la app igual.
+    setTimeout(function(){ var s = document.getElementById('splashInicio'); if (s) s.remove(); }, 12000);
+  })();
+</script>
+
 <div id="landingSelector">
   <div class="landing-box">
     <div class="lc-greet">👋 Hola de nuevo</div>
@@ -2280,7 +2299,7 @@ const BUCKET = "Ejercicios";
 // un cambio, se incrementa este número — el chequeo de actualización (más abajo) lo compara
 // contra lo que hay publicado y avisa si están desactualizados, sin que nadie tenga que
 // cambiar ningún link a mano.
-const APP_VERSION = 60;
+const APP_VERSION = 61;
 
 // ---------- Instalar como app (PWA): acceso directo en escritorio/celular ----------
 // Chrome/Edge/Android disparan "beforeinstallprompt" cuando el manifest + service worker
@@ -3200,7 +3219,7 @@ function chequearBloqueoEscrituraStaff(path, opts){
   throw new Error('Tu período de prueba venció. Activá tu suscripción para poder crear o editar — mientras tanto podés seguir viendo todo.');
 }
 
-async function sb(path, opts = {}, _retry){
+async function sb(path, opts = {}, _retry, _redReintento){
   chequearBloqueoEscrituraStaff(path, opts);
   // Si hay sesión real (login del profesor/admin), mandamos su token en vez del
   // anon key, para que más adelante las políticas de RLS puedan distinguir quién
@@ -3212,7 +3231,22 @@ async function sb(path, opts = {}, _retry){
     Authorization: `Bearer ${token}`,
     "Content-Type": "application/json",
   }, opts.headers || {});
-  const resp = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, { ...opts, headers });
+  let resp;
+  try{
+    resp = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, { ...opts, headers });
+  }catch(errRed){
+    // (v61) Falla de red antes de recibir respuesta ("Load failed" en Safari/iPhone,
+    // "Failed to fetch" en Chrome): pasa al retomar la app del fondo o con señal floja.
+    // Se reintenta UNA vez, y solo si es una lectura (GET o RPC de solo lectura), para
+    // no duplicar escrituras que pudieron haber llegado al servidor.
+    const metodo = String(opts.method || 'GET').toUpperCase();
+    const esLectura = metodo === 'GET' || (metodo === 'POST' && /^rpc\/(obtener|listar)_/.test(path));
+    if (esLectura && !_redReintento){
+      await new Promise(r => setTimeout(r, 700));
+      return sb(path, opts, _retry, true);
+    }
+    throw new Error('No se pudo conectar con el servidor. Revisá tu conexión e intentá de nuevo.');
+  }
   // Leemos como texto primero: un POST/PATCH con "Prefer: return=minimal" responde 201/200
   // con el cuerpo VACÍO (no siempre 204), y llamar a resp.json() ahí tira
   // "Unexpected end of JSON input". Parseamos solo si realmente vino contenido.
@@ -3406,8 +3440,10 @@ async function entrarComoStaff(){
   mostrarLinkCodigosSiCorresponde();
   registrarActividadGimnasio();
   sincronizarTabsRol();
-  await Promise.all([cargarPersonas(), cargarCatalogoEjercicios(), cargarGimnasioActual(), cargarCategoriasYEquipos()]);
+  await Promise.all([cargarPersonas(), cargarGimnasioActual(), cargarCategoriasYEquipos()]);
   cambiarSubvista('agenda'); // lo primero que ve el profesor al entrar es la agenda del día, no el armador
+  // (v61) El catálogo de ejercicios (~430 kB) ya no frena la entrada: solo se usa al armar/buscar rutinas.
+  cargarCatalogoEjercicios().catch(e => console.error('No se pudo cargar el catálogo de ejercicios:', e));
   if (PERFIL_ACTUAL.rol === 'admin') revisarNotificacionesStaff();
   actualizarBotonesPush();
 }
@@ -11963,15 +11999,17 @@ if ('serviceWorker' in navigator){
 // Arranque: primero se fija si ya había una sesión activa (login previo guardado
 // por supabase-js), y recién con eso resuelto carga los datos ya scopeados.
 (async function iniciar(){
+  const ocultarSplash = () => { const sp = document.getElementById('splashInicio'); if (sp) sp.remove(); };
   try{
     const { data } = await supaAuth.auth.getSession();
     SESION_ACTUAL = data.session || null;
     await cargarPerfilDeSesion();
-    await Promise.all([cargarPersonas(), cargarCatalogoEjercicios(), cargarGimnasioActual(), cargarCategoriasYEquipos()]);
-    await cargarPlanesEnSelectAlumno();
 
     if (PERFIL_ACTUAL && PERFIL_ACTUAL.rol === 'alumno'){
       // Ya había sesión de alumno guardada en el navegador: entra directo a su perfil.
+      await Promise.all([cargarPersonas(), cargarGimnasioActual(), cargarCategoriasYEquipos()]);
+      cargarCatalogoEjercicios().catch(e => console.error(e)); // (v61) en segundo plano
+      await cargarPlanesEnSelectAlumno();
       document.getElementById('landingSelector').style.display = 'none';
       document.getElementById('appShell').style.display = '';
       cambiarVista('alumno');
@@ -11979,13 +12017,17 @@ if ('serviceWorker' in navigator){
     } else if (PERFIL_ACTUAL){
       // Ya había sesión de staff guardada en el navegador: entra directo, sin landing.
       // (29/9) Pasa por entrarComoStaff() para que también aplique la puerta de
-      // seguridad (2 pasos / contraseña temporal) y recargue los datos ya con la sesión completa.
+      // seguridad (2 pasos / contraseña temporal). (v61) Ya no precarga los datos acá:
+      // entrarComoStaff() los carga una sola vez (antes se bajaba todo dos veces).
       document.getElementById('landingSelector').style.display = 'none';
       document.getElementById('appShell').style.display = '';
       cambiarVista('profesor');
       await entrarComoStaff();
       if (PERFIL_ACTUAL && PERFIL_ACTUAL.rol === 'admin') manejarRetornoOAuthMercadoPago();
     } else {
+      ocultarSplash();
+      await Promise.all([cargarPersonas(), cargarCatalogoEjercicios(), cargarGimnasioActual(), cargarCategoriasYEquipos()]);
+      await cargarPlanesEnSelectAlumno();
       let tipoGuardado = null;
       try{ tipoGuardado = localStorage.getItem('m2f_tipo'); }catch(e){}
       if (tipoGuardado === 'alumno') elegirTipoIngreso('alumno');
@@ -11993,6 +12035,7 @@ if ('serviceWorker' in navigator){
       sincronizarTabsRol();
     }
   }catch(e){ toast('Error cargando datos: '+e.message, true); }
+  finally{ ocultarSplash(); }
 })();
 </script>
 
