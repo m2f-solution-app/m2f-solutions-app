@@ -1079,7 +1079,7 @@
             </div>
             <div class="field" id="profDuracionWrap" style="display:none; min-width:130px;">
               <label>Duración (semanas)</label>
-              <input type="number" min="1" id="profDuracionSemanas" onchange="CONS['dia'].estado.duracionSemanas=this.value?parseInt(this.value):null">
+              <input inputmode="numeric" type="number" min="1" id="profDuracionSemanas" onchange="CONS['dia'].estado.duracionSemanas=this.value?parseInt(this.value):null">
             </div>
           </div>
           <div class="muted" id="profModoDiasHint" style="font-size:12px; margin-top:6px; display:none;">Rotativa: no hace falta cargar fecha en los días. Se van a repetir solos, en el orden en que los agregues, según lo que el alumno ya entrenó — el "días por semana" y la "duración" son solo orientativos, no se fuerzan.</div>
@@ -1175,7 +1175,7 @@
             </div>
             <div class="field" id="espDuracionWrap" style="display:none; min-width:130px;">
               <label>Duración (semanas)</label>
-              <input type="number" min="1" id="espDuracionSemanas" onchange="CONS['esp'].estado.duracionSemanas=this.value?parseInt(this.value):null">
+              <input inputmode="numeric" type="number" min="1" id="espDuracionSemanas" onchange="CONS['esp'].estado.duracionSemanas=this.value?parseInt(this.value):null">
             </div>
           </div>
           <div class="muted" id="espModoDiasHint" style="font-size:12px; margin-top:6px; display:none;">Rotativa: no hace falta cargar fecha en los días. Sirve tanto para el que también usa turno (por cupo/aforo) como para el que entrena a distancia sin reservar nada — el turno es un tema aparte.</div>
@@ -1252,7 +1252,7 @@
               </div>
               <div class="field" style="min-width:130px;">
                 <label>DNI</label>
-                <input id="nuevoJugadorDni" placeholder="Ej: 30123456">
+                <input id="nuevoJugadorDni" inputmode="numeric" placeholder="Ej: 30123456">
               </div>
               <button onclick="crearJugadorEquipo()" id="btnCrearJugadorEquipo">➕ Agregar al equipo</button>
             </div>
@@ -1273,7 +1273,7 @@
             </div>
             <div class="field" style="min-width:140px;">
               <label>DNI</label>
-              <input id="nuevoAlumnoDni" placeholder="Ej: 30123456" />
+              <input id="nuevoAlumnoDni" inputmode="numeric" placeholder="Ej: 30123456" />
             </div>
             <div class="field">
               <label>Tipo de entrenamiento</label>
@@ -1292,8 +1292,8 @@
           </div>
           <div id="datosNuevoAlumno" style="display:none; margin-top:10px;">
             <div class="row">
-              <div class="field"><label>Altura (cm)</label><input type="number" id="nuevoAlumnoAltura" placeholder="Ej: 175"></div>
-              <div class="field"><label>Peso (kg)</label><input type="number" step="0.1" id="nuevoAlumnoPeso" placeholder="Ej: 72.5"></div>
+              <div class="field"><label>Altura (cm)</label><input inputmode="numeric" type="number" id="nuevoAlumnoAltura" placeholder="Ej: 175"></div>
+              <div class="field"><label>Peso (kg)</label><input inputmode="decimal" type="number" step="0.1" id="nuevoAlumnoPeso" placeholder="Ej: 72.5"></div>
               <div class="field" style="flex:1; min-width:180px;">
                 <label>Objetivo</label>
                 <select id="nuevoAlumnoObjetivo" onchange="document.getElementById('nuevoAlumnoObjetivoOtro').style.display = this.value==='otro' ? '' : 'none';">
@@ -1431,7 +1431,7 @@
             </div>
             <div class="field" style="min-width:140px;">
               <label>DNI</label>
-              <input id="nuevoProfesorDni" placeholder="Ej: 30123456" />
+              <input id="nuevoProfesorDni" inputmode="numeric" placeholder="Ej: 30123456" />
             </div>
             <button onclick="crearProfesor()" id="btnCrearProfesor" style="align-self:end;">Crear profesor</button>
           </div>
@@ -1569,21 +1569,21 @@
             </div>
             <div class="field">
               <label>Días por semana</label>
-              <input type="number" min="0" id="planDiasSemana" placeholder="Vacío = Libre" oninput="sugerirTurnosPorMes()">
+              <input inputmode="numeric" type="number" min="0" id="planDiasSemana" placeholder="Vacío = Libre" oninput="sugerirTurnosPorMes()">
             </div>
             <div class="field">
               <label>Turnos por mes (aviso)</label>
-              <input type="number" min="0" id="planTurnosMes" placeholder="Vacío = sin límite">
+              <input inputmode="numeric" type="number" min="0" id="planTurnosMes" placeholder="Vacío = sin límite">
             </div>
           </div>
           <div class="row" style="margin-top:8px;">
             <div class="field">
               <label>Precio transferencia</label>
-              <input type="number" min="0" step="0.01" id="planPrecio" oninput="previewPrecioEfectivoPlan()">
+              <input inputmode="decimal" type="number" min="0" step="0.01" id="planPrecio" oninput="previewPrecioEfectivoPlan()">
             </div>
             <div class="field">
               <label>Dura (días)</label>
-              <input type="number" min="1" id="planDuracionDias" value="30">
+              <input inputmode="numeric" type="number" min="1" id="planDuracionDias" value="30">
             </div>
             <div class="field">
               <label>Precio en efectivo (con descuento)</label>
@@ -1629,7 +1629,7 @@
               </div>
               <div class="field" style="min-width:120px;">
                 <label>Monto</label>
-                <input type="number" min="0" step="0.01" id="gastoMonto">
+                <input inputmode="decimal" type="number" min="0" step="0.01" id="gastoMonto">
               </div>
               <div class="field" style="min-width:150px;">
                 <label>Fecha</label>
@@ -1702,7 +1702,7 @@
               </div>
               <div class="field" style="min-width:120px;">
                 <label>Monto</label>
-                <input type="number" min="0" step="0.01" id="movCajaMonto">
+                <input inputmode="decimal" type="number" min="0" step="0.01" id="movCajaMonto">
               </div>
               <div class="field" style="min-width:150px;">
                 <label>Fecha</label>
@@ -1726,11 +1726,11 @@
               </div>
               <div class="field" style="min-width:140px;">
                 <label>Efectivo</label>
-                <input type="number" step="0.01" id="cajaCfgEfectivo" placeholder="0">
+                <input inputmode="decimal" type="number" step="0.01" id="cajaCfgEfectivo" placeholder="0">
               </div>
               <div class="field" style="min-width:140px;">
                 <label>Banco</label>
-                <input type="number" step="0.01" id="cajaCfgBanco" placeholder="0">
+                <input inputmode="decimal" type="number" step="0.01" id="cajaCfgBanco" placeholder="0">
               </div>
               <button onclick="guardarCajaConfig()" id="btnCajaCfg" style="align-self:end;">Guardar</button>
             </div>
@@ -1750,7 +1750,7 @@
             </div>
             <div class="row" style="background:var(--panel2); border:1px solid var(--border); border-radius:999px; padding:6px 8px 6px 14px; gap:8px; font-size:12.5px; color:var(--muted);">
               ⚙️ Días sin turno para "inactivo":
-              <input type="number" min="1" max="90" id="alertasUmbralInput" style="width:52px; padding:3px 4px; text-align:center; font-size:12.5px;" onchange="guardarUmbralInactivo()">
+              <input inputmode="numeric" type="number" min="1" max="90" id="alertasUmbralInput" style="width:52px; padding:3px 4px; text-align:center; font-size:12.5px;" onchange="guardarUmbralInactivo()">
               días
             </div>
           </div>
@@ -1921,7 +1921,7 @@
           <div class="row">
             <div class="field">
               <label>Descuento por pago en efectivo (%)</label>
-              <input type="number" min="0" max="100" step="0.1" id="gimDescuentoEfectivo" placeholder="Ej: 10">
+              <input inputmode="decimal" type="number" min="0" max="100" step="0.1" id="gimDescuentoEfectivo" placeholder="Ej: 10">
             </div>
             <button onclick="guardarGimnasio()" style="align-self:end;">Guardar</button>
           </div>
@@ -1932,8 +1932,8 @@
           <h2 style="margin-top:0">Planes de pago adelantado</h2>
           <div class="muted" style="margin-bottom:10px;">Opciones para cobrarle a un alumno varios meses juntos con descuento (ej: "3 meses -10%"). Aparecen como alternativa al mes normal en el botón "💰 Cobrar" de Cobranzas.</div>
           <div class="row">
-            <div class="field" style="width:110px;"><label>Meses</label><input type="number" min="2" step="1" id="nuevoPrepagoMeses" placeholder="Ej: 3"></div>
-            <div class="field" style="width:140px;"><label>Descuento (%)</label><input type="number" min="0" max="100" step="0.1" id="nuevoPrepagoDescuento" placeholder="Ej: 10"></div>
+            <div class="field" style="width:110px;"><label>Meses</label><input inputmode="numeric" type="number" min="2" step="1" id="nuevoPrepagoMeses" placeholder="Ej: 3"></div>
+            <div class="field" style="width:140px;"><label>Descuento (%)</label><input inputmode="decimal" type="number" min="0" max="100" step="0.1" id="nuevoPrepagoDescuento" placeholder="Ej: 10"></div>
             <button onclick="crearPlanPrepago()" style="align-self:end;">+ Agregar</button>
           </div>
           <div id="listaPlanesPrepago" class="muted" style="margin-top:10px;">Cargando...</div>
@@ -2023,7 +2023,7 @@
         <button class="ghost" onclick="volverALanding()">← Volver</button>
         <span class="muted">Ingresar</span>
       </div>
-      <div class="field" style="margin-bottom:10px;"><label>DNI</label><input id="alumnoLoginDni" placeholder="Tu DNI" /></div>
+      <div class="field" style="margin-bottom:10px;"><label>DNI</label><input id="alumnoLoginDni" inputmode="numeric" placeholder="Tu DNI" /></div>
       <div class="field" style="margin-bottom:14px;"><label>Contraseña</label><div class="password-wrap"><input type="password" id="alumnoLoginPassword" placeholder="La que te dio tu gimnasio, o la tuya" /><button type="button" class="toggle-pass" onclick="togglePasswordVisibility('alumnoLoginPassword', this)">👁️</button></div></div>
       <button onclick="hacerLoginAlumno()" id="btnAlumnoLogin" style="width:100%;">Ingresar</button>
       <div id="alumnoAuthMsg" class="muted" style="margin-top:12px; text-align:center;"></div>
@@ -2178,10 +2178,10 @@
 
   <div id="cronoIntervalos" style="display:none;">
     <div class="row">
-      <div class="field" style="min-width:70px;"><label>Vueltas</label><input type="number" min="1" id="cronoRondas" value="2"></div>
-      <div class="field" style="min-width:70px;"><label>Ejerc./vuelta</label><input type="number" min="1" id="cronoEjerciciosPorVuelta" value="1"></div>
-      <div class="field" style="min-width:70px;"><label>Trabajo (s)</label><input type="number" min="1" id="cronoTrabajo" value="15"></div>
-      <div class="field" style="min-width:70px;"><label>Descanso (s)</label><input type="number" min="0" id="cronoDescanso" value="10"></div>
+      <div class="field" style="min-width:70px;"><label>Vueltas</label><input inputmode="numeric" type="number" min="1" id="cronoRondas" value="2"></div>
+      <div class="field" style="min-width:70px;"><label>Ejerc./vuelta</label><input inputmode="numeric" type="number" min="1" id="cronoEjerciciosPorVuelta" value="1"></div>
+      <div class="field" style="min-width:70px;"><label>Trabajo (s)</label><input inputmode="numeric" type="number" min="1" id="cronoTrabajo" value="15"></div>
+      <div class="field" style="min-width:70px;"><label>Descanso (s)</label><input inputmode="numeric" type="number" min="0" id="cronoDescanso" value="10"></div>
     </div>
     <div class="crono-display" id="cronoIntervaloDisplay">00:00</div>
     <div class="muted" style="text-align:center; font-weight:700;" id="cronoIntervaloEstado">Listo</div>
@@ -2376,7 +2376,7 @@
       </div>
       <div class="field" style="flex:1;">
         <label>Cupo para esta cobertura</label>
-        <input type="number" id="excCupoCobertura" value="1" min="1" step="1">
+        <input inputmode="numeric" type="number" id="excCupoCobertura" value="1" min="1" step="1">
       </div>
     </div>
     <div class="field" id="excCoberturaAvisoWrap" style="display:none;">
@@ -2448,7 +2448,7 @@ const BUCKET = "Ejercicios";
 // un cambio, se incrementa este número — el chequeo de actualización (más abajo) lo compara
 // contra lo que hay publicado y avisa si están desactualizados, sin que nadie tenga que
 // cambiar ningún link a mano.
-const APP_VERSION = 66;
+const APP_VERSION = 68;
 
 // ---------- Instalar como app (PWA): acceso directo en escritorio/celular ----------
 // Chrome/Edge/Android disparan "beforeinstallprompt" cuando el manifest + service worker
@@ -5158,7 +5158,7 @@ function renderCobrosOnlineGimnasio(){
       <div class="row">
         <div class="field">
           <label>Recargo por pagar con Mercado Pago (%)</label>
-          <input type="number" min="0" max="100" step="0.1" id="gimRecargoMP" value="${GIMNASIO_ACTUAL.recargo_mercadopago_pct ?? 0}">
+          <input inputmode="decimal" type="number" min="0" max="100" step="0.1" id="gimRecargoMP" value="${GIMNASIO_ACTUAL.recargo_mercadopago_pct ?? 0}">
         </div>
         <button onclick="guardarRecargoMercadoPago()" style="align-self:end;">Guardar</button>
       </div>
@@ -5590,8 +5590,8 @@ function cargarListaProfesores(){
           ${controlRol}
         </div>
         <div class="row" style="gap:14px; flex-wrap:wrap; align-items:center; margin-top:6px;">
-          <label class="muted" style="font-size:12px; display:flex; align-items:center; gap:4px;">Tarifa/hora $<input type="number" step="0.01" min="0" value="${p.tarifa_hora ?? ''}" style="width:90px;" onchange="actualizarTarifaProfesor('${p.id}','tarifa_hora',this.value)"></label>
-          <label class="muted" style="font-size:12px; display:flex; align-items:center; gap:4px;">Impuesto/carga %<input type="number" step="0.1" min="0" value="${p.impuesto_pct ?? 0}" style="width:60px;" onchange="actualizarTarifaProfesor('${p.id}','impuesto_pct',this.value)"></label>
+          <label class="muted" style="font-size:12px; display:flex; align-items:center; gap:4px;">Tarifa/hora $<input inputmode="decimal" type="number" step="0.01" min="0" value="${p.tarifa_hora ?? ''}" style="width:90px;" onchange="actualizarTarifaProfesor('${p.id}','tarifa_hora',this.value)"></label>
+          <label class="muted" style="font-size:12px; display:flex; align-items:center; gap:4px;">Impuesto/carga %<input inputmode="decimal" type="number" step="0.1" min="0" value="${p.impuesto_pct ?? 0}" style="width:60px;" onchange="actualizarTarifaProfesor('${p.id}','impuesto_pct',this.value)"></label>
           ${(p.perfil_id && rol === 'profesor' && !(PERFIL_ACTUAL && p.perfil_id === PERFIL_ACTUAL.id)) ? `<span class="muted" style="font-size:12px; cursor:pointer; text-decoration:underline;" onclick="abrirGestionAccesoProfesor('${p.id}')">🔁 Acceso</span>` : ''}
           <span style="color:#ff6b6b; font-size:12px; cursor:pointer; font-weight:700; margin-left:auto;" onclick="abrirModalBajaProfesor('${p.id}','${(p.nombre||'').replace(/'/g,"&apos;")}')">Dar de baja</span>
         </div>
@@ -6361,7 +6361,7 @@ function filaRangoHorarioHtml(dia, h, modo){
       </div>
       <div class="field" style="min-width:80px;">
         <label>Cupo x turno</label>
-        <input type="number" min="1" id="horCupo${suf}-${rid}" value="${h.cupo_por_turno ?? 1}" onchange="guardarRangoHorario${suf}(${dia},'${rid}')">
+        <input inputmode="numeric" type="number" min="1" id="horCupo${suf}-${rid}" value="${h.cupo_por_turno ?? 1}" onchange="guardarRangoHorario${suf}(${dia},'${rid}')">
       </div>
       <button class="danger" onclick="eliminarRangoHorario${suf}('${rid}')">Quitar</button>
     </div>
@@ -7784,9 +7784,9 @@ async function cargarListaAlumnos(){
       <div class="muted" style="margin-top:4px;">${datos || 'Sin datos de contacto/físicos cargados.'} ${chipPlan} ${chipInactivo} ${chipsCategorias} ${chipEquipo} ${chipPosicion}</div>
       <div id="editarAlumno${a.id}" style="display:none; margin-top:10px;">
         <div class="row">
-          <div class="field"><label>DNI</label><input id="editDni${a.id}" value="${a.dni||''}"></div>
-          <div class="field"><label>Altura (cm)</label><input type="number" id="editAltura${a.id}" value="${a.altura_cm||''}"></div>
-          <div class="field"><label>Peso (kg)</label><input type="number" step="0.1" id="editPeso${a.id}" value="${a.peso_kg||''}"></div>
+          <div class="field"><label>DNI</label><input id="editDni${a.id}" inputmode="numeric" value="${a.dni||''}"></div>
+          <div class="field"><label>Altura (cm)</label><input inputmode="numeric" type="number" id="editAltura${a.id}" value="${a.altura_cm||''}"></div>
+          <div class="field"><label>Peso (kg)</label><input inputmode="decimal" type="number" step="0.1" id="editPeso${a.id}" value="${a.peso_kg||''}"></div>
           <div class="field" style="flex:1; min-width:180px;"><label>Objetivo</label><input id="editObjetivo${a.id}" value="${(a.objetivo||'').replace(/"/g,'&quot;')}"></div>
           <div class="field" style="min-width:160px;"><label>Posición (opcional)</label><input id="editPosicion${a.id}" placeholder="Ej: Mediocampo" value="${(a.posicion||'').replace(/"/g,'&quot;')}"></div>
         </div>
@@ -8250,7 +8250,7 @@ function categoriaGenericaHtml(cat, metricas){
       ${metricas.map(m => `
         <div class="field" style="min-width:170px;">
           <label>${m.nombre}${m.unidad ? ' ('+m.unidad+')' : ''}</label>
-          <input type="number" step="0.1" class="eval-metrica-input" data-categoria="${cat}" data-metrica="${m.nombre}" data-unidad="${m.unidad}">
+          <input inputmode="decimal" type="number" step="0.1" class="eval-metrica-input" data-categoria="${cat}" data-metrica="${m.nombre}" data-unidad="${m.unidad}">
           ${m.referencia ? `<div class="muted" style="font-size:10.5px; margin-top:2px;">Ref: ${m.referencia}</div>` : ''}
         </div>
       `).join('')}
@@ -8368,8 +8368,8 @@ function testsFuerzaModuloHtml(alumnoId){
   const filas = TESTS_FUERZA.map((ej, i) => `
     <div class="row" style="align-items:flex-end; margin-bottom:8px;">
       <div class="field" style="flex:1; min-width:160px;"><label>${ej}</label></div>
-      <div class="field" style="width:90px;"><label>Peso (kg)</label><input type="number" step="0.5" class="eval-fuerza-peso" data-idx="${i}" oninput="actualizarCalculoFuerza(${i})"></div>
-      <div class="field" style="width:80px;"><label>Reps</label><input type="number" class="eval-fuerza-reps" data-idx="${i}" oninput="actualizarCalculoFuerza(${i})"></div>
+      <div class="field" style="width:90px;"><label>Peso (kg)</label><input inputmode="decimal" type="number" step="0.5" class="eval-fuerza-peso" data-idx="${i}" oninput="actualizarCalculoFuerza(${i})"></div>
+      <div class="field" style="width:80px;"><label>Reps</label><input inputmode="numeric" type="number" class="eval-fuerza-reps" data-idx="${i}" oninput="actualizarCalculoFuerza(${i})"></div>
       <div class="muted" style="min-width:190px; padding-bottom:9px;" id="evalFuerzaCalc-${i}">1RM: - · %PC: - · Nivel: -</div>
     </div>
   `).join('');
@@ -8427,7 +8427,7 @@ function agregarMetricaPersonalizada(){
       </select>
     </div>
     <div class="field" style="flex:1; min-width:160px;"><label>Métrica</label><input class="eval-extra-nombre" placeholder="Ej: Flexibilidad isquios"></div>
-    <div class="field" style="min-width:100px;"><label>Valor</label><input type="number" step="0.1" class="eval-extra-valor"></div>
+    <div class="field" style="min-width:100px;"><label>Valor</label><input inputmode="decimal" type="number" step="0.1" class="eval-extra-valor"></div>
     <div class="field" style="min-width:90px;"><label>Unidad</label><input class="eval-extra-unidad" placeholder="cm, kg..."></div>
     <button class="ghost" style="align-self:flex-end;" onclick="document.getElementById('${id}').remove()">✕</button>
   `;
@@ -8939,6 +8939,24 @@ function ejToggle(el){
   card.querySelector('.ej-body').style.display = abierto ? '' : 'none';
   if (abierto) EJ_ABIERTOS.add(card.dataset.uid); else EJ_ABIERTOS.delete(card.dataset.uid);
 }
+function ejCerrarTodos(ctx){
+  document.querySelectorAll(`.ej-card[data-ctx="${ctx}"]`).forEach(c => {
+    c.classList.remove('abierto'); c.querySelector('.ej-body').style.display = 'none'; EJ_ABIERTOS.delete(c.dataset.uid);
+  });
+}
+// Al agregar un ejercicio: se abre el nuevo (para cargar series/reps/kg de una) y se cierran los demás.
+function ejAbrirSoloNuevo(arr, nuevo){
+  arr.forEach(e => EJ_ABIERTOS.delete(ejUid(e)));
+  EJ_ABIERTOS.add(ejUid(nuevo));
+  return ejUid(nuevo);
+}
+function ejMostrarNuevo(uid){
+  const card = document.querySelector(`.ej-card[data-uid="${uid}"]`);
+  if (!card) return;
+  card.scrollIntoView({ block:'center', behavior:'smooth' });
+  const inp = card.querySelector('.ej-body input[type="number"]');
+  if (inp) setTimeout(() => { try{ inp.focus({ preventScroll:true }); inp.select(); }catch(e){} }, 250);
+}
 function ejArr(ctx){
   const [t, a, b] = ctx.split('|');
   if (t === 'cons') return CONS[a].estado.dias[b].ejercicios;
@@ -9152,12 +9170,12 @@ function crearConstructorDeDias(prefijo, containerId, headerPrefix){
     const cuerpo = `
           <div class="row" style="margin-top:6px;">
             <div class="field" style="min-width:150px;"><label>Bloque</label>${bloqueFieldHtml(`${prefijo}-${diaId}-${idx}`, ex.bloque, (v)=>CONS[prefijo].setBloque(diaId,idx,v))}</div>
-            <div class="field" style="min-width:70px;"><label>Series</label><input type="number" min="1" value="${ex.series}" onchange="CONS['${prefijo}'].estado.dias['${diaId}'].ejercicios[${idx}].series=parseInt(this.value)||1"></div>
+            <div class="field" style="min-width:70px;"><label>Series</label><input inputmode="numeric" type="number" min="1" value="${ex.series}" onchange="CONS['${prefijo}'].estado.dias['${diaId}'].ejercicios[${idx}].series=parseInt(this.value)||1"></div>
             <div class="field" style="min-width:90px;"><label>Reps</label><input value="${ex.repeticiones}" onchange="CONS['${prefijo}'].estado.dias['${diaId}'].ejercicios[${idx}].repeticiones=this.value"></div>
-            <div class="field" style="min-width:90px;"><label>Peso sug. (kg)</label><input type="number" step="0.5" value="${ex.peso_sugerido ?? ''}" onchange="CONS['${prefijo}'].estado.dias['${diaId}'].ejercicios[${idx}].peso_sugerido=this.value?parseFloat(this.value):null"></div>
-            <div class="field" style="min-width:100px;"><label>Trabajo (s)</label><input type="number" min="1" placeholder="ej: plancha" value="${ex.tiempo_trabajo_seg ?? ''}" onchange="CONS['${prefijo}'].estado.dias['${diaId}'].ejercicios[${idx}].tiempo_trabajo_seg=this.value?parseInt(this.value):null"></div>
-            <div class="field" style="min-width:90px;"><label>Pausa (s)</label><input type="number" value="${ex.descanso_seg ?? ''}" onchange="CONS['${prefijo}'].estado.dias['${diaId}'].ejercicios[${idx}].descanso_seg=this.value?parseInt(this.value):null"></div>
-            <div class="field" style="min-width:70px;"><label>RIR</label><input type="number" min="0" max="5" value="${ex.rir ?? ''}" onchange="CONS['${prefijo}'].estado.dias['${diaId}'].ejercicios[${idx}].rir=this.value?parseInt(this.value):null"></div>
+            <div class="field" style="min-width:90px;"><label>Peso sug. (kg)</label><input inputmode="decimal" type="number" step="0.5" value="${ex.peso_sugerido ?? ''}" onchange="CONS['${prefijo}'].estado.dias['${diaId}'].ejercicios[${idx}].peso_sugerido=this.value?parseFloat(this.value):null"></div>
+            <div class="field" style="min-width:100px;"><label>Trabajo (s)</label><input inputmode="numeric" type="number" min="1" placeholder="ej: plancha" value="${ex.tiempo_trabajo_seg ?? ''}" onchange="CONS['${prefijo}'].estado.dias['${diaId}'].ejercicios[${idx}].tiempo_trabajo_seg=this.value?parseInt(this.value):null"></div>
+            <div class="field" style="min-width:90px;"><label>Pausa (s)</label><input inputmode="numeric" type="number" value="${ex.descanso_seg ?? ''}" onchange="CONS['${prefijo}'].estado.dias['${diaId}'].ejercicios[${idx}].descanso_seg=this.value?parseInt(this.value):null"></div>
+            <div class="field" style="min-width:70px;"><label>RIR</label><input inputmode="numeric" type="number" min="0" max="5" value="${ex.rir ?? ''}" onchange="CONS['${prefijo}'].estado.dias['${diaId}'].ejercicios[${idx}].rir=this.value?parseInt(this.value):null"></div>
             <div class="field" style="flex:1; min-width:140px;"><label>Notas</label><input value="${ex.notas ?? ''}" onchange="CONS['${prefijo}'].estado.dias['${diaId}'].ejercicios[${idx}].notas=this.value"></div>
             <div class="field" style="min-width:100px;"><label>Unilateral</label><label style="display:flex; align-items:center; gap:4px; font-weight:400; height:38px;"><input type="checkbox" ${ex.unilateral?'checked':''} onchange="CONS['${prefijo}'].estado.dias['${diaId}'].ejercicios[${idx}].unilateral=this.checked"> Por lado</label></div>
             <div class="field" style="min-width:110px;"><label>Peso corporal</label><label style="display:flex; align-items:center; gap:4px; font-weight:400; height:38px;"><input type="checkbox" ${ex.peso_corporal?'checked':''} onchange="CONS['${prefijo}'].estado.dias['${diaId}'].ejercicios[${idx}].peso_corporal=this.checked"> Sin peso extra</label></div>
@@ -9172,8 +9190,8 @@ function crearConstructorDeDias(prefijo, containerId, headerPrefix){
           </div>
           ${prog==='autoregulada' ? `
             <div class="row" style="margin-top:8px;">
-              <div class="field" style="min-width:120px;"><label>RIR objetivo</label><input type="number" min="0" max="5" value="${ex.progresion_rir_objetivo ?? ''}" onchange="CONS['${prefijo}'].estado.dias['${diaId}'].ejercicios[${idx}].progresion_rir_objetivo=this.value?parseInt(this.value):null"></div>
-              <div class="field" style="min-width:140px;"><label>Incremento (kg)</label><input type="number" step="0.5" min="0" value="${ex.progresion_incremento_kg ?? ''}" onchange="CONS['${prefijo}'].estado.dias['${diaId}'].ejercicios[${idx}].progresion_incremento_kg=this.value?parseFloat(this.value):null"></div>
+              <div class="field" style="min-width:120px;"><label>RIR objetivo</label><input inputmode="numeric" type="number" min="0" max="5" value="${ex.progresion_rir_objetivo ?? ''}" onchange="CONS['${prefijo}'].estado.dias['${diaId}'].ejercicios[${idx}].progresion_rir_objetivo=this.value?parseInt(this.value):null"></div>
+              <div class="field" style="min-width:140px;"><label>Incremento (kg)</label><input inputmode="decimal" type="number" step="0.5" min="0" value="${ex.progresion_incremento_kg ?? ''}" onchange="CONS['${prefijo}'].estado.dias['${diaId}'].ejercicios[${idx}].progresion_incremento_kg=this.value?parseFloat(this.value):null"></div>
               <div class="muted" style="font-size:12px; align-self:end; padding-bottom:9px; max-width:260px;">Si completa todas las series con ese RIR o menos, se le suma el incremento la próxima vez que le toque este día.</div>
             </div>
           ` : ''}
@@ -9185,9 +9203,9 @@ function crearConstructorDeDias(prefijo, containerId, headerPrefix){
                   ${(ex.semanas||[]).map((s,si) => `
                     <tr>
                       <td style="padding:4px 6px;">${s.semana}</td>
-                      <td style="padding:4px 6px;"><input type="number" min="1" value="${s.series ?? ''}" onchange="CONS['${prefijo}'].setSemanaCampo('${diaId}',${idx},${si},'series',this.value?parseInt(this.value):null)"></td>
+                      <td style="padding:4px 6px;"><input inputmode="numeric" type="number" min="1" value="${s.series ?? ''}" onchange="CONS['${prefijo}'].setSemanaCampo('${diaId}',${idx},${si},'series',this.value?parseInt(this.value):null)"></td>
                       <td style="padding:4px 6px;"><input value="${s.repeticiones ?? ''}" onchange="CONS['${prefijo}'].setSemanaCampo('${diaId}',${idx},${si},'repeticiones',this.value)"></td>
-                      <td style="padding:4px 6px;"><input type="number" step="0.5" value="${s.peso_sugerido ?? ''}" onchange="CONS['${prefijo}'].setSemanaCampo('${diaId}',${idx},${si},'peso_sugerido',this.value?parseFloat(this.value):null)"></td>
+                      <td style="padding:4px 6px;"><input inputmode="decimal" type="number" step="0.5" value="${s.peso_sugerido ?? ''}" onchange="CONS['${prefijo}'].setSemanaCampo('${diaId}',${idx},${si},'peso_sugerido',this.value?parseFloat(this.value):null)"></td>
                       <td style="padding:4px 6px;"><button type="button" class="danger" style="padding:2px 9px;" onclick="CONS['${prefijo}'].quitarSemana('${diaId}',${idx},${si})">✕</button></td>
                     </tr>
                   `).join('')}
@@ -9264,7 +9282,7 @@ function crearConstructorDeDias(prefijo, containerId, headerPrefix){
               </div>
             </div>
             <div class="row" style="margin-bottom:8px;">
-              <input id="buscador-${diaId}" placeholder="Escribí para filtrar: bíceps, glúteos, press banca..." oninput="CONS['${prefijo}'].buscar(this.value,'${diaId}')" style="flex:1; min-width:160px;" />
+              <input id="buscador-${diaId}" placeholder="Escribí para filtrar: bíceps, glúteos, press banca..." onfocus="ejCerrarTodos('cons|${prefijo}|${diaId}')" oninput="CONS['${prefijo}'].buscar(this.value,'${diaId}')" style="flex:1; min-width:160px;" />
               ${patronSelectHtml(`patron-${diaId}`, `CONS['${prefijo}'].buscar(document.getElementById('buscador-${diaId}').value, '${diaId}')`)}
             </div>
             <button type="button" class="btn-crear-rapido" onclick="CONTEXTOS_EJ['${prefijo}-${diaId}']=(nuevo)=>CONS['${prefijo}'].agregarEjercicio('${diaId}', nuevo); mostrarFormularioNuevoEjercicio('${prefijo}-${diaId}', this, document.getElementById('buscador-${diaId}').value.trim())">➕ Agregar ejercicio nuevo</button>
@@ -9309,9 +9327,12 @@ function crearConstructorDeDias(prefijo, containerId, headerPrefix){
   function agregarEjercicio(diaId, ejercicioJson){
     const ejercicio = typeof ejercicioJson === 'string' ? JSON.parse(ejercicioJson) : ejercicioJson;
     const bloque = (estado.dias[diaId].bloqueActual || '').trim() || 'General';
-    estado.dias[diaId].ejercicios.push({ ejercicio, bloque, series:3, repeticiones:'10-12', peso_sugerido:null, tiempo_trabajo_seg:null, descanso_seg:60, rir:null, notas:'', unilateral:false, peso_corporal:false, variante:'', modo_progresion:'fijo', progresion_incremento_kg:null, progresion_rir_objetivo:null, semanas:[] });
+    estado.dias[diaId].ejercicios.push({ ejercicio, bloque, series:3, repeticiones:'', peso_sugerido:null, tiempo_trabajo_seg:null, descanso_seg:60, rir:null, notas:'', unilateral:false, peso_corporal:false, variante:'', modo_progresion:'fijo', progresion_incremento_kg:null, progresion_rir_objetivo:null, semanas:[] });
     document.getElementById(`resultados-${diaId}`).style.display='none';
+    const lista = estado.dias[diaId].ejercicios;
+    const uidNuevo = ejAbrirSoloNuevo(lista.slice(0, -1), lista[lista.length - 1]);
     render();
+    ejMostrarNuevo(uidNuevo);
   }
 
   function limpiar(){
@@ -9581,7 +9602,7 @@ async function cargarVistaEquipo(){
         const ejecs = ejecPorDia[d.id] || [];
         const completados = ejecs.filter(e => e.estado === 'finalizada').length;
         const cargasHtml = ejercicios.length
-          ? ejercicios.map(e => `<div style="padding:2px 0;">${e.ejercicios?.nombre || '-'} — ${e.series}x${e.repeticiones}${e.peso_sugerido ? ` @ ${e.peso_sugerido}kg` : ''}</div>`).join('')
+          ? ejercicios.map(e => `<div style="padding:2px 0;">${e.ejercicios?.nombre || '-'} — ${e.series}x${e.repeticiones || '-'}${e.peso_sugerido ? ` @ ${e.peso_sugerido}kg` : ''}</div>`).join('')
           : '<div class="muted" style="font-size:13px;">Sin ejercicios cargados.</div>';
         return `
           <div style="padding:10px 0; border-bottom:1px solid var(--border);">
@@ -10377,7 +10398,7 @@ function renderEdicionDia(diaId){
     ${filas}
     <div style="margin-top:10px;">
       <div class="row" style="margin-bottom:8px;">
-        <input id="buscadorEdicion-${diaId}" placeholder="Escribí para agregar un ejercicio: bíceps, glúteos, press banca..." oninput="buscarParaAgregarEdicion(this.value,'${diaId}')" style="flex:1; min-width:160px;" />
+        <input id="buscadorEdicion-${diaId}" placeholder="Escribí para agregar un ejercicio: bíceps, glúteos, press banca..." onfocus="ejCerrarTodos('edit|${diaId}')" oninput="buscarParaAgregarEdicion(this.value,'${diaId}')" style="flex:1; min-width:160px;" />
         ${patronSelectHtml(`patronEdicion-${diaId}`, `buscarParaAgregarEdicion(document.getElementById('buscadorEdicion-${diaId}').value, '${diaId}')`)}
       </div>
       <button type="button" class="btn-crear-rapido" onclick="CONTEXTOS_EJ['edicion-${diaId}']=(nuevo)=>agregarEjercicioEdicion('${diaId}', nuevo); mostrarFormularioNuevoEjercicio('edicion-${diaId}', this, document.getElementById('buscadorEdicion-${diaId}').value.trim())">➕ Agregar ejercicio nuevo</button>
@@ -10441,12 +10462,12 @@ function filaEdicionHtml(diaId, item, idx){
   const cuerpo = `
         <div class="row" style="margin-top:6px;">
           <div class="field" style="min-width:150px;"><label>Bloque</label>${bloqueFieldHtml(`edicion-${diaId}-${item.id}`, item.bloque, (v)=>cambiarBloqueEdicion(diaId,item.id,v))}</div>
-          <div class="field" style="min-width:70px;"><label>Series</label><input type="number" min="1" value="${item.series}" onchange="setCampoEdicion('${diaId}','${item.id}','series',parseInt(this.value)||1)"></div>
+          <div class="field" style="min-width:70px;"><label>Series</label><input inputmode="numeric" type="number" min="1" value="${item.series}" onchange="setCampoEdicion('${diaId}','${item.id}','series',parseInt(this.value)||1)"></div>
           <div class="field" style="min-width:90px;"><label>Reps</label><input value="${item.repeticiones||''}" onchange="setCampoEdicion('${diaId}','${item.id}','repeticiones',this.value)"></div>
-          <div class="field" style="min-width:90px;"><label>Peso sug. (kg)</label><input type="number" step="0.5" value="${item.peso_sugerido ?? ''}" onchange="setCampoEdicion('${diaId}','${item.id}','peso_sugerido',this.value?parseFloat(this.value):null)"></div>
-          <div class="field" style="min-width:100px;"><label>Trabajo (s)</label><input type="number" min="1" placeholder="ej: plancha" value="${item.tiempo_trabajo_seg ?? ''}" onchange="setCampoEdicion('${diaId}','${item.id}','tiempo_trabajo_seg',this.value?parseInt(this.value):null)"></div>
-          <div class="field" style="min-width:90px;"><label>Pausa (s)</label><input type="number" value="${item.descanso_seg ?? ''}" onchange="setCampoEdicion('${diaId}','${item.id}','descanso_seg',this.value?parseInt(this.value):null)"></div>
-          <div class="field" style="min-width:70px;"><label>RIR</label><input type="number" min="0" max="5" value="${item.rir ?? ''}" onchange="setCampoEdicion('${diaId}','${item.id}','rir',this.value?parseInt(this.value):null)"></div>
+          <div class="field" style="min-width:90px;"><label>Peso sug. (kg)</label><input inputmode="decimal" type="number" step="0.5" value="${item.peso_sugerido ?? ''}" onchange="setCampoEdicion('${diaId}','${item.id}','peso_sugerido',this.value?parseFloat(this.value):null)"></div>
+          <div class="field" style="min-width:100px;"><label>Trabajo (s)</label><input inputmode="numeric" type="number" min="1" placeholder="ej: plancha" value="${item.tiempo_trabajo_seg ?? ''}" onchange="setCampoEdicion('${diaId}','${item.id}','tiempo_trabajo_seg',this.value?parseInt(this.value):null)"></div>
+          <div class="field" style="min-width:90px;"><label>Pausa (s)</label><input inputmode="numeric" type="number" value="${item.descanso_seg ?? ''}" onchange="setCampoEdicion('${diaId}','${item.id}','descanso_seg',this.value?parseInt(this.value):null)"></div>
+          <div class="field" style="min-width:70px;"><label>RIR</label><input inputmode="numeric" type="number" min="0" max="5" value="${item.rir ?? ''}" onchange="setCampoEdicion('${diaId}','${item.id}','rir',this.value?parseInt(this.value):null)"></div>
           <div class="field" style="flex:1; min-width:140px;"><label>Notas</label><input value="${item.notas ?? ''}" onchange="setCampoEdicion('${diaId}','${item.id}','notas',this.value)"></div>
           <div class="field" style="min-width:100px;"><label>Unilateral</label><label style="display:flex; align-items:center; gap:4px; font-weight:400; height:38px;"><input type="checkbox" ${item.unilateral?'checked':''} onchange="setCampoEdicion('${diaId}','${item.id}','unilateral',this.checked)"> Por lado</label></div>
           <div class="field" style="min-width:110px;"><label>Peso corporal</label><label style="display:flex; align-items:center; gap:4px; font-weight:400; height:38px;"><input type="checkbox" ${item.peso_corporal?'checked':''} onchange="setCampoEdicion('${diaId}','${item.id}','peso_corporal',this.checked)"> Sin peso extra</label></div>
@@ -10509,13 +10530,15 @@ async function agregarEjercicioEdicion(diaId, ejercicioJson){
       method:'POST', headers:{Prefer:'return=representation'},
       body: JSON.stringify([{
         rutina_dia_id: diaId, ejercicio_id: ejercicio.id, orden: ordenSiguiente,
-        bloque: 'General', series: 3, repeticiones: '10-12', peso_sugerido: null,
+        bloque: 'General', series: 3, repeticiones: '', peso_sugerido: null,
         tiempo_trabajo_seg: null, descanso_seg: 60, rir: null, notas: ''
       }])
     });
     creado.ejercicios = ejercicio;
+    const uidNuevo = ejAbrirSoloNuevo(EDICION_DIAS[diaId].items, creado);
     EDICION_DIAS[diaId].items.push(creado);
     renderEdicionDia(diaId);
+    ejMostrarNuevo(uidNuevo);
     toast('Ejercicio agregado ✓');
   }catch(e){ toast('Error agregando el ejercicio: ' + e.message, true); }
 }
@@ -12142,10 +12165,10 @@ function bloqueHtml(b, idx){
     return `
     <div class="set-row">
       <div class="muted">#${numero}</div>
-      <input type="number" step="0.5" placeholder="${p.peso_corporal ? 'Extra (kg)' : 'Peso (kg)'}" id="peso-${idx}-${s}" value="${pesoDefault}" ${dis}>
-      <input type="number" placeholder="Reps" id="reps-${idx}-${s}" value="${repsDefault}" ${dis}>
-      <input type="number" placeholder="RIR" id="rir-${idx}-${s}" value="${rirDefault}" ${dis}>
-      <span class="muted set-sug">${p.peso_corporal ? 'p.corporal' : (p.peso_sugerido ?? '-')+'kg'}×${p.repeticiones}</span>
+      <input inputmode="decimal" type="number" step="0.5" placeholder="${p.peso_corporal ? 'Extra (kg)' : 'Peso (kg)'}" id="peso-${idx}-${s}" value="${pesoDefault}" ${dis}>
+      <input inputmode="numeric" type="number" placeholder="Reps" id="reps-${idx}-${s}" value="${repsDefault}" ${dis}>
+      <input inputmode="numeric" type="number" placeholder="RIR" id="rir-${idx}-${s}" value="${rirDefault}" ${dis}>
+      <span class="muted set-sug">${p.peso_corporal ? 'p.corporal' : (p.peso_sugerido ?? '-')+'kg'}×${p.repeticiones || '-'}</span>
     </div>
   `;
   }).join('');
@@ -12163,7 +12186,7 @@ function bloqueHtml(b, idx){
   const porLadoTxt = p.unilateral ? ` · ${formatoPorLado(p.series)}` : '';
   const detalleSets = esPorTiempo
     ? `${p.series} series × ${p.tiempo_trabajo_seg}s trabajo${p.descanso_seg ? ' / '+p.descanso_seg+'s pausa' : ''}${porLadoTxt}`
-    : `${p.series} series × ${p.repeticiones}${porLadoTxt}`;
+    : `${p.series} series × ${p.repeticiones || '-'}${porLadoTxt}`;
 
   return `
     <div class="ex-block" id="bloque-${idx}">
@@ -12735,7 +12758,7 @@ if ('serviceWorker' in navigator){
     <p class="muted" style="font-size:13px;">Cada código sirve una sola vez para crear un gimnasio nuevo. Generá uno cuando cierres una venta y pasáselo al cliente. Precio y contacto son solo para tu propio registro — no afectan el código.</p>
     <div class="row" style="align-items:flex-end; flex-wrap:wrap; gap:8px;">
       <div class="field" style="flex:1; min-width:180px;"><label>Nota (ej: nombre del cliente)</label><input id="codigosNota" placeholder="Ej: Gimnasio PowerZone"></div>
-      <div class="field" style="width:120px;"><label>Precio</label><input id="codigosPrecio" type="number" step="0.01" placeholder="Ej: 15000"></div>
+      <div class="field" style="width:120px;"><label>Precio</label><input inputmode="decimal" id="codigosPrecio" type="number" step="0.01" placeholder="Ej: 15000"></div>
       <div class="field" style="flex:1; min-width:160px;"><label>Contacto</label><input id="codigosContacto" placeholder="Tel./email/IG"></div>
       <button id="btnCodigosAccion" onclick="generarCodigoActivacionUI()">+ Generar código</button>
       <button id="btnCodigosCancelarEdicion" class="ghost" style="display:none;" onclick="cancelarEdicionCodigo()">Cancelar</button>
@@ -12787,11 +12810,11 @@ if ('serviceWorker' in navigator){
     </div>
     <div class="field" style="margin-bottom:10px;">
       <label>Meses</label>
-      <input type="number" min="1" step="1" id="activarSuscripcionMeses" value="1" oninput="aplicarPlanSuscripcionSeleccionado()">
+      <input inputmode="numeric" type="number" min="1" step="1" id="activarSuscripcionMeses" value="1" oninput="aplicarPlanSuscripcionSeleccionado()">
     </div>
     <div class="field" style="margin-bottom:10px;">
       <label>Monto cobrado (se autocompleta con el plan, editable)</label>
-      <input type="number" min="0" step="0.01" id="activarSuscripcionMonto" placeholder="Ej: 15000">
+      <input inputmode="decimal" type="number" min="0" step="0.01" id="activarSuscripcionMonto" placeholder="Ej: 15000">
     </div>
     <div class="field" style="margin-bottom:10px;">
       <label>Medio de pago</label>
