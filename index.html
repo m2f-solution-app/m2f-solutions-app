@@ -2448,7 +2448,7 @@ const BUCKET = "Ejercicios";
 // un cambio, se incrementa este número — el chequeo de actualización (más abajo) lo compara
 // contra lo que hay publicado y avisa si están desactualizados, sin que nadie tenga que
 // cambiar ningún link a mano.
-const APP_VERSION = 68;
+const APP_VERSION = 70;
 
 // ---------- Instalar como app (PWA): acceso directo en escritorio/celular ----------
 // Chrome/Edge/Android disparan "beforeinstallprompt" cuando el manifest + service worker
@@ -2695,14 +2695,35 @@ function pasoCambioPasswordObligatorio(){
 // Paso 3 (y botón "🛡️ 2 pasos"): alta de la app de autenticación con QR.
 async function pasoConfigurarDosPasos({ obligatorio }){
   const { data: lista } = await supaAuth.auth.mfa.listFactors();
-  for (const f of (lista?.all || [])){
-    // Un intento anterior que quedó a medias (factor sin verificar) bloquea uno nuevo.
-    if (f.status !== 'verified') await supaAuth.auth.mfa.unenroll({ factorId: f.id }).catch(() => {});
+  // (v69, 29/9) Si el admin sale a la app de autenticación y al volver la página se recarga
+  // (pasa seguido en el iPhone), antes se generaba una clave NUEVA y la que ya había cargado
+  // en su app quedaba inválida: el código daba siempre "incorrecto". Ahora, si hay un alta
+  // pendiente reciente de este mismo usuario y su factor sigue sin verificar, se vuelve a
+  // mostrar el MISMO QR/clave. Se guarda en este dispositivo hasta activar o cancelar, y vence a los 30 min.
+  const MFA_PEND = 'm2f_mfa_pendiente';
+  let data = null, error = null;
+  try{
+    const g = JSON.parse(localStorage.getItem(MFA_PEND) || 'null');
+    const uid = SESION_ACTUAL?.user?.id;
+    const sigue = g && uid && g.uid === uid && (Date.now() - g.t) < 30 * 60 * 1000
+      && (lista?.all || []).some(f => f.id === g.id && f.status !== 'verified');
+    if (sigue) data = { id: g.id, totp: g.totp };
+    else localStorage.removeItem(MFA_PEND);
+  }catch(e){ data = null; }
+  if (!data){
+    for (const f of (lista?.all || [])){
+      // Un intento anterior que quedó a medias (factor sin verificar) bloquea uno nuevo.
+      if (f.status !== 'verified') await supaAuth.auth.mfa.unenroll({ factorId: f.id }).catch(() => {});
+    }
+    const r = await supaAuth.auth.mfa.enroll({
+      factorType: 'totp',
+      friendlyName: 'M2F Solutions ' + new Date().toISOString().slice(0, 10) + ' ' + Math.random().toString(36).slice(2, 6),
+    });
+    data = r.data; error = r.error;
+    if (!error && data){
+      try{ localStorage.setItem(MFA_PEND, JSON.stringify({ id: data.id, totp: data.totp, uid: SESION_ACTUAL?.user?.id, t: Date.now() })); }catch(e){}
+    }
   }
-  const { data, error } = await supaAuth.auth.mfa.enroll({
-    factorType: 'totp',
-    friendlyName: 'M2F Solutions ' + new Date().toISOString().slice(0, 10) + ' ' + Math.random().toString(36).slice(2, 6),
-  });
   return new Promise(resolve => {
     RESOLVER_SEGURIDAD = resolve;
     const pie = obligatorio
@@ -2727,6 +2748,7 @@ async function pasoConfigurarDosPasos({ obligatorio }){
       <h3>🛡️ Activá la verificación en dos pasos</h3>
       ${obligatorio ? `<p style="margin:0 0 8px;">Como <strong>administrador</strong> manejás cobros y datos de todos los alumnos, así que para tu cuenta es obligatoria. Lleva un minuto.</p>` : ''}
       <p class="muted" style="margin:0 0 8px;">1) Instalá una app de autenticación en tu celular (Google Authenticator, Microsoft Authenticator o Authy).<br>2) En la app, tocá "+" y escaneá este código:</p>
+      <p style="margin:0 0 8px; font-size:12.5px; color:var(--warn);">⚠️ Hacelo desde <strong>un solo dispositivo</strong>: si abrís la app en otro (o en otra pestaña) mientras tanto, se genera un código nuevo y el que cargaste deja de servir. Lo ideal: mostrá este QR en la compu y escanealo con el celular.</p>
       <div style="text-align:center;"><img src="${qr}" alt="Código QR" style="width:180px; height:180px; background:#fff; padding:8px; border-radius:8px;"></div>
       <p class="muted" style="font-size:12px; margin:8px 0;">¿Estás en el mismo celular? <a href="${escaparHtml((data.totp && data.totp.uri) || '#')}">Tocá acá para abrirlo en la app</a>, o cargá a mano esta clave: <code style="user-select:all;">${escaparHtml(secreto)}</code></p>
       <p class="muted" style="margin:0 0 6px;">3) Escribí el código de 6 números que te muestra la app:</p>
@@ -2744,6 +2766,7 @@ async function pasoConfigurarDosPasos({ obligatorio }){
       const { error: e } = await supaAuth.auth.mfa.challengeAndVerify({ factorId: data.id, code });
       btn.disabled = false;
       if (e){ msg.textContent = 'Código incorrecto o vencido. Probá con el que aparece ahora.'; input.select(); return; }
+      try{ localStorage.removeItem(MFA_PEND); }catch(e){}
       const { data: s } = await supaAuth.auth.getSession();
       SESION_ACTUAL = s.session;
       RESOLVER_SEGURIDAD = null;
@@ -2755,6 +2778,7 @@ async function pasoConfigurarDosPasos({ obligatorio }){
     const c = box.querySelector('#segCancelar');
     if (c) c.onclick = async () => {
       await supaAuth.auth.mfa.unenroll({ factorId: data.id }).catch(() => {});
+      try{ localStorage.removeItem(MFA_PEND); }catch(e){}
       RESOLVER_SEGURIDAD = null; modalSeguridadCerrar(); resolve(false);
     };
   });
@@ -10265,7 +10289,7 @@ function renderGrillaRutinas(){
         : '<div class="muted" style="font-size:12px;">Sin días cargados.</div>';
       return `
         <div style="background:var(--panel2); border:1px solid var(--border); border-radius:10px; padding:10px 10px 4px; margin-bottom:10px;">
-          <div style="font-weight:700; margin-bottom:8px;">${escaparHtml(r.nombre)}${r.creador?.nombre ? ` <span class="muted" style="font-weight:400; font-size:11px;">· creada por ${escaparHtml(r.creador.nombre)}</span>` : ''}</div>
+          <div style="font-weight:700; margin-bottom:8px; display:flex; justify-content:space-between; align-items:flex-start; gap:8px;"><span>${escaparHtml(r.nombre)}${r.creador?.nombre ? ` <span class="muted" style="font-weight:400; font-size:11px;">· creada por ${escaparHtml(r.creador.nombre)}</span>` : ''}</span><button class="ghost" style="color:var(--danger); padding:2px 8px; font-size:12px; flex:none;" title="Eliminar rutina" onclick="eliminarRutina('${r.id}')">🗑️ Eliminar</button></div>
           ${diasHtml}
         </div>`;
     }).join('');
@@ -10278,6 +10302,28 @@ function renderGrillaRutinas(){
         <div id="${idSeccion}" style="display:${abrirSoloUno?'':'none'}; padding:10px;">${rutinasHtml}</div>
       </div>`;
   }).join('');
+}
+
+// (v70, 29/9) Eliminar rutina. Regla: si algún alumno ya la empezó/hizo (hay `ejecuciones`)
+// NO se borra: baja lógica (activa=false), se conserva el historial. Si nadie la usó todavía
+// (aunque tenga alumnos asignados o turnos agendados) se borra de verdad; los turnos quedan
+// sin rutina y se re-enganchan solos con otra. Toda la lógica vive en el RPC eliminar_rutina.
+async function eliminarRutina(rutinaId){
+  try{
+    const info = await sb('rpc/eliminar_rutina', { method:'POST', body: JSON.stringify({ p_rutina_id: rutinaId, p_ejecutar: false }) });
+    const extra = [];
+    if (info.asignados) extra.push(`${info.asignados} alumno${info.asignados===1?'':'s'} asignado${info.asignados===1?'':'s'} (se les quita)`);
+    if (info.turnos_futuros) extra.push(`${info.turnos_futuros} turno${info.turnos_futuros===1?'':'s'} futuro${info.turnos_futuros===1?'':'s'} con esta rutina (quedan sin rutina y se les asigna otra automáticamente)`);
+    const detalle = extra.length ? '\n\nAfecta a: ' + extra.join('; ') + '.' : '';
+    const msg = info.accion === 'eliminar'
+      ? `¿Eliminar la rutina "${info.nombre}"?\n\nNadie la usó todavía, así que se borra definitivamente.${detalle}`
+      : `La rutina "${info.nombre}" ya fue usada (${info.alumnos_que_la_usaron} alumno${info.alumnos_que_la_usaron===1?'':'s'}, ${info.ejecuciones} entrenamiento${info.ejecuciones===1?'':'s'}), por eso no se puede borrar del todo.\n\nSe va a dar de baja: desaparece de las listas y no se asigna más, pero el historial de los alumnos se conserva.${detalle}\n\n¿Continuar?`;
+    if (!confirm(msg)) return;
+    const r = await sb('rpc/eliminar_rutina', { method:'POST', body: JSON.stringify({ p_rutina_id: rutinaId, p_ejecutar: true }) });
+    toast(r.accion === 'eliminar' ? 'Rutina eliminada ✓' : 'Rutina dada de baja ✓ (se conserva el historial)');
+    cargarGrillaRutinas();
+    if (document.getElementById('espAlumno')?.value) cargarEspecialesDeAlumno();
+  }catch(e){ toast('Error eliminando: ' + extraerMensajeError(e), true); }
 }
 
 function toggleGrillaProfesor(id){
@@ -10348,7 +10394,7 @@ async function cargarEspecialesDeAlumno(){
         </div>
         <div id="editarDia${d.id}" style="display:none; margin:6px 0 12px; padding:10px; background:var(--panel2); border:1px solid var(--border); border-radius:10px; width:100%;"></div>
       `).join('');
-      return `<div style="margin-bottom:14px;"><div style="font-weight:700;">${r.nombre}</div><div>${diasHtml || '<span class="muted">Sin días</span>'}</div></div>`;
+      return `<div style="margin-bottom:14px;"><div style="font-weight:700; display:flex; justify-content:space-between; align-items:center; gap:8px;"><span>${escaparHtml(r.nombre)}</span><button class="ghost" style="color:var(--danger); padding:2px 8px; font-size:12px;" onclick="eliminarRutina('${r.id}')">🗑️ Eliminar</button></div><div>${diasHtml || '<span class="muted">Sin días</span>'}</div></div>`;
     }).join('<hr>');
   }catch(e){ cont.innerHTML = 'Error: ' + e.message; }
 }
@@ -10579,7 +10625,7 @@ async function listarRutinasRotativasDeAlumno(alumnoId){
     const asignaciones = await sb(`rutina_asignaciones?select=rutina_id&alumno_id=eq.${alumnoId}`);
     const rutinaIdsAlumno = asignaciones.map(a => a.rutina_id);
     if (rutinaIdsAlumno.length){
-      const rutinas = await sb(`rutinas?select=id,nombre&id=in.(${rutinaIdsAlumno.join(',')})&modo_dias=eq.rotativa`);
+      const rutinas = await sb(`rutinas?select=id,nombre&id=in.(${rutinaIdsAlumno.join(',')})&modo_dias=eq.rotativa&activa=eq.true`);
       for (const r of rutinas){
         const diaCursor = await resolverDiaRutinaRotativa(r.id, alumnoId);
         if (!diaCursor) continue;
@@ -10598,7 +10644,7 @@ async function listarRutinasRotativasDeAlumno(alumnoId){
         ? [`tipo_alumno_id=eq.${tipoAlumnoId}`, `tipo_alumno_id=is.null`]
         : [`tipo_alumno_id=is.null`];
       for (const filtroTipo of filtrosTipo){
-        const candidatas = await sb(`rutinas?select=id,nombre&gimnasio_id=eq.${gimnasioIdAlumno}&modo_dias=eq.rotativa&${filtroTipo}`);
+        const candidatas = await sb(`rutinas?select=id,nombre&gimnasio_id=eq.${gimnasioIdAlumno}&modo_dias=eq.rotativa&activa=eq.true&${filtroTipo}`);
         for (const r of candidatas){
           if (idsConAsignacion.has(r.id) || idsYaListados.has(r.id)) continue;
           const diaCursor = await resolverDiaRutinaRotativa(r.id, alumnoId);
@@ -11611,7 +11657,7 @@ async function intentarAsignarRutina(turnoId, alumnoId, fecha){
       ? [`tipo_alumno_id=eq.${tipoAlumnoId}`, `tipo_alumno_id=is.null`]
       : [`tipo_alumno_id=is.null`];
     for (const filtroTipo of filtrosTipo){
-      const rutinasCandidatas = await sb(`rutinas?select=id&gimnasio_id=eq.${gimnasioIdAlumno}&${filtroTipo}`);
+      const rutinasCandidatas = await sb(`rutinas?select=id&gimnasio_id=eq.${gimnasioIdAlumno}&activa=eq.true&${filtroTipo}`);
       if (!rutinasCandidatas.length) continue;
       const idsLibres = rutinasCandidatas.map(r => r.id).filter(id => !idsConAsignacion.has(id));
       if (!idsLibres.length) continue;
@@ -11659,7 +11705,7 @@ async function resolverDiaSinTurno(alumnoId, fecha){
     const asignaciones = await sb(`rutina_asignaciones?select=rutina_id&alumno_id=eq.${alumnoId}`);
     const rutinaIdsAlumno = asignaciones.map(a => a.rutina_id);
     if (rutinaIdsAlumno.length){
-      const rutinas = await sb(`rutinas?select=id,modo_dias&id=in.(${rutinaIdsAlumno.join(',')})`);
+      const rutinas = await sb(`rutinas?select=id,modo_dias&id=in.(${rutinaIdsAlumno.join(',')})&activa=eq.true`);
       for (const r of rutinas.filter(r => r.modo_dias === 'rotativa')){
         const dia = await resolverDiaRutinaRotativa(r.id, alumnoId);
         if (dia) return dia;
@@ -11680,7 +11726,7 @@ async function resolverDiaSinTurno(alumnoId, fecha){
       ? [`tipo_alumno_id=eq.${tipoAlumnoId}`, `tipo_alumno_id=is.null`]
       : [`tipo_alumno_id=is.null`];
     for (const filtroTipo of filtrosTipo){
-      const candidatas = await sb(`rutinas?select=id,modo_dias&gimnasio_id=eq.${gimnasioIdAlumno}&${filtroTipo}`);
+      const candidatas = await sb(`rutinas?select=id,modo_dias&gimnasio_id=eq.${gimnasioIdAlumno}&activa=eq.true&${filtroTipo}`);
       const libres = candidatas.filter(r => !idsConAsignacion.has(r.id));
       if (!libres.length) continue;
       for (const r of libres.filter(r => r.modo_dias === 'rotativa')){
