@@ -748,7 +748,7 @@
         <div class="field" style="margin-bottom:10px;"><label id="labelNombreSignup">Tu nombre</label><input id="signupNombre" /></div>
         <div class="field" style="margin-bottom:10px;" id="campoNombreGimnasio"><label>Nombre de tu gimnasio</label><input id="signupGimnasio" placeholder="Ej: PowerZone Fitness" /></div>
         <div class="field" style="margin-bottom:10px;"><label>Email</label><input type="email" id="signupEmail" /></div>
-        <div class="field" style="margin-bottom:14px;"><label>Contraseña</label><div class="password-wrap"><input type="password" id="signupPassword" placeholder="Mínimo 6 caracteres" /><button type="button" class="toggle-pass" onclick="togglePasswordVisibility('signupPassword', this)">👁️</button></div></div>
+        <div class="field" style="margin-bottom:14px;"><label>Contraseña</label><div class="password-wrap"><input type="password" id="signupPassword" placeholder="Mínimo 8 caracteres, con letras" /><button type="button" class="toggle-pass" onclick="togglePasswordVisibility('signupPassword', this)">👁️</button></div></div>
         <div class="field" style="margin-bottom:6px;"><label>Código de activación (opcional)</label><input id="signupCodigo" placeholder="Si no tenés uno, dejalo vacío" /></div>
         <p class="muted" style="font-size:12px; margin:0 0 14px;">Sin código arrancás con <strong>14 días de prueba gratis</strong>, sin compromiso.</p>
         <button onclick="hacerSignup()" id="btnSignup" style="width:100%;">Crear cuenta</button>
@@ -788,6 +788,7 @@
         <span id="linkCodigosActivacion" style="display:none; margin-left:8px;">· <span class="muted" style="cursor:pointer; text-decoration:underline; font-size:12px; color:var(--accent);" onclick="abrirPanelCodigos()">🔑 Códigos</span></span>
         <span id="linkPanelGimnasios" style="display:none; margin-left:8px;">· <span class="muted" style="cursor:pointer; text-decoration:underline; font-size:12px; color:var(--accent);" onclick="abrirPanelGimnasiosAdmin()">🏋️ Gimnasios</span></span>
         <button class="ghost btn-push" onclick="activarNotificacionesPush()" style="margin-top:4px;">🔔 Activar notificaciones</button>
+        <button class="ghost btn-2fa" onclick="gestionarDosPasos()" style="margin-top:4px;">🛡️ Activar 2 pasos</button>
         <button class="ghost" onclick="hacerLogout()" style="margin-top:4px;">Salir</button>
       </div>
     </div>
@@ -1855,7 +1856,7 @@
         <span class="muted">Ingresar</span>
       </div>
       <div class="field" style="margin-bottom:10px;"><label>DNI</label><input id="alumnoLoginDni" placeholder="Tu DNI" /></div>
-      <div class="field" style="margin-bottom:14px;"><label>Contraseña</label><div class="password-wrap"><input type="password" id="alumnoLoginPassword" placeholder="Tu DNI, salvo que ya la hayas cambiado" /><button type="button" class="toggle-pass" onclick="togglePasswordVisibility('alumnoLoginPassword', this)">👁️</button></div></div>
+      <div class="field" style="margin-bottom:14px;"><label>Contraseña</label><div class="password-wrap"><input type="password" id="alumnoLoginPassword" placeholder="La que te dio tu gimnasio, o la tuya" /><button type="button" class="toggle-pass" onclick="togglePasswordVisibility('alumnoLoginPassword', this)">👁️</button></div></div>
       <button onclick="hacerLoginAlumno()" id="btnAlumnoLogin" style="width:100%;">Ingresar</button>
       <div id="alumnoAuthMsg" class="muted" style="margin-top:12px; text-align:center;"></div>
       <div class="muted" style="margin-top:14px; text-align:center; font-size:12px;">¿Todavía no tenés acceso? Pedíselo a tu profe — te lo genera desde tu ficha.</div>
@@ -2277,7 +2278,7 @@ const BUCKET = "Ejercicios";
 // un cambio, se incrementa este número — el chequeo de actualización (más abajo) lo compara
 // contra lo que hay publicado y avisa si están desactualizados, sin que nadie tenga que
 // cambiar ningún link a mano.
-const APP_VERSION = 55;
+const APP_VERSION = 56;
 
 // ---------- Instalar como app (PWA): acceso directo en escritorio/celular ----------
 // Chrome/Edge/Android disparan "beforeinstallprompt" cuando el manifest + service worker
@@ -2359,6 +2360,7 @@ async function activarNotificacionesPush(){
 // Refleja en los botones "🔔 Activar notificaciones" si ya están activadas en este
 // navegador, para no invitar de nuevo a quien ya aceptó.
 async function actualizarBotonesPush(){
+  actualizarBotonesDosPasos();
   if (!soportaPush()) return;
   try{
     const registro = await navigator.serviceWorker.ready;
@@ -2369,6 +2371,332 @@ async function actualizarBotonesPush(){
       b.disabled = activas;
     });
   }catch(e){}
+}
+
+// ---------- Seguridad de acceso (29/9, pedido de Martin) ----------
+// Orden al entrar (controlesDeSeguridad, llamado al principio de entrarComoStaff y de
+// entrarComoAlumnoLogueado):
+//   1) si la cuenta tiene verificación en dos pasos → pedir el código de 6 números;
+//   2) si la contraseña es temporal (la generó el gimnasio) → obligar a elegir una propia;
+//   3) si es administrador y todavía no configuró los dos pasos → obligarlo a hacerlo.
+// Lo que protege de verdad está en el servidor (RLS + auth_mfa_ok() en Supabase, que
+// exige el segundo paso a quien lo tiene activo): esto es la puerta de la app.
+const PASSWORD_MIN = 8;
+let RESOLVER_SEGURIDAD = null;
+
+function escaparHtml(s){
+  return String(s ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+}
+
+function dniDeSesion(){
+  const email = (SESION_ACTUAL && SESION_ACTUAL.user && SESION_ACTUAL.user.email) || '';
+  const m = email.match(/^(?:alu|prof)-(\d+)@m2fsolutions\.local$/);
+  return m ? m[1] : null;
+}
+
+function validarPasswordNueva(nueva, repetida){
+  if (!nueva || nueva.length < PASSWORD_MIN) return `Elegí una contraseña de al menos ${PASSWORD_MIN} caracteres.`;
+  if (repetida !== undefined && nueva !== repetida) return 'Las dos contraseñas no coinciden.';
+  if (/^\d+$/.test(nueva)) return 'Usá también letras, no solo números.';
+  const dni = dniDeSesion();
+  if (dni && nueva.includes(dni)) return 'La contraseña no puede contener tu DNI.';
+  return null;
+}
+
+function mensajeErrorPassword(e){
+  const m = (e && e.message) || '';
+  if (/different from the old/i.test(m)) return 'Tiene que ser distinta de la anterior.';
+  if (/pwned|leaked|compromised|weak/i.test(m)) return 'Esa contraseña es muy común o apareció en filtraciones de datos. Elegí otra.';
+  if (/at least|characters/i.test(m)) return `La contraseña es muy corta (mínimo ${PASSWORD_MIN} caracteres).`;
+  return 'No se pudo cambiar la contraseña: ' + m;
+}
+
+function modalSeguridadAbrir(html){
+  let ov = document.getElementById('modalSeguridad');
+  if (!ov){
+    ov = document.createElement('div');
+    ov.id = 'modalSeguridad';
+    ov.className = 'modal-overlay';
+    ov.style.zIndex = '1000';
+    ov.innerHTML = '<div class="modal-box" style="max-width:400px; text-align:left;"></div>';
+    document.body.appendChild(ov);
+  }
+  const box = ov.querySelector('.modal-box');
+  box.innerHTML = html;
+  ov.classList.add('show');
+  return box;
+}
+function modalSeguridadCerrar(){
+  const ov = document.getElementById('modalSeguridad');
+  if (ov) ov.classList.remove('show');
+}
+
+async function cerrarSesionDesdeSeguridad(){
+  const esAlumno = PERFIL_ACTUAL && PERFIL_ACTUAL.rol === 'alumno';
+  modalSeguridadCerrar();
+  const r = RESOLVER_SEGURIDAD; RESOLVER_SEGURIDAD = null;
+  if (r) r(false);
+  if (esAlumno) await hacerLogoutAlumno(); else await hacerLogout();
+}
+
+async function factorTotpVerificado(){
+  const { data, error } = await supaAuth.auth.mfa.listFactors();
+  if (error) throw error;
+  return (data?.all || []).find(f => f.factor_type === 'totp' && f.status === 'verified') || null;
+}
+
+const BTN_CERRAR_SESION_SEG = `<button class="ghost" style="width:100%; margin-top:8px;" onclick="cerrarSesionDesdeSeguridad()">Cerrar sesión</button>`;
+
+// Paso 1: la cuenta ya tiene dos pasos → pedir el código.
+async function pasoVerificarDosPasos(){
+  const { data: aal, error } = await supaAuth.auth.mfa.getAuthenticatorAssuranceLevel();
+  if (error) throw error;
+  if (!aal || aal.currentLevel === 'aal2' || aal.nextLevel !== 'aal2') return true;
+  const factor = await factorTotpVerificado();
+  if (!factor) return true;
+  return new Promise(resolve => {
+    RESOLVER_SEGURIDAD = resolve;
+    const box = modalSeguridadAbrir(`
+      <h3>🛡️ Verificación en dos pasos</h3>
+      <p class="muted" style="margin:0 0 10px;">Abrí tu app de autenticación (Google Authenticator, Microsoft Authenticator, Authy…) y escribí el código de 6 números de M2F Solutions.</p>
+      <input id="segCodigo" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="123456" style="font-size:22px; letter-spacing:6px; text-align:center; width:100%;">
+      <div id="segMsg" class="muted" style="margin-top:8px; min-height:18px;"></div>
+      <button id="segBtn" style="width:100%; margin-top:6px;">Verificar</button>
+      ${BTN_CERRAR_SESION_SEG}
+      <div class="muted" style="font-size:12px; margin-top:10px;">¿Cambiaste o perdiste el celular? Pedile al administrador de tu gimnasio que te quite la verificación en dos pasos (si sos administrador, escribinos a soporte).</div>`);
+    const input = box.querySelector('#segCodigo');
+    const msg = box.querySelector('#segMsg');
+    const btn = box.querySelector('#segBtn');
+    const verificar = async () => {
+      const code = input.value.replace(/\D/g, '');
+      if (code.length !== 6){ msg.textContent = 'El código tiene 6 números.'; return; }
+      btn.disabled = true;
+      const { error: e } = await supaAuth.auth.mfa.challengeAndVerify({ factorId: factor.id, code });
+      btn.disabled = false;
+      if (e){ msg.textContent = 'Código incorrecto o vencido. Probá con el que aparece ahora.'; input.select(); return; }
+      const { data: s } = await supaAuth.auth.getSession();
+      SESION_ACTUAL = s.session;
+      RESOLVER_SEGURIDAD = null;
+      modalSeguridadCerrar();
+      resolve(true);
+    };
+    btn.onclick = verificar;
+    input.addEventListener('keydown', ev => { if (ev.key === 'Enter') verificar(); });
+    setTimeout(() => input.focus(), 50);
+  });
+}
+
+// Paso 2: contraseña temporal (o el viejo DNI) → elegir una propia.
+function pasoCambioPasswordObligatorio(){
+  if (!PERFIL_ACTUAL || !PERFIL_ACTUAL.debe_cambiar_password) return Promise.resolve(true);
+  return new Promise(resolve => {
+    RESOLVER_SEGURIDAD = resolve;
+    const box = modalSeguridadAbrir(`
+      <h3>🔑 Elegí tu contraseña</h3>
+      <p class="muted" style="margin:0 0 10px;">Estás entrando con una contraseña temporal. Para proteger tu cuenta elegí una propia: mínimo ${PASSWORD_MIN} caracteres, con letras, y que no sea tu DNI.</p>
+      <label>Nueva contraseña</label>
+      <div class="password-wrap"><input type="password" id="segPass1" autocomplete="new-password"><button type="button" class="toggle-pass" onclick="togglePasswordVisibility('segPass1', this)">👁️</button></div>
+      <label style="margin-top:8px; display:block;">Repetila</label>
+      <div class="password-wrap"><input type="password" id="segPass2" autocomplete="new-password"><button type="button" class="toggle-pass" onclick="togglePasswordVisibility('segPass2', this)">👁️</button></div>
+      <div id="segMsg" class="muted" style="margin-top:8px; min-height:18px;"></div>
+      <button id="segBtn" style="width:100%; margin-top:6px;">Guardar y entrar</button>
+      ${BTN_CERRAR_SESION_SEG}`);
+    const msg = box.querySelector('#segMsg');
+    const btn = box.querySelector('#segBtn');
+    btn.onclick = async () => {
+      const p1 = box.querySelector('#segPass1').value;
+      const p2 = box.querySelector('#segPass2').value;
+      const err = validarPasswordNueva(p1, p2);
+      if (err){ msg.textContent = err; return; }
+      btn.disabled = true;
+      const { error } = await supaAuth.auth.updateUser({ password: p1 });
+      btn.disabled = false;
+      if (error){ msg.textContent = mensajeErrorPassword(error); return; }
+      await cargarPerfilDeSesion(); // el servidor ya apagó debe_cambiar_password
+      RESOLVER_SEGURIDAD = null;
+      modalSeguridadCerrar();
+      toast('Contraseña actualizada ✓');
+      resolve(true);
+    };
+    setTimeout(() => box.querySelector('#segPass1').focus(), 50);
+  });
+}
+
+// Paso 3 (y botón "🛡️ 2 pasos"): alta de la app de autenticación con QR.
+async function pasoConfigurarDosPasos({ obligatorio }){
+  const { data: lista } = await supaAuth.auth.mfa.listFactors();
+  for (const f of (lista?.all || [])){
+    // Un intento anterior que quedó a medias (factor sin verificar) bloquea uno nuevo.
+    if (f.status !== 'verified') await supaAuth.auth.mfa.unenroll({ factorId: f.id }).catch(() => {});
+  }
+  const { data, error } = await supaAuth.auth.mfa.enroll({
+    factorType: 'totp',
+    friendlyName: 'M2F Solutions ' + new Date().toISOString().slice(0, 10) + ' ' + Math.random().toString(36).slice(2, 6),
+  });
+  return new Promise(resolve => {
+    RESOLVER_SEGURIDAD = resolve;
+    const pie = obligatorio
+      ? BTN_CERRAR_SESION_SEG
+      : `<button class="ghost" id="segCancelar" style="width:100%; margin-top:8px;">Cancelar</button>`;
+    if (error){
+      const box = modalSeguridadAbrir(`
+        <h3>🛡️ Verificación en dos pasos</h3>
+        <p class="muted">No se pudo iniciar la configuración: ${escaparHtml(error.message)}</p>
+        <button id="segReintentar" style="width:100%; margin-top:6px;">Reintentar</button>
+        ${pie}`);
+      box.querySelector('#segReintentar').onclick = async () => { RESOLVER_SEGURIDAD = null; resolve(await pasoConfigurarDosPasos({ obligatorio })); };
+      const c = box.querySelector('#segCancelar');
+      if (c) c.onclick = () => { RESOLVER_SEGURIDAD = null; modalSeguridadCerrar(); resolve(false); };
+      return;
+    }
+    let qr = (data.totp && data.totp.qr_code) || '';
+    const i = qr.indexOf('<svg');
+    if (i >= 0) qr = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(qr.slice(i));
+    const secreto = ((data.totp && data.totp.secret) || '').replace(/(.{4})/g, '$1 ').trim();
+    const box = modalSeguridadAbrir(`
+      <h3>🛡️ Activá la verificación en dos pasos</h3>
+      ${obligatorio ? `<p style="margin:0 0 8px;">Como <strong>administrador</strong> manejás cobros y datos de todos los alumnos, así que para tu cuenta es obligatoria. Lleva un minuto.</p>` : ''}
+      <p class="muted" style="margin:0 0 8px;">1) Instalá una app de autenticación en tu celular (Google Authenticator, Microsoft Authenticator o Authy).<br>2) En la app, tocá "+" y escaneá este código:</p>
+      <div style="text-align:center;"><img src="${qr}" alt="Código QR" style="width:180px; height:180px; background:#fff; padding:8px; border-radius:8px;"></div>
+      <p class="muted" style="font-size:12px; margin:8px 0;">¿Estás en el mismo celular? <a href="${escaparHtml((data.totp && data.totp.uri) || '#')}">Tocá acá para abrirlo en la app</a>, o cargá a mano esta clave: <code style="user-select:all;">${escaparHtml(secreto)}</code></p>
+      <p class="muted" style="margin:0 0 6px;">3) Escribí el código de 6 números que te muestra la app:</p>
+      <input id="segCodigo" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="123456" style="font-size:22px; letter-spacing:6px; text-align:center; width:100%;">
+      <div id="segMsg" class="muted" style="margin-top:8px; min-height:18px;"></div>
+      <button id="segBtn" style="width:100%; margin-top:6px;">Activar</button>
+      ${pie}`);
+    const input = box.querySelector('#segCodigo');
+    const msg = box.querySelector('#segMsg');
+    const btn = box.querySelector('#segBtn');
+    const activar = async () => {
+      const code = input.value.replace(/\D/g, '');
+      if (code.length !== 6){ msg.textContent = 'El código tiene 6 números.'; return; }
+      btn.disabled = true;
+      const { error: e } = await supaAuth.auth.mfa.challengeAndVerify({ factorId: data.id, code });
+      btn.disabled = false;
+      if (e){ msg.textContent = 'Código incorrecto o vencido. Probá con el que aparece ahora.'; input.select(); return; }
+      const { data: s } = await supaAuth.auth.getSession();
+      SESION_ACTUAL = s.session;
+      RESOLVER_SEGURIDAD = null;
+      modalSeguridadCerrar();
+      resolve(true);
+    };
+    btn.onclick = activar;
+    input.addEventListener('keydown', ev => { if (ev.key === 'Enter') activar(); });
+    const c = box.querySelector('#segCancelar');
+    if (c) c.onclick = async () => {
+      await supaAuth.auth.mfa.unenroll({ factorId: data.id }).catch(() => {});
+      RESOLVER_SEGURIDAD = null; modalSeguridadCerrar(); resolve(false);
+    };
+  });
+}
+
+async function controlesDeSeguridad(){
+  if (!SESION_ACTUAL || !PERFIL_ACTUAL) return false;
+  try{
+    if (!await pasoVerificarDosPasos()) return false;
+    await cargarPerfilDeSesion(); // con la sesión ya completa se lee bien el perfil
+    if (!PERFIL_ACTUAL) return false;
+    if (!await pasoCambioPasswordObligatorio()) return false;
+    if (PERFIL_ACTUAL.rol === 'admin' && !(await factorTotpVerificado())){
+      if (!await pasoConfigurarDosPasos({ obligatorio: true })) return false;
+    }
+    return true;
+  }catch(e){
+    toast('No se pudo completar la verificación de seguridad: ' + e.message, true);
+    return false;
+  }
+}
+
+// Botón "🛡️ 2 pasos" (staff y alumno): activar, o desactivar si no es admin.
+async function gestionarDosPasos(){
+  try{
+    const f = await factorTotpVerificado();
+    if (f){
+      if (PERFIL_ACTUAL && PERFIL_ACTUAL.rol === 'admin'){
+        toast('La verificación en dos pasos está activa (es obligatoria para administradores).');
+        return;
+      }
+      if (!confirm('¿Desactivar la verificación en dos pasos? Tu cuenta va a quedar protegida solo con la contraseña.')) return;
+      const { error } = await supaAuth.auth.mfa.unenroll({ factorId: f.id });
+      if (error) throw error;
+      await supaAuth.auth.refreshSession();
+      toast('Verificación en dos pasos desactivada');
+    } else {
+      if (!await pasoConfigurarDosPasos({ obligatorio: false })) return;
+      toast('Verificación en dos pasos activada ✓');
+    }
+  }catch(e){ toast('Error: ' + e.message, true); }
+  finally{ actualizarBotonesDosPasos(); }
+}
+async function actualizarBotonesDosPasos(){
+  try{
+    const f = SESION_ACTUAL ? await factorTotpVerificado() : null;
+    document.querySelectorAll('.btn-2fa').forEach(b => { b.textContent = f ? '🛡️ 2 pasos: activo' : '🛡️ Activar 2 pasos'; });
+  }catch(e){}
+}
+
+// Datos de acceso recién generados (alta o reseteo): se muestran UNA vez para pasárselos
+// a la persona; no se guardan en ningún lado.
+function mostrarCredenciales({ titulo, nombre, usuario, password, telefono }){
+  const texto = `Hola ${nombre}! Tus datos para entrar a la app del gimnasio:\nUsuario: ${usuario} (tu DNI)\nContraseña temporal: ${password}\nLa primera vez te va a pedir que elijas tu propia contraseña.`;
+  let tel = String(telefono || '').replace(/\D/g, '').replace(/^0/, '');
+  if (tel.length === 10) tel = '549' + tel; // número argentino cargado sin código de país
+  const box = modalSeguridadAbrir(`
+    <h3>${escaparHtml(titulo)}</h3>
+    <p class="muted" style="margin:0 0 10px;">Pasale estos datos a ${escaparHtml(nombre)}. La contraseña es temporal: la primera vez que entre le vamos a pedir que elija una propia.</p>
+    <div style="background:var(--panel2); border:1px solid var(--border); border-radius:10px; padding:10px;">
+      <div>Usuario: <strong>${escaparHtml(usuario)}</strong> <span class="muted">(DNI)</span></div>
+      <div style="margin-top:4px;">Contraseña temporal: <strong style="font-size:18px; letter-spacing:1px; font-family:monospace;">${escaparHtml(password)}</strong></div>
+    </div>
+    <p class="muted" style="font-size:12px; margin:8px 0 0;">No la guardamos en ningún lado: si se pierde, generás otra desde "🔁 Acceso".</p>
+    <button id="credCopiar" style="width:100%; margin-top:10px;">📋 Copiar mensaje</button>
+    ${tel ? `<button id="credWa" class="ghost" style="width:100%; margin-top:8px;">💬 Enviar por WhatsApp</button>` : ''}
+    <button class="ghost" style="width:100%; margin-top:8px;" onclick="modalSeguridadCerrar()">Listo</button>`);
+  box.querySelector('#credCopiar').onclick = async () => {
+    try{ await navigator.clipboard.writeText(texto); toast('Copiado ✓'); }
+    catch(e){ toast('No se pudo copiar: anotalo a mano.', true); }
+  };
+  const wa = box.querySelector('#credWa');
+  if (wa) wa.onclick = () => window.open(`https://wa.me/${tel}?text=${encodeURIComponent(texto)}`, '_blank');
+}
+
+// "🔁 Acceso" (staff): contraseña temporal nueva, o quitar los dos pasos si perdió el celular.
+let ACCESO_OBJETIVO = null;
+function abrirGestionAcceso(perfilId, nombre, telefono){
+  ACCESO_OBJETIVO = { perfilId, nombre, telefono };
+  modalSeguridadAbrir(`
+    <h3>🔁 Acceso de ${escaparHtml(nombre)}</h3>
+    <p class="muted" style="margin:0 0 10px;">Usalo si se olvidó la contraseña o perdió el celular donde tenía la verificación en dos pasos.</p>
+    <button style="width:100%;" onclick="resetearAcceso('resetear_password')">🔑 Generar contraseña temporal nueva</button>
+    <button class="ghost" style="width:100%; margin-top:8px;" onclick="resetearAcceso('resetear_mfa')">🛡️ Quitar verificación en dos pasos</button>
+    <button class="ghost" style="width:100%; margin-top:8px;" onclick="modalSeguridadCerrar()">Cerrar</button>`);
+}
+function abrirGestionAccesoAlumno(alumnoId){
+  const a = buscarAlumnoCache(alumnoId);
+  if (!a || !a.perfil_id) return;
+  abrirGestionAcceso(a.perfil_id, a.nombre, a.telefono);
+}
+function abrirGestionAccesoProfesor(profesorId){
+  const p = PROFESORES_CACHE.find(x => x.id === profesorId);
+  if (!p || !p.perfil_id) return;
+  abrirGestionAcceso(p.perfil_id, p.nombre, null);
+}
+async function resetearAcceso(accion){
+  const o = ACCESO_OBJETIVO;
+  if (!o) return;
+  const pregunta = accion === 'resetear_password'
+    ? `¿Generar una contraseña temporal nueva para ${o.nombre}? La actual deja de funcionar.`
+    : `¿Quitarle la verificación en dos pasos a ${o.nombre}? Va a poder entrar solo con su contraseña y volver a configurarla.`;
+  if (!confirm(pregunta)) return;
+  try{
+    const r = await sbFn('gestionar-acceso', { accion, perfil_id: o.perfilId });
+    if (accion === 'resetear_password'){
+      mostrarCredenciales({ titulo: 'Contraseña temporal nueva ✓', nombre: o.nombre, usuario: r.usuario, password: r.password_temporal, telefono: o.telefono });
+    } else {
+      modalSeguridadCerrar();
+      toast(r.quitados ? 'Verificación en dos pasos quitada ✓' : 'No tenía la verificación en dos pasos activa.');
+    }
+  }catch(e){ toast(e.message, true); }
 }
 
 // ---------- Soporte por WhatsApp ----------
@@ -2448,7 +2776,7 @@ async function cargarGimnasiosAdmin(){
     if (!GIMNASIOS_ADMIN_CACHE.length){ tbody.innerHTML = '<tr><td colspan="6" class="muted" style="padding:10px;">Todavía no hay gimnasios dados de alta.</td></tr>'; return; }
     tbody.innerHTML = GIMNASIOS_ADMIN_CACHE.map(f => `
       <tr style="border-bottom:1px solid var(--border);">
-        <td style="padding:6px;">${f.nombre}</td>
+        <td style="padding:6px;">${escaparHtml(f.nombre)}</td>
         <td style="padding:6px;">${semaforoActividad(f.ultima_actividad)}</td>
         <td style="padding:6px;">${f.ultima_actividad ? formatearFechaCorta(f.ultima_actividad) : '—'}</td>
         <td style="padding:6px;">${f.socios_activos ?? 0}</td>
@@ -2480,7 +2808,7 @@ async function toggleHistorialSuscripcion(gimnasioId){
     celda.innerHTML = pagos.map(p => `
       <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; padding:4px 0; border-bottom:1px solid var(--border); font-size:12px;">
         <span>${formatearFechaCorta((p.creado_en||'').slice(0,10))}${p.plan_nombre ? ' · '+p.plan_nombre : ''} · ${p.meses} mes${p.meses===1?'':'es'}${p.monto!=null ? ' · $'+Number(p.monto).toFixed(2) : ''}${p.medio_pago ? ' · '+etiquetaMedioPagoSuscripcion(p.medio_pago) : ''}</span>
-        <button class="ghost" style="font-size:11px; padding:2px 6px;" onclick='descargarComprobanteSuscripcion(${JSON.stringify(p)}, ${JSON.stringify(f ? f.nombre : "")})'>🧾</button>
+        <button class="ghost" style="font-size:11px; padding:2px 6px;" onclick='descargarComprobanteSuscripcion(${escaparHtml(JSON.stringify(p))}, ${escaparHtml(JSON.stringify(f ? f.nombre : ""))})'>🧾</button>
       </div>`).join('');
   }catch(e){ celda.innerHTML = `Error: ${e.message}`; }
 }
@@ -3062,12 +3390,14 @@ function elegirTipoIngreso(tipo){
 
 async function cargarPerfilDeSesion(){
   if (!SESION_ACTUAL){ PERFIL_ACTUAL = null; return; }
-  const perfiles = await sb(`perfiles?select=id,gimnasio_id,rol,nombre,email&id=eq.${SESION_ACTUAL.user.id}`);
+  const perfiles = await sb(`perfiles?select=id,gimnasio_id,rol,nombre,email,debe_cambiar_password&id=eq.${SESION_ACTUAL.user.id}`);
   PERFIL_ACTUAL = (perfiles && perfiles[0]) || null;
 }
 
 // Punto único que muestra la app del profesor una vez que hay sesión + perfil válidos.
 async function entrarComoStaff(){
+  // (29/9) Puerta de seguridad: código de 2 pasos / contraseña temporal / alta de 2 pasos (admin).
+  if (!await controlesDeSeguridad()) return;
   document.getElementById('authGate').style.display = 'none';
   document.getElementById('profesorApp').style.display = '';
   document.getElementById('sesionEmail').textContent = `${PERFIL_ACTUAL.nombre || PERFIL_ACTUAL.email} · ${PERFIL_ACTUAL.rol}`;
@@ -3118,6 +3448,9 @@ async function hacerSignup(){
   msg.textContent = '';
   if (!nombre || (!esIndependiente && !nombreGimnasio) || !email || !password){
     msg.textContent = 'Completá todos los campos.'; return;
+  }
+  if (password.length < PASSWORD_MIN || /^\d+$/.test(password)){
+    msg.textContent = `La contraseña tiene que tener al menos ${PASSWORD_MIN} caracteres y alguna letra.`; return;
   }
   const btn = document.getElementById('btnSignup');
   btn.disabled = true;
@@ -3206,13 +3539,13 @@ async function hacerLoginAlumno(){
 async function cambiarPasswordAlumno(){
   const nueva = document.getElementById('alumnoNuevaPassword').value;
   const msg = document.getElementById('alumnoPasswordMsg');
-  if (!nueva || nueva.length < 4){ msg.textContent = 'Elegí una contraseña de al menos 4 caracteres.'; return; }
+  { const err = validarPasswordNueva(nueva); if (err){ msg.textContent = err; return; } }
   try{
     const { error } = await supaAuth.auth.updateUser({ password: nueva });
     if (error) throw error;
     document.getElementById('alumnoNuevaPassword').value = '';
     msg.textContent = 'Contraseña actualizada ✓';
-  }catch(e){ msg.textContent = 'Error: ' + e.message; }
+  }catch(e){ msg.textContent = mensajeErrorPassword(e); }
 }
 
 // Cambio de contraseña para quien está logueado como staff (admin o profesor),
@@ -3220,13 +3553,13 @@ async function cambiarPasswordAlumno(){
 async function cambiarPasswordStaff(){
   const nueva = document.getElementById('staffNuevaPassword').value;
   const msg = document.getElementById('staffPasswordMsg');
-  if (!nueva || nueva.length < 4){ msg.textContent = 'Elegí una contraseña de al menos 4 caracteres.'; return; }
+  { const err = validarPasswordNueva(nueva); if (err){ msg.textContent = err; return; } }
   try{
     const { error } = await supaAuth.auth.updateUser({ password: nueva });
     if (error) throw error;
     document.getElementById('staffNuevaPassword').value = '';
     msg.textContent = 'Contraseña actualizada ✓';
-  }catch(e){ msg.textContent = 'Error: ' + e.message; }
+  }catch(e){ msg.textContent = mensajeErrorPassword(e); }
 }
 
 // Punto único que muestra el perfil del alumno logueado, reutilizando TODA la
@@ -3236,6 +3569,8 @@ async function cambiarPasswordStaff(){
 async function entrarComoAlumnoLogueado(){
   const msg = document.getElementById('alumnoAuthMsg');
   try{
+    // (29/9) Puerta de seguridad: código de 2 pasos / contraseña temporal.
+    if (!await controlesDeSeguridad()) return;
     const fichas = await sb(`alumnos?perfil_id=eq.${PERFIL_ACTUAL.id}&select=id,nombre,gimnasio_id,foto_url,activo`);
     const ficha = fichas && fichas[0];
     if (!ficha){
@@ -3286,6 +3621,7 @@ function mostrarModoAlumnoLogueado(ficha){
       <span class="muted" style="cursor:pointer; text-decoration:underline;" onclick="document.getElementById('miFotoInputAlu').click();">📷 Cambiar foto</span>
       <span class="muted" style="cursor:pointer; text-decoration:underline;" onclick="document.getElementById('alumnoCambiarPasswordWrap').style.display = document.getElementById('alumnoCambiarPasswordWrap').style.display==='none' ? '' : 'none';">Cambiar contraseña</span>
       <button class="ghost btn-push" onclick="activarNotificacionesPush()">🔔 Activar notificaciones</button>
+      <button class="ghost btn-2fa" onclick="gestionarDosPasos()">🛡️ Activar 2 pasos</button>
       <button class="ghost" onclick="hacerLogoutAlumno()">Cerrar sesión</button>
     </div>
   </div>
@@ -4719,8 +5055,9 @@ async function cargarPersonas(){
 }
 
 // ---------- Alta de profesores: cuenta de login real para tu staff ----------
-// Mismo esquema que los alumnos: usuario y contraseña inicial = DNI, con un
-// email sintético interno que el profesor nunca ve ni necesita.
+// Usuario = DNI (email sintético interno que el profesor nunca ve). Desde el 29/9 la
+// contraseña inicial es temporal y aleatoria, y la cuenta la crea el servidor
+// (Edge Function gestionar-acceso) — ya no el navegador con contraseña = DNI.
 async function crearProfesor(){
   const nombre = document.getElementById('nuevoProfesorNombre').value.trim();
   const dni = document.getElementById('nuevoProfesorDni').value.trim();
@@ -4729,17 +5066,8 @@ async function crearProfesor(){
   const btn = document.getElementById('btnCrearProfesor');
   btn.disabled = true;
   try{
-    // Cliente aparte, sin persistir sesión: si usáramos supaAuth acá, el signUp
-    // te loguearía como el profesor nuevo y perderías tu propia sesión de admin.
-    const clienteTemp = window.supabase.createClient(SUPABASE_URL, ANON_KEY, {
-      auth: { persistSession: false, autoRefreshToken: false }
-    });
-    const { error } = await clienteTemp.auth.signUp({
-      email: `prof-${dni}@m2fsolutions.local`, password: dni,
-      options: { data: { nombre, gimnasio_id: PERFIL_ACTUAL.gimnasio_id, dni } }
-    });
-    if (error) throw error;
-    toast(`Profesor creado ✓ Usuario y contraseña: DNI ${dni} (lo puede cambiar después).`);
+    const r = await sbFn('gestionar-acceso', { accion: 'crear_profesor', nombre, dni });
+    mostrarCredenciales({ titulo: 'Profesor creado ✓', nombre, usuario: r.usuario, password: r.password_temporal });
     document.getElementById('nuevoProfesorNombre').value = '';
     document.getElementById('nuevoProfesorDni').value = '';
     await cargarPersonas();
@@ -4776,6 +5104,7 @@ function cargarListaProfesores(){
         <div class="row" style="gap:14px; flex-wrap:wrap; align-items:center; margin-top:6px;">
           <label class="muted" style="font-size:12px; display:flex; align-items:center; gap:4px;">Tarifa/hora $<input type="number" step="0.01" min="0" value="${p.tarifa_hora ?? ''}" style="width:90px;" onchange="actualizarTarifaProfesor('${p.id}','tarifa_hora',this.value)"></label>
           <label class="muted" style="font-size:12px; display:flex; align-items:center; gap:4px;">Impuesto/carga %<input type="number" step="0.1" min="0" value="${p.impuesto_pct ?? 0}" style="width:60px;" onchange="actualizarTarifaProfesor('${p.id}','impuesto_pct',this.value)"></label>
+          ${(p.perfil_id && rol === 'profesor' && !(PERFIL_ACTUAL && p.perfil_id === PERFIL_ACTUAL.id)) ? `<span class="muted" style="font-size:12px; cursor:pointer; text-decoration:underline;" onclick="abrirGestionAccesoProfesor('${p.id}')">🔁 Acceso</span>` : ''}
           <span style="color:#ff6b6b; font-size:12px; cursor:pointer; font-weight:700; margin-left:auto;" onclick="abrirModalBajaProfesor('${p.id}','${(p.nombre||'').replace(/'/g,"&apos;")}')">Dar de baja</span>
         </div>
       </div>
@@ -6914,7 +7243,7 @@ async function cargarListaAlumnos(){
       ? `<span class="pill" style="${COLOR_ESTADO[estado]||''}">${plan.plan_nombre} · ${ETIQUETA_ESTADO[estado]}</span>`
       : `<span class="pill">Sin plan</span>`;
     const chipAcceso = a.perfil_id
-      ? `<span class="pill" style="color:var(--accent2); border-color:rgba(61,220,132,.4);">🔑 Tiene cuenta</span>`
+      ? `<span class="pill" style="color:var(--accent2); border-color:rgba(61,220,132,.4);">🔑 Tiene cuenta</span> <button class="ghost" style="font-size:12px; padding:2px 8px;" onclick="abrirGestionAccesoAlumno('${a.id}')">🔁 Acceso</button>`
       : (a.dni
         ? `<button class="ghost" onclick="generarAccesoAlumno('${a.id}')">🔑 Generar acceso</button>`
         : `<span class="pill" title="Cargale el DNI en Datos para poder generarle acceso">🔒 Sin DNI</span>`);
@@ -6997,27 +7326,18 @@ async function cargarListaAlumnos(){
   }).join('');
 }
 
-// Genera la cuenta de login del alumno: usuario y contraseña inicial = su DNI
-// (email sintético interno, invisible para el alumno). El alumno puede cambiar
-// la contraseña después desde su perfil.
+// Genera la cuenta de login del alumno: usuario = su DNI (email sintético interno,
+// invisible para el alumno). Desde el 29/9 la crea el servidor (Edge Function
+// gestionar-acceso) con una contraseña temporal aleatoria — ya no el DNI — que el
+// alumno tiene que cambiar la primera vez que entra.
 async function generarAccesoAlumno(alumnoId){
   const alumno = buscarAlumnoCache(alumnoId);
   if (!alumno) return;
   if (!alumno.dni){ toast('Cargale el DNI primero (botón "✏️ Datos").', true); return; }
-  if (!confirm(`¿Generar acceso para ${alumno.nombre}? Usuario y contraseña inicial: DNI ${alumno.dni}.`)) return;
+  if (!confirm(`¿Generar acceso para ${alumno.nombre}? Se va a crear una contraseña temporal para que le pases.`)) return;
   try{
-    // Cliente aparte, sin persistir sesión: si usáramos supaAuth acá, el signUp
-    // te loguearía como el alumno nuevo y perderías tu propia sesión de profesor/admin.
-    const clienteTemp = window.supabase.createClient(SUPABASE_URL, ANON_KEY, {
-      auth: { persistSession: false, autoRefreshToken: false }
-    });
-    const emailSintetico = `alu-${alumno.dni}@m2fsolutions.local`;
-    const { error } = await clienteTemp.auth.signUp({
-      email: emailSintetico, password: alumno.dni,
-      options: { data: { tipo: 'alumno', alumno_id: alumno.id, nombre: alumno.nombre } }
-    });
-    if (error) throw error;
-    toast(`Acceso generado ✓ Usuario y contraseña: DNI ${alumno.dni} (el alumno puede cambiarla después).`);
+    const r = await sbFn('gestionar-acceso', { accion: 'crear_acceso_alumno', alumno_id: alumno.id });
+    mostrarCredenciales({ titulo: 'Acceso generado ✓', nombre: alumno.nombre, usuario: r.usuario, password: r.password_temporal, telefono: alumno.telefono });
     await cargarPersonas();
     cargarListaAlumnos();
   }catch(e){ toast('Error generando el acceso: ' + extraerMensajeError(e), true); }
@@ -11217,18 +11537,13 @@ if ('serviceWorker' in navigator){
       await entrarComoAlumnoLogueado();
     } else if (PERFIL_ACTUAL){
       // Ya había sesión de staff guardada en el navegador: entra directo, sin landing.
+      // (29/9) Pasa por entrarComoStaff() para que también aplique la puerta de
+      // seguridad (2 pasos / contraseña temporal) y recargue los datos ya con la sesión completa.
       document.getElementById('landingSelector').style.display = 'none';
       document.getElementById('appShell').style.display = '';
-      document.getElementById('authGate').style.display = 'none';
-      document.getElementById('profesorApp').style.display = '';
-      document.getElementById('sesionEmail').textContent = `${PERFIL_ACTUAL.nombre || PERFIL_ACTUAL.email} · ${PERFIL_ACTUAL.rol}`;
-      mostrarLinkCodigosSiCorresponde();
-      registrarActividadGimnasio();
       cambiarVista('profesor');
-      sincronizarTabsRol();
-      cambiarSubvista('agenda'); // lo primero que ve el profesor al entrar es la agenda del día, no el armador
-      if (PERFIL_ACTUAL.rol === 'admin') { manejarRetornoOAuthMercadoPago(); revisarNotificacionesStaff(); }
-      actualizarBotonesPush();
+      await entrarComoStaff();
+      if (PERFIL_ACTUAL && PERFIL_ACTUAL.rol === 'admin') manejarRetornoOAuthMercadoPago();
     } else {
       let tipoGuardado = null;
       try{ tipoGuardado = localStorage.getItem('m2f_tipo'); }catch(e){}
