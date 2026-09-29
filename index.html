@@ -2448,7 +2448,7 @@ const BUCKET = "Ejercicios";
 // un cambio, se incrementa este número — el chequeo de actualización (más abajo) lo compara
 // contra lo que hay publicado y avisa si están desactualizados, sin que nadie tenga que
 // cambiar ningún link a mano.
-const APP_VERSION = 65;
+const APP_VERSION = 66;
 
 // ---------- Instalar como app (PWA): acceso directo en escritorio/celular ----------
 // Chrome/Edge/Android disparan "beforeinstallprompt" cuando el manifest + service worker
@@ -10598,10 +10598,12 @@ async function cargarRutinasDeAlumno(selectId, contenedorId){
   cont.innerHTML = 'Cargando...';
   try{
     const hoy = new Date().toISOString().slice(0,10);
-    const [rows, rotativas] = await Promise.all([
+    const [rows, rotativas, ejecFinalizadas] = await Promise.all([
       sb(`turnos?select=id,fecha,hora,rutina_dia_id,rutina_dias(id,nombre_dia,rutinas(nombre))&alumno_id=eq.${alumnoId}&estado=neq.cancelado&rutina_dia_id=not.is.null&order=fecha.desc,hora.desc&limit=30`),
       listarRutinasRotativasDeAlumno(alumnoId),
+      sb(`ejecuciones?select=rutina_dia_id&alumno_id=eq.${alumnoId}&estado=eq.finalizada&limit=500`),
     ]);
+    const diasCompletados = new Set(ejecFinalizadas.map(e => e.rutina_dia_id));
     // Sin ninguna rutina enganchada (ni por turno ni rotativa): ocultamos la sección del menú.
     if (menuItem) menuItem.style.display = (rows.length || rotativas.length) ? '' : 'none';
     if (!rows.length && !rotativas.length){ cont.innerHTML = '<div class="empty">Todavía no tenés ninguna rutina asignada.</div>'; return; }
@@ -10623,13 +10625,16 @@ async function cargarRutinasDeAlumno(selectId, contenedorId){
       // no llegó. Ahora un turno futuro no tiene botón de empezar, solo la fecha en la que va
       // a estar disponible (comenzarEntrenamiento también lo bloquea si se llega a intentar).
       const esFutura = t.fecha > hoy;
+      const completado = diasCompletados.has(t.rutina_dia_id);
       return `
         <div class="row" style="justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--border);">
           <div>
             <div style="font-weight:600;">${t.rutina_dias?.rutinas?.nombre || '-'} · ${t.rutina_dias?.nombre_dia || '-'}</div>
             <div class="muted">Turno del ${formatearFechaCorta(t.fecha)} · ${t.hora.slice(0,5)}hs${esFutura ? ' <span class="pill">Próximo</span>' : ''}</div>
           </div>
-          ${esFutura
+          ${completado
+            ? `<span class="pill" style="background:rgba(61,220,132,.12); color:var(--accent2); border-color:rgba(61,220,132,.4);">✓ Entrenamiento realizado</span>`
+            : esFutura
             ? `<span class="muted" style="font-size:12px;">Disponible el ${formatearFechaCorta(t.fecha)}</span>`
             : `<button class="secondary" onclick="comenzarEntrenamiento('${t.rutina_dia_id}','${alumnoId}','${(t.rutina_dias?.nombre_dia||'').replace(/'/g,"&apos;")}')">Ver / Empezar</button>`
           }
@@ -11825,6 +11830,18 @@ async function comenzarEntrenamiento(rutinaDiaId, alumnoId, nombreDia){
       return;
     }
     rutinaIdDelDia = diaInfo?.rutina_id || null;
+    // (v66, 29/9) Martin (alumno de prueba) completó el entrenamiento del lunes 28 y seguía
+    // pudiendo empezarlo de nuevo desde "Mis rutinas": el v52 solo cerró "Mis turnos" y el
+    // botón central. Un día con fecha (rutina de fecha fija) se entrena UNA vez: si ya hay
+    // una ejecución finalizada de ese día para este alumno, no se crea otra. Las rutinas
+    // rotativas y las plantillas no llevan fecha en el día (se repiten), así que no aplican.
+    if (diaInfo && diaInfo.fecha){
+      const hechas = await sb(`ejecuciones?select=id&rutina_dia_id=eq.${rutinaDiaId}&alumno_id=eq.${alumnoId}&estado=eq.finalizada&limit=1`);
+      if (hechas && hechas.length){
+        toast(`Ya completaste el entrenamiento del ${formatearFechaCorta(diaInfo.fecha)} ✓`);
+        return;
+      }
+    }
   }catch(e){ console.error('No se pudo validar la fecha de la rutina antes de empezar:', e); }
 
   document.getElementById('alumnoHome').style.display = 'none';
