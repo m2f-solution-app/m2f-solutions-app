@@ -1,0 +1,722 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mapa de M2F Solutions</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0b0c10;--panel:#15171c;--panel2:#1b1e25;--border:#262a33;--text:#f2f3f5;--dim:#9aa0ab;--accent:#ff7a30;--accent-dim:#c95a1f;--tagc:#ff7a30}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;padding:20px 16px 48px}
+.wrap{max-width:640px;margin:0 auto}
+.brand{display:flex;align-items:center;gap:10px;margin-bottom:22px}
+.logo{width:34px;height:34px;border-radius:9px;background:var(--accent);color:#1a0d02;font-weight:800;font-size:11px;display:flex;align-items:center;justify-content:center;letter-spacing:-.3px}
+.brand b{font-size:17px}.brand b span{color:var(--accent)}
+h1{font-size:28px;line-height:1.15;margin:0 0 8px;font-weight:700;letter-spacing:-.4px}
+.sub{color:var(--dim);font-size:14px;line-height:1.45;margin:0 0 20px}
+.search{position:relative;margin-bottom:18px}
+.search input{width:100%;background:var(--panel);border:1px solid var(--border);color:var(--text);border-radius:14px;padding:13px 14px 13px 42px;font:inherit;font-size:16px;outline:none}
+.search input:focus{border-color:var(--accent)}
+.search i{position:absolute;left:15px;top:50%;transform:translateY(-50%);font-style:normal;opacity:.6}
+.lbl{font-size:11px;letter-spacing:.08em;color:var(--dim);font-weight:600;margin:0 0 8px}
+.seg{display:flex;background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:4px;gap:2px}
+.seg button{flex:1;border:0;background:none;color:var(--dim);font:inherit;font-size:14px;font-weight:600;padding:10px 4px;border-radius:10px;cursor:pointer}
+.seg button.on{background:var(--panel2);color:var(--text);box-shadow:0 0 0 1px var(--border)}
+hr{border:0;border-top:1px solid var(--border);margin:20px 0}
+.tabs{display:flex;gap:18px;overflow-x:auto;border-bottom:1px solid var(--border);margin-bottom:18px;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tabs button{flex:none;background:none;border:0;border-bottom:2px solid transparent;color:var(--dim);font:inherit;font-size:14px;font-weight:600;padding:8px 0 10px;cursor:pointer;white-space:nowrap}
+.tabs button.on{color:var(--accent);border-color:var(--accent)}
+h2{font-size:20px;margin:0 0 4px}
+.intro{color:var(--dim);font-size:13.5px;margin:0 0 18px;line-height:1.45}
+.list{position:relative}
+.step{display:flex;gap:12px;position:relative;padding-bottom:10px}
+.rail{flex:none;width:30px;display:flex;flex-direction:column;align-items:center}
+.dot{width:30px;height:30px;border-radius:50%;border:1.5px solid var(--accent);color:var(--accent);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;background:var(--bg);flex:none;margin-top:10px}
+.step.open .dot{background:var(--accent);color:#1a0d02}
+.line{flex:1;width:2px;background:var(--border);margin-top:4px;min-height:10px}
+.step:last-child .line{display:none}
+.card{flex:1;min-width:0;background:var(--panel);border:1px solid var(--border);border-radius:14px;overflow:hidden}
+.step.open .card{border-color:rgba(255,122,48,.45)}
+.head{width:100%;display:flex;align-items:center;gap:10px;background:none;border:0;color:var(--text);font:inherit;text-align:left;padding:12px 14px;cursor:pointer}
+.head .t{flex:1;min-width:0}
+.head b{display:block;font-size:15px;line-height:1.3}
+.head small{display:block;color:var(--dim);font-size:12.5px;margin-top:2px;line-height:1.35}
+.step.open .head small{display:none}
+.chev{color:var(--dim);transition:transform .2s;flex:none}
+.step.open .chev{transform:rotate(180deg);color:var(--accent)}
+.body{display:none;padding:0 14px 14px}
+.step.open .body{display:block}
+.meta{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 12px}
+.chip{font-size:11.5px;font-weight:600;color:var(--dim);background:var(--bg);border:1px solid var(--border);border-radius:999px;padding:4px 10px}
+.chip.w{color:#ffb98a;border-color:rgba(255,122,48,.35)}
+.sec{background:var(--panel2);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:8px}
+.sec:last-child{margin-bottom:0}
+.sec h4{margin:0 0 5px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--tagc)}
+.sec p{margin:0;font-size:14px;line-height:1.5}
+.sec ol{margin:0;padding-left:20px}.sec li{font-size:14px;line-height:1.5;margin-bottom:3px}
+.tip{font-size:13px;line-height:1.45;background:rgba(255,122,48,.09);border:1px solid rgba(255,122,48,.3);border-radius:10px;padding:9px 12px;margin-top:8px}
+.vacio{color:var(--dim);font-size:14px;padding:20px 0;text-align:center}
+.res-where{font-size:11px;color:var(--dim);margin-top:3px}
+footer{text-align:center;color:var(--dim);font-size:12px;margin-top:28px}
+</style></head><body>
+<div class="wrap">
+  <div class="brand"><div class="logo">M2F</div><b>M2F <span>Solutions</span></b></div>
+  <h1>Aprendé a usar la app, paso a paso</h1>
+  <p class="sub">Elegí quién sos y tocá cualquier paso para ver cómo se hace.</p>
+  <div class="search"><i>🔍</i><input id="q" type="search" placeholder="Buscar: turno, cuota, rutina…" autocomplete="off"></div>
+  <div id="quien">
+    <div class="lbl">¿QUIÉN SOS?</div>
+    <div class="seg" id="seg"></div>
+    <hr>
+  </div>
+  <div class="tabs" id="tabs"></div>
+  <h2 id="h"></h2>
+  <p class="intro" id="intro"></p>
+  <div class="list" id="list"></div>
+  <footer>Actualizado a la versión 85 · 30/9/2026</footer>
+</div>
+<script>
+const DATA = {
+
+/* ============================================================
+   🧭 EMPEZAR ACÁ — guías para usar la app sin perderse
+   ============================================================ */
+guias: {
+  label: '🧭 Empezar acá',
+  subs: {
+    arranque: {
+      label: '🚀 Primeros pasos del gimnasio',
+      intro: 'Orden recomendado para dejar un gimnasio nuevo andando. Seguilo de arriba hacia abajo: cada paso prepara al siguiente.',
+      items: [
+        { icon:'1️⃣', title:'Crear la cuenta y activar los 2 pasos',
+          donde:'Pantalla inicial → "Crear cuenta"', quien:'Administrador',
+          sirve:'Se crea el gimnasio (o el perfil de profesor independiente) y tu usuario Administrador. Necesitás el código de activación que te da M2F Solutions. Después la app te pide activar la verificación en dos pasos con una app Authenticator: es obligatoria para todo administrador.',
+          pasos:['Tocá "Crear cuenta", elegí Gimnasio o Profesor independiente y cargá el código de activación.','Entrá con tu email y contraseña.','Cuando aparezca el QR, escanealo con Google Authenticator (o similar) y escribí el código de 6 números.','Hacelo desde UNA sola pantalla: ideal, el QR en la compu y escanear con el celular sin recargar la página.'],
+          aplica:'Sin los 2 pasos activos el administrador no puede ver ni tocar datos del gimnasio (la base de datos lo bloquea). Una vez activos, cada vez que entrás te pide el código.',
+          tip:'Si perdés el celu con el Authenticator, el soporte de M2F Solutions puede reiniciarte los 2 pasos.' },
+        { icon:'2️⃣', title:'Completar "Mi gimnasio"',
+          donde:'Menú ☰ → 🏢 Mi gimnasio (o el ⚙️ de arriba)', quien:'Administrador',
+          sirve:'Acá cargás nombre, logo, colores de marca, descuento por efectivo, planes de pago adelantado, cobros online, tipos de entrenamiento, bloques de rutina, categorías y equipos. Es la base de todo lo demás.',
+          pasos:['Subí el nombre y el logo.','Elegí tus colores (o dejá el naranja de M2F).','Definí el % de descuento por efectivo.','Cargá los tipos de entrenamiento (los vas a usar para asignar rutinas solas) y los bloques de rutina.','Opcional: categorías, equipos y conexión con Mercado Pago.'],
+          aplica:'Los colores y el logo se ven en toda la app, en los PDF y en los recibos. Los tipos de entrenamiento y los bloques aparecen después en el Armador de rutinas y en el alta de alumnos.' },
+        { icon:'3️⃣', title:'Crear los planes',
+          donde:'Menú ☰ → 💳 Planes', quien:'Administrador',
+          sirve:'Cada plan define nombre, días por semana, turnos por mes (informativo), precio por transferencia y duración en días.',
+          pasos:['Tocá "Nuevo plan".','Completá nombre, días por semana, precio y duración (ej. 30 días).','Guardá. Podés desactivarlo después sin perder el historial.'],
+          aplica:'El plan se le asigna a cada alumno y de ahí salen el monto y la vigencia de cada cobro, la racha semanal y los avisos de vencimiento.',
+          tip:'Asignar un plan NO cobra nada: el pago se registra aparte, en Finanzas.' },
+        { icon:'4️⃣', title:'Dar de alta profesores y cargar horarios',
+          donde:'Menú ☰ → 🧑‍🏫 Profesores y 🕒 Horarios', quien:'Administrador',
+          sirve:'Sin profesores con horarios cargados no hay turnos para reservar. Cada profesor trabaja en rangos horarios con un cupo por turno.',
+          pasos:['En Profesores: cargá nombre y DNI. La app te muestra UNA vez una contraseña temporal: pasásela a la persona.','En Horarios: elegí al profesor y cargá, por día, los rangos Desde–Hasta y el cupo.','Mirá el "cuadro de todos" para detectar huecos.'],
+          aplica:'Los horarios definen qué turnos ve y puede reservar el alumno y qué cupos ve Recepción. El profesor entra con su DNI y esa contraseña, y la tiene que cambiar en el primer ingreso.' },
+        { icon:'5️⃣', title:'Dar de alta alumnos y generarles el acceso',
+          donde:'Menú ☰ → 👤 Alumnos', quien:'Administrador',
+          sirve:'Cada socio necesita su ficha (nombre, DNI, plan, etc.) y, para usar la app desde el celu, una cuenta de acceso.',
+          pasos:['"Nuevo alumno": nombre, DNI, plan, tipo de entrenamiento, categorías, equipo, foto.','Tocá 🔑 Acceso → "Generar acceso". Te muestra el usuario (su DNI) y una contraseña temporal, una sola vez.','Pasásela al alumno (WhatsApp, en persona). En el primer ingreso elige su propia contraseña.'],
+          aplica:'Sin DNI cargado no se puede generar el acceso. Sin acceso el alumno igual existe para Cobranzas, Agenda y Recepción; solo no puede entrar a la app.' },
+        { icon:'6️⃣', title:'Armar las primeras rutinas',
+          donde:'Menú ☰ → 🏋️ Armador de Rutina', quien:'Administrador y Profesor',
+          sirve:'Las rutinas son del gimnasio, no de un profesor. Elegís el modo (fecha fija, rotativa o plantilla), el tipo de entrenamiento y cargás los ejercicios.',
+          pasos:['Elegí el modo: Fecha fija (una sesión por día calendario), Rotativa (se repite sola) o Plantilla (la elegís a mano desde la Agenda).','Agregá ejercicios con el buscador: series, reps, carga, pausa, RIR.','Guardá. Verificá en 🗂️ Rutinas que quedó.'],
+          aplica:'Cuando un alumno reserva un turno para un día con rutina de su tipo, se le engancha sola. Rotativas y "para cualquier alumno" las toma el alumno sin turno.' },
+        { icon:'7️⃣', title:'Cobrar la primera cuota',
+          donde:'Menú ☰ → 💰 Finanzas → Cobros', quien:'Administrador',
+          sirve:'Registrás el pago del alumno y el sistema calcula monto y nueva vigencia.',
+          pasos:['Buscá al alumno en Cobros.','Tocá 💰 Cobrar, elegí efectivo o transferencia y (si querés) meses de pago adelantado.','Confirmá: podés bajar o mandar por WhatsApp el recibo PDF.'],
+          aplica:'El alumno ve su vigencia actualizada y recibe el aviso de "pago recibido". El monto entra a la caja que corresponde (efectivo → Efectivo; transferencia/Mercado Pago → Banco).' },
+        { icon:'8️⃣', title:'Probar desde el celular del alumno',
+          donde:'Celular del alumno', quien:'Todos',
+          sirve:'Comprobá el circuito completo antes de largar: entrar, sacar turno, ver la rutina y entrenar.',
+          pasos:['Abrí la app, pestaña Alumno, DNI + contraseña temporal.','Elegí una contraseña nueva.','Sacá un turno para hoy: tiene que aparecer la rutina y, si hay turno hoy, la tarjeta de Wellness.','Instalá la app en la pantalla de inicio (Android: menú → Instalar; iPhone: Compartir → Agregar a inicio).'],
+          aplica:'Instalada, la app abre a pantalla completa y (en iPhone, desde iOS 16.4) puede recibir notificaciones.' },
+      ]
+    },
+    dia: {
+      label: '📅 Un día típico por rol',
+      intro: 'Qué hace cada persona en un día normal, en el orden en que lo necesita.',
+      items: [
+        { icon:'🧑‍🏫', title:'Profesor: su día',
+          donde:'🏠 Inicio → 📋 Agenda', quien:'Profesor',
+          sirve:'Entrás y aterrizás en Inicio: tu agenda de hoy, el Wellness a revisar, lo que requiere atención y tus números de los últimos 14 días.',
+          pasos:['Antes de la clase: mirá "Wellness a revisar". Un 🔴 pide ajustar la sesión de esa persona.','Tocá al alumno (Agenda o Inicio) → popup: ver Wellness, rutina del turno, 🔄 cambiar o ✏️ ajustar la sesión.','En el turno: marcá ✓ presente a cada uno que llega.','Si falta rutina en los próximos días, Inicio te avisa: armala en el Armador.'],
+          aplica:'Lo que marcás (presente/ausente, ajustes de rutina) se ve al instante en la app del alumno y alimenta Logros, Seguimiento y Dashboard.' },
+        { icon:'🛎️', title:'Recepción: su día',
+          donde:'🛎️ Recepción', quien:'Recepción (o Administrador)',
+          sirve:'Es el mostrador: cada socio que llega se busca por DNI, se marca su llegada y, si no tenía turno o no le anda el celu, se le saca en el momento.',
+          pasos:['Tipeá el DNI en el teclado de la pantalla (o uno USB) y Enter; o buscá por nombre.','Si tiene turno de hoy: botón verde "✓ Marcar llegada".','Si no tiene: elegí día y horario con lugar y "Sacar turno y marcar llegada".','Si se equivocó: "↩ Deshacer".'],
+          aplica:'La llegada queda como asistencia del turno: el profesor la ve en Agenda e Inicio, en vivo.' },
+        { icon:'🧑‍💼', title:'Administrador: rutina semanal',
+          donde:'📊 Dashboard · 🔔 Alertas · 💰 Finanzas', quien:'Administrador',
+          sirve:'Una vuelta por semana para tener el negocio bajo control.',
+          pasos:['🔔 Alertas: contactá cuotas vencidas, por vencer y gente que dejó de venir (botón 📤 copia los teléfonos del grupo).','💰 Finanzas → Cobros: registrá los pagos pendientes.','Gastos y Cajas: cargá lo gastado y verificá saldos.','📊 Dashboard: revisá altas, bajas (churn), ocupación y proyección.','🕒 Horarios: revisá huecos de la semana siguiente.'],
+          aplica:'Todo se calcula en vivo sobre lo cargado: si algo no cuadra, casi siempre es un pago o un gasto sin registrar.' },
+        { icon:'🎓', title:'Alumno: su día',
+          donde:'Celular', quien:'Alumno',
+          sirve:'El alumno no tiene que pensar: la app le dice qué hacer hoy.',
+          pasos:['Abre la app → Inicio: ve su turno y su rutina de hoy.','Responde el Wellness (1 minuto) antes de entrenar.','Toca "Entrenar": registra series, peso y RIR; usa el cronómetro si lo necesita.','Finaliza y cuenta qué tan pesado fue (RPE).','Mira su racha en Logros.'],
+          aplica:'Cada serie guardada alimenta Historial, Seguimiento, Logros y la sugerencia de carga de la próxima vez.' },
+      ]
+    },
+    conceptos: {
+      label: '🧩 Conceptos clave',
+      intro: 'Las ideas que, una vez entendidas, explican todo el sistema.',
+      items: [
+        { icon:'🔀', title:'Turno vs. rutina: son dos cosas distintas',
+          sirve:'El turno es el lugar y la hora en el gimnasio (cupo). La rutina es qué entrena la persona. Un alumno puede tener rutina y no sacar turno (entrena a distancia), o sacar turno sin rutina.',
+          aplica:'Al reservar un turno, el sistema intenta enganchar una rutina sola (especial del alumno primero, biblioteca de su tipo después). Si no hay, el turno queda sin rutina y se puede asignar a mano desde la Agenda.' },
+        { icon:'📚', title:'Tipos de rutina',
+          sirve:'Fecha fija: una sesión por día calendario, para un tipo de entrenamiento. Rotativa: sesiones sin fecha que se repiten en ciclo (Día A, B, C…). Plantilla: sesión suelta, no se asigna sola, se elige a mano (ej. Recovery). Especial: rutina hecha para un alumno o un equipo.',
+          aplica:'Fecha fija y rotativa se asignan solas; plantilla y especial se eligen o asignan a propósito. Las rotativas y plantillas pueden ser "para cualquier alumno" (sin tipo).' },
+        { icon:'🟢', title:'Semáforo de Wellness',
+          sirve:'Antes de entrenar el alumno puntúa del 1 al 5 fatiga, sueño, dolor muscular, estrés y ánimo (5 = mejor). Total de 5 a 25: 🟢 20+ · 🟡 15 a 19 · 🔴 14 o menos, o algún ítem en 1.',
+          aplica:'El profesor lo ve en Agenda e Inicio con una sugerencia: verde puede sumar intensidad, amarillo mantener, rojo considerar bajar la carga. No cambia la rutina solo.' },
+        { icon:'🎚️', title:'RIR y RPE',
+          sirve:'RIR = repeticiones que te quedaron "en el tanque" al terminar la serie (0 = llegaste al fallo). RPE = qué tan pesado sentiste la sesión (10 = máximo). Hay una tabla de equivalencia (botón ? al lado de RIR).',
+          aplica:'El RIR alimenta la progresión autoregulada (sube la carga solo si cumplís el RIR objetivo); el RPE final queda en el seguimiento del alumno.' },
+        { icon:'📆', title:'Vigencia y cuota',
+          sirve:'Cada pago extiende la vigencia del alumno según la duración del plan (o los meses adelantados). Estados: al día, por vencer, vencido, sin pagos, sin plan.',
+          aplica:'Los estados alimentan los banners del alumno, las Alertas, Cobranzas y las reglas de Recepción (cuota vencida bloquea marcar llegada y sacar turnos nuevos).' },
+        { icon:'🛡️', title:'Roles de la plataforma',
+          sirve:'Administrador: todo. Profesor: Inicio, Agenda, rutinas, equipos, evaluaciones y seguimiento. Recepción: solo la pantalla Recepción. Alumno: solo lo suyo.',
+          aplica:'Se aplica ocultando menús y, sobre todo, en la base de datos: aunque alguien llame a la API a mano, no puede ver ni modificar lo que su rol no permite.' },
+        { icon:'🔁', title:'Todo se sincroniza',
+          sirve:'No hay que "publicar" nada: lo que carga el staff se ve en el alumno y viceversa.',
+          aplica:'Ejemplos: el pago cargado actualiza el chip de vigencia del alumno; la rutina editada se ve al abrirla; la asistencia marcada aparece en "Mis turnos"; lo que entrena el alumno aparece en Seguimiento y Logros del profesor.' },
+      ]
+    },
+    problemas: {
+      label: '🛟 Si te pasa esto…',
+      intro: 'Los problemas más comunes y dónde se resuelven.',
+      items: [
+        { icon:'🔑', title:'Un alumno no puede entrar',
+          sirve:'Revisá en orden: (1) ¿tiene DNI cargado? (2) ¿tiene acceso generado? (3) ¿puso el DNI sin puntos en la pestaña Alumno?',
+          pasos:['👤 Alumnos → 🔑 Acceso de esa persona.','Si no tiene cuenta: "Generar acceso" (necesita DNI cargado).','Si se olvidó la clave: "🔑 Generar contraseña temporal nueva". Se la pasás y elige otra al entrar.'],
+          aplica:'La contraseña temporal se muestra una sola vez. Si la perdiste, generá otra: no hay forma de "ver" la anterior.' },
+        { icon:'🧑‍🏫', title:'Un profesor olvidó su contraseña o perdió el Authenticator',
+          sirve:'El administrador resuelve ambas cosas desde Profesores.',
+          pasos:['🧑‍🏫 Profesores → Acceso del profesor.','"🔑 Generar contraseña temporal nueva" o "🛡️ Quitar verificación en dos pasos".'],
+          aplica:'La cuenta de un Administrador solo la puede reiniciar el soporte de M2F Solutions.' },
+        { icon:'📵', title:'Un alumno dice que no ve su rutina',
+          sirve:'Casi siempre es una de tres: no tiene turno para ese día, su tipo de entrenamiento no tiene rutina cargada ese día, o la rutina es rotativa y está en "Mis rutinas".',
+          pasos:['Mirá su turno en Agenda: ¿tiene rutina enganchada?','Si no, asignale una desde el popup de la Agenda (🔄 Cambiar por otra sesión) o armá una especial.','Revisá que su ficha tenga tipo de entrenamiento.'],
+          aplica:'Un día de fecha fija ya completado no se puede volver a empezar: aparece como "✓ Entrenamiento realizado".' },
+        { icon:'📅', title:'Un alumno no puede reservar',
+          sirve:'Causas típicas: cuota vencida, sin cupo en ese horario, no hay horarios cargados ese día o ya tiene un turno ese día.',
+          pasos:['Cobranzas: revisá su estado de cuota.','Horarios: verificá que el profesor tenga horario y cupo.','Si el alumno no puede con el celu: pasalo por 🛎️ Recepción o sacale el turno vos.'],
+          aplica:'Hay un solo turno activo por alumno por día; para cambiarlo hay que cancelar y volver a reservar (Recepción lo hace con "reemplazar").' },
+        { icon:'🔔', title:'No le llegan las notificaciones',
+          sirve:'Tienen que estar activadas en ⚙️ Configuración → Notificaciones. En iPhone solo funcionan con la app instalada en pantalla de inicio (iOS 16.4 o más nuevo).',
+          pasos:['Abrir ⚙️ → Notificaciones → Activar.','Aceptar el permiso del navegador.','iPhone: primero Compartir → Agregar a inicio y abrir desde ese ícono.'],
+          aplica:'Mientras tanto los avisos igual aparecen dentro de la app al entrar.' },
+        { icon:'⛔', title:'En Recepción dice "cuota vencida"',
+          sirve:'Con cuota vencida no se puede marcar llegada ni sacar turnos nuevos (sí deshacer o cancelar los existentes).',
+          pasos:['Administrador: botón "💰 Ir a cobrar" en la misma ficha.','Recepción: que el socio pase por administración.','Una vez cobrado, volvé a buscar al socio.'],
+          aplica:'Apenas se registra el pago la vigencia se actualiza y la restricción desaparece.' },
+        { icon:'🧮', title:'Los números del Dashboard no cierran',
+          sirve:'Dashboard, Cajas y Proyección se calculan sobre lo registrado. Si algo falta, revisá qué no se cargó.',
+          pasos:['Pagos sin cargar (Finanzas → Cobros).','Gastos sin caja asignada ("⚠️ Sin caja — asignar").','Saldo inicial de cajas y fecha de corte sin configurar.'],
+          aplica:'Mercado Pago entra por sí solo; efectivo y transferencia los carga una persona.' },
+      ]
+    },
+  }
+},
+
+/* ============================================================
+   🧑‍💼 ADMIN / PROFESOR
+   ============================================================ */
+admin: {
+  label: '🧑‍💼 Admin / Profesor',
+  subs: {
+
+    config: {
+      label: '⚙️ Configuración inicial',
+      items: [
+        { icon:'🏢', title:'Mi gimnasio (nombre y logo)',
+          donde:'Menú ☰ → 🏢 Mi gimnasio', quien:'Administrador',
+          sirve:'Nombre y logo que identifican a tu gimnasio. Se configura una sola vez, es lo primero que tiene que cargar un gimnasio nuevo.',
+          pasos:['Escribí el nombre.','Subí la imagen del logo (se guarda sola) o pegá un link.','Tocá Guardar.'],
+          aplica:'Se muestran en la barra superior de toda la app (staff y alumno), en los recibos de pago en PDF y en la ficha descargable del alumno.' },
+        { icon:'🎨', title:'Colores de marca',
+          donde:'Mi gimnasio → Colores de tu app', quien:'Administrador',
+          sirve:'Elegís el color primario y secundario de tu gimnasio, en vez del naranja de M2F Solutions.',
+          pasos:['Elegí los dos colores.','Guardá y recargá para ver el cambio.','Probalos en modo claro y oscuro con el botón 🌙/☀️.'],
+          aplica:'Se aplican en toda la app (botones, barras, destacados) y en los PDF generados: un solo cambio, se ve en todos lados.',
+          tip:'Elegí un color con buen contraste: lo vas a ver sobre fondo claro y oscuro.' },
+        { icon:'💰', title:'Facturación (descuento por efectivo)',
+          donde:'Mi gimnasio → Facturación', quien:'Administrador',
+          sirve:'Definís el % de descuento cuando un socio paga en efectivo. Es un valor único por gimnasio, no por plan.',
+          aplica:'Lo usa el registro de cada cobro: si el método es efectivo, resta ese % al precio del plan; con transferencia se cobra el precio de lista.' },
+        { icon:'📅', title:'Planes de pago adelantado',
+          donde:'Mi gimnasio → Planes de pago adelantado', quien:'Administrador',
+          sirve:'Opciones para cobrar varios meses juntos con descuento propio (ej. "3 meses −10%", "6 meses −15%"). Se crean, desactivan o eliminan sin límite.',
+          aplica:'Aparecen en el selector "Meses a pagar" del botón 💰 Cobrar. El monto se recalcula (precio × meses × descuento) y la vigencia se extiende esos meses de una vez. Ese % pisa al de efectivo.' },
+        { icon:'💳', title:'Cobros online (Mercado Pago)',
+          donde:'Mi gimnasio → Cobros online', quien:'Administrador',
+          sirve:'Conectás la cuenta de Mercado Pago del gimnasio (un clic, iniciás sesión y autorizás; M2F nunca ve tu usuario ni contraseña) para que los alumnos paguen la cuota desde la app. También configurás el % de recargo. Hay un acceso directo a Mercado Pago para consultar tus comisiones.',
+          pasos:['Tocá "Conectar Mercado Pago" y autorizá.','Cargá el % de recargo (mirá tu comisión en el link de la misma pantalla).','Guardá.'],
+          aplica:'Habilita el botón "Pagar con Mercado Pago" en la cuota del alumno. El recargo se suma para que la comisión la pague el alumno y al gimnasio le quede el precio de lista (precio ÷ (1 − recargo%)). El dinero va directo a tu cuenta, nunca pasa por M2F. Solo se puede conectar una cuenta por gimnasio.' },
+        { icon:'🏷️', title:'Categorías / disciplinas',
+          donde:'Mi gimnasio → Categorías', quien:'Administrador',
+          sirve:'La lista de disciplinas que entrena tu gimnasio (Fuerza, Funcional, Fútbol…). La administra el gimnasio, no es texto libre.',
+          aplica:'En 👤 Alumnos cada socio tilda una o varias; se ven como chips en la lista, en la ficha/PDF y sirven de filtro.' },
+        { icon:'⚽', title:'Equipos (alta)',
+          donde:'Mi gimnasio → Equipos', quien:'Administrador',
+          sirve:'Creás los equipos (ej. un plantel de fútbol) a los que después se asigna cada alumno.',
+          aplica:'Un alumno pertenece a un solo equipo (o ninguno). Habilita la pantalla ⚽ Equipo y permite asignar UNA misma rutina a todos los jugadores desde ⭐ Rutinas especiales.' },
+        { icon:'💳', title:'Planes',
+          donde:'Menú ☰ → 💳 Planes', quien:'Administrador',
+          sirve:'Cada plan define nombre, días por semana, tope de turnos por mes (informativo, no bloquea), precio con transferencia y duración en días.',
+          aplica:'Precio y duración calculan monto y vigencia de cada cobro (manual o Mercado Pago). Los días por semana alimentan la racha semanal en Logros. Asignar un plan NO genera ningún pago.' },
+        { icon:'🎯', title:'Tipos de entrenamiento',
+          donde:'Mi gimnasio → Tipos de entrenamiento', quien:'Administrador',
+          sirve:'Es la etiqueta que agrupa rutinas y alumnos (ej. "Fuerza", "Funcional"). Se asigna a cada alumno al darlo de alta.',
+          aplica:'Es la clave de la asignación automática: cuando un alumno reserva un turno para un día, el sistema le engancha la rutina de biblioteca de su mismo tipo para ese día. La grilla de 🗂️ Rutinas se ordena por tipo.' },
+        { icon:'🧩', title:'Bloques de rutina',
+          donde:'Mi gimnasio → Bloques de rutina', quien:'Administrador',
+          sirve:'Lista de bloques (Entrada en calor, Bloque 1, Fuerza, Core…) que administra cada gimnasio, no es una lista fija.',
+          aplica:'El profesor elige uno para agrupar ejercicios en el Armador y en Especiales (o escribe uno puntual con "Otro…"). Un bloque nuevo queda disponible al instante.' },
+        { icon:'🆕', title:'Ejercicios (catálogo)',
+          donde:'Menú ☰ → 🆕 Ejercicios', quien:'Administrador y Profesor',
+          sirve:'Base de ejercicios propios del gimnasio: nombre, grupo muscular, video/gif, equipamiento. Se suman a los ejercicios globales de la plataforma.',
+          aplica:'Aparecen en el buscador del Armador, de Especiales y al sustituir un ejercicio durante el entrenamiento. Un ejercicio nuevo (cargado acá o al vuelo desde el buscador) queda disponible en los tres lugares.' },
+      ]
+    },
+
+    personas: {
+      label: '👥 Personas y accesos',
+      items: [
+        { icon:'🧑‍🏫', title:'Profesores (alta y baja)',
+          donde:'Menú ☰ → 🧑‍🏫 Profesores', quien:'Administrador',
+          sirve:'Alta de cada profesor con nombre y DNI; no pide email ni contraseña manual.',
+          pasos:['Completá nombre y DNI en "Nuevo profesor".','La app muestra una contraseña temporal UNA sola vez: anotala o pasásela.','El profesor entra por el login de staff con su DNI (o email) y esa contraseña, y elige la suya.'],
+          aplica:'La cuenta se crea en el servidor con una contraseña aleatoria. En la misma pantalla se puede promover a Administrador, reiniciar su acceso o darlo de baja; la baja asistida reasigna sus turnos futuros a otro profesor.' },
+        { icon:'🛎️', title:'Usuarios de Recepción',
+          donde:'Profesores → "Usuarios de Recepción"', quien:'Administrador',
+          sirve:'Crea cuentas para quien atiende el mostrador, sin darle acceso a finanzas, rutinas ni datos del staff.',
+          pasos:['Desplegá "Usuarios de Recepción".','Cargá nombre y DNI y tocá "Crear usuario": se crea con una contraseña temporal.','Pasale usuario y clave: entra por el login de staff con su DNI.','Si hace falta: "🔁 Contraseña nueva" o "Quitar" en la lista de abajo.'],
+          aplica:'Esa persona solo ve la pantalla 🛎️ Recepción. Todo lo que hace queda en un registro (quién, cuándo, a quién).' },
+        { icon:'🕐', title:'Horarios de trabajo',
+          donde:'Menú ☰ → 🕒 Horarios → ✎ Editar horario', quien:'Administrador',
+          sirve:'Por profesor y por día de la semana cargás uno o varios rangos (Desde–Hasta) y el cupo por turno. Podés copiar el horario de un día a otros.',
+          aplica:'Es la base de los turnos que ve el alumno al reservar y de los cupos de Recepción; cambiar un horario se refleja al instante. También define qué días se ven habilitados.' },
+        { icon:'👤', title:'Alumnos / Socios (alta)',
+          donde:'Menú ☰ → 👤 Alumnos', quien:'Administrador',
+          sirve:'Alta de cada socio: nombre, DNI, plan, categorías, equipo, tipo de entrenamiento, posición y foto. La lista permite editar, cambiar plan, ver la ficha y dar de baja.',
+          aplica:'El DNI habilita "Generar acceso" y la búsqueda en Recepción; el plan alimenta Cobranzas y la racha; categorías/equipo/posición/foto van a la ficha/PDF. Cargar estos datos NO crea ningún pago ni cuenta.',
+          tip:'Si dejás al alumno sin plan, la app te avisa: sin plan no puede pagar desde la app ni figura en Cobranzas.' },
+        { icon:'🔑', title:'Generar acceso del alumno',
+          donde:'Alumnos → 🔑 Acceso', quien:'Administrador',
+          sirve:'Crea la cuenta real de acceso del alumno: usuario = su DNI y una contraseña temporal aleatoria. Solo si tiene DNI cargado y aún no tiene cuenta.',
+          pasos:['Abrí al alumno en la lista → 🔑 Acceso.','"Generar acceso" → copiá la contraseña temporal (se ve una sola vez).','Pasásela. Si la pierde: "🔑 Generar contraseña temporal nueva".'],
+          aplica:'Con eso entra por la pestaña Alumno con DNI + contraseña y debe cambiarla en el primer ingreso. Antes de esto no puede entrar ni pagar con Mercado Pago.' },
+        { icon:'🔐', title:'Verificación en 2 pasos',
+          donde:'⚙️ Configuración → Verificación en 2 pasos', quien:'Todos (obligatoria para Administrador)',
+          sirve:'Segundo factor con una app Authenticator. Obligatoria para el administrador; opcional para el resto.',
+          aplica:'Un administrador sin 2 pasos activos queda sin acceso a los datos del gimnasio. Si pierde el celu, el soporte de M2F reinicia el factor. A profesores y Recepción los reinicia el administrador.' },
+        { icon:'🛡️', title:'Roles y permisos',
+          donde:'Automático', quien:'—',
+          sirve:'Administrador: todo (Dashboard, Alumnos, Logros, Profesores, Horarios, Planes, Finanzas, Alertas, Mi gimnasio + lo del profesor). Profesor: Inicio, Armador, Rutinas, Agenda, Especiales, Equipo, Evaluaciones, Seguimiento y Ejercicios. Recepción: solo 🛎️ Recepción.',
+          aplica:'Se aplica en dos capas: ocultando secciones del menú y a nivel de base de datos. Aunque alguien llame a la API directo, escribir en Cobranzas, Planes, Profesores, Alumnos, Horarios o Cobros online sigue restringido al Administrador. El profesor no ve Finanzas ni las notificaciones de pago.' },
+      ]
+    },
+
+    diario: {
+      label: '📋 Gestión diaria',
+      items: [
+        { icon:'🏠', title:'Inicio del profesor',
+          donde:'🏠 Inicio (es lo primero que ves al entrar)', quien:'Administrador y Profesor',
+          sirve:'Tu tablero del día: turnos de hoy con progreso, Wellness a revisar, lo que requiere atención (turnos sin rutina, alumnos a revisar) y tus números de 14 días (asistencia diaria, turnos por día).',
+          pasos:['Tocá un horario para filtrar el Wellness de ese turno.','Tocá ✓ para marcar presente.','Tocá la fila de un alumno para abrir el popup (ajustar sesión, ver rutina).','Las alertas te llevan directo a la pantalla donde se resuelven.'],
+          aplica:'Se refresca solo cada minuto. Un profesor ve sus turnos; un administrador con ficha puede alternar "Mis turnos / Todo el gimnasio".' },
+        { icon:'📋', title:'Agenda',
+          donde:'📋 Agenda', quien:'Administrador y Profesor',
+          sirve:'Vista del día (o varios) con la línea de tiempo de turnos, % de ocupación y asistencia por alumno, con el semáforo de Wellness al lado de cada nombre.',
+          pasos:['Elegí la fecha.','Tocá un alumno → popup de asistencia (Presente / Ausente).','Desde el mismo popup: ver Wellness, ver rutina del turno, cambiar o ajustar la sesión.'],
+          aplica:'La asistencia se refleja al instante en "Mis turnos" del alumno y en Dashboard. La llegada marcada en Recepción aparece acá también.' },
+        { icon:'🟢', title:'Wellness del alumno (vista staff)',
+          donde:'Agenda / Inicio → popup del alumno', quien:'Administrador y Profesor',
+          sirve:'Ver cómo llega cada alumno: 5 ítems, total sobre 25, semáforo, la nota que dejó y una sugerencia de intensidad. Los ítems bajos (1-2) se resaltan.',
+          aplica:'Es informativo: no cambia la rutina solo. Si aparece "pendiente", el alumno todavía no respondió (se le avisa por push antes del turno).' },
+        { icon:'🔄', title:'Cambiar o ajustar la sesión de un turno',
+          donde:'Agenda → popup del alumno (turnos de hoy o futuros)', quien:'Administrador y Profesor',
+          sirve:'Cuando el Wellness o una lesión lo pide: cambiar la sesión por otra ya armada (ej. Recovery), ajustar cargas/ejercicios en una copia personal, o crear una rutina nueva solo para ese turno.',
+          pasos:['Tocá al alumno en Agenda.','🔄 Cambiar por otra sesión (plantillas primero, con chips de etiqueta) o ✏️ Ajustar la rutina.','Escribí el motivo. Si el alumno ya empezó, la app pide confirmación.','↩️ Volver a la rutina original deshace todo.'],
+          aplica:'La rutina original nunca se toca: el ajuste se guarda como copia del alumno. Queda el chip "🔄 Sesión ajustada" y el 📝 Historial de ajustes (quién, cuándo, motivo). El alumno lo ve en su app sin aviso push.' },
+        { icon:'🗓️', title:'Cuadro de horarios y excepciones',
+          donde:'🕒 Horarios → 🗓️ Ver cuadro de todos', quien:'Administrador',
+          sirve:'Doble entrada con el horario de todos los profesores, navegable semana a semana, más la carga de excepciones puntuales: ausencia (total o parcial) y cobertura.',
+          aplica:'Una excepción no modifica el horario base: se combina al dibujar esa fecha. Sirve para detectar huecos sin cubrir y alimenta el cálculo de horas de Facturar horas.' },
+        { icon:'⚽', title:'Equipo (semana planificada)',
+          donde:'⚽ Equipo', quien:'Administrador y Profesor',
+          sirve:'Ver por equipo los entrenamientos de la semana (objetivo de cada sesión, ejercicios, cargas) y quién los completó.',
+          aplica:'El cumplimiento se calcula contra las ejecuciones finalizadas de cada jugador; desde cada uno hay acceso directo a su evolución en 📏 Evaluaciones.' },
+        { icon:'📏', title:'Evaluaciones',
+          donde:'📏 Evaluaciones', quien:'Administrador y Profesor',
+          sirve:'Cargar métricas físicas y antropométricas de un alumno (fuerza, potencia, movilidad, composición corporal…) desde un catálogo predefinido o métricas ad-hoc, y compararlas con las anteriores.',
+          pasos:['Elegí al alumno.','"Nueva evaluación": fecha y métricas.','Mirá el gráfico de Evolución y el historial.'],
+          aplica:'Alimenta el gráfico que ve el propio alumno (solo lectura) y las barras de "Desempeño por habilidad" de su ficha/PDF (métricas con unidad %).' },
+        { icon:'📈', title:'Seguimiento de entrenamientos',
+          donde:'📈 Seguimiento', quien:'Administrador y Profesor',
+          sirve:'Elegís un alumno y ves, ejercicio por ejercicio, el peso, repeticiones, RIR y tonelaje de cada sesión.',
+          aplica:'Es lo que el alumno registró al entrenar: sin carga manual. Es el mismo dato que ve el alumno en su propio Seguimiento y te sirve para decidir cuándo subir cargas.' },
+        { icon:'🏆', title:'Logros (vista staff)',
+          donde:'🏆 Logros', quien:'Administrador',
+          sirve:'Por alumno: su racha semanal, constancia, récords personales y evolución de peso por ejercicio.',
+          aplica:'Es el mismo panel que ve el alumno: una ejecución nueva actualiza los dos lados a la vez.' },
+        { icon:'📄', title:'Ficha del alumno / PDF',
+          donde:'Alumnos o Equipo → Ficha', quien:'Administrador',
+          sirve:'Reporte individual con foto, chips (posición, categorías, equipo), KPIs de asistencia y desempeño, barras de habilidad y gráficos de evolución.',
+          aplica:'Se descarga como PDF con los colores y logo de tu gimnasio.' },
+      ]
+    },
+
+    rutinas: {
+      label: '🏋️ Rutinas y entrenamiento',
+      items: [
+        { icon:'🏋️', title:'Armador de rutina',
+          donde:'🏋️ Armador de Rutina', quien:'Administrador y Profesor',
+          sirve:'Crear una rutina de biblioteca (del gimnasio): elegís el modo, el tipo de entrenamiento, los días y los ejercicios con series, reps, carga, pausa, tiempos y RIR. Las rutinas pertenecen al gimnasio, no a un profesor.',
+          pasos:['Modo: Fecha fija (por tipo de entrenamiento) · Rotativa (para cualquier alumno, se repite sola) · Plantilla (para cualquier alumno, la elegís desde la Agenda).','Tipo de entrenamiento o nombre de la rutina, según el modo.','Por día: fecha (o nombre del día) y ejercicios con el buscador.','Guardar rutina.'],
+          aplica:'Fecha fija: se engancha sola al turno del alumno de ese tipo y día. Rotativa: la ve el alumno en "Mis rutinas" con el día que le toca, con o sin turno. Plantilla: no se asigna sola, se elige a mano.' },
+        { icon:'🃏', title:'Armar los ejercicios (tarjetas, arrastre, detalles)',
+          donde:'Armador / Especiales / editar rutina', quien:'Administrador y Profesor',
+          sirve:'Cada ejercicio es una tarjeta plegable con resumen ("3 × 10 · 40 kg · RIR 2"). Al elegir uno nuevo se abre solo. Campos: bloque, medir por repeticiones o por tiempo, unilateral, peso corporal, carga, pausa, RIR, material (kettlebell, disco, banda, pelota, cajón) y notas.',
+          pasos:['Buscá el ejercicio (o creá uno nuevo al vuelo).','Completá la tarjeta con los botones −/+.','Reordená arrastrando desde el asa ⠿ (o con ▲▼); podés pasar de un bloque a otro.','En unilateral cargás series POR LADO: la app guarda el total.'],
+          aplica:'El alumno ve estos datos en su pantalla de entrenamiento (filas por serie, pill Izq/Der, material, carga sugerida). El orden y el bloque se guardan en la rutina.' },
+        { icon:'📈', title:'Progresión (autoregulada o por semana)',
+          donde:'Armador → rutinas Rotativas → por ejercicio', quien:'Administrador y Profesor',
+          sirve:'Solo en rutinas rotativas. Fijo: siempre lo mismo. Autoregulada: si el alumno cumplió todas las series con el RIR objetivo, sube el peso (incremento en kg); si no, repite. Por semana: una tabla manual semana → series/reps/peso.',
+          aplica:'El alumno ve una nota "⬆️ subiste / repetimos" bajo el ejercicio y el peso ya viene precargado; lo puede cambiar. La "semana actual" se cuenta por ciclos completados, no por calendario.' },
+        { icon:'🗂️', title:'Rutinas (ya creadas)',
+          donde:'🗂️ Rutinas', quien:'Administrador y Profesor',
+          sirve:'Grilla de todas las rutinas del gimnasio ordenadas por tipo (y una sección de plantillas por etiqueta). Abrís un día para editarlo: bloques, series, reps, peso, por repeticiones ↔ por tiempo, agregar o quitar ejercicios.',
+          aplica:'El cambio se guarda directo y se refleja al abrirla el alumno; no hay que reasignar. Tocar cargas modifica la rutina de todos los que la tienen: para un solo alumno usá "Ajustar la rutina" en la Agenda.' },
+        { icon:'🗑️', title:'Eliminar una rutina',
+          donde:'🗂️ Rutinas → 🗑️ Eliminar', quien:'Administrador y Profesor',
+          sirve:'Si nadie la entrenó todavía, se borra definitivamente. Si alguien ya la empezó o completó, se da de baja (archivada) para conservar el historial.',
+          aplica:'La app te muestra antes cuántos alumnos y turnos futuros afecta. Al archivarla, los turnos futuros sin ejecución quedan sin rutina y se re-enganchan solos con otra.' },
+        { icon:'⭐', title:'Rutinas especiales',
+          donde:'⭐ Rutinas especiales por alumno', quien:'Administrador y Profesor',
+          sirve:'Una rutina hecha para UN alumno, o la misma para TODOS los jugadores de un equipo de una sola vez.',
+          pasos:['Elegí destino: un alumno o un equipo.','Armá la rutina (igual que en el Armador) o usá "Empezar desde una rutina existente".','Guardá.'],
+          aplica:'Tiene prioridad sobre la de biblioteca al enganchar turnos. En modo equipo se crea una sola rutina y una asignación por jugador: cada uno registra su propia ejecución.' },
+        { icon:'📋', title:'Empezar desde una rutina existente / Copiar para un alumno',
+          donde:'Especiales → "Empezar desde una rutina existente", o 🗂️ Rutinas → "📋 Copiar para un alumno"', quien:'Administrador y Profesor',
+          sirve:'Ahorra tipear: buscás una rutina ya armada y se vuelca en el armador de especiales (días, ejercicios, cargas, progresión) para adaptarla a un alumno.',
+          aplica:'Se guarda como una rutina nueva y la original no cambia. "Empezar de cero" limpia el armador.' },
+        { icon:'🔗', title:'Cómo se enganchan las rutinas a los turnos',
+          donde:'Automático', quien:'—',
+          sirve:'Al reservar un turno (o cuando un proceso nocturno lo detecta), el sistema busca rutina en este orden: 1) especial del alumno, 2) de biblioteca de su tipo de entrenamiento para ese día, 3) rotativa "para cualquier alumno".',
+          aplica:'Si no encuentra ninguna, el turno queda sin rutina: Inicio te lo marca y la asignás a mano desde la Agenda. Las plantillas nunca se enganchan solas.' },
+      ]
+    },
+
+    finanzas: {
+      label: '💰 Finanzas',
+      items: [
+        { icon:'🧾', title:'Cobranzas (Cobros)',
+          donde:'💰 Finanzas → Cobros', quien:'Administrador',
+          sirve:'Lista de alumnos ordenada por urgencia (vencido → por vencer → nunca pagó → al día → sin plan) con el botón 💰 Cobrar. Elegís método (transferencia o efectivo con descuento) y, si querés, pago adelantado de varios meses: ves el monto ya calculado.',
+          pasos:['Buscá o ubicá al alumno.','💰 Cobrar → método y meses.','Confirmá → descargá o mandá el recibo por WhatsApp.'],
+          aplica:'Define la nueva vigencia (visible al instante en el chip del alumno), dispara el aviso de "pago recibido" al alumno y suma a la caja correspondiente. Los pagos por Mercado Pago llegan solos y aparecen igual.' },
+        { icon:'📜', title:'Historial de pagos',
+          donde:'Cobros → 🧾 Historial (junto a 💰 Cobrar)', quien:'Administrador',
+          sirve:'Últimos pagos del alumno: fecha, método y monto.',
+          aplica:'En pagos por Mercado Pago muestra también la comisión y el neto que le quedó al gimnasio.' },
+        { icon:'🔔', title:'Aviso de pago por Mercado Pago',
+          donde:'Al entrar a la app', quien:'Administrador',
+          sirve:'Te avisa cuando un alumno pagó por Mercado Pago mientras no estabas mirando.',
+          aplica:'Solo avisa pagos de Mercado Pago (los manuales ya los ves al cargarlos). Se marca como leído al cerrarlo y, si activaste las notificaciones, también llega como push.' },
+        { icon:'💸', title:'Gastos',
+          donde:'Finanzas → Gastos', quien:'Administrador',
+          sirve:'Cargás cada gasto con categoría, monto, fecha y desde qué caja se pagó (obligatorio). Un gráfico resume los gastos mensuales por categoría.',
+          aplica:'Descuenta de la caja elegida y entra en la ganancia del Dashboard. Los históricos sin caja se asignan con "⚠️ Sin caja — asignar".' },
+        { icon:'🏦', title:'Cajas (Efectivo / Banco)',
+          donde:'Finanzas → Cajas', quien:'Administrador',
+          sirve:'Dos cajas: Efectivo y Banco. Ves el saldo actual, el resumen del mes (cobros, gastos, movimientos) y los ingresos por método. Podés mover plata entre cajas y definir saldo inicial y fecha de corte.',
+          pasos:['Configurá "Saldo inicial" y la fecha de corte una sola vez.','Cada mes navegá con las flechas.','Usá "Mover plata entre cajas" para depósitos o retiros.'],
+          aplica:'Regla: cobro en efectivo → Efectivo; transferencia, Mercado Pago (neto de comisión) y otros → Banco. Los movimientos no se editan: se borran y recargan. No hay reversos de pagos todavía.' },
+        { icon:'💵', title:'Facturar horas de profesores',
+          donde:'🕒 Horarios → 💵 Facturar horas', quien:'Administrador',
+          sirve:'Calcula las horas trabajadas de un profesor en un rango de fechas a partir de su horario semanal más las excepciones de ausencia y cobertura. No hace falta fichar.',
+          pasos:['Elegí profesor y rango Desde–Hasta → Calcular.','Confirmá la liquidación indicando de qué caja se paga.','Mirá las "Liquidaciones ya pagadas".'],
+          aplica:'La liquidación descuenta de la caja elegida y figura como egreso en el Dashboard.' },
+      ]
+    },
+
+    dash: {
+      label: '📊 Dashboard y alertas',
+      items: [
+        { icon:'📊', title:'Dashboard',
+          donde:'📊 Dashboard', quien:'Administrador',
+          sirve:'KPIs en un vistazo, en secciones plegables: 💰 Ganancias del mes, 🏦 Cajas, 📈 Membresía (activos, inactivos, altas), 📉 Tasa de bajas (churn), evolución de la membresía y 📅 Ocupación por día (últimas 4 semanas).',
+          aplica:'Todo se calcula en vivo contra alumnos, pagos, gastos, planes y agenda: no hay datos cacheados ni cargados a mano. Las secciones recuerdan si las dejaste abiertas o cerradas.' },
+        { icon:'💹', title:'Proyección de ingresos',
+          donde:'Dashboard → 💹 Proyección (si está habilitada)', quien:'Administrador',
+          sirve:'Barras con lo ya pagado más las renovaciones estimadas de los próximos meses, por mes que corresponde o por cuándo se cobra.',
+          aplica:'La estimación usa tu tasa real de renovación (hace falta historial: al menos 5 períodos vencidos). No incluye socios nuevos. Es un módulo que habilita M2F Solutions por gimnasio; si no lo ves, pedilo.' },
+        { icon:'🔔', title:'Alertas (seguimiento de clientes)',
+          donde:'Menú ☰ → 🔔 Alertas', quien:'Administrador',
+          sirve:'Siete grupos listos para actuar: 🆕 nuevos con poca asistencia, 🔴 cuotas vencidas, 🟡 por vencer (30 días), ⚪ sin plan o sin pagos, 🟠 al día pero sin venir hace días, ⚫ ex-clientes y 🟣 sin rutina asignada.',
+          pasos:['Abrí el grupo que querés trabajar.','Usá 📤 (arriba del grupo) para copiar los teléfonos de todos.','Tocá 💬 WhatsApp en cada fila: se abre el chat con un mensaje ya escrito y la persona queda marcada "✓ Contactado hoy".','Ajustá el umbral "Días sin turno para inactivo" arriba a la derecha.'],
+          aplica:'Arriba ves "Contactados esta semana" y "Reactivados este mes" para medir si tu seguimiento funciona.' },
+      ]
+    },
+
+    plataforma: {
+      label: '🏢 Plataforma (dueño de M2F)',
+      items: [
+        { icon:'🔐', title:'Código de activación',
+          donde:'Pantalla "Crear cuenta"', quien:'Dueño de la plataforma',
+          sirve:'Código que exige el alta de un gimnasio o profesor independiente. Lo genera M2F Solutions, no el gimnasio cliente.',
+          aplica:'El alta valida el código y lo marca "usado"; sin uno válido la creación se cancela. Es el control de ventas de la plataforma.' },
+        { icon:'🏋️', title:'Panel Superadmin: Gimnasios',
+          donde:'⚙️ Configuración → Gimnasios (solo superadmin)', quien:'Dueño de la plataforma',
+          sirve:'Seguimiento de actividad de cada gimnasio vendido, con semáforo por antigüedad de uso, cantidad de socios activos y el interruptor de módulos (ej. 📈 Proyección ON/OFF).',
+          aplica:'Se alimenta de un registro que se actualiza en cada login. Sirve para detectar clientes inactivos antes de que la infraestructura se pause por falta de uso.' },
+        { icon:'🔑', title:'Panel Superadmin: Códigos de venta',
+          donde:'⚙️ Configuración → Códigos de activación', quien:'Dueño de la plataforma',
+          sirve:'Mini-CRM de los códigos generados: precio, contacto, notas y estado usado/no usado.',
+          aplica:'Cada código habilita UNA alta y queda asociado al gimnasio que lo usó: trazabilidad de qué código vendió qué cliente.' },
+      ]
+    },
+  }
+},
+
+/* ============================================================
+   🛎️ RECEPCIÓN
+   ============================================================ */
+recepcion: {
+  label: '🛎️ Recepción',
+  subs: {
+    uso: {
+      label: '🛎️ Uso en el mostrador',
+      intro: 'Pantalla pensada para la tablet o PC de la entrada. Con un teclado numérico USB se usa sin mouse.',
+      items: [
+        { icon:'🚪', title:'Entrar y qué ve Recepción',
+          donde:'Login de staff (DNI o email)', quien:'Recepción',
+          sirve:'El usuario de Recepción entra con su DNI y la contraseña temporal que le dio el administrador (la cambia al primer ingreso). Ve una sola pantalla: Recepción, sin menú ni barra inferior.',
+          aplica:'Desde ⚙️ puede cambiar su contraseña o el tema claro/oscuro. El administrador también tiene 🛎️ Recepción en su menú.' },
+        { icon:'🔢', title:'Buscar al socio',
+          donde:'🛎️ Recepción → Buscar socio', quien:'Recepción y Administrador',
+          sirve:'Tipeás el DNI con el teclado de la pantalla (o uno USB) y Enter, o buscás por nombre/apellido en el campo de abajo.',
+          pasos:['Escribí el DNI completo y Enter.','O escribí parte del nombre: aparecen coincidencias.','Tocá al socio para abrir su ficha.'],
+          aplica:'La ficha muestra nombre, plan, estado de cuota y sus turnos de los próximos días.' },
+        { icon:'✅', title:'Marcar la llegada',
+          donde:'Ficha del socio', quien:'Recepción y Administrador',
+          sirve:'Si el socio tiene turno hoy, un botón grande "✓ Marcar llegada · turno HH:MM" lo registra como presente.',
+          aplica:'Es la misma asistencia que marca el profesor: se ve en Agenda e Inicio al instante y en "Mis turnos" del alumno. Solo se puede marcar en el día del turno.' },
+        { icon:'📅', title:'Sacarle turno al socio',
+          donde:'Ficha del socio → "Sacarle turno"', quien:'Recepción y Administrador',
+          sirve:'Para cuando no tiene turno o no le anda el celular: elegís el día (hoy + 6) y un horario con lugar, y se reserva como si fuera el alumno. Si es hoy: "Sacar turno y marcar llegada".',
+          pasos:['Elegí el día.','Tocá un horario (muestra cuántos lugares quedan).','Confirmá con "Sacar turno" o "Sacar turno y marcar llegada".'],
+          aplica:'Respeta el cupo: los horarios llenos aparecen como "sin cupo". El alumno ve el turno en su app y, si corresponde, se le engancha la rutina.' },
+        { icon:'🔁', title:'Cambiar un turno (reemplazar)',
+          donde:'Ficha del socio', quien:'Recepción y Administrador',
+          sirve:'Hay un solo turno activo por alumno por día. Si ya tiene uno ese día y le sacás otro, la app te pregunta y lo reemplaza en un solo paso.',
+          aplica:'No se pierde el cupo del viejo si falla la reserva nueva: es una operación atómica.' },
+        { icon:'↩️', title:'Deshacer y cancelar',
+          donde:'Ficha del socio', quien:'Recepción y Administrador',
+          sirve:'"↩ Deshacer llegada" saca la asistencia marcada por error. "Cancelar turno" lo anula (pide confirmación). Después de cada acción aparece "↩ Deshacer" para volver atrás.',
+          aplica:'Se pueden usar aunque la cuota esté vencida, para corregir errores.' },
+        { icon:'🕒', title:'Llegadas de hoy',
+          donde:'Parte de abajo de la pantalla', quien:'Recepción y Administrador',
+          sirve:'Lista en vivo de quién ya marcó llegada hoy, con el contador.',
+          aplica:'Sirve para controlar la sala y cruzar con la Agenda del profesor.' },
+      ]
+    },
+    reglas: {
+      label: '📏 Reglas y límites',
+      items: [
+        { icon:'⛔', title:'Cuota vencida',
+          donde:'Ficha del socio', quien:'Recepción y Administrador',
+          sirve:'Si la cuota está vencida no se puede marcar llegada ni sacar turnos nuevos, aunque tenga un turno ya reservado. Sí se pueden deshacer y cancelar los existentes.',
+          aplica:'El administrador ve el botón "💰 Ir a cobrar"; Recepción le indica al socio que pase por administración. Apenas se cobra, se destraba.',
+          warn:true },
+        { icon:'🔒', title:'Qué NO puede hacer Recepción',
+          donde:'—', quien:'Recepción',
+          sirve:'No ve rutinas, evaluaciones, wellness, pagos ni datos de otros profesores. Solo busca socios, marca llegadas y maneja turnos.',
+          aplica:'Está garantizado en la base de datos: cada acción de Recepción pasa por funciones seguras que verifican rol, verificación en 2 pasos (si es admin) y que el gimnasio esté activo.' },
+        { icon:'📝', title:'Registro de lo que hace Recepción',
+          donde:'Automático', quien:'—',
+          sirve:'Cada marca, deshacer, reserva y cancelación queda guardada con quién, cuándo y a qué alumno.',
+          aplica:'Es auditable por el administrador. Pendiente: una pantalla para consultar ese historial desde la app.' },
+        { icon:'🕓', title:'Hora y día de referencia',
+          donde:'Automático', quien:'—',
+          sirve:'"Hoy" se calcula con la hora de Argentina, no la del dispositivo.',
+          aplica:'Así no hay desfase si la tablet tiene la hora mal.' },
+      ]
+    },
+  }
+},
+
+/* ============================================================
+   🎓 ALUMNO
+   ============================================================ */
+alumno: {
+  label: '🎓 Alumno',
+  subs: {
+    hoy: {
+      label: '📱 Día a día',
+      items: [
+        { icon:'🏠', title:'Inicio',
+          donde:'🏠 Inicio (es lo primero que ves)', quien:'Alumno',
+          sirve:'Tu hoy en una pantalla: el turno de hoy o el próximo, la rutina que te toca y un botón para entrenar. Desde acá también ves tu estado de cuota.',
+          aplica:'Si hoy tenés turno pero no respondiste el Wellness, aparece la tarjeta para hacerlo. Si no tenés turno, te ofrece la rutina rotativa o de fecha fija que corresponda.' },
+        { icon:'🟢', title:'Wellness antes de entrenar',
+          donde:'Tarjeta en Inicio / aviso al entrar', quien:'Alumno',
+          sirve:'Cinco preguntas de 1 a 5: fatiga, sueño, dolor muscular, estrés y ánimo (5 = mejor), más una nota opcional. Toma un minuto.',
+          pasos:['Tocá la tarjeta o el aviso.','Elegí un número en cada pregunta.','Escribí una nota si querés (ej. "me duele la rodilla").','Enviar.'],
+          aplica:'Tu profesor lo ve con un semáforo 🟢🟡🔴 y puede ajustar tu sesión. "Ahora no" lo pospone una hora. Si tenés turno, te llega un aviso push.' },
+        { icon:'📅', title:'Reservar turno',
+          donde:'Barra inferior → Turnos', quien:'Alumno',
+          sirve:'Elegís día y horario disponible según el horario de trabajo de los profesores y el cupo que queda.',
+          pasos:['Tocá Turnos.','Elegí el día (los no habilitados aparecen atenuados).','Elegí el horario y confirmá.'],
+          aplica:'Al confirmar, el sistema busca una rutina para tu tipo de entrenamiento ese día y la engancha al turno. Con cuota vencida no se puede reservar. Si no podés desde el celu, pasá por Recepción.' },
+        { icon:'📋', title:'Mis turnos',
+          donde:'Turnos → mis reservas', quien:'Alumno',
+          sirve:'Tus turnos con su estado (vigente, próximo, realizado, vencido) y la posibilidad de cancelarlos.',
+          aplica:'Un turno "✓ Entrenamiento realizado" no se puede volver a empezar, y uno "Próximo" no se arranca antes de tiempo: los dos controles corren en el servidor.' },
+        { icon:'🔔', title:'Notificaciones y avisos',
+          donde:'Al entrar + push del celular', quien:'Alumno',
+          sirve:'Avisos de cuota vencida o por vencer, pago recibido (manual o Mercado Pago), Wellness pendiente y cambios en tus turnos.',
+          aplica:'Vencida: te aparece siempre que entrás mientras siga vencida. Por vencer: una vez por día. Pago recibido: una vez, al cerrarlo se marca leído. Para recibirlas con la app cerrada, activalas en ⚙️.' },
+      ]
+    },
+    entrenar: {
+      label: '💪 Entrenar',
+      items: [
+        { icon:'🗂️', title:'Mis rutinas',
+          donde:'Barra inferior → Rutinas', quien:'Alumno',
+          sirve:'Tus rutinas: las rotativas con el día que te toca ahora (y la posición en el ciclo) y las de tus turnos reservados, de biblioteca o especiales.',
+          aplica:'Cada una lleva a "Ver / Empezar". Si ya completaste un día con fecha, dice "✓ Entrenamiento realizado". Las rotativas se repiten sin depender de turno.' },
+        { icon:'💪', title:'Entrenar (ejecución)',
+          donde:'Inicio → Entrenar / Rutinas → Empezar', quien:'Alumno',
+          sirve:'Pantalla de entrenamiento con barra de progreso: por ejercicio ves series, reps, carga sugerida, pausa, material, nota del profesor y "última vez". Registrás peso, reps y RIR de cada serie. En ejercicios por tiempo hay un botón ▶ con cronómetro y aviso sonoro al llegar al objetivo; en unilaterales alterna Izq/Der.',
+          pasos:['Tocá Empezar.','Completá cada serie y guardá el ejercicio.','Al terminar: Finalizar y contá qué tan pesado fue (RPE).'],
+          aplica:'Cada serie alimenta Historial, Seguimiento, Logros y el gráfico de peso por ejercicio. La próxima vez que hagas ese ejercicio el peso viene precargado; si tu rutina tiene progresión, verás la sugerencia "⬆️ subiste / repetimos".' },
+        { icon:'🎚️', title:'Ayuda de RIR',
+          donde:'Botón ? junto a "RIR"', quien:'Alumno',
+          sirve:'Tabla de equivalencia RPE ↔ RIR para cargar el RIR sin dudar (10 = fallo, RIR 0 … 6 = esfuerzo moderado, RIR 4+).',
+          aplica:'Es solo informativa: no cambia nada de lo que registrás.' },
+        { icon:'🔁', title:'"No puedo hacer este ejercicio"',
+          donde:'Dentro del ejercicio', quien:'Alumno',
+          sirve:'Dos salidas: sustituir por otro (filtrás por patrón de movimiento en el catálogo del gimnasio) u omitirlo con "No pude hacer este ejercicio".',
+          aplica:'El reemplazo queda registrado en tu ejecución; la rutina del profesor no se modifica. La ✕ arriba cierra el panel y vuelve al ejercicio planificado.' },
+        { icon:'⏱️', title:'Cronómetro flotante',
+          donde:'Botón ⏱️ dentro de la pantalla de entrenamiento', quien:'Alumno',
+          sirve:'Un cronómetro siempre a mano: modo Simple (pausar, reiniciar, vueltas) y modo Intervalos (trabajo/pausa por rondas).',
+          aplica:'Es independiente de las series que registrás: sirve para descansos, EMOM, tabatas y similares.' },
+      ]
+    },
+    progreso: {
+      label: '📈 Mi progreso',
+      items: [
+        { icon:'📜', title:'Historial',
+          donde:'Menú ☰ → Historial', quien:'Alumno',
+          sirve:'Tus entrenamientos ya realizados a lo largo del tiempo.',
+          aplica:'Es el registro del que se calculan racha semanal y constancia: no se carga nada manual.' },
+        { icon:'📈', title:'Seguimiento',
+          donde:'Barra inferior → Seguimiento', quien:'Alumno',
+          sirve:'Peso, repeticiones, RIR y tonelaje de cada sesión, ejercicio por ejercicio.',
+          aplica:'Es lo mismo que ve tu profesor: lo usa para decidir cuándo subirte cargas.' },
+        { icon:'📊', title:'Evolución de peso por ejercicio',
+          donde:'Seguimiento / Logros', quien:'Alumno',
+          sirve:'Gráfico del mayor peso que levantaste sesión a sesión en cada ejercicio con carga.',
+          aplica:'Se calcula con lo que registrás al entrenar. Agrupa por día: para ver la curva moverse hace falta entrenar otro día o con otro peso.' },
+        { icon:'📏', title:'Evolución (evaluaciones físicas)',
+          donde:'Menú ☰ → Evolución', quien:'Alumno',
+          sirve:'Gráfico de tus métricas (fuerza, composición corporal, movilidad…) con la diferencia contra tu medición anterior.',
+          aplica:'Es de solo lectura: lo carga tu profesor en Evaluaciones y se actualiza solo.' },
+        { icon:'🏆', title:'Logros',
+          donde:'Menú ☰ → Logros', quien:'Alumno',
+          sirve:'Racha semanal (semanas cumpliendo los días por semana de tu plan), constancia (total de entrenamientos) y récords personales.',
+          aplica:'La racha usa el plan que tenés HOY aplicado a todo tu historial: si cambiaste de plan se recalcula.' },
+      ]
+    },
+    cuenta: {
+      label: '⚙️ Mi cuenta y pagos',
+      items: [
+        { icon:'🔑', title:'Primer ingreso y contraseña',
+          donde:'Pestaña Alumno → DNI + contraseña', quien:'Alumno',
+          sirve:'Entrás con tu DNI y la contraseña temporal que te dio el gimnasio. La app te pide elegir una propia.',
+          aplica:'Podés cambiarla cuando quieras desde ⚙️. Si la olvidás, pedile al gimnasio una temporal nueva.' },
+        { icon:'👤', title:'Mi perfil',
+          donde:'Menú ☰ / Inicio', quien:'Alumno',
+          sirve:'Tus datos, tu usuario (DNI), tu foto (la cambiás vos) y el estado de tu cuenta.',
+          aplica:'El chip de vigencia del plan usa los mismos datos que ve tu profesor en Cobranzas: es la misma información con dos vistas.' },
+        { icon:'💳', title:'Cuota y pago con Mercado Pago',
+          donde:'Banner de cuota (Inicio)', quien:'Alumno',
+          sirve:'Además de pagar en efectivo o transferencia con el gimnasio, si tu gimnasio conectó Mercado Pago ves el botón "Pagar con Mercado Pago" cuando la cuota está por vencer, vencida o si todavía no pagaste la primera. Muestra el desglose (cuota + recargo, si hay) y te lleva al checkout oficial.',
+          aplica:'Al aprobarse, Mercado Pago avisa solo a la plataforma y tu vigencia se actualiza automáticamente; queda como "💳 Mercado Pago" en tu historial. Sin plan asignado no hay monto para cobrar: pedile al gimnasio que te asigne uno.' },
+        { icon:'⚙️', title:'Configuración',
+          donde:'⚙️ arriba a la derecha', quien:'Todos',
+          sirve:'Un solo lugar para: cambiar contraseña, verificación en 2 pasos, activar notificaciones, elegir tema, cambiar la foto de perfil, contactar soporte y cerrar sesión.',
+          aplica:'En celular se abre como una hoja desde abajo.' },
+        { icon:'🌓', title:'Tema claro / oscuro / automático',
+          donde:'Botón 🌙 / ☀️ / 🌓 arriba', quien:'Todos',
+          sirve:'Cada toque cicla entre oscuro, claro y automático (sigue el tema del celular).',
+          aplica:'Se guarda por dispositivo: no cambia la vista de nadie más. Los colores de marca del gimnasio se conservan en ambos temas.' },
+        { icon:'📲', title:'Instalar la app y recibir notificaciones',
+          donde:'Navegador del celular', quien:'Todos',
+          sirve:'La app funciona como PWA: se instala en la pantalla de inicio y abre a pantalla completa.',
+          pasos:['Android (Chrome): menú ⋮ → Instalar aplicación.','iPhone (Safari): Compartir → Agregar a pantalla de inicio.','Abrila desde ese ícono y activá las notificaciones en ⚙️.'],
+          aplica:'En iPhone las notificaciones solo funcionan con la app instalada y iOS 16.4 o más nuevo; en Android no hace falta instalarla.' },
+      ]
+    },
+  }
+}
+};
+
+const ROLES = [['guias','Inicio'],['admin','Admin'],['recepcion','Recepción'],['alumno','Alumno']];
+let role='guias', sub='arranque', open=null, query='';
+const $=id=>document.getElementById(id);
+const norm=s=>String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+const plain=s=>String(s||'').replace(/<[^>]+>/g,'');
+
+function short(it){ // bajada de una línea para el título cerrado
+  const t=plain(it.sirve); const i=t.search(/[.:]\s/); let s=i>20&&i<110?t.slice(0,i):t.slice(0,80).replace(/\s+\S*$/,'')+'…';
+  return s.replace(/\.$/,'');
+}
+function items(){
+  if(query){const q=norm(query),out=[];
+    Object.keys(DATA).forEach(r=>Object.keys(DATA[r].subs).forEach(s=>DATA[r].subs[s].items.forEach((it,i)=>{
+      if(norm([it.title,it.sirve,it.aplica,it.donde,(it.pasos||[]).join(' ')].join(' ')).includes(q)) out.push({it,key:r+'/'+s+'/'+i,where:DATA[r].label.replace(/^\S+\s/,'')+' · '+DATA[r].subs[s].label.replace(/^\S+\s/,'')});
+    })));return out;}
+  return DATA[role].subs[sub].items.map((it,i)=>({it,key:role+'/'+sub+'/'+i}));
+}
+function render(){
+  $('quien').style.display=$('tabs').style.display=query?'none':'';
+  $('seg').innerHTML=ROLES.map(([k,l])=>`<button class="${k===role?'on':''}" data-r="${k}">${l}</button>`).join('');
+  const subs=DATA[role].subs, keys=Object.keys(subs);
+  $('tabs').innerHTML=keys.map(k=>`<button class="${k===sub?'on':''}" data-s="${k}">${subs[k].label.replace(/^\S+\s/,'')}</button>`).join('');
+  const L=items();
+  if(query){ $('h').textContent=L.length+(L.length===1?' resultado':' resultados'); $('intro').textContent='En toda la guía.'; }
+  else { $('h').textContent=subs[sub].label.replace(/^\S+\s/,''); $('intro').textContent=subs[sub].intro||''; }
+  $('intro').style.display=$('intro').textContent?'':'none';
+  const numerada = !query && role==='guias' && sub==='arranque';
+  $('list').innerHTML=L.length?L.map((e,n)=>{
+    const it=e.it, isOpen=e.key===open;
+    let b='';
+    if(it.donde||it.quien) b+='<div class="meta">'+(it.donde?`<span class="chip">📍 ${it.donde}</span>`:'')+(it.quien?`<span class="chip w">👥 ${it.quien}</span>`:'')+'</div>';
+    b+=`<div class="sec"><h4>Para qué sirve</h4><p>${it.sirve}</p></div>`;
+    if(it.pasos&&it.pasos.length) b+=`<div class="sec"><h4>Cómo se usa</h4><ol>${it.pasos.map(p=>'<li>'+p+'</li>').join('')}</ol></div>`;
+    b+=`<div class="sec"><h4>Dónde impacta</h4><p>${it.aplica}</p></div>`;
+    if(it.tip) b+=`<div class="tip">💡 ${it.tip}</div>`;
+    return `<div class="step ${isOpen?'open':''}"><div class="rail"><div class="dot">${numerada?n+1:it.icon}</div><div class="line"></div></div>
+      <div class="card"><button class="head" data-k="${e.key}"><span class="t"><b>${it.title}</b><small>${short(it)}</small>${e.where?`<div class="res-where">${e.where}</div>`:''}</span><span class="chev">⌄</span></button><div class="body">${b}</div></div></div>`;
+  }).join(''):'<div class="vacio">No encontré nada. Probá con otra palabra.</div>';
+}
+document.addEventListener('click',e=>{
+  const r=e.target.closest('[data-r]'),s=e.target.closest('[data-s]'),k=e.target.closest('[data-k]');
+  if(r){role=r.dataset.r;sub=Object.keys(DATA[role].subs)[0];open=null;render();}
+  else if(s){sub=s.dataset.s;open=null;render();}
+  else if(k){open=open===k.dataset.k?null:k.dataset.k;render();
+    const o=document.querySelector('.step.open');if(o)o.scrollIntoView({block:'nearest',behavior:'smooth'});}
+});
+$('q').addEventListener('input',e=>{query=e.target.value.trim();open=null;render();});
+open=role+'/'+sub+'/0'; render();
+</script></body></html>
