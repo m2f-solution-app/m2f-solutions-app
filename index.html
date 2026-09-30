@@ -72,6 +72,41 @@
     }
   }
   :root[data-tema="claro"] input[type="date"]::-webkit-calendar-picker-indicator{ filter:none; }
+
+  /* ---- (v85) Recepción ---- */
+  .rc-grid{display:grid; grid-template-columns:340px 1fr; gap:14px; align-items:start;}
+  @media(max-width:800px){ .rc-grid{grid-template-columns:1fr;} }
+  .rc-full{grid-column:1/-1;}
+  .rc-grid > *{min-width:0;}
+  #rcQ{width:100%; margin-top:10px;}
+  .rc-disp{background:var(--panel2); border:1px solid var(--border); border-radius:12px; text-align:center; font-size:32px; font-weight:800; letter-spacing:.16em; padding:10px; min-height:60px; font-variant-numeric:tabular-nums; display:flex; align-items:center; justify-content:center;}
+  .rc-pad{display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:10px;}
+  button.rc-k{background:var(--panel2); border:1px solid var(--border); color:var(--text); font-size:24px; font-weight:700; border-radius:12px; padding:12px 0;}
+  button.rc-k.go{background:var(--accent); border-color:var(--accent); color:#1a0d02; font-size:16px;}
+  button.rc-k.del{font-size:18px; color:var(--muted);}
+  .rc-hint{font-size:12px; color:var(--muted); margin-top:10px; line-height:1.5;}
+  .rc-who{display:flex; gap:12px; align-items:center;}
+  .rc-av{width:52px; height:52px; border-radius:50%; background:var(--panel2); display:grid; place-items:center; font-weight:800; font-size:20px; color:var(--accent-text); border:1px solid var(--border); flex:none;}
+  .rc-who h3{margin:0; font-size:20px;} .rc-who small{color:var(--muted);}
+  .rc-pill{display:inline-block; padding:4px 11px; border-radius:99px; font-size:12.5px; font-weight:700; margin:8px 6px 0 0;}
+  .rc-p-ok{background:rgba(47,210,122,.16); color:var(--accent2-text);} .rc-p-warn{background:rgba(255,200,74,.18); color:var(--warn-text);} .rc-p-bad{background:rgba(255,93,93,.16); color:var(--danger);} .rc-p-n{background:var(--panel2); color:var(--muted);}
+  .rc-row{display:flex; justify-content:space-between; align-items:center; gap:8px; padding:8px 0; border-bottom:1px solid var(--border); font-size:14px; flex-wrap:wrap;}
+  .rc-row:last-child{border-bottom:0;}
+  .rc-row .rc-act{display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end; align-items:center;}
+  button.rc-mini{padding:5px 12px; font-size:13px;}
+  button.rc-big{width:100%; font-size:18px; padding:16px; margin-top:14px;}
+  button.rc-wide{width:100%; margin-top:12px;}
+  .rc-days{display:flex; gap:6px; margin:12px 0 6px; overflow-x:auto; padding-bottom:4px;}
+  button.rc-day{flex:1 0 auto; background:var(--panel2); border:1px solid var(--border); color:var(--muted); border-radius:10px; padding:8px 10px; font-size:13px; white-space:nowrap;}
+  button.rc-day.on{border-color:var(--accent); color:var(--text); font-weight:700;}
+  .rc-slots{display:grid; grid-template-columns:repeat(auto-fill,minmax(112px,1fr)); gap:8px;}
+  .rc-slot{background:var(--panel2); border:1px solid var(--border); border-radius:12px; padding:10px 6px; text-align:center; cursor:pointer; color:var(--text);}
+  .rc-slot b{display:block; font-size:17px;} .rc-slot span{font-size:11.5px; color:var(--muted);}
+  .rc-slot.sel{border-color:var(--accent); background:rgba(255,122,48,.12);}
+  .rc-slot.agotado{opacity:.4; cursor:not-allowed;} .rc-slot.poco span{color:var(--warn-text);}
+  .rc-msg{border-radius:12px; padding:12px; margin-top:12px; font-size:14px; border:1px solid var(--border);}
+  .rc-msg.ok{background:rgba(47,210,122,.12); border-color:var(--accent2);} .rc-msg.bad{background:rgba(255,93,93,.1); border-color:var(--danger);} .rc-msg.warn{background:rgba(255,200,74,.1); border-color:var(--warn);}
+  .rc-vacio{text-align:center; color:var(--muted); padding:36px 10px;} .rc-vacio .big{font-size:46px;}
   .btn-tema{background:var(--panel); border:1px solid var(--border); color:var(--text); width:38px; height:38px; min-width:38px; padding:0; border-radius:999px; font-size:17px; line-height:1; display:inline-flex; align-items:center; justify-content:center; cursor:pointer;}
   .btn-tema:hover{border-color:var(--muted);}
   @media (max-width:520px){
@@ -1303,6 +1338,7 @@
     <button class="tt-btn" id="ttDashboard" onclick="cambiarSubvista('dashboard')" style="display:none;" title="Dashboard"><span class="tt-ico">📊</span><span class="tt-lbl">Dashboard</span></button>
     <button class="tt-btn" id="ttArmador" onclick="cambiarSubvista('armador')" title="Armador de Rutina"><span class="tt-ico">🏋️</span><span class="tt-lbl">Armador de rutinas</span></button>
     <button class="tt-btn" id="ttRutinas" onclick="cambiarSubvista('rutinas')" title="Rutinas"><span class="tt-ico">🗂️</span><span class="tt-lbl">Rutinas</span></button>
+    <button class="tt-btn" id="ttRecepcion" onclick="cambiarSubvista('recepcion')" style="display:none;" title="Recepción"><span class="tt-ico">🛎️</span><span class="tt-lbl">Recepción</span></button>
     <button class="tt-btn" id="ttAgenda" onclick="cambiarSubvista('agenda')" title="Agenda"><span class="tt-ico">📋</span><span class="tt-lbl">Agenda</span></button>
     <button class="tt-btn" id="ttEspeciales" onclick="cambiarSubvista('especiales')" title="Rutinas especiales por alumno"><span class="tt-ico">⭐</span><span class="tt-lbl">Rutinas especiales</span></button>
     <button class="tt-btn" id="ttEquipo" onclick="cambiarSubvista('equipo')" title="Seguimiento Equipo"><span class="tt-ico">⚽</span><span class="tt-lbl">Seguimiento Equipo</span></button>
@@ -1332,6 +1368,7 @@
     <div class="side-item" id="menuDashboard" onclick="cambiarSubvista('dashboard')" style="display:none;" title="Dashboard"><span class="side-ico">📊</span><span class="side-label">Dashboard</span></div>
     <div class="side-item" id="menuArmador" onclick="cambiarSubvista('armador')" title="Armador de Rutina"><span class="side-ico">🏋️</span><span class="side-label">Armador de Rutina</span></div>
     <div class="side-item" id="menuRutinas" onclick="cambiarSubvista('rutinas')" title="Rutinas"><span class="side-ico">🗂️</span><span class="side-label">Rutinas</span></div>
+    <div class="side-item" id="menuRecepcion" onclick="cambiarSubvista('recepcion')" style="display:none;" title="Recepción"><span class="side-ico">🛎️</span><span class="side-label">Recepción</span></div>
     <div class="side-item" id="menuAgenda" onclick="cambiarSubvista('agenda')" title="Agenda"><span class="side-ico">📋</span><span class="side-label">Agenda</span></div>
     <div class="side-item" id="menuEspeciales" onclick="cambiarSubvista('especiales')" title="Rutinas especiales por alumno"><span class="side-ico">⭐</span><span class="side-label">Rutinas especiales por alumno</span></div>
     <div class="side-item" id="menuEquipo" onclick="cambiarSubvista('equipo')" title="Equipo"><span class="side-ico">⚽</span><span class="side-label">Equipo</span></div>
@@ -1387,6 +1424,26 @@
               <div class="ip-ch" id="ipCh2"><div class="ct">Turnos por día <span>· esta semana</span></div><svg id="ipBars" viewBox="0 0 260 150"></svg><div class="ip-tip" id="ipTip2"></div></div>
             </div></div>
           </section>
+        </div>
+      </div>
+
+      <!-- ---- SUBVISTA: RECEPCIÓN (v85) — check-in y turnos por el alumno (administrador y usuario de recepción) ---- -->
+      <div id="subvistaRecepcion" style="display:none;">
+        <div class="vista-eyebrow">Check-in</div>
+        <div class="vista-titulo">Recepción</div>
+        <div class="rc-grid">
+          <div class="card">
+            <h2 style="margin-top:0">Buscar socio</h2>
+            <div class="rc-disp" id="rcDisp">&nbsp;</div>
+            <div class="rc-pad" id="rcPad"></div>
+            <input id="rcQ" placeholder="…o buscá por nombre / apellido" autocomplete="off" oninput="rcBuscarNombreDebounce()" />
+            <div class="rc-hint">Con el teclado de la pantalla o un teclado numérico USB: escribí el DNI y Enter.</div>
+          </div>
+          <div class="card" id="rcRes"></div>
+          <div class="card rc-full">
+            <h2 style="margin-top:0">Llegadas de hoy · <span id="rcCnt" style="color:var(--accent-text);">0</span></h2>
+            <div id="rcLog" class="muted">Cargando...</div>
+          </div>
         </div>
       </div>
 
@@ -1941,6 +1998,22 @@
             </div>
             <button onclick="crearProfesor()" id="btnCrearProfesor" style="align-self:end;">Crear profesor</button>
           </div>
+        </div></details>
+
+        <details class="plegable card" data-k="prof-recepcion"><summary>Usuarios de Recepción</summary><div class="plg-body">
+          <div class="muted" style="font-size:12px; margin-bottom:8px;">Un usuario de Recepción solo ve la pantalla 🛎️ Recepción: buscar socios, marcar la llegada y sacar turnos por el alumno. No ve finanzas, alumnos ni rutinas. Entra con su DNI y una contraseña temporal.</div>
+          <div class="row">
+            <div class="field" style="flex:1; min-width:180px;">
+              <label>Nombre</label>
+              <input id="nuevoRecepcionNombre" placeholder="Nombre y apellido" />
+            </div>
+            <div class="field" style="min-width:140px;">
+              <label>DNI</label>
+              <input id="nuevoRecepcionDni" inputmode="numeric" placeholder="Ej: 30123456" />
+            </div>
+            <button onclick="crearRecepcion()" id="btnCrearRecepcion" style="align-self:end;">Crear usuario</button>
+          </div>
+          <div id="listaRecepcion" style="margin-top:10px;"></div>
         </div></details>
 
         <div class="card" id="wrapHorarioNuevoProf" style="display:none;">
@@ -2922,7 +2995,7 @@ const BUCKET = "Ejercicios";
 // un cambio, se incrementa este número — el chequeo de actualización (más abajo) lo compara
 // contra lo que hay publicado y avisa si están desactualizados, sin que nadie tenga que
 // cambiar ningún link a mano.
-const APP_VERSION = 84;
+const APP_VERSION = 85;
 
 // ---------- Instalar como app (PWA): acceso directo en escritorio/celular ----------
 // Chrome/Edge/Android disparan "beforeinstallprompt" cuando el manifest + service worker
@@ -4099,6 +4172,14 @@ async function entrarComoStaff(){
   document.getElementById('authGate').style.display = 'none';
   document.getElementById('profesorApp').style.display = '';
   document.getElementById('sesionEmail').textContent = `${PERFIL_ACTUAL.nombre || PERFIL_ACTUAL.email} · ${PERFIL_ACTUAL.rol}`;
+  if (PERFIL_ACTUAL.rol === 'recepcion'){
+    // (v85) Usuario de Recepción: solo su pantalla; no carga alumnos, rutinas ni catálogo (no tiene permiso).
+    sincronizarTabsRol();
+    aplicarPermisosPorRol();
+    cargarGimnasioActual().catch(() => {});
+    cambiarSubvista('recepcion');
+    return;
+  }
   mostrarLinkCodigosSiCorresponde();
   registrarActividadGimnasio();
   sincronizarTabsRol();
@@ -4121,7 +4202,12 @@ async function hacerLogin(){
   msg.textContent = '';
   btn.disabled = true;
   try{
-    const { data, error } = await supaAuth.auth.signInWithPassword({ email, password });
+    let { data, error } = await supaAuth.auth.signInWithPassword({ email, password });
+    // (v85) Si puso solo el DNI y no es de un profesor, probamos si es un usuario de Recepción.
+    if (error && !valor.includes('@') && /invalid login credentials/i.test(error.message || '')){
+      const r2 = await supaAuth.auth.signInWithPassword({ email: `rec-${valor}@m2fsolutions.local`, password });
+      if (!r2.error){ data = r2.data; error = null; }
+    }
     if (error) throw error;
     SESION_ACTUAL = data.session;
     await cargarPerfilDeSesion();
@@ -4743,6 +4829,295 @@ function ipDibujarBarras(d){
   });
 }
 
+// ---------- (v85) Recepción: check-in con teclado numérico + turnos por el alumno ----------
+// Administrador y usuario de Recepción. Todo va por funciones recepcion_* de la base (validan el rol
+// adentro y dejan registro en recepcion_log); el usuario de Recepción no lee tablas directamente.
+// Reglas: si tiene turno hoy => "Marcar llegada"; si no => se le saca uno (con cupo);
+// cuota vencida => no se marca ni se saca turno (sí se puede deshacer/cancelar lo que ya había).
+const RC = { buf:'', ficha:null, dia:0, slot:null, disp:null, dispKey:'', ultimo:null, confirmar:null, verMas:false, busq:0, tmr:null, ocupado:false };
+const rcEl = id => document.getElementById(id);
+const rcIso = d => dateAIso(d);
+function rcSumarDias(iso, n){ const [y,m,d] = iso.split('-').map(Number); return rcIso(new Date(y, m-1, d+n)); }
+function rcEtiquetaDia(iso, hoy){
+  if (iso === hoy) return 'Hoy';
+  if (iso === rcSumarDias(hoy, 1)) return 'Mañana';
+  const [y,m,d] = iso.split('-').map(Number);
+  return new Date(y, m-1, d).toLocaleDateString('es-AR', { weekday:'short', day:'numeric' });
+}
+function rcHora(h){ return String(h || '').slice(0, 5); }
+
+function iniciarRecepcion(){
+  const pad = rcEl('rcPad');
+  if (pad && !pad.children.length){
+    ['1','2','3','4','5','6','7','8','9','⌫','0','Buscar'].forEach(k => {
+      const b = document.createElement('button');
+      b.type = 'button'; b.textContent = k; b.className = 'rc-k' + (k === '⌫' ? ' del' : k === 'Buscar' ? ' go' : '');
+      b.onclick = () => rcTecla(k);
+      pad.appendChild(b);
+    });
+  }
+  if (!RC.ficha) rcVacio();
+  rcCargarLlegadas();
+}
+function rcVacio(msg){
+  rcEl('rcRes').innerHTML = `<div class="rc-vacio"><div class="big">🛎️</div><p>${msg || 'Ingresá el DNI del socio o buscá por nombre.'}</p></div>`;
+}
+function rcPintar(){ rcEl('rcDisp').innerHTML = RC.buf ? escaparHtml(RC.buf) : '&nbsp;'; }
+function rcTecla(k){
+  if (k === '⌫') RC.buf = RC.buf.slice(0, -1);
+  else if (k === 'Buscar'){ if (RC.buf.length < 2){ toast('Ingresá al menos 2 dígitos del DNI.', true); return; } rcBuscar(RC.buf); return; }
+  else if (RC.buf.length < 10) RC.buf += k;
+  rcPintar();
+}
+document.addEventListener('keydown', e => {
+  const sv = rcEl('subvistaRecepcion');
+  if (!sv || sv.style.display === 'none') return;
+  const tag = (document.activeElement && document.activeElement.tagName) || '';
+  if (/INPUT|TEXTAREA|SELECT/.test(tag)){ if (e.key === 'Enter' && document.activeElement.id === 'rcQ'){ clearTimeout(RC.tmr); rcBuscar(rcEl('rcQ').value); } return; }
+  if (document.querySelector('.modal-overlay.show, .overlay.show')) return;
+  if (/^\d$/.test(e.key)) rcTecla(e.key);
+  else if (e.key === 'Backspace') rcTecla('⌫');
+  else if (e.key === 'Enter') rcTecla('Buscar');
+});
+function rcBuscarNombreDebounce(){
+  clearTimeout(RC.tmr);
+  const t = rcEl('rcQ').value.trim();
+  if (t.length < 2) return;
+  RC.tmr = setTimeout(() => rcBuscar(t), 350);
+}
+async function rcBuscar(texto){
+  const mio = ++RC.busq;
+  rcEl('rcRes').innerHTML = '<div class="rc-vacio">Buscando…</div>';
+  try{
+    const rows = await sb('rpc/recepcion_buscar_socios', { method:'POST', body: JSON.stringify({ p_texto: texto }) });
+    if (mio !== RC.busq) return;
+    if (!rows.length){ RC.ficha = null; rcEl('rcRes').innerHTML = '<div class="rc-vacio"><div class="big">❓</div><p>No encontramos ese socio. Revisá el DNI o probá por nombre.</p></div>'; return; }
+    if (rows.length === 1) return rcAbrir(rows[0].alumno_id);
+    RC.ficha = null;
+    rcEl('rcRes').innerHTML = `<h2 style="margin-top:0">Coincidencias</h2>` + rows.map(r => `
+      <div class="rc-row"><span>${escaparHtml(r.nombre)} <span class="muted">· DNI ${escaparHtml(r.dni || '-')}</span></span>
+      <button class="secondary rc-mini" onclick="rcAbrir('${r.alumno_id}')">Elegir</button></div>`).join('');
+  }catch(e){ rcEl('rcRes').innerHTML = `<div class="rc-vacio">Error: ${escaparHtml(extraerMensajeError(e))}</div>`; }
+}
+async function rcAbrir(alumnoId){
+  RC.buf = ''; rcPintar(); rcEl('rcQ').value = '';
+  RC.dia = 0; RC.slot = null; RC.confirmar = null; RC.ultimo = null; RC.verMas = false; RC.disp = null; RC.dispKey = '';
+  await rcRefrescar(undefined, alumnoId);
+}
+async function rcRefrescar(msg, alumnoId){
+  const id = alumnoId || RC.ficha?.alumno_id;
+  try{
+    RC.ficha = await sb('rpc/recepcion_ficha_socio', { method:'POST', body: JSON.stringify({ p_alumno_id: id }) });
+    rcRender(msg);
+    rcCargarLlegadas();
+  }catch(e){ toast(extraerMensajeError(e), true); }
+}
+function rcVolver(){ RC.ficha = null; RC.slot = null; RC.confirmar = null; RC.ultimo = null; rcVacio(); }
+
+function rcPill(f){
+  const e = f.estado_pago;
+  if (e === 'vencido') return `<span class="rc-pill rc-p-bad">⛔ Cuota vencida hace ${Math.abs(f.dias_para_vencer)} día${Math.abs(f.dias_para_vencer) === 1 ? '' : 's'}</span>`;
+  if (e === 'por_vencer') return `<span class="rc-pill rc-p-warn">⏰ La cuota vence en ${f.dias_para_vencer} día${f.dias_para_vencer === 1 ? '' : 's'}</span>`;
+  if (e === 'al_dia') return `<span class="rc-pill rc-p-ok">Cuota al día · vence en ${f.dias_para_vencer} d</span>`;
+  if (e === 'sin_pagos') return `<span class="rc-pill rc-p-warn">Todavía no pagó</span>`;
+  return `<span class="rc-pill rc-p-n">Sin plan asignado</span>`;
+}
+
+function rcRender(msg){
+  const f = RC.ficha; if (!f) return;
+  RC.msg = msg;
+  const bloqueado = f.estado_pago === 'vencido';
+  const esAdmin = PERFIL_ACTUAL?.rol === 'admin';
+  const ini = (f.nombre || '?').split(' ').filter(Boolean).slice(0, 2).map(x => x[0]).join('').toUpperCase();
+  const btnMini = 'secondary rc-mini';
+  let h = `<button class="secondary rc-mini" style="margin-bottom:12px;" onclick="rcVolver()">← Volver a buscar</button>
+    <div class="rc-who"><div class="rc-av">${escaparHtml(ini)}</div><div><h3>${escaparHtml(f.nombre)}</h3><small>DNI ${escaparHtml(f.dni || '-')}${f.plan_nombre ? ' · ' + escaparHtml(f.plan_nombre) : ''}</small></div></div>${rcPill(f)}`;
+
+  // Turnos reservados (se pueden deshacer/cancelar aunque la cuota esté vencida, para corregir errores)
+  h += `<h2 style="margin:16px 0 4px;">Turnos reservados</h2>`;
+  if (!f.turnos.length) h += `<div class="rc-hint" style="margin:0 0 6px;">No tiene turnos reservados.</div>`;
+  f.turnos.forEach(t => {
+    const pres = t.asistio === true;
+    h += `<div class="rc-row"><span><b>${escaparHtml(rcEtiquetaDia(t.fecha, f.hoy))} ${escaparHtml(t.hora)}</b> <span class="muted">· ${escaparHtml(t.profesor_nombre || '')}</span> ${pres ? '<span class="rc-pill rc-p-ok" style="margin:0 0 0 6px;">Llegó</span>' : ''}</span><span class="rc-act">`;
+    if (RC.confirmar === t.id){
+      h += `<span style="color:var(--warn-text);">¿Cancelar${pres ? ' y sacar la llegada' : ''}?</span>
+        <button class="rc-mini" style="background:var(--danger); color:#fff;" onclick="rcCancelar('${t.id}')">Sí</button>
+        <button class="${btnMini}" onclick="RC.confirmar=null; rcRender()">No</button>`;
+    } else {
+      if (pres) h += `<button class="${btnMini}" onclick="rcMarcar('${t.id}', null)">↩ Deshacer llegada</button>`;
+      h += `<button class="${btnMini}" onclick="RC.confirmar='${t.id}'; rcRender()">Cancelar turno</button>`;
+    }
+    h += `</span></div>`;
+  });
+
+  const tHoy = f.turnos.find(t => t.fecha === f.hoy);
+  const presHoy = tHoy && tHoy.asistio === true;
+  if (bloqueado){
+    h += `<div class="rc-msg bad">La cuota está vencida: no se puede marcar la llegada ni sacar turnos nuevos (sí se pueden deshacer y cancelar los que ya hay). ${esAdmin ? `<button class="secondary rc-mini" style="margin-top:8px; display:block;" onclick="cambiarSubvista('cobranzas')">💰 Ir a cobrar</button>` : 'Que pase por administración para regularizarla.'}</div>`;
+  } else {
+    if (tHoy && !presHoy) h += `<button class="rc-big" onclick="rcMarcar('${tHoy.id}', true)">✓ Marcar llegada · turno ${escaparHtml(tHoy.hora)}</button>`;
+    if (tHoy && presHoy) h += `<div class="rc-msg ok" style="font-size:16px;">✅ <b>Llegada registrada</b> · turno ${escaparHtml(tHoy.hora)}</div>`;
+    if (!tHoy) h += `<div class="rc-msg warn">Hoy no tiene turno reservado. Sacale uno acá abajo y queda marcada la llegada.</div>`;
+    if (tHoy && !RC.verMas){
+      h += `<button class="secondary rc-wide" onclick="RC.verMas=true; rcRender()">＋ Sacarle otro turno (otro día u horario)</button>`;
+    } else {
+      h += rcReservaHtml(f, tHoy);
+    }
+  }
+  if (msg) h += `<div class="rc-msg ok">${escaparHtml(msg)}${RC.ultimo ? ` <button class="${btnMini}" style="display:block; margin-top:8px;" onclick="rcDeshacerUltimo()">↩ Deshacer</button>` : ''}</div>`;
+  rcEl('rcRes').innerHTML = h;
+  if (!bloqueado && (!tHoy || RC.verMas)) rcAsegurarDisp();
+}
+
+function rcReservaHtml(f, tHoy){
+  const fecha = rcSumarDias(f.hoy, RC.dia);
+  let h = `<h2 style="margin:18px 0 0;">Sacarle turno <span class="muted" style="font-weight:400; font-size:12px;">(como si fuera el alumno)</span></h2>
+    <div class="rc-days">${[0,1,2,3,4,5,6].map(i => `<button class="rc-day ${i === RC.dia ? 'on' : ''}" onclick="RC.dia=${i}; RC.slot=null; rcRender()">${escaparHtml(rcEtiquetaDia(rcSumarDias(f.hoy, i), f.hoy))}</button>`).join('')}</div>`;
+  const rows = (RC.dispKey === fecha && RC.disp) ? RC.disp : null;
+  if (!rows){ return h + '<div class="rc-hint">Buscando horarios…</div>'; }
+  if (!rows.length) return h + '<div class="rc-hint">No hay horarios cargados para ese día.</div>';
+  const varios = new Set(rows.map(r => r.profesor_id)).size > 1;
+  const previo = f.turnos.find(t => t.fecha === fecha);
+  h += '<div class="rc-slots">' + rows.map(r => {
+    const libres = r.cupo_disponible, hora = rcHora(r.hora);
+    const propio = previo && previo.profesor_id === r.profesor_id && previo.hora === hora;
+    const sel = RC.slot && RC.slot.pid === r.profesor_id && RC.slot.hora === r.hora;
+    const cls = ((libres <= 0 && !propio) ? 'agotado ' : '') + ((libres > 0 && libres <= 2) ? 'poco ' : '') + (sel ? 'sel' : '');
+    const click = (libres > 0 && !propio) ? `onclick="rcElegirSlot('${r.profesor_id}','${r.hora}')"` : '';
+    const sub = propio ? 'ya reservado' : libres <= 0 ? 'sin cupo' : `${libres} lugar${libres === 1 ? '' : 'es'}`;
+    return `<div class="rc-slot ${cls}" ${click}><b>${escaparHtml(hora)}</b><span>${sub}${varios ? ' · ' + escaparHtml((r.profesor_nombre || '').split(' ')[0]) : ''}</span></div>`;
+  }).join('') + '</div>';
+  const etiqueta = RC.slot ? ` ${rcEtiquetaDia(fecha, f.hoy).toLowerCase()} ${rcHora(RC.slot.hora)}` : '';
+  const off = (RC.slot && !RC.ocupado) ? '' : 'disabled';
+  if (RC.dia === 0 && !tHoy){
+    h += `<button class="rc-wide" ${off} onclick="rcReservar(true)">📅 Sacar turno${etiqueta} y marcar llegada</button>
+          <button class="secondary rc-wide" ${off} onclick="rcReservar(false)" style="margin-top:8px;">Solo sacar el turno (todavía no llegó)</button>`;
+  } else {
+    h += `<button class="rc-wide" ${off} onclick="rcReservar(false)">📅 Sacar turno${etiqueta}</button>`;
+  }
+  if (previo && RC.slot) h += `<div class="rc-hint">Ya tiene turno ese día (${escaparHtml(previo.hora)}): al confirmar, se cambia por este y se libera su lugar.</div>`;
+  return h;
+}
+function rcElegirSlot(pid, hora){ RC.slot = { pid, hora }; rcRender(); }
+async function rcAsegurarDisp(){
+  const f = RC.ficha; if (!f) return;
+  const fecha = rcSumarDias(f.hoy, RC.dia);
+  if (RC.dispKey === fecha && RC.disp) return;
+  if (RC.dispCargando === fecha) return;
+  RC.dispCargando = fecha;
+  try{
+    const rows = await sb('rpc/obtener_turnos_disponibles', { method:'POST', body: JSON.stringify({ p_gimnasio_id: f.gimnasio_id, p_fecha: fecha, p_profesor_id: null }) });
+    RC.disp = rows; RC.dispKey = fecha;
+  }catch(e){ RC.disp = []; RC.dispKey = fecha; toast('No se pudieron cargar los horarios: ' + extraerMensajeError(e), true); }
+  finally{ RC.dispCargando = null; }
+  if (RC.ficha && rcSumarDias(RC.ficha.hoy, RC.dia) === fecha) rcRender(RC.msg);
+}
+
+async function rcMarcar(turnoId, valor){
+  if (RC.ocupado) return; RC.ocupado = true;
+  try{
+    await sb('rpc/recepcion_marcar_llegada', { method:'POST', body: JSON.stringify({ p_turno_id: turnoId, p_valor: valor }) });
+    RC.ultimo = valor === true ? { tipo:'llegada', turnoId } : null;
+    RC.ocupado = false;
+    await rcRefrescar(valor === true ? `✅ Llegada de ${RC.ficha.nombre} registrada.` : '↩ Llegada deshecha: el turno sigue reservado.');
+  }catch(e){ RC.ocupado = false; toast(extraerMensajeError(e), true); rcRefrescar(); }
+}
+async function rcCancelar(turnoId){
+  if (RC.ocupado) return; RC.ocupado = true;
+  try{
+    await sb('rpc/recepcion_cancelar_turno', { method:'POST', body: JSON.stringify({ p_turno_id: turnoId }) });
+    RC.ultimo = null; RC.confirmar = null; RC.ocupado = false; RC.disp = null; RC.dispKey = '';
+    await rcRefrescar('🗑️ Turno cancelado. El lugar quedó libre.');
+  }catch(e){ RC.ocupado = false; RC.confirmar = null; toast(extraerMensajeError(e), true); rcRefrescar(); }
+}
+async function rcReservar(marcar){
+  const f = RC.ficha, s = RC.slot;
+  if (!f || !s || RC.ocupado) return;
+  RC.ocupado = true;
+  const fecha = rcSumarDias(f.hoy, RC.dia);
+  const previo = f.turnos.find(t => t.fecha === fecha);
+  try{
+    const r = await sb('rpc/recepcion_reservar_turno', { method:'POST', body: JSON.stringify({
+      p_alumno_id: f.alumno_id, p_profesor_id: s.pid, p_fecha: fecha, p_hora: s.hora,
+      p_marcar_llegada: !!marcar, p_reemplazar: !!previo }) });
+    RC.ultimo = { tipo:'reserva', nuevo: r.turno_id, previo: r.reemplazo_turno_id || null };
+    // Enganche de rutina (mismo que la reserva del alumno). Un usuario de Recepción no lee rutinas,
+    // así que ahí queda para cuando el alumno abra la app; el administrador lo resuelve en el momento.
+    if (PERFIL_ACTUAL?.rol === 'admin') intentarAsignarRutina(r.turno_id, f.alumno_id, fecha).catch(() => {});
+    RC.slot = null; RC.ocupado = false; RC.disp = null; RC.dispKey = '';
+    await rcRefrescar(`📅 Turno ${rcEtiquetaDia(fecha, f.hoy).toLowerCase()} ${rcHora(s.hora)} reservado para ${f.nombre}${r.llegada ? ' y llegada marcada' : ''}${previo ? ` (reemplaza al de ${previo.hora})` : ''}.`);
+  }catch(e){ RC.ocupado = false; toast(extraerMensajeError(e), true); RC.disp = null; RC.dispKey = ''; rcRefrescar(); }
+}
+async function rcDeshacerUltimo(){
+  const u = RC.ultimo; if (!u || RC.ocupado) return;
+  RC.ultimo = null; RC.ocupado = true;
+  try{
+    if (u.tipo === 'llegada') await sb('rpc/recepcion_marcar_llegada', { method:'POST', body: JSON.stringify({ p_turno_id: u.turnoId, p_valor: null }) });
+    else await sb('rpc/recepcion_deshacer_reserva', { method:'POST', body: JSON.stringify({ p_turno_nuevo_id: u.nuevo, p_turno_anterior_id: u.previo }) });
+    RC.ocupado = false; RC.disp = null; RC.dispKey = '';
+    await rcRefrescar('↩ Deshecho' + (u.tipo === 'reserva' && u.previo ? ': volvió el turno anterior.' : '.'));
+  }catch(e){ RC.ocupado = false; toast(extraerMensajeError(e), true); rcRefrescar(); }
+}
+async function rcCargarLlegadas(){
+  const cont = rcEl('rcLog'); if (!cont) return;
+  try{
+    const rows = await sb('rpc/recepcion_llegadas_hoy', { method:'POST', body: '{}' });
+    rcEl('rcCnt').textContent = rows.length;
+    cont.innerHTML = rows.length ? rows.map(l => `<div class="rc-row"><span>${escaparHtml(l.nombre)} <span class="muted">· turno ${escaparHtml(l.hora)}</span></span><span class="muted">${l.marcada_en ? new Date(l.marcada_en).toLocaleTimeString('es-AR', { hour:'2-digit', minute:'2-digit' }) : ''} <a href="#" style="color:var(--accent-text); margin-left:6px;" onclick="rcMarcarDesdeLista('${l.turno_id}'); return false;">deshacer</a></span></div>`).join('')
+      : '<div class="muted">Todavía no se marcó nadie hoy.</div>';
+  }catch(e){ cont.innerHTML = `<div class="muted">No se pudo cargar: ${escaparHtml(extraerMensajeError(e))}</div>`; }
+}
+async function rcMarcarDesdeLista(turnoId){
+  try{
+    await sb('rpc/recepcion_marcar_llegada', { method:'POST', body: JSON.stringify({ p_turno_id: turnoId, p_valor: null }) });
+    toast('Llegada deshecha ✓');
+    if (RC.ficha) await rcRefrescar(); else rcCargarLlegadas();
+  }catch(e){ toast(extraerMensajeError(e), true); }
+}
+
+// Usuarios de Recepción (solo administrador, desde Profesores)
+async function crearRecepcion(){
+  const nombre = rcEl('nuevoRecepcionNombre').value.trim();
+  const dni = rcEl('nuevoRecepcionDni').value.trim();
+  if (!nombre || !dni){ toast('Completá nombre y DNI.', true); return; }
+  const btn = rcEl('btnCrearRecepcion'); btn.disabled = true;
+  try{
+    const r = await sbFn('gestionar-acceso', { accion: 'crear_recepcion', nombre, dni });
+    mostrarCredenciales({ titulo: 'Usuario de Recepción creado ✓', nombre, usuario: r.usuario, password: r.password_temporal });
+    rcEl('nuevoRecepcionNombre').value = ''; rcEl('nuevoRecepcionDni').value = '';
+    cargarListaRecepcion();
+  }catch(e){ toast('Error creando el usuario: ' + extraerMensajeError(e), true); }
+  finally{ btn.disabled = false; }
+}
+async function cargarListaRecepcion(){
+  const cont = rcEl('listaRecepcion'); if (!cont || !PERFIL_ACTUAL) return;
+  try{
+    const rows = await sb(`perfiles?select=id,nombre,email&rol=eq.recepcion&gimnasio_id=eq.${PERFIL_ACTUAL.gimnasio_id}&order=nombre.asc`);
+    cont.innerHTML = rows.length ? rows.map(p => {
+      const dni = (p.email || '').replace(/^rec-/, '').replace(/@m2fsolutions\.local$/, '');
+      const nom = escaparHtml(p.nombre || '').replace(/'/g, '&apos;');
+      return `<div class="rc-row"><span>${escaparHtml(p.nombre || '')} <span class="muted">· DNI ${escaparHtml(dni)}</span></span><span class="rc-act">
+        <button class="secondary rc-mini" onclick="resetearAccesoRecepcion('${p.id}','${nom}')">🔁 Contraseña nueva</button>
+        <button class="secondary rc-mini" style="color:var(--danger);" onclick="quitarRecepcion('${p.id}','${nom}')">Quitar</button></span></div>`;
+    }).join('') : '<div class="muted" style="font-size:13px;">Todavía no creaste ningún usuario de Recepción.</div>';
+  }catch(e){ cont.innerHTML = ''; }
+}
+async function resetearAccesoRecepcion(perfilId, nombre){
+  if (!confirm(`¿Generar una contraseña temporal nueva para ${nombre}? La anterior deja de servir.`)) return;
+  try{
+    const r = await sbFn('gestionar-acceso', { accion: 'resetear_password', perfil_id: perfilId });
+    mostrarCredenciales({ titulo: 'Contraseña nueva ✓', nombre, usuario: r.usuario, password: r.password_temporal });
+  }catch(e){ toast('Error: ' + extraerMensajeError(e), true); }
+}
+async function quitarRecepcion(perfilId, nombre){
+  if (!confirm(`¿Quitar el usuario de Recepción de ${nombre}? Su cuenta se borra y ya no puede entrar (el registro de lo que hizo se conserva).`)) return;
+  try{
+    await sbFn('gestionar-acceso', { accion: 'quitar_recepcion', perfil_id: perfilId });
+    toast('Usuario quitado ✓');
+    cargarListaRecepcion();
+  }catch(e){ toast('Error: ' + extraerMensajeError(e), true); }
+}
+
 let AGENDA_AUTO_REFRESH_TIMER = null;
 
 function cambiarSubvista(v){
@@ -4753,6 +5128,9 @@ function cambiarSubvista(v){
   if (v==='agenda') AGENDA_AUTO_REFRESH_TIMER = setInterval(renderAgenda, 25000);
   if (v==='inicio') AGENDA_AUTO_REFRESH_TIMER = setInterval(cargarInicioProfesor, 60000);
   document.getElementById('subvistaInicio').style.display = v==='inicio' ? '' : 'none';
+  document.getElementById('subvistaRecepcion').style.display = v==='recepcion' ? '' : 'none';
+  document.getElementById('menuRecepcion').classList.toggle('active', v==='recepcion');
+  document.getElementById('ttRecepcion').classList.toggle('active', v==='recepcion');
   document.getElementById('subvistaDashboard').style.display = v==='dashboard' ? '' : 'none';
   document.getElementById('subvistaArmador').style.display = v==='armador' ? '' : 'none';
   document.getElementById('subvistaRutinas').style.display = v==='rutinas' ? '' : 'none';
@@ -4812,13 +5190,14 @@ function cambiarSubvista(v){
   document.getElementById('bnavProfAgenda').classList.toggle('active', v==='agenda');
   document.getElementById('bnavProfAlumnos').classList.toggle('active', v==='alumnos');
   if (v==='inicio') cargarInicioProfesor();
+  if (v==='recepcion') iniciarRecepcion();
   if (v==='dashboard') cargarDashboardAdmin();
   if (v==='rutinas') cargarGrillaRutinas();
   if (v==='alumnos') cargarListaAlumnos();
   if (v==='evaluaciones') iniciarEvaluaciones();
   if (v==='seguimiento') iniciarSeguimiento();
   if (v==='logros') iniciarLogros();
-  if (v==='profesores'){ cargarListaProfesores(); cargarListaProfesoresInactivos(); }
+  if (v==='profesores'){ cargarListaProfesores(); cargarListaProfesoresInactivos(); cargarListaRecepcion(); }
   if (v==='agenda') iniciarAgenda();
   if (v==='horarios'){ horCambiarTab('editar'); cargarHorarioProfesorActual(); }
   if (v==='planes') cargarPlanes();
@@ -5983,9 +6362,20 @@ const BNAV_SOLO_ADMIN = ['bnavProfAlumnos'];
 
 function aplicarPermisosPorRol(){
   const esAdmin = PERFIL_ACTUAL?.rol === 'admin';
+  const esRecep = PERFIL_ACTUAL?.rol === 'recepcion';
   [...MENU_SOLO_ADMIN, ...BNAV_SOLO_ADMIN].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.style.display = esAdmin ? '' : 'none';
+  });
+  // (v85) Recepción la ven el administrador y el usuario de Recepción; el profesor no.
+  ['menuRecepcion', 'ttRecepcion'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = (esAdmin || esRecep) ? '' : 'none';
+  });
+  // El usuario de Recepción solo ve esa pantalla: sin menú, barra ni navegación inferior.
+  ['menuDrawerBtnProf', 'topToolbarProf', 'bottomNavProf', 'menuProfDrawer', 'staffCuentaCard'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = esRecep ? 'none' : '';
   });
 }
 function idAleatorio(){
