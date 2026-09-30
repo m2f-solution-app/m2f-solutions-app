@@ -864,6 +864,67 @@
   .ejec-prog{ display:flex; align-items:center; gap:10px; margin-bottom:16px; font-size:12.5px; color:var(--muted); }
   .ejec-bar{ flex:1; height:8px; border-radius:99px; background:var(--panel2); overflow:hidden; }
   .ejec-bar i{ display:block; height:100%; width:0; background:var(--accent2); border-radius:99px; transition:width .3s; }
+  /* ===================================================================================
+     (v75, 30/9) Rediseño — ETAPA 4: profesor (barra inferior, Agenda, Armador, Alumnos).
+     =================================================================================== */
+  /* Barra inferior del profesor: misma que la del alumno */
+  #bottomNavProf{ box-shadow:none; background:var(--panel); border-top:1px solid var(--border); padding:6px 6px calc(8px + env(safe-area-inset-bottom)); }
+  #bottomNavProf .bottom-nav-item{ font-size:11px; font-weight:600; gap:3px; padding:4px 2px; color:var(--muted); background:none; border-radius:0; }
+  #bottomNavProf .bottom-nav-item .ico{ display:flex; align-items:center; justify-content:center; width:56px; height:30px; border-radius:999px; line-height:0; transition:background .15s; }
+  #bottomNavProf .bottom-nav-item svg{ width:23px; height:23px; stroke:currentColor; fill:none; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+  #bottomNavProf .bottom-nav-item.active{ color:var(--text); font-weight:800; }
+  #bottomNavProf .bottom-nav-item.active .ico{ background:rgba(255,122,48,.18); color:var(--accent-text); }
+  @supports (background: color-mix(in srgb, red 10%, transparent)){
+    #bottomNavProf .bottom-nav-item.active .ico{ background:color-mix(in srgb, var(--accent) 20%, transparent); }
+  }
+  @media (min-width:721px){ .vista-titulo{ font-size:28px; } }
+  /* Agenda */
+  #agendaKpis{ display:grid; grid-template-columns:repeat(2,1fr); gap:12px; margin-bottom:14px; }
+  @media (min-width:721px){ #agendaKpis{ grid-template-columns:repeat(4,1fr); } }
+  #agendaKpis .kpi{ min-width:0; background:var(--panel); border-radius:20px; padding:16px; box-shadow:var(--shadow-card); }
+  #agendaKpis .kpi .num{ font-size:26px; letter-spacing:-.03em; }
+  #agendaKpis .kpi .label{ text-transform:none; letter-spacing:0; font-size:12.5px; margin-top:6px; line-height:1.3; }
+  #agendaKpis .kpi.activo{ background:rgba(255,122,48,.14); }
+  .franja{ background:var(--panel); border:1px solid var(--card-bd); border-radius:22px; box-shadow:var(--shadow-card); padding:16px; margin-bottom:12px; border-bottom:1px solid var(--card-bd); gap:14px; }
+  .franja:last-child{ border-bottom:1px solid var(--card-bd); }
+  .franja-hora{ flex:0 0 54px; font-size:20px; letter-spacing:-.03em; padding-top:0; }
+  .franja-barra-wrap{ height:8px; border-radius:99px; margin-bottom:8px; }
+  .franja-barra{ border-radius:99px; transition:width .3s; }
+  .franja-barra.llena{ background:var(--accent2); }
+  .alumnos-chips{ display:grid; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); gap:8px; }
+  .alumno-chip{ border-radius:16px; padding:8px 12px 8px 8px; gap:10px; }
+  .alumno-chip .avatar{ width:34px; height:34px; font-size:13px; }
+  .chip-nombre{ font-size:14px; font-weight:600; }
+  .chip-progreso{ font-size:11.5px; }
+  .filtro-aviso{ border-radius:14px; }
+  /* Armador: botón de guardar siempre a mano en celular */
+  @media (max-width:720px){
+    .armador-guardar{ position:sticky; bottom:calc(84px + env(safe-area-inset-bottom)); z-index:30; padding:6px 0 2px; }
+    .armador-guardar button{ width:100%; padding:15px 22px; font-size:15px; font-weight:800; box-shadow:0 8px 22px rgba(0,0,0,.28); }
+  }
+  /* Alumnos: filas con avatar */
+  .al-row{ padding:16px 0; border-top:1px solid var(--border); }
+  .al-row:first-child{ border-top:0; }
+  .al-head{ display:flex; gap:12px; align-items:center; }
+  .al-av{ width:46px; height:46px; border-radius:50%; flex:none; object-fit:cover; background:var(--panel2); color:var(--text); display:flex; align-items:center; justify-content:center; font-weight:800; font-size:15px; }
+  .al-info{ flex:1; min-width:0; }
+  .al-info b{ display:block; font-size:16px; font-weight:700; color:var(--text); }
+  .al-info .m{ font-size:13px; color:var(--muted); margin-top:2px; overflow-wrap:anywhere; }
+  .al-chips{ display:flex; flex-wrap:wrap; gap:6px; margin-top:10px; }
+  .al-acts{ display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; align-items:center; }
+  .al-acts select{ flex:1 1 150px; min-width:0; }
+  .al-acts button{ padding:8px 14px; font-size:13px; }
+  /* Cuenta del staff: en celular queda plegada detrás de un botón (antes ocupaba ~230px en cada pantalla) */
+  .cuenta-toggle{ display:none; padding:9px 16px; font-size:13px; }
+  @media (max-width:720px){
+    #staffCuentaCard .row{ flex-wrap:wrap; gap:10px; }
+    #staffCuentaCard .field{ flex:1 1 180px; }
+    .cuenta-toggle{ display:inline-flex; align-self:flex-end; }
+    #staffCuentaAcciones{ display:none; flex-basis:100%; text-align:left !important; }
+    #staffCuentaAcciones.abierta{ display:block; }
+    #staffCuentaAcciones button{ margin:6px 6px 0 0 !important; }
+    #sesionEmail{ display:block; margin-bottom:6px; }
+  }
 </style>
 </head>
 <body>
@@ -1002,13 +1063,14 @@
 
   <div id="bannerSuscripcion" style="display:none; margin-bottom:12px;"></div>
 
-  <div class="card" style="margin-bottom:12px;">
+  <div class="card" id="staffCuentaCard" style="margin-bottom:12px;">
     <div class="row" style="justify-content:space-between; align-items:center;">
       <div class="field" style="min-width:220px;">
         <label>Profesor</label>
         <select id="profActual" onchange="onCambiarProfesorActual()"></select>
       </div>
-      <div class="muted" style="text-align:right;">
+      <button class="ghost cuenta-toggle" onclick="document.getElementById('staffCuentaAcciones').classList.toggle('abierta')">⚙️ Cuenta</button>
+      <div class="muted" id="staffCuentaAcciones" style="text-align:right;">
         <span id="sesionEmail"></span><br>
         <span class="muted" style="cursor:pointer; text-decoration:underline; font-size:12px;" onclick="document.getElementById('staffCambiarPasswordWrap').style.display = document.getElementById('staffCambiarPasswordWrap').style.display==='none' ? '' : 'none';">Cambiar contraseña</span>
         <span id="linkCodigosActivacion" style="display:none; margin-left:8px;">· <span class="muted" style="cursor:pointer; text-decoration:underline; font-size:12px; color:var(--accent-text);" onclick="abrirPanelCodigos()">🔑 Códigos</span></span>
@@ -1225,8 +1287,9 @@
       <!-- ---- SUBVISTA: ARMADOR DE RUTINA (estándar, planificación quincenal) ---- -->
       <div id="subvistaArmador" style="display:none;">
 
+        <div class="vista-titulo">Armador</div>
         <div class="card">
-          <h2 style="margin-top:0">Nueva rutina</h2>
+          <div class="sec-t">Nueva rutina</div>
           <div class="row">
             <div class="field" id="profTipoWrap" style="flex:1; min-width:200px;">
               <label>Tipo de entrenamiento</label>
@@ -1269,7 +1332,7 @@
           <div id="diasContainer"></div>
         </div>
 
-        <div class="row" style="justify-content:flex-end;">
+        <div class="row armador-guardar" style="justify-content:flex-end;">
           <button onclick="guardarRutina()" id="btnGuardarRutina">Guardar rutina</button>
         </div>
       </div>
@@ -1440,8 +1503,13 @@
       <!-- ---- SUBVISTA: ALUMNOS (alta + tipo estándar/especial) ---- -->
       <div id="subvistaAlumnos" style="display:none;">
 
+        <div class="vista-titulo">Alumnos</div>
         <div class="card">
-          <h2 style="margin-top:0">Nuevo alumno</h2>
+          <div class="row" style="justify-content:space-between; align-items:center;">
+            <div class="sec-t" style="margin:0">Nuevo alumno</div>
+            <button class="ghost" id="btnToggleNuevoAlumno" onclick="toggleFormNuevoAlumno()">＋ Agregar</button>
+          </div>
+          <div id="nuevoAlumnoForm" style="display:none; margin-top:14px;">
           <div class="row">
             <div class="field" style="flex:1; min-width:200px;">
               <label>Nombre</label>
@@ -1504,11 +1572,12 @@
               <div class="muted" style="align-self:end; padding-bottom:10px;">La forma de pago y el monto se cargan aparte, en "💰 Finanzas", el día que el alumno pague.</div>
             </div>
           </div>
+          </div>
         </div>
 
         <div class="card">
           <div class="row" style="justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
-            <h2 style="margin-top:0; margin-bottom:0;">Alumnos cargados</h2>
+            <div class="sec-t" style="margin:0">Alumnos cargados</div>
             <div class="row" style="gap:6px;">
               <button class="ghost filtro-estado-alu activo" id="filtroAluActivos" onclick="cambiarFiltroEstadoAlumnos('activos')">🟢 Activos</button>
               <button class="ghost filtro-estado-alu" id="filtroAluInactivos" onclick="cambiarFiltroEstadoAlumnos('inactivos')">⚪ Inactivos</button>
@@ -1635,6 +1704,8 @@
 
       <!-- ---- SUBVISTA: AGENDA (turnos agendados por horario, día a día) ---- -->
       <div id="subvistaAgenda">
+        <div class="vista-eyebrow" id="agendaEyebrow"></div>
+        <div class="vista-titulo">Agenda</div>
         <div class="card">
           <div class="row">
             <div class="field" style="flex:1; min-width:200px;">
@@ -1650,10 +1721,8 @@
           <label style="margin-top:14px;">Día</label>
           <div class="dias-scroll" id="agendaDiasScroll"></div>
         </div>
-        <div class="card">
-          <div class="kpis" id="agendaKpis"></div>
-        </div>
-        <div class="card" id="agendaTimelineWrap">Elegí un día.</div>
+        <div class="kpis" id="agendaKpis"></div>
+        <div id="agendaTimelineWrap">Elegí un día.</div>
       </div>
 
       <!-- ---- SUBVISTA: HORARIOS DE TRABAJO (genera turnos cada 1h) ---- -->
@@ -2175,11 +2244,11 @@
   <!-- ---- Barra inferior de navegación (solo mobile) ---- -->
   <div class="bottom-nav show" id="bottomNavProf">
     <div class="bottom-nav-inner">
-      <button class="bottom-nav-item" id="bnavProfRutinas" onclick="cambiarSubvista('rutinas')"><span class="ico">🗂️</span>Rutinas</button>
-      <button class="bottom-nav-item" id="bnavProfArmador" onclick="cambiarSubvista('armador')"><span class="ico">🏋️</span>Armador</button>
-      <button class="bottom-nav-item principal" id="bnavProfAgenda" onclick="cambiarSubvista('agenda')"><span class="ico">📋</span>Agenda</button>
-      <button class="bottom-nav-item" id="bnavProfAlumnos" onclick="cambiarSubvista('alumnos')"><span class="ico">👤</span>Alumnos</button>
-      <button class="bottom-nav-item" id="bnavProfMenu" onclick="abrirMenuProf()"><span class="ico">☰</span>Menú</button>
+      <button class="bottom-nav-item" id="bnavProfRutinas" onclick="cambiarSubvista('rutinas')"><span class="ico"><svg viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13"/><path d="M3.5 6h.01M3.5 12h.01M3.5 18h.01"/></svg></span>Rutinas</button>
+      <button class="bottom-nav-item" id="bnavProfArmador" onclick="cambiarSubvista('armador')"><span class="ico"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="M12 8v8M8 12h8"/></svg></span>Armador</button>
+      <button class="bottom-nav-item" id="bnavProfAgenda" onclick="cambiarSubvista('agenda')"><span class="ico"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M8 3v4M16 3v4M3 10h18"/></svg></span>Agenda</button>
+      <button class="bottom-nav-item" id="bnavProfAlumnos" onclick="cambiarSubvista('alumnos')"><span class="ico"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.6-3.6 3.2-5.5 6.5-5.5s5.9 1.9 6.5 5.5"/><path d="M16 4.7a3.5 3.5 0 0 1 0 6.6M18 14.7c1.9.7 3.2 2.4 3.5 5.3"/></svg></span>Alumnos</button>
+      <button class="bottom-nav-item" id="bnavProfMenu" onclick="abrirMenuProf()"><span class="ico"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg></span>Menú</button>
     </div>
   </div>
 
@@ -2628,7 +2697,7 @@ const BUCKET = "Ejercicios";
 // un cambio, se incrementa este número — el chequeo de actualización (más abajo) lo compara
 // contra lo que hay publicado y avisa si están desactualizados, sin que nadie tenga que
 // cambiar ningún link a mano.
-const APP_VERSION = 74;
+const APP_VERSION = 75;
 
 // ---------- Instalar como app (PWA): acceso directo en escritorio/celular ----------
 // Chrome/Edge/Android disparan "beforeinstallprompt" cuando el manifest + service worker
@@ -6922,6 +6991,8 @@ async function renderAgenda(){
   const profesorFiltroId = document.getElementById('agendaFiltroProfesor').value;
   const fecha = agendaFechaISO(agendaDiaSeleccionado);
   const dow = new Date(fecha+'T00:00:00').getDay();
+  const ebAg = document.getElementById('agendaEyebrow');
+  if (ebAg){ const t = fechaLegible(fecha); ebAg.textContent = t.charAt(0).toUpperCase() + t.slice(1); }
   const profesores = profesorFiltroId ? PROFESORES_CACHE.filter(p => p.id === profesorFiltroId) : PROFESORES_CACHE;
 
   if (!profesores.length){
@@ -7027,7 +7098,7 @@ async function renderAgenda(){
             <div class="franja ${nombres.length===0?'sin-reservas':''}">
               <div class="franja-hora">${horaLabel}</div>
               <div class="franja-cuerpo">
-                <div class="franja-barra-wrap"><div class="franja-barra" style="width:${pct}%;"></div></div>
+                <div class="franja-barra-wrap"><div class="franja-barra ${pct>=100?'llena':''}" style="width:${pct}%;"></div></div>
                 <div class="franja-cupo-txt">${nombres.length} de ${h.cupo_por_turno} cupos ocupados</div>
                 ${nombres.length ? `<div class="alumnos-chips">${chips}</div>` : '<div class="franja-vacia">Sin reservas en este horario</div>'}
               </div>
@@ -8100,26 +8171,33 @@ async function cargarListaAlumnos(){
     const btnEstado = a.activo
       ? `<button class="ghost" onclick="toggleActivoAlumno('${a.id}', false, '${(a.nombre||'').replace(/'/g,"\\'")}')" title="Marca al alumno como inactivo sin borrar sus datos ni su historial">🔴 Dar de baja</button>`
       : `<button class="ghost" onclick="toggleActivoAlumno('${a.id}', true, '${(a.nombre||'').replace(/'/g,"\\'")}')" title="Vuelve a poner al alumno como activo">🟢 Reactivar</button>`;
+    const datosTxt = [a.dni ? 'DNI ' + a.dni : 'Sin DNI', datos || 'Sin datos de contacto/físicos cargados.'].join(' · ');
+    const avatarHtml = a.foto_url
+      ? `<img class="al-av" src="${a.foto_url}" alt="">`
+      : `<div class="al-av">${iniciales(a.nombre)}</div>`;
     return `
-    <div style="padding:8px 0; border-bottom:1px solid var(--border); ${a.activo?'':'opacity:.7;'}">
-      <div class="row" style="justify-content:space-between; flex-wrap:wrap; gap:8px;">
-        <div style="font-weight:600; display:flex; align-items:center;">${fotoChica}${a.nombre}${a.dni ? ` <span class="muted" style="font-weight:400;">· DNI ${a.dni}</span>` : ''}</div>
-        <div class="row" style="gap:8px; flex-wrap:wrap;">
-          <select onchange="cambiarTipoAlumno('${a.id}', this.value)">
-            <option value="">-- sin tipo --</option>
-            ${TIPOS_ALUMNO_CACHE.map(t => `<option value="${t.id}" ${a.tipo_alumno_id===t.id?'selected':''}>${t.nombre}</option>`).join('')}
-          </select>
-          <select onchange="cambiarPlanAlumno('${a.id}', this.value)">
-            <option value="">-- sin plan --</option>
-            ${PLANES_CACHE.map(p => `<option value="${p.id}" ${a.plan_id===p.id?'selected':''}>${p.nombre}</option>`).join('')}
-          </select>
-          ${chipAcceso}
-          <button class="ghost" onclick="abrirReporteAlumno('${a.id}')">📄 Ver ficha</button>
-          <button class="ghost" onclick="toggleEditarAlumno('${a.id}')">✏️ Datos</button>
-          ${btnEstado}
-        </div>
+    <div class="al-row" style="${a.activo?'':'opacity:.7;'}">
+      <div class="al-head">
+        ${avatarHtml}
+        <div class="al-info"><b>${a.nombre}</b><div class="m">${datosTxt}</div></div>
       </div>
-      <div class="muted" style="margin-top:4px;">${datos || 'Sin datos de contacto/físicos cargados.'} ${chipPlan} ${chipInactivo} ${chipsCategorias} ${chipEquipo} ${chipPosicion}</div>
+      <div class="al-chips">${chipPlan} ${chipInactivo} ${chipsCategorias} ${chipEquipo} ${chipPosicion}</div>
+      <div class="al-acts">
+        <select onchange="cambiarTipoAlumno('${a.id}', this.value)">
+          <option value="">-- sin tipo --</option>
+          ${TIPOS_ALUMNO_CACHE.map(t => `<option value="${t.id}" ${a.tipo_alumno_id===t.id?'selected':''}>${t.nombre}</option>`).join('')}
+        </select>
+        <select onchange="cambiarPlanAlumno('${a.id}', this.value)">
+          <option value="">-- sin plan --</option>
+          ${PLANES_CACHE.map(p => `<option value="${p.id}" ${a.plan_id===p.id?'selected':''}>${p.nombre}</option>`).join('')}
+        </select>
+      </div>
+      <div class="al-acts">
+        ${chipAcceso}
+        <button class="ghost" onclick="abrirReporteAlumno('${a.id}')">📄 Ver ficha</button>
+        <button class="ghost" onclick="toggleEditarAlumno('${a.id}')">✏️ Datos</button>
+        ${btnEstado}
+      </div>
       <div id="editarAlumno${a.id}" style="display:none; margin-top:10px;">
         <div class="row">
           <div class="field"><label>DNI</label><input id="editDni${a.id}" inputmode="numeric" value="${a.dni||''}"></div>
@@ -8212,6 +8290,13 @@ async function toggleActivoAlumno(alumnoId, nuevoActivo, nombre){
     cargarListaAlumnos();
     if (document.getElementById('subvistaDashboard')?.style.display !== 'none') cargarDashboardAdmin();
   }catch(e){ toast('Error cambiando el estado: ' + extraerMensajeError(e), true); }
+}
+
+function toggleFormNuevoAlumno(){
+  const f = document.getElementById('nuevoAlumnoForm'), b = document.getElementById('btnToggleNuevoAlumno');
+  const abrir = f.style.display === 'none';
+  f.style.display = abrir ? '' : 'none';
+  b.textContent = abrir ? '✕ Cerrar' : '＋ Agregar';
 }
 
 function toggleEditarAlumno(alumnoId){
