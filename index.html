@@ -2995,7 +2995,7 @@ const BUCKET = "Ejercicios";
 // un cambio, se incrementa este número — el chequeo de actualización (más abajo) lo compara
 // contra lo que hay publicado y avisa si están desactualizados, sin que nadie tenga que
 // cambiar ningún link a mano.
-const APP_VERSION = 85;
+const APP_VERSION = 86;
 
 // ---------- Instalar como app (PWA): acceso directo en escritorio/celular ----------
 // Chrome/Edge/Android disparan "beforeinstallprompt" cuando el manifest + service worker
@@ -10792,8 +10792,12 @@ function crearConstructorDeDias(prefijo, containerId, headerPrefix){
             <div class="row">
               ${campoDiaHtml}
             </div>
-            <button class="danger" onclick="if(confirm('¿Eliminar este día de la rutina?')) CONS['${prefijo}'].eliminarDia('${diaId}')">🗑️ Eliminar día</button>
+            <div class="row" style="gap:8px;">
+              <button type="button" class="secondary" onclick="traerDiaToggle('${prefijo}','${diaId}')">📥 Traer un día de otra rutina</button>
+              <button class="danger" onclick="if(confirm('¿Eliminar este día de la rutina?')) CONS['${prefijo}'].eliminarDia('${diaId}')">🗑️ Eliminar día</button>
+            </div>
           </div>
+          <div id="traer-${diaId}" class="traer-panel" style="display:none;"></div>
           <hr>
           ${seccionesHtml || '<div class="muted" style="padding:8px 0;">Sin ejercicios todavía.</div>'}
           <div style="margin-top:10px;">
@@ -10888,6 +10892,142 @@ CONS['esp'] = crearConstructorDeDias('esp', 'diasContainerEsp', 'esp');
 function agregarDia(){ CONS['dia'].agregarDia(); }
 function agregarDiaEsp(){ CONS['esp'].agregarDia(); }
 
+// ---------- (v86) Traer un día de otra rutina al día que estoy armando ----------
+// Sirve en el Armador y en Especiales: dentro de cada día hay un botón que busca una rutina
+// ya guardada (de una sola fecha, rotativa, plantilla o especial de otro alumno), muestra sus
+// días y copia los ejercicios del elegido a ESTE día (reemplazando o agregando al final).
+// Es una copia en memoria: la rutina de origen no se toca y lo de acá se guarda con "Guardar".
+const TRAER = {}; // diaId -> { rutinaNombre, dias }
+
+function traerDiaEtiqueta(r){
+  return r.especialDe ? `⭐ Especial de ${escaparHtml(r.especialDe.slice(0, 2).join(', '))}${r.especialDe.length > 2 ? '…' : ''}`
+    : r.modo_dias === 'plantilla' ? '🧩 Plantilla' : r.modo_dias === 'rotativa' ? '🔁 Rotativa' : `🏷️ ${escaparHtml(r.tipos_alumno?.nombre || 'Sin tipo')}`;
+}
+
+function traerDiaToggle(prefijo, diaId){
+  const p = document.getElementById(`traer-${diaId}`);
+  if (!p) return;
+  if (p.style.display !== 'none'){ p.style.display = 'none'; return; }
+  p.style.display = '';
+  p.innerHTML = `
+    <div style="background:var(--panel2); border:1px solid var(--border); border-radius:14px; padding:12px; margin:10px 0 4px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:6px;">
+        <b>📥 Traer un día de otra rutina</b>
+        <button type="button" class="x-cerrar est" aria-label="Cerrar" title="Cerrar" onclick="document.getElementById('traer-${diaId}').style.display='none'">✕</button>
+      </div>
+      <div class="muted" style="font-size:12px; margin-bottom:8px;">Buscá la rutina, elegí qué día querés y se copia a este día. La rutina original no cambia.</div>
+      <input id="traerQ-${diaId}" placeholder="Nombre o alumno…" autocomplete="off" oninput="traerDiaBuscar('${prefijo}','${diaId}')" />
+      <div id="traerRes-${diaId}" style="max-height:280px; overflow:auto; margin-top:8px;"></div>
+    </div>`;
+  traerDiaBuscar(prefijo, diaId);
+  document.getElementById(`traerQ-${diaId}`)?.focus({ preventScroll: true });
+}
+
+async function traerDiaBuscar(prefijo, diaId){
+  const cont = document.getElementById(`traerRes-${diaId}`);
+  if (!cont) return;
+  if (!ESP_BASE_LISTA) cont.innerHTML = '<div class="muted" style="padding:6px;">Cargando…</div>';
+  try{ await espBaseAsegurarLista(); }catch(e){ cont.innerHTML = 'Error: ' + escaparHtml(e.message); return; }
+  const q = normalizar(document.getElementById(`traerQ-${diaId}`)?.value || '').trim();
+  const terminos = q.split(/\s+/).filter(Boolean);
+  const lista = (ESP_BASE_LISTA || []).filter(r => {
+    const texto = normalizar(`${r.nombre} ${r.tipos_alumno?.nombre || ''} ${(r.especialDe || []).join(' ')}`);
+    return terminos.every(t => texto.includes(t));
+  }).slice(0, 30);
+  if (!lista.length){ cont.innerHTML = '<div class="empty">No encontramos rutinas con ese nombre.</div>'; return; }
+  cont.innerHTML = lista.map(r => `
+    <button type="button" class="ghost" style="width:100%; text-align:left; display:block; margin-bottom:6px;" onclick="traerDiaElegirRutina('${prefijo}','${diaId}','${r.id}')">
+      <span style="font-weight:700;">${escaparHtml(r.nombre)}</span>
+      <span class="muted" style="font-size:11px;"> · ${traerDiaEtiqueta(r)} · ${r.rutina_dias.length} día${r.rutina_dias.length === 1 ? '' : 's'}</span>
+    </button>`).join('');
+}
+
+function traerDiaRotulo(d, i){
+  if (d.nombre_dia) return d.nombre_dia;
+  if (d.fecha){ const [y, m, dd] = String(d.fecha).split('-'); return `${dd}/${m}/${y}`; }
+  return `Día ${i + 1}`;
+}
+
+async function traerDiaElegirRutina(prefijo, diaId, rutinaId){
+  const cont = document.getElementById(`traerRes-${diaId}`);
+  if (!cont) return;
+  cont.innerHTML = '<div class="muted" style="padding:6px;">Cargando días…</div>';
+  try{
+    const dias = await sb(`rutina_dias?rutina_id=eq.${rutinaId}&select=id,fecha,nombre_dia,orden,objetivo,rutina_ejercicios(id,orden,bloque,series,repeticiones,peso_sugerido,tiempo_trabajo_seg,descanso_seg,rir,notas,unilateral,peso_corporal,variante,material,modo_progresion,progresion_incremento_kg,progresion_rir_objetivo,ejercicios(id,nombre,grupo_muscular,provider_ref_id,video_provider,video_url_propio),rutina_ejercicio_semanas(semana,series,repeticiones,peso_sugerido))&order=orden.asc`);
+    dias.sort((a, b) => (a.orden ?? 0) - (b.orden ?? 0));
+    const r = (ESP_BASE_LISTA || []).find(x => x.id === rutinaId);
+    TRAER[diaId] = { rutinaNombre: r?.nombre || 'la rutina', dias };
+    cont.innerHTML = `
+      <button type="button" class="ghost" style="margin-bottom:8px;" onclick="traerDiaBuscar('${prefijo}','${diaId}')">← Otras rutinas</button>
+      <div style="font-weight:700; margin-bottom:6px;">${escaparHtml(TRAER[diaId].rutinaNombre)} <span class="muted" style="font-size:11px; font-weight:400;">· elegí el día que querés traer</span></div>
+      ${dias.map((d, i) => {
+        const n = (d.rutina_ejercicios || []).length;
+        return `<button type="button" class="ghost" style="width:100%; text-align:left; display:block; margin-bottom:6px;" onclick="traerDiaElegirDia('${prefijo}','${diaId}',${i})">
+          <span style="font-weight:700;">${escaparHtml(traerDiaRotulo(d, i))}</span>
+          <span class="muted" style="font-size:11px;"> · ${n} ejercicio${n === 1 ? '' : 's'}${d.objetivo ? ' · ' + escaparHtml(String(d.objetivo).slice(0, 50)) : ''}</span>
+        </button>`;
+      }).join('') || '<div class="empty">Esta rutina no tiene días.</div>'}`;
+  }catch(e){
+    cont.innerHTML = 'Error: ' + escaparHtml(extraerMensajeError(e));
+  }
+}
+
+function traerDiaElegirDia(prefijo, diaId, idx){
+  const dest = CONS[prefijo].estado.dias[diaId];
+  const src = TRAER[diaId]?.dias[idx];
+  if (!dest || !src) return;
+  const cont = document.getElementById(`traerRes-${diaId}`);
+  if (!dest.ejercicios.length){ traerDiaAplicar(prefijo, diaId, idx, 'reemplazar'); return; }
+  const n = dest.ejercicios.length;
+  cont.innerHTML = `
+    <div style="font-weight:700; margin-bottom:6px;">Este día ya tiene ${n} ejercicio${n === 1 ? '' : 's'}.</div>
+    <div class="muted" style="font-size:12px; margin-bottom:8px;">Vas a traer "${escaparHtml(traerDiaRotulo(src, idx))}" de ${escaparHtml(TRAER[diaId].rutinaNombre)}. ¿Qué hacemos?</div>
+    <div class="row" style="gap:8px;">
+      <button type="button" onclick="traerDiaAplicar('${prefijo}','${diaId}',${idx},'agregar')">➕ Agregar al final</button>
+      <button type="button" class="secondary" onclick="traerDiaAplicar('${prefijo}','${diaId}',${idx},'reemplazar')">🔁 Reemplazar lo que hay</button>
+      <button type="button" class="ghost" onclick="traerDiaElegirRutina('${prefijo}','${diaId}','${(ESP_BASE_LISTA || []).find(x => x.nombre === TRAER[diaId].rutinaNombre)?.id || ''}')">Cancelar</button>
+    </div>`;
+}
+
+function traerDiaAplicar(prefijo, diaId, idx, modo){
+  const cons = CONS[prefijo];
+  const dest = cons.estado.dias[diaId];
+  const src = TRAER[diaId]?.dias[idx];
+  if (!dest || !src) return;
+  const esRot = cons.estado.modoDias === 'rotativa';
+  let sinCatalogo = 0, conSemanasPerdidas = 0;
+  const ejs = (src.rutina_ejercicios || []).slice().sort((a, b) => (a.orden ?? 0) - (b.orden ?? 0)).map(x => {
+    const cat = (typeof TODOS_EJERCICIOS !== 'undefined' && TODOS_EJERCICIOS.find(e => e.id === x.ejercicios?.id)) || x.ejercicios;
+    if (!cat){ sinCatalogo++; return null; }
+    const semanas = (x.rutina_ejercicio_semanas || []).slice().sort((a, b) => a.semana - b.semana).map(s => ({ semana: s.semana, series: s.series, repeticiones: s.repeticiones || '', peso_sugerido: s.peso_sugerido }));
+    const prog = esRot ? (x.modo_progresion || 'fijo') : 'fijo';
+    if (!esRot && (x.modo_progresion || 'fijo') !== 'fijo') conSemanasPerdidas++;
+    return {
+      ejercicio: cat, bloque: x.bloque || 'General', series: x.series, repeticiones: x.repeticiones || '',
+      peso_sugerido: x.peso_sugerido, tiempo_trabajo_seg: x.tiempo_trabajo_seg, descanso_seg: x.descanso_seg, rir: x.rir,
+      notas: x.notas || '', unilateral: !!x.unilateral, peso_corporal: !!x.peso_corporal, variante: x.variante || '',
+      material: Array.isArray(x.material) ? x.material : [],
+      modo_progresion: prog,
+      progresion_incremento_kg: prog === 'autoregulada' ? x.progresion_incremento_kg : null,
+      progresion_rir_objetivo: prog === 'autoregulada' ? x.progresion_rir_objetivo : null,
+      semanas: prog === 'por_semana' ? semanas : [],
+    };
+  }).filter(Boolean);
+  if (!ejs.length){ toast('Ese día no tiene ejercicios para traer.', true); return; }
+  dest.ejercicios = modo === 'agregar' ? dest.ejercicios.concat(ejs) : ejs;
+  // Rotativa/plantilla: si el día no tenía nombre, toma el del día de origen. El objetivo también, si estaba vacío.
+  if (cons.estado.modoDias !== 'fecha_fija' && !dest.nombre_dia && src.nombre_dia) dest.nombre_dia = src.nombre_dia;
+  if (!dest.objetivo && src.objetivo) dest.objetivo = src.objetivo;
+  dest.bloqueActual = ejs[ejs.length - 1].bloque || dest.bloqueActual;
+  const nombreOrigen = TRAER[diaId].rutinaNombre;
+  const rot = traerDiaRotulo(src, idx);
+  cons.render();
+  const avisos = [];
+  if (sinCatalogo) avisos.push(`${sinCatalogo} ejercicio${sinCatalogo === 1 ? '' : 's'} ya no existe${sinCatalogo === 1 ? '' : 'n'} en el catálogo y no se copiaron`);
+  if (conSemanasPerdidas) avisos.push('la progresión se pasó a "Fijo" porque esta rutina no es rotativa');
+  toast(`✓ Traído "${rot}" de ${nombreOrigen} (${ejs.length} ejercicio${ejs.length === 1 ? '' : 's'})` + (avisos.length ? ' — ' + avisos.join('; ') : ''));
+}
+
 // ---------- (v84) Especiales: empezar desde una rutina que ya existe ----------
 // Copia (client-side) los días y ejercicios de una rutina guardada al constructor de
 // Especiales. No toca la original: al guardar se crea una rutina nueva asignada al alumno/equipo.
@@ -10895,8 +11035,9 @@ let ESP_BASE_LISTA = null, ESP_BASE_TS = 0, ESP_BASE_CARGANDO = false;
 
 async function espBaseAsegurarLista(){
   if (ESP_BASE_LISTA && Date.now() - ESP_BASE_TS < 30000) return;
-  if (ESP_BASE_CARGANDO) return;
-  ESP_BASE_CARGANDO = true;
+  // (v86) Si ya hay una carga en curso se espera esa misma (antes devolvía sin lista y una búsqueda rápida mostraba "no encontramos").
+  if (ESP_BASE_CARGANDO) return ESP_BASE_CARGANDO;
+  return ESP_BASE_CARGANDO = (async () => {
   try{
     const filtroGym = PERFIL_ACTUAL ? `&gimnasio_id=eq.${PERFIL_ACTUAL.gimnasio_id}` : '';
     const [rutinas, asig] = await Promise.all([
@@ -10908,6 +11049,7 @@ async function espBaseAsegurarLista(){
     ESP_BASE_LISTA = (rutinas || []).filter(r => !r.es_ajuste && (r.rutina_dias || []).length).map(r => ({ ...r, especialDe: deAlumno[r.id] || null }));
     ESP_BASE_TS = Date.now();
   }finally{ ESP_BASE_CARGANDO = false; }
+  })();
 }
 
 async function espBaseBuscar(){
