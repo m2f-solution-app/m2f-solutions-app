@@ -925,6 +925,99 @@
     #staffCuentaAcciones button{ margin:6px 6px 0 0 !important; }
     #sesionEmail{ display:block; margin-bottom:6px; }
   }
+  /* ===================================================================================
+     (v76, 30/9) Rediseño — ETAPA 5: admin (Dashboard, Finanzas, Mi gimnasio) + secciones plegables.
+     <details class="plegable"> = sección que se achica con un toque; el estado (abierta/cerrada) se
+     recuerda por dispositivo en localStorage['m2f_plegables'].
+     =================================================================================== */
+  details.plegable > summary{ list-style:none; cursor:pointer; display:flex; align-items:center; justify-content:space-between; gap:10px; font-size:17px; font-weight:700; letter-spacing:-.01em; user-select:none; min-height:28px; }
+  details.plegable > summary::-webkit-details-marker{ display:none; }
+  details.plegable > summary::marker{ content:""; }
+  details.plegable > summary::after{ content:""; flex:none; width:8px; height:8px; border-right:2px solid var(--muted); border-bottom:2px solid var(--muted); transform:rotate(45deg); margin:-4px 4px 0 6px; transition:transform .2s; }
+  details.plegable[open] > summary::after{ transform:rotate(-135deg); margin-top:4px; }
+  details.plegable > summary .plg-extra{ margin-left:auto; display:flex; gap:6px; align-items:center; }
+  details.plegable > .plg-body{ margin-top:14px; }
+  details.plegable.card{ padding:16px 20px; }
+  details.plegable.dash-sec{ margin-top:22px; }
+  details.plegable.dash-sec > summary{ font-size:19px; }
+  details.plegable.dash-sec > .plg-body{ margin-top:12px; }
+  details.plegable.dash-sec > :not(summary){ margin-top:12px; }
+  /* Dashboard: el contenedor deja de ser una tarjeta gigante; cada tarjeta interna es la tarjeta */
+  #subvistaDashboard > .card{ background:none; border:0; box-shadow:none; padding:0; }
+  #dashboardKpis .card{ padding:16px; border-radius:20px; box-shadow:var(--shadow-card); }
+  /* Finanzas */
+  .tabs{ background:var(--panel2); border-color:transparent; }
+  #subvistaCobranzas > .card:first-of-type{ background:none; border:0; box-shadow:none; padding:0; margin-bottom:12px; }
+  #subvistaCobranzas > .card:first-of-type .tabs{ background:var(--panel); box-shadow:var(--shadow-card); }
+  .cob-head{ flex-wrap:wrap; gap:10px; }
+  .cob-acts{ flex-wrap:wrap; gap:8px; flex-basis:100%; }
+  .cob-acts .pill{ margin-right:auto; }
+  .cob-acts button{ padding:8px 14px; font-size:13px; }
+  :is(#subvistaCobranzas,#subvistaPlanes,#subvistaProfesores,#subvistaAlertas,#subvistaEjercicios,#subvistaGimnasio,#subvistaDashboard) h2{ font-size:17px; letter-spacing:-.01em; }
+  #dashboardKpis > .row:first-child{ flex-wrap:nowrap !important; gap:10px !important; }
+  #dashboardKpis > .row:first-child > .card{ min-width:0 !important; padding:12px 8px; }
+  #dashboardKpis > .row:first-child > .card > div:last-child{ font-size:26px !important; }
+  /* (v77) En claro los campos se perdían sobre la tarjeta blanca: borde visible y foco marcado */
+  :root[data-tema="claro"]{ --field-bd:#c3cad6; }
+  :root[data-tema="claro"] :where(select, input:not([type="checkbox"]):not([type="radio"]):not([type="color"]):not([type="range"]), textarea){ background:#f4f6f9; }
+  :root[data-tema="claro"] :where(select, input, textarea):focus{ border-color:var(--accent); background:#fff; }
+  /* (v78) iPhone hace zoom al enfocar un campo con letra menor a 16px y después no vuelve: en celular todos los campos usan 16px */
+  @media (max-width:720px){
+    select, textarea, input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]){ font-size:16px !important; }
+    .set-row input, .ej-body input, .ej-body select, .ej-body textarea{ font-size:16px !important; }
+  }
+
+  /* (v79) Datos del ejercicio. Profe: fields grandes con − / +, "Medir por", Unilateral, Material. Alumno: filas compactas, Izq/Der y tiempo con ▶ */
+  :root{ --mt:#8b95a7; --mt-d:#586173; --mt-l:#c9d0dc; --band:#2fbf71; --ball:#3d8bf2; }
+  :root[data-tema="claro"]{ --mt:#7a8598; --mt-d:#4c5567; --mt-l:#aeb7c6; }
+  .ej-campos .l{ display:block; font-size:11px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; margin:0 0 5px; }
+  .ej-campos select, .ej-campos .ej-txt{ width:100%; height:48px; border-radius:14px; padding:0 12px; font-size:16px; }
+  .ej-campos .ej-txt{ margin-bottom:12px; }
+  .ej-top{ display:flex; gap:10px; align-items:flex-end; margin:6px 0 14px; }
+  .ej-top .f{ flex:1; min-width:0; }
+  .ej-top .ej-quitar{ flex:none; width:48px; height:48px; padding:0; border-radius:50%; background:transparent; color:var(--danger-text, var(--danger)); border:1px solid var(--field-bd); display:inline-flex; align-items:center; justify-content:center; }
+  .ej-top .ej-quitar svg{ width:20px; height:20px; stroke:currentColor; fill:none; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+  .ej-seg{ display:flex; gap:4px; background:var(--panel); padding:4px; border-radius:999px; margin-bottom:12px; }
+  .ej-seg button{ flex:1; background:transparent; color:var(--muted); border:0; border-radius:999px; padding:10px 12px; font-size:13.5px; font-weight:700; }
+  .ej-seg button.on{ background:var(--accent); color:#1a1000; }
+  .ej-opts{ display:flex; flex-wrap:wrap; gap:8px; margin:0 0 12px; }
+  .ej-opts .tg{ display:inline-flex; align-items:center; gap:6px; padding:10px 14px; border-radius:999px; border:1px solid var(--field-bd); background:var(--panel); color:var(--muted); font-weight:700; font-size:13.5px; }
+  .ej-opts .tg.on{ background:rgba(255,122,48,.16); border-color:var(--accent); color:var(--accent-text); }
+  .ej-calc{ background:rgba(61,220,132,.10); border:1px solid rgba(61,220,132,.30); color:var(--text); border-radius:14px; padding:10px 12px; font-size:13.5px; line-height:1.45; margin:0 0 12px; }
+  .ej-calc b{ color:var(--accent2-text); }
+  .ej-g3{ display:grid; grid-template-columns:repeat(auto-fill,minmax(122px,1fr)); gap:10px; margin-bottom:12px; }
+  .ej-g3 > div{ min-width:0; }
+  .ej-step{ display:flex; align-items:center; background:var(--panel); border:1px solid var(--field-bd); border-radius:14px; height:48px; overflow:hidden; }
+  .ej-step:focus-within{ border-color:var(--accent); }
+  .ej-step button{ width:34px; height:100%; border:0; background:transparent; color:var(--accent-text); font-size:20px; font-weight:700; padding:0; border-radius:0; flex:none; }
+  .ej-step input{ border:0 !important; background:transparent !important; height:100%; text-align:center; font-weight:800; padding:0 !important; border-radius:0 !important; min-width:0; width:100%; outline:none !important; }
+  .mt-row{ display:flex; flex-wrap:wrap; gap:8px; margin:0 0 12px; }
+  .ej-campos .mt{ width:56px; height:56px; border-radius:16px; border:1px solid var(--field-bd); background:var(--panel); padding:0; display:inline-flex; align-items:center; justify-content:center; }
+  .ej-campos .mt.on{ background:rgba(255,122,48,.16); border-color:var(--accent); }
+  .mi{ width:40px; height:40px; flex:none; }
+  .ej-campos .lsel{ color:var(--accent-text); text-transform:none; letter-spacing:0; font-weight:700; margin-left:6px; }
+  /* alumno */
+  .ex-chips{ display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
+  .ex-chip{ display:inline-flex; align-items:center; border-radius:999px; padding:3px 10px; font-size:12px; font-weight:700; background:var(--panel2); color:var(--muted); }
+  .ex-chip.ac{ background:rgba(255,122,48,.16); color:var(--accent-text); }
+  .ex-chip.ok{ background:rgba(61,220,132,.16); color:var(--accent2-text); }
+  .ex-chip .mi{ width:22px; height:22px; margin:-4px 5px -4px -4px; }
+  .ex-carga{ background:rgba(61,220,132,.10); border:1px solid rgba(61,220,132,.30); border-radius:14px; padding:10px 12px; font-size:13.5px; margin:0 0 10px; line-height:1.4; }
+  .ex-carga b{ color:var(--accent2-text); }
+  .sa-head, .sa-row{ display:grid; grid-template-columns:46px 1fr 1fr 1fr; gap:8px; align-items:center; }
+  .sa-head.t, .sa-row.t{ grid-template-columns:46px 1fr 1fr 50px; }
+  .sa-head{ font-size:11px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; text-align:center; margin:12px 0 6px; }
+  .sa-head > span{ display:flex; align-items:center; justify-content:center; gap:4px; }
+  .sa-row{ margin-bottom:8px; }
+  .sa-cap{ font-size:11px; font-weight:700; color:var(--accent-text); text-transform:uppercase; letter-spacing:.06em; margin:12px 0 6px; }
+  .sa-cap:first-child{ margin-top:4px; }
+  .sa-n{ height:34px; border-radius:17px; background:var(--panel2); color:var(--muted); display:flex; align-items:center; justify-content:center; font-weight:800; font-size:13px; }
+  .sa-row.done .sa-n{ background:var(--accent2); color:#04210f; }
+  #ejecucionContainer .sa-row input{ height:50px; text-align:center; font-size:20px !important; font-weight:800; padding:0 4px; width:100%; min-width:0; border-radius:14px; }
+  .sa-row .play{ width:50px; height:50px; border-radius:50%; padding:0; font-size:18px; display:flex; align-items:center; justify-content:center; }
+  .sa-row .play.run{ background:var(--danger); color:#fff; }
+  .sa-row.done .play{ background:var(--accent2); color:#04210f; }
+  .sa-ult{ font-size:12px; color:var(--muted); margin:2px 0 8px; }
 </style>
 </head>
 <body>
@@ -1146,7 +1239,7 @@
       <div id="subvistaDashboard" style="display:none;">
         <div class="card">
           <div class="row" style="justify-content:space-between; align-items:center;">
-            <h2 style="margin-top:0; margin-bottom:0;">📊 Dashboard</h2>
+            <div class="vista-titulo" style="margin:0;">Dashboard</div>
             <button class="ghost" onclick="cargarDashboardAdmin()">🔄 Actualizar</button>
           </div>
           <div class="muted" id="dashboardEstado" style="margin-top:10px;">Cargando métricas...</div>
@@ -1189,7 +1282,7 @@
               El monto pendiente por cobrar es estimado: toma el precio del plan de cada socio vencido, no una factura real.
             </div>
 
-            <h2 style="margin-top:22px;">💰 Ganancias del mes</h2>
+            <details class="plegable dash-sec" data-k="dash-ganancias" open><summary>💰 Ganancias del mes</summary>
             <div class="row" style="flex-wrap:wrap; gap:12px;">
               <div class="card" style="flex:1; min-width:170px; margin:0;">
                 <div class="muted" style="font-size:12px;">Facturado a alumnos</div>
@@ -1208,13 +1301,13 @@
                 <div style="font-size:26px; font-weight:800;" id="ganNeta">-</div>
               </div>
             </div>
-            <div class="muted" style="margin-top:8px; font-size:12px;">Del mes en curso. El pago a profesores solo cuenta una vez confirmada la liquidación (pestaña "💵 Facturar horas" en Horarios).</div>
+            <div class="muted" style="margin-top:8px; font-size:12px;">Del mes en curso. El pago a profesores solo cuenta una vez confirmada la liquidación (pestaña "💵 Facturar horas" en Horarios).</div></details>
 
-            <h2 style="margin-top:22px;">🏦 Cajas</h2>
+            <details class="plegable dash-sec" data-k="dash-cajas" open><summary>🏦 Cajas</summary>
             <div id="dashCajas" class="row" style="flex-wrap:wrap; gap:12px;"><div class="muted">Cargando...</div></div>
-            <div style="margin-top:8px;"><button class="ghost" onclick="abrirCajas()" style="font-size:12.5px;">Ver detalle y mover plata entre cajas →</button></div>
+            <div style="margin-top:8px;"><button class="ghost" onclick="abrirCajas()" style="font-size:12.5px;">Ver detalle y mover plata entre cajas →</button></div></details>
 
-            <h2 style="margin-top:22px;">📈 Membresía</h2>
+            <details class="plegable dash-sec" data-k="dash-membresia"><summary>📈 Membresía</summary>
             <div class="row" style="flex-wrap:wrap; gap:12px; align-items:stretch;">
               <div class="card" style="flex:1; min-width:230px; margin:0;">
                 <h3 style="margin:0 0 2px; font-size:15px;">📉 Tasa de bajas (Churn)</h3>
@@ -1237,10 +1330,10 @@
                 <div id="membresiaBars" class="row" style="gap:10px; margin-top:12px; align-items:flex-end;"></div>
               </div>
             </div>
-            <div class="muted" style="margin-top:10px; font-size:12px;" id="membresiaNota"></div>
+            <div class="muted" style="margin-top:10px; font-size:12px;" id="membresiaNota"></div></details>
 
             <div id="proyeccionSeccion" style="display:none;">
-              <h2 style="margin-top:22px;">💹 Proyección de ingresos</h2>
+              <details class="plegable dash-sec" data-k="dash-proyeccion"><summary>💹 Proyección de ingresos</summary>
               <div class="card" style="margin:0;">
                 <div class="row" style="justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:10px;">
                   <div class="muted" style="font-size:12px; flex:1; min-width:220px;" id="proyeccionSub"></div>
@@ -1275,11 +1368,12 @@
                 </details>
                 <div class="muted" style="margin-top:10px; font-size:12px;" id="proyeccionNota"></div>
               </div>
+              </details>
             </div>
 
-            <h2 style="margin-top:22px;">📅 Ocupación por día (últimas 4 semanas)</h2>
+            <details class="plegable dash-sec" data-k="dash-ocupacion"><summary>📅 Ocupación por día (últimas 4 semanas)</summary>
             <div class="muted" style="font-size:12px; margin-bottom:10px;">% de cupos reservados sobre la capacidad total de horarios de trabajo cargados, promediado por día de la semana.</div>
-            <div id="dashboardOcupacion"></div>
+            <div id="dashboardOcupacion"></div></details>
           </div>
         </div>
       </div>
@@ -1291,16 +1385,6 @@
         <div class="card">
           <div class="sec-t">Nueva rutina</div>
           <div class="row">
-            <div class="field" id="profTipoWrap" style="flex:1; min-width:200px;">
-              <label>Tipo de entrenamiento</label>
-              <select id="profTipoAlumno"></select>
-            </div>
-            <div class="field" id="profPlantillaNombreWrap" style="display:none; flex:1; min-width:200px;">
-              <label>Nombre de la plantilla</label>
-              <input id="profPlantillaNombre" maxlength="80" placeholder="Ej: Recovery - tren inferior">
-            </div>
-          </div>
-          <div class="row" style="margin-top:14px;">
             <div class="field">
               <label>Modo de rutina</label>
               <select id="profModoDias" onchange="CONS['dia'].setModoDias(this.value)">
@@ -1322,6 +1406,16 @@
             </div>
           </div>
           <div class="muted" id="profModoDiasHint" style="font-size:12px; margin-top:6px; display:none;">Rotativa: no hace falta cargar fecha en los días. Se van a repetir solos, en el orden en que los agregues, según lo que el alumno ya entrenó — el "días por semana" y la "duración" son solo orientativos, no se fuerzan.</div>
+          <div class="row" style="margin-top:14px;">
+            <div class="field" id="profTipoWrap" style="flex:1; min-width:200px;">
+              <label>Tipo de entrenamiento</label>
+              <select id="profTipoAlumno"></select>
+            </div>
+            <div class="field" id="profPlantillaNombreWrap" style="display:none; flex:1; min-width:200px;">
+              <label>Nombre de la plantilla</label>
+              <input id="profPlantillaNombre" maxlength="80" placeholder="Ej: Recovery - tren inferior">
+            </div>
+          </div>
         </div>
 
         <div class="card">
@@ -1667,8 +1761,8 @@
       <!-- ---- SUBVISTA: PROFESORES (cuentas de login para tu staff) ---- -->
       <div id="subvistaProfesores" style="display:none;">
 
-        <div class="card">
-          <h2 style="margin-top:0">Nuevo profesor</h2>
+        <div class="vista-titulo">Profesores</div>
+        <details class="plegable card" data-k="prof-nuevo"><summary>Nuevo profesor</summary><div class="plg-body">
           <div class="row">
             <div class="field" style="flex:1; min-width:180px;">
               <label>Nombre</label>
@@ -1680,7 +1774,7 @@
             </div>
             <button onclick="crearProfesor()" id="btnCrearProfesor" style="align-self:end;">Crear profesor</button>
           </div>
-        </div>
+        </div></details>
 
         <div class="card" id="wrapHorarioNuevoProf" style="display:none;">
           <div class="row" style="justify-content:space-between; align-items:center;">
@@ -1846,6 +1940,7 @@
 
       <!-- ---- SUBVISTA: COBRANZAS (vencimientos de cuota) ---- -->
       <div id="subvistaCobranzas" style="display:none;">
+        <div class="vista-titulo">Finanzas</div>
         <div class="card">
           <div class="tabs" style="margin-bottom:0;">
             <div class="tab active" id="cobTabBtnCobros" onclick="cobCambiarTab('cobros')" style="flex:1; text-align:center;">Cobros</div>
@@ -1861,8 +1956,7 @@
         </div>
 
         <div id="cobTabGastos" style="display:none;">
-          <div class="card">
-            <h2 style="margin-top:0">Nuevo gasto</h2>
+          <details class="plegable card" data-k="fin-nuevo-gasto"><summary>Nuevo gasto</summary><div class="plg-body">
             <div class="row">
               <div class="field" style="min-width:150px;">
                 <label>Categoría</label>
@@ -1895,7 +1989,7 @@
               <button onclick="crearCategoriaGasto()">Crear categoría</button>
               <button class="ghost" onclick="cancelarNuevaCategoriaGasto()">Cancelar</button>
             </div>
-          </div>
+          </div></details>
           <div class="card">
             <div class="row" style="justify-content:space-between; align-items:center;">
               <h2 style="margin-top:0; margin-bottom:0;">Gastos cargados</h2>
@@ -1904,15 +1998,11 @@
             <div id="gastosPorCategoria" style="margin-top:8px;"></div>
             <div id="listaGastos" class="muted" style="margin-top:10px;">Cargando...</div>
           </div>
-          <div class="card">
-            <div class="row" style="justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
-              <h2 style="margin-top:0; margin-bottom:0;">📊 Gastos mensuales por categoría</h2>
-              <select id="gastoGraficoCategoria" onchange="cargarGraficoGastos()" style="min-width:170px;"></select>
-            </div>
+          <details class="plegable card" data-k="fin-grafico-gastos"><summary>📊 Gastos mensuales por categoría</summary><div class="plg-body"><div class="row" style="margin-bottom:8px;"><select id="gastoGraficoCategoria" onchange="cargarGraficoGastos()" style="min-width:170px;"></select></div>
             <div id="gastoGraficoWrap" class="muted" style="margin-top:10px;">Elegí una categoría para ver el gráfico.</div>
             <div id="gastoGraficoTabla" style="display:none; margin-top:10px;"></div>
             <button class="ghost" id="btnToggleTablaGasto" style="display:none; margin-top:10px; font-size:12px;" onclick="toggleTablaGasto()">Ver como tabla</button>
-          </div>
+          </div></details>
         </div>
 
         <div id="cobTabCajas" style="display:none;">
@@ -1935,8 +2025,7 @@
             <h2 style="margin-top:18px;">Ingresos del mes por método de pago</h2>
             <div id="cajasMetodos" class="muted">Cargando...</div>
           </div>
-          <div class="card">
-            <h2 style="margin-top:0;">Mover plata entre cajas</h2>
+          <details class="plegable card" data-k="fin-mover"><summary>Mover plata entre cajas</summary><div class="plg-body">
             <div class="row">
               <div class="field" style="min-width:220px;">
                 <label>Movimiento</label>
@@ -1960,9 +2049,8 @@
               <button onclick="registrarMovimientoCaja()" id="btnMovCaja" style="align-self:end;">Registrar</button>
             </div>
             <div id="cajasMovimientos" class="muted" style="margin-top:12px;">Cargando...</div>
-          </div>
-          <div class="card">
-            <h2 style="margin-top:0;">Saldo inicial</h2>
+          </div></details>
+          <details class="plegable card" data-k="fin-saldo-inicial"><summary>Saldo inicial</summary><div class="plg-body">
             <div class="muted" style="font-size:12.5px; margin-bottom:8px;">Cuánta plata había en cada caja al empezar el día de la fecha de corte. Desde esa fecha se suman cobros y se restan gastos. Si lo cambiás, todos los saldos se recalculan.</div>
             <div class="row">
               <div class="field" style="min-width:150px;">
@@ -1979,7 +2067,7 @@
               </div>
               <button onclick="guardarCajaConfig()" id="btnCajaCfg" style="align-self:end;">Guardar</button>
             </div>
-          </div>
+          </div></details>
         </div>
       </div>
 
@@ -2005,83 +2093,55 @@
             <div class="pill" id="alertasStatReactivados">📈 Reactivados este mes: 0</div>
           </div>
 
-          <div class="card">
-            <div class="row" style="justify-content:space-between; align-items:center;">
-              <h2 style="margin:0;">🆕 Nuevos con poca asistencia</h2>
-              <div class="row" style="gap:6px;">
+          <details class="plegable card" data-k="ale-1"><summary><span>🆕 Nuevos con poca asistencia</span><div class="plg-extra">
                 <span class="badge-sub" id="alertasCountOnboarding">0</span>
                 <button class="ghost" style="font-size:12px; padding:3px 8px;" title="Copiar teléfonos de este grupo" onclick="exportarTelefonosGrupo('onboarding')">📤</button>
-              </div>
-            </div>
+              </div></summary><div class="plg-body">
             <div class="muted" style="margin:4px 0 6px; font-size:.85em;">Se anotaron hace menos de 30 días y vinieron poco — el momento de mayor riesgo de abandono.</div>
             <div id="alertasOnboarding" class="muted" style="margin-top:6px;">Cargando...</div>
-          </div>
+          </div></details>
 
-          <div class="card">
-            <div class="row" style="justify-content:space-between; align-items:center;">
-              <h2 style="margin:0;">🔴 Cuotas vencidas</h2>
-              <div class="row" style="gap:6px;">
+          <details class="plegable card" data-k="ale-2"><summary><span>🔴 Cuotas vencidas</span><div class="plg-extra">
                 <span class="badge-sub" id="alertasCountVencidos">0</span>
                 <button class="ghost" style="font-size:12px; padding:3px 8px;" title="Copiar teléfonos de este grupo" onclick="exportarTelefonosGrupo('vencidos')">📤</button>
-              </div>
-            </div>
+              </div></summary><div class="plg-body">
             <div id="alertasVencidos" class="muted" style="margin-top:6px;">Cargando...</div>
-          </div>
+          </div></details>
 
-          <div class="card">
-            <div class="row" style="justify-content:space-between; align-items:center;">
-              <h2 style="margin:0;">🟡 Por vencer (próximos 30 días)</h2>
-              <div class="row" style="gap:6px;">
+          <details class="plegable card" data-k="ale-3"><summary><span>🟡 Por vencer (próximos 30 días)</span><div class="plg-extra">
                 <span class="badge-sub" id="alertasCountPorVencer">0</span>
                 <button class="ghost" style="font-size:12px; padding:3px 8px;" title="Copiar teléfonos de este grupo" onclick="exportarTelefonosGrupo('por_vencer')">📤</button>
-              </div>
-            </div>
+              </div></summary><div class="plg-body">
             <div id="alertasPorVencer" class="muted" style="margin-top:6px;">Cargando...</div>
-          </div>
+          </div></details>
 
-          <div class="card">
-            <div class="row" style="justify-content:space-between; align-items:center;">
-              <h2 style="margin:0;">⚪ Sin plan o sin pagos registrados</h2>
-              <div class="row" style="gap:6px;">
+          <details class="plegable card" data-k="ale-4"><summary><span>⚪ Sin plan o sin pagos registrados</span><div class="plg-extra">
                 <span class="badge-sub" id="alertasCountSinPago">0</span>
                 <button class="ghost" style="font-size:12px; padding:3px 8px;" title="Copiar teléfonos de este grupo" onclick="exportarTelefonosGrupo('sin_pago')">📤</button>
-              </div>
-            </div>
+              </div></summary><div class="plg-body">
             <div id="alertasSinPago" class="muted" style="margin-top:6px;">Cargando...</div>
-          </div>
+          </div></details>
 
-          <div class="card">
-            <div class="row" style="justify-content:space-between; align-items:center;">
-              <h2 style="margin:0;">🟠 Al día pero sin venir hace días</h2>
-              <div class="row" style="gap:6px;">
+          <details class="plegable card" data-k="ale-5"><summary><span>🟠 Al día pero sin venir hace días</span><div class="plg-extra">
                 <span class="badge-sub" id="alertasCountInactivos">0</span>
                 <button class="ghost" style="font-size:12px; padding:3px 8px;" title="Copiar teléfonos de este grupo" onclick="exportarTelefonosGrupo('inactivo')">📤</button>
-              </div>
-            </div>
+              </div></summary><div class="plg-body">
             <div id="alertasInactivos" class="muted" style="margin-top:6px;">Cargando...</div>
-          </div>
+          </div></details>
 
-          <div class="card">
-            <div class="row" style="justify-content:space-between; align-items:center;">
-              <h2 style="margin:0;">⚫ Ex-clientes (dados de baja)</h2>
-              <div class="row" style="gap:6px;">
+          <details class="plegable card" data-k="ale-6"><summary><span>⚫ Ex-clientes (dados de baja)</span><div class="plg-extra">
                 <span class="badge-sub" id="alertasCountBajas">0</span>
                 <button class="ghost" style="font-size:12px; padding:3px 8px;" title="Copiar teléfonos de este grupo" onclick="exportarTelefonosGrupo('baja')">📤</button>
-              </div>
-            </div>
+              </div></summary><div class="plg-body">
             <div id="alertasBajas" class="muted" style="margin-top:6px;">Cargando...</div>
-          </div>
+          </div></details>
 
-          <div class="card">
-            <div class="row" style="justify-content:space-between; align-items:center;">
-              <h2 style="margin:0;">🟣 Sin rutina asignada</h2>
-              <div class="row" style="gap:6px;">
+          <details class="plegable card" data-k="ale-7"><summary><span>🟣 Sin rutina asignada</span><div class="plg-extra">
                 <span class="badge-sub" id="alertasCountSinRutina">0</span>
                 <button class="ghost" style="font-size:12px; padding:3px 8px;" title="Copiar teléfonos de este grupo" onclick="exportarTelefonosGrupo('sin_rutina')">📤</button>
-              </div>
-            </div>
+              </div></summary><div class="plg-body">
             <div id="alertasSinRutina" class="muted" style="margin-top:6px;">Cargando...</div>
-          </div>
+          </div></details>
 
         </div>
       </div>
@@ -2089,8 +2149,7 @@
       <!-- ---- SUBVISTA: EJERCICIOS PERSONALIZADOS ---- -->
       <div id="subvistaEjercicios" style="display:none;">
 
-        <div class="card">
-          <h2 style="margin-top:0">Nuevo ejercicio</h2>
+        <details class="plegable card" data-k="ej-nuevo"><summary>Nuevo ejercicio</summary><div class="plg-body">
           <div class="row">
             <div class="field" style="flex:1; min-width:180px;">
               <label>Nombre</label>
@@ -2112,7 +2171,7 @@
             </div>
             <button onclick="crearEjercicioPersonalizadoPanel()" id="btnCrearEjPanel" style="align-self:end;">Guardar ejercicio</button>
           </div>
-        </div>
+        </div></details>
 
         <div class="card">
           <h2 style="margin-top:0">Ejercicios propios cargados</h2>
@@ -2122,8 +2181,8 @@
 
       <!-- ---- SUBVISTA: MI GIMNASIO (nombre + logo propio) ---- -->
       <div id="subvistaGimnasio" style="display:none;">
-        <div class="card">
-          <h2 style="margin-top:0">Nombre y logo</h2>
+        <div class="vista-titulo">Mi gimnasio</div>
+        <details class="plegable card" data-k="gim-nombre"><summary>Nombre y logo</summary><div class="plg-body">
           <div class="row">
             <div class="field" style="flex:1; min-width:200px;">
               <label>Nombre del gimnasio</label>
@@ -2142,10 +2201,9 @@
           <div class="row" style="margin-top:10px;">
             <img id="gimLogoPreview" src="" alt="" style="width:64px;height:64px;object-fit:cover;border-radius:8px;background:#000;display:none;" onerror="this.style.display='none'" />
           </div>
-        </div>
+        </div></details>
 
-        <div class="card">
-          <h2 style="margin-top:0">Colores de tu app</h2>
+        <details class="plegable card" data-k="gim-colores"><summary>Colores de tu app</summary><div class="plg-body">
           <div class="muted" style="margin-bottom:10px;">Elegí los dos colores con los que van a ver la app tus alumnos y profesores (además de tu logo). Se aplican al instante en botones, destacados y avisos.</div>
           <div class="row">
             <div class="field">
@@ -2159,10 +2217,9 @@
             <button class="ghost" onclick="restaurarColoresPorDefecto()" style="align-self:end;">Restaurar por defecto</button>
             <button onclick="guardarGimnasio()" style="align-self:end;">Guardar</button>
           </div>
-        </div>
+        </div></details>
 
-        <div class="card">
-          <h2 style="margin-top:0">Facturación</h2>
+        <details class="plegable card" data-k="gim-facturacion"><summary>Facturación</summary><div class="plg-body">
           <div class="row">
             <div class="field">
               <label>Descuento por pago en efectivo (%)</label>
@@ -2171,10 +2228,9 @@
             <button onclick="guardarGimnasio()" style="align-self:end;">Guardar</button>
           </div>
           <div class="muted" style="margin-top:6px;">Se aplica a todos los planes del gimnasio cuando el alumno paga en efectivo.</div>
-        </div>
+        </div></details>
 
-        <div class="card">
-          <h2 style="margin-top:0">Planes de pago adelantado</h2>
+        <details class="plegable card" data-k="gim-prepago"><summary>Planes de pago adelantado</summary><div class="plg-body">
           <div class="muted" style="margin-bottom:10px;">Opciones para cobrarle a un alumno varios meses juntos con descuento (ej: "3 meses -10%"). Aparecen como alternativa al mes normal en el botón "💰 Cobrar" de Cobranzas.</div>
           <div class="row">
             <div class="field" style="width:110px;"><label>Meses</label><input inputmode="numeric" type="number" min="2" step="1" id="nuevoPrepagoMeses" placeholder="Ej: 3"></div>
@@ -2182,15 +2238,13 @@
             <button onclick="crearPlanPrepago()" style="align-self:end;">+ Agregar</button>
           </div>
           <div id="listaPlanesPrepago" class="muted" style="margin-top:10px;">Cargando...</div>
-        </div>
+        </div></details>
 
-        <div class="card">
-          <h2 style="margin-top:0">Cobros online</h2>
+        <details class="plegable card" data-k="gim-cobros-online"><summary>Cobros online</summary><div class="plg-body">
           <div id="cobrosOnlineGimnasio" class="muted">Cargando...</div>
-        </div>
+        </div></details>
 
-        <div class="card">
-          <h2 style="margin-top:0">Tipos de entrenamiento</h2>
+        <details class="plegable card" data-k="gim-tipos"><summary>Tipos de entrenamiento</summary><div class="plg-body">
           <div class="muted" style="margin-bottom:10px;">Ej: Fitness, Rendimiento específico, Readaptación, Salud. Reemplaza a "Estándar/Especial": cada alumno tiene un tipo de entrenamiento, y en el Armador elegís para qué tipo (y en qué día, por la fecha del día planificado) es cada rutina — se asigna sola al reservar turno.</div>
           <div class="row">
             <div class="field" style="flex:1; min-width:200px;">
@@ -2199,10 +2253,9 @@
             <button onclick="crearTipoAlumno()">+ Agregar tipo</button>
           </div>
           <div id="listaTiposAlumno" class="muted" style="margin-top:10px;">Cargando...</div>
-        </div>
+        </div></details>
 
-        <div class="card">
-          <h2 style="margin-top:0">Bloques de rutina</h2>
+        <details class="plegable card" data-k="gim-bloques"><summary>Bloques de rutina</summary><div class="plg-body">
           <div class="muted" style="margin-bottom:10px;">Ej: Movilidad, Bloque 1, Fuerza, Core. Se usan para agrupar ejercicios en el Armador y en Rutina especial — el profesor elige uno de esta lista al armar cada día (o escribe uno nuevo con "Otro...").</div>
           <div class="row">
             <div class="field" style="flex:1; min-width:200px;">
@@ -2211,10 +2264,9 @@
             <button onclick="crearBloqueGimnasio()">+ Agregar bloque</button>
           </div>
           <div id="listaBloquesGimnasio" class="muted" style="margin-top:10px;">Cargando...</div>
-        </div>
+        </div></details>
 
-        <div class="card">
-          <h2 style="margin-top:0">Categorías / disciplinas</h2>
+        <details class="plegable card" data-k="gim-categorias"><summary>Categorías / disciplinas</summary><div class="plg-body">
           <div class="muted" style="margin-bottom:10px;">Ej: Fuerza, Funcional, Fútbol. Después, a cada alumno le tildás una o varias desde "👤 Alumnos".</div>
           <div class="row">
             <div class="field" style="flex:1; min-width:200px;">
@@ -2223,10 +2275,9 @@
             <button onclick="crearCategoria()">+ Agregar categoría</button>
           </div>
           <div id="listaCategorias" class="muted" style="margin-top:10px;">Cargando...</div>
-        </div>
+        </div></details>
 
-        <div class="card">
-          <h2 style="margin-top:0">Equipos</h2>
+        <details class="plegable card" data-k="gim-equipos"><summary>Equipos</summary><div class="plg-body">
           <div class="muted" style="margin-bottom:10px;">Un alumno pertenece a un solo equipo (o ninguno). Sirve, por ejemplo, para armar una rutina y asignarla a todo el equipo de una sola vez.</div>
           <div class="row">
             <div class="field" style="flex:1; min-width:200px;">
@@ -2235,7 +2286,7 @@
             <button onclick="crearEquipo()">+ Agregar equipo</button>
           </div>
           <div id="listaEquipos" class="muted" style="margin-top:10px;">Cargando...</div>
-        </div>
+        </div></details>
       </div>
 
     </div>
@@ -2697,7 +2748,7 @@ const BUCKET = "Ejercicios";
 // un cambio, se incrementa este número — el chequeo de actualización (más abajo) lo compara
 // contra lo que hay publicado y avisa si están desactualizados, sin que nadie tenga que
 // cambiar ningún link a mano.
-const APP_VERSION = 75;
+const APP_VERSION = 79;
 
 // ---------- Instalar como app (PWA): acceso directo en escritorio/celular ----------
 // Chrome/Edge/Android disparan "beforeinstallprompt" cuando el manifest + service worker
@@ -4310,6 +4361,23 @@ function toggleModoIconosMenuProf(){
   }catch(e){}
 })();
 
+// ---------- Secciones plegables (v76): recuerdan abierta/cerrada por dispositivo ----------
+function initPlegables(){
+  let guardado = {};
+  try{ guardado = JSON.parse(localStorage.getItem('m2f_plegables') || '{}') || {}; }catch(e){}
+  document.querySelectorAll('details.plegable[data-k]').forEach(d => {
+    const k = d.dataset.k;
+    if (k in guardado) d.open = !!guardado[k];
+    d.addEventListener('toggle', () => {
+      try{
+        const g = JSON.parse(localStorage.getItem('m2f_plegables') || '{}') || {};
+        g[k] = d.open; localStorage.setItem('m2f_plegables', JSON.stringify(g));
+      }catch(e){}
+    });
+  });
+}
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initPlegables); else initPlegables();
+
 async function cargarDashboardAdmin(){
   const estado = document.getElementById('dashboardEstado');
   const kpis = document.getElementById('dashboardKpis');
@@ -4365,7 +4433,7 @@ async function cargarGananciasDashboard(gimId, facturadoMes){
     document.getElementById('ganGastosProf').textContent = formatearMonto(totalProf);
     const netaEl = document.getElementById('ganNeta');
     netaEl.textContent = formatearMonto(neta);
-    netaEl.style.color = neta >= 0 ? 'var(--accent2)' : 'var(--danger)';
+    netaEl.style.color = neta >= 0 ? 'var(--accent2-text)' : 'var(--danger-text)';
   }catch(e){
     ['ganFacturado','ganGastosInfra','ganGastosProf','ganNeta'].forEach(id => { const el = document.getElementById(id); if (el) el.textContent = '-'; });
   }
@@ -4401,7 +4469,7 @@ function cajasAbrirTab(){
 function cajasTarjetaSaldo(titulo, valor){
   return `<div class="card" style="flex:1; min-width:170px; margin:0;">
     <div class="muted" style="font-size:12px;">${titulo}</div>
-    <div style="font-size:24px; font-weight:800; color:${valor >= 0 ? 'var(--accent2)' : 'var(--danger)'};">${formatearMonto(valor)}</div></div>`;
+    <div style="font-size:24px; font-weight:800; color:${valor >= 0 ? 'var(--accent2-text)' : 'var(--danger-text)'};">${formatearMonto(valor)}</div></div>`;
 }
 async function cajasCargar(){
   const gimId = GIMNASIO_ACTUAL?.id;
@@ -4423,6 +4491,7 @@ async function cajasCargar(){
       avisoHtml = `<div style="background:rgba(255,210,61,.12); border:1px solid rgba(255,210,61,.4); color:var(--warn-text); border-radius:8px; padding:10px 12px; font-size:13px;">⚠️ ${d.egresos_sin_caja.cantidad} gasto(s) por ${formatearMonto(d.egresos_sin_caja.monto)} desde la fecha de corte no tienen caja asignada, así que no restan de ningún saldo. Asignales una en la pestaña Gastos.</div>`;
     }
     aviso.innerHTML = avisoHtml;
+    if (!d.configurada){ const sd = document.querySelector('details[data-k="fin-saldo-inicial"]'); if (sd) sd.open = true; } // sin saldo inicial, el formulario tiene que verse
     const cont = document.getElementById('cajasSaldos');
     if (d.configurada){
       const ef = Number(d.saldos.efectivo), bn = Number(d.saldos.banco);
@@ -4439,7 +4508,7 @@ async function cajasCargar(){
         <td style="text-align:right; border-bottom:1px solid var(--border); color:var(--danger-text);">${formatearMonto(x.gastos)}</td>
         <td style="text-align:right; border-bottom:1px solid var(--border);">${formatearMonto(x.mov_entrada)}</td>
         <td style="text-align:right; border-bottom:1px solid var(--border);">${formatearMonto(x.mov_salida)}</td>
-        <td style="text-align:right; border-bottom:1px solid var(--border); font-weight:700; color:${neto>=0?'var(--accent2)':'var(--danger)'};">${formatearMonto(neto)}</td></tr>`; };
+        <td style="text-align:right; border-bottom:1px solid var(--border); font-weight:700; color:${neto>=0?'var(--accent2-text)':'var(--danger-text)'};">${formatearMonto(neto)}</td></tr>`; };
     document.getElementById('cajasResumenMes').innerHTML = `<div style="overflow-x:auto;"><table style="width:100%; border-collapse:collapse; font-size:13px; min-width:460px;">
       <tr class="muted"><th style="text-align:left; padding:4px;">Caja</th><th style="text-align:right;">Cobros</th><th style="text-align:right;">Gastos</th><th style="text-align:right;">Entra (mov.)</th><th style="text-align:right;">Sale (mov.)</th><th style="text-align:right;">Variación</th></tr>
       ${fila('efectivo')}${fila('banco')}</table></div>
@@ -4677,7 +4746,7 @@ async function cargarMetricasMembresia(gimId){
     const bajo = actual <= anterior;
     churnDelta.textContent = (bajo ? '▼ ' : '▲ ') + 'vs. ' + anterior.toLocaleString('es-AR', {minimumFractionDigits:1, maximumFractionDigits:1}) + '% mes anterior';
     churnDelta.style.background = bajo ? 'rgba(61,220,132,.14)' : 'rgba(255,93,93,.14)';
-    churnDelta.style.color = bajo ? 'var(--accent2)' : 'var(--danger)';
+    churnDelta.style.color = bajo ? 'var(--accent2-text)' : 'var(--danger-text)';
     churnDetalle.textContent = `${m.bajas_mes_actual ?? 0} baja(s) este mes sobre ${m.activos_inicio_mes_actual ?? 0} socios activos al empezar el mes.`;
 
     const meses = m.meses || [];
@@ -7467,12 +7536,12 @@ async function cargarCobranzas(){
         </div>`;
       }
       return `<div style="padding:8px 0; border-bottom:1px solid var(--border);">
-        <div class="row" style="justify-content:space-between;">
+        <div class="row cob-head" style="justify-content:space-between;">
           <div>
             <div style="font-weight:600;">${alumno.nombre}</div>
             <div class="muted">${plan.plan_nombre} · $${plan.precio_transferencia}</div>
           </div>
-          <div class="row" style="gap:8px;">
+          <div class="row cob-acts">
             <span class="pill" style="${colores[plan.estado_pago]}">${etiqueta(plan)}</span>
             <button onclick="toggleCobrar('${alumno.id}')">💰 Cobrar</button>
             ${GIMNASIO_ACTUAL?.mp_conectado ? `<button class="ghost" onclick="abrirModalCobrarQR('${alumno.id}')">📲 Cobrar con QR</button>` : ''}
@@ -9230,7 +9299,7 @@ async function cargarSeguimiento(contId, alumnoId){
   const cont = document.getElementById(contId);
   cont.innerHTML = '<div class="muted">Cargando...</div>';
   try{
-    const rows = await sb(`ejecuciones?select=id,fecha,estado,rpe,rutina_dias(nombre_dia,rutinas(nombre)),ejecucion_ejercicios(id,finalizado,omitido,motivo_omision,sustituido,ejercicios(nombre,grupo_muscular),series_registradas(numero_serie,peso_realizado,repeticiones_realizadas,rir_realizado,tonelaje))&alumno_id=eq.${alumnoId}&order=fecha.desc&limit=20`);
+    const rows = await sb(`ejecuciones?select=id,fecha,estado,rpe,rutina_dias(nombre_dia,rutinas(nombre)),ejecucion_ejercicios(id,finalizado,omitido,motivo_omision,sustituido,ejercicios(nombre,grupo_muscular),series_registradas(numero_serie,peso_realizado,repeticiones_realizadas,rir_realizado,tiempo_realizado_seg,tonelaje))&alumno_id=eq.${alumnoId}&order=fecha.desc&limit=20`);
     SEGUIMIENTO_CACHE[contId] = rows;
     if (!rows.length){ cont.innerHTML = '<div class="empty">Todavía no hay entrenamientos registrados.</div>'; return; }
     cont.innerHTML = rows.map((r, i) => {
@@ -9276,7 +9345,7 @@ function toggleSeguimientoSesion(contId, i){
       ? series.map(s => `
           <div class="row" style="justify-content:space-between; font-size:13px; padding:3px 0; gap:8px;">
             <span style="min-width:56px;">Serie ${s.numero_serie ?? '-'}</span>
-            <span style="flex:1;">${s.peso_realizado != null ? s.peso_realizado+' kg' : '-'} × ${s.repeticiones_realizadas ?? '-'} reps${s.rir_realizado != null ? ' · RIR '+s.rir_realizado : ''}</span>
+            <span style="flex:1;">${s.tiempo_realizado_seg != null ? s.tiempo_realizado_seg+' s'+(s.peso_realizado != null ? ' · '+s.peso_realizado+' kg' : '') : `${s.peso_realizado != null ? s.peso_realizado+' kg' : '-'} × ${s.repeticiones_realizadas ?? '-'} reps${s.rir_realizado != null ? ' · RIR '+s.rir_realizado : ''}`}</span>
             <span class="muted" style="white-space:nowrap;">${s.tonelaje ? Number(s.tonelaje).toFixed(1)+' kg' : '-'}</span>
           </div>
         `).join('')
@@ -9315,21 +9384,165 @@ function ejUid(ex){
   if (!ex._uid) ex._uid = 'x' + Math.random().toString(36).slice(2, 10);
   return ex._uid;
 }
+// ---------- (v79) Datos del ejercicio: material, campos del profe ----------
+const MATERIALES = [
+  {k:'kettlebell', n:'Kettlebell', svg:`<path d="M13.5 25V15a4.5 4.5 0 0 1 4.5-4.5h12a4.5 4.5 0 0 1 4.5 4.5v10" fill="none" stroke="var(--mt)" stroke-width="5.6" stroke-linejoin="round"/><path d="M24 17c-8.4 0-14.4 6-14.4 13.6 0 4.6 2.2 8.4 5 10.6h18.8c2.8-2.2 5-6 5-10.6C38.4 23 32.4 17 24 17z" fill="var(--mt-d)"/><rect x="14" y="40" width="20" height="3.2" rx="1.6" fill="var(--mt)"/><path d="M13.4 29a11 11 0 0 1 6.6-8" fill="none" stroke="#fff" stroke-opacity=".35" stroke-width="2.2" stroke-linecap="round"/><circle cx="24" cy="31.5" r="4.6" fill="var(--mt-l)" opacity=".85"/>`},
+  {k:'disco', n:'Disco', svg:`<path fill-rule="evenodd" d="M4 24a20 20 0 1 0 40 0a20 20 0 1 0-40 0ZM20.4 24a3.6 3.6 0 1 0 7.2 0a3.6 3.6 0 1 0-7.2 0Z" fill="var(--mt)"/><circle cx="24" cy="24" r="15.5" fill="none" stroke="var(--mt-d)" stroke-width="2"/><path fill-rule="evenodd" d="M16 24a8 8 0 1 0 16 0a8 8 0 1 0-16 0ZM20.4 24a3.6 3.6 0 1 0 7.2 0a3.6 3.6 0 1 0-7.2 0Z" fill="var(--mt-l)"/><path d="M9 17a17 17 0 0 1 8-8" fill="none" stroke="#fff" stroke-opacity=".4" stroke-width="2" stroke-linecap="round"/>`},
+  {k:'banda', n:'Banda', svg:`<path fill-rule="evenodd" d="M15 14h18a10 10 0 0 1 0 20H15a10 10 0 0 1 0-20zm0 5.5a4.5 4.5 0 0 0 0 9h18a4.5 4.5 0 0 0 0-9z" fill="var(--band)"/><path d="M15 16.6h18" stroke="#fff" stroke-opacity=".4" stroke-width="1.6" stroke-linecap="round"/>`},
+  {k:'pelota', n:'Pelota', svg:`<ellipse cx="24" cy="44.2" rx="13" ry="2.6" fill="#000" opacity=".22"/><circle cx="24" cy="24" r="19" fill="var(--ball)"/><ellipse cx="17" cy="14.5" rx="6.5" ry="3.6" transform="rotate(-35 17 14.5)" fill="#fff" opacity=".4"/><circle cx="24" cy="41" r="1.5" fill="#000" opacity=".3"/>`},
+  {k:'cajon', n:'Cajón', svg:`<rect x="3" y="26" width="13" height="16" rx="1.5" fill="#c68e50"/><rect x="3" y="26" width="13" height="4" rx="1.5" fill="#e6b984"/><rect x="17.5" y="17" width="13" height="25" rx="1.5" fill="#c68e50"/><rect x="17.5" y="17" width="13" height="4" rx="1.5" fill="#e6b984"/><rect x="32" y="8" width="13" height="34" rx="1.5" fill="#c68e50"/><rect x="32" y="8" width="13" height="4" rx="1.5" fill="#e6b984"/><rect x="35.5" y="24" width="6" height="3" rx="1.5" fill="#000" opacity=".35"/><rect x="21" y="30" width="6" height="3" rx="1.5" fill="#000" opacity=".35"/><rect x="6.5" y="34" width="6" height="3" rx="1.5" fill="#000" opacity=".35"/>`},
+];
+function matNombre(k){ const m = MATERIALES.find(x => x.k === k); return m ? m.n : k; }
+function matIco(k, z){ const m = MATERIALES.find(x => x.k === k); return m ? `<svg class="mi" width="${z}" height="${z}" viewBox="0 0 48 48" aria-hidden="true">${m.svg}</svg>` : ''; }
+function ejEsTiempo(ex){ return ex.tiempo_trabajo_seg !== null && ex.tiempo_trabajo_seg !== undefined && ex.tiempo_trabajo_seg !== ''; }
+function ejFmt(v){ return String(v).replace('.', ','); }
+function ejSeriesUi(ex){ const s = Number(ex.series) || 1; return ex.unilateral ? s / 2 : s; }
+function ejNum(v){ return (v === null || v === undefined || v === '') ? '' : ejFmt(v); }
+function ejStepHtml(k, label, valor, inputmode){
+  return `<div><label class="l">${label}</label><div class="ej-step" data-k="${k}"><button type="button" onclick="ejStep(this,-1)" aria-label="Menos">−</button><input type="text" ${inputmode ? `inputmode="${inputmode}"` : ''} value="${ejEsc(valor)}" onchange="ejStepInput(this)"><button type="button" onclick="ejStep(this,1)" aria-label="Más">+</button></div></div>`;
+}
+function ejCalcHtml(ex){
+  const n = ejSeriesUi(ex), t = Number(ex.series) || 0;
+  return `↔ <b>${ejFmt(n)} por lado</b> → <b>${t} series en total</b> (${ejFmt(n)} izquierda + ${ejFmt(n)} derecha). El alumno las ve separadas por lado.`;
+}
+function ejDynHtml(ex){
+  const t = ejEsTiempo(ex), u = !!ex.unilateral, mats = ex.material || [];
+  return `
+    <label class="l">Medir por</label>
+    <div class="ej-seg"><button type="button" class="${t ? '' : 'on'}" onclick="ejModo(this,'reps')">Repeticiones</button><button type="button" class="${t ? 'on' : ''}" onclick="ejModo(this,'tiempo')">Tiempo</button></div>
+    <div class="ej-opts">
+      <button type="button" class="tg ${u ? 'on' : ''}" onclick="ejOpcion(this,'unilateral')">↔ Unilateral (por lado)</button>
+      <button type="button" class="tg ${ex.peso_corporal ? 'on' : ''}" onclick="ejOpcion(this,'peso_corporal')">🧍 Peso corporal</button>
+    </div>
+    ${u ? `<div class="ej-calc">${ejCalcHtml(ex)}</div>` : ''}
+    <div class="ej-g3">
+      ${ejStepHtml('series', u ? 'Series/lado' : 'Series', ejFmt(ejSeriesUi(ex)), 'decimal')}
+      ${t ? ejStepHtml('trabajo', u ? 'Seg./lado' : 'Segundos', ejNum(ex.tiempo_trabajo_seg), 'numeric') : ejStepHtml('reps', u ? 'Reps/lado' : 'Reps', ex.repeticiones ?? '', '')}
+      ${ejStepHtml('peso', ex.peso_corporal ? 'Extra (kg)' : 'Peso (kg)', ejNum(ex.peso_sugerido), 'decimal')}
+      ${t ? '' : ejStepHtml('rir', 'RIR', ejNum(ex.rir), 'numeric')}
+      ${ejStepHtml('pausa', 'Pausa (s)', ejNum(ex.descanso_seg), 'numeric')}
+    </div>
+    <label class="l">Material<span class="lsel">${mats.map(matNombre).join(' · ')}</span></label>
+    <div class="mt-row">${MATERIALES.map(m => `<button type="button" class="mt ${mats.includes(m.k) ? 'on' : ''}" title="${m.n}" aria-label="${m.n}" aria-pressed="${mats.includes(m.k)}" onclick="ejMaterial(this,'${m.k}')">${matIco(m.k, 40)}</button>`).join('')}</div>
+    <label class="l">Aclaración de la carga o variante</label>
+    <input class="ej-txt" placeholder="ej: kettlebell en un solo brazo, halo con disco de 5 kg" value="${ejEsc(ex.variante ?? '')}" onchange="ejTxt(this,'variante')">
+    <label class="l">Notas para el alumno</label>
+    <input class="ej-txt" value="${ejEsc(ex.notas ?? '')}" onchange="ejTxt(this,'notas')">
+  `;
+}
+function ejCamposHtml(bloqueFieldStr, quitarJs, ex){
+  return `<div class="ej-campos">
+    <div class="ej-top"><div class="f"><label class="l">Bloque</label>${bloqueFieldStr}</div>
+      <button type="button" class="ej-quitar" title="Quitar ejercicio" aria-label="Quitar ejercicio" onclick="${quitarJs}"><svg viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6"/></svg></button></div>
+    <div class="ej-dyn">${ejDynHtml(ex)}</div>
+  </div>`;
+}
+function ejCtxDe(el){
+  const card = el.closest('.ej-card');
+  return { card, ex: card ? ejArr(card.dataset.ctx)[+card.dataset.idx] : null };
+}
+function ejRefrescarCard(card, ex, redibujar){
+  if (redibujar) card.querySelector('.ej-dyn').innerHTML = ejDynHtml(ex);
+  card.querySelector('.ej-res').innerHTML = ejResumen(ex);
+}
+const EJ_STEP = { series:{s:1,min:1}, trabajo:{s:5,min:5}, peso:{s:2.5,min:0}, rir:{s:1,min:0,max:5}, pausa:{s:15,min:0} };
+function ejValor(ex, k){
+  if (k === 'series') return ejFmt(ejSeriesUi(ex));
+  if (k === 'trabajo') return ejNum(ex.tiempo_trabajo_seg);
+  if (k === 'peso') return ejNum(ex.peso_sugerido);
+  if (k === 'rir') return ejNum(ex.rir);
+  if (k === 'pausa') return ejNum(ex.descanso_seg);
+  return ex.repeticiones ?? '';
+}
+function ejAsignar(ex, k, v){
+  if (k === 'series') ex.series = ex.unilateral ? Math.max(2, Math.round(v * 2)) : Math.max(1, Math.round(v));
+  else if (k === 'trabajo') ex.tiempo_trabajo_seg = v;
+  else if (k === 'peso') ex.peso_sugerido = (v !== null && v > 0) ? v : null;
+  else if (k === 'rir') ex.rir = v;
+  else if (k === 'pausa') ex.descanso_seg = v;
+  else if (k === 'reps') ex.repeticiones = v;
+}
+function ejRepsStep(txt, dir){
+  const t = String(txt || '').trim();
+  let m = t.match(/^(\d+)\s*-\s*(\d+)$/);
+  if (m){ const a = Math.max(1, +m[1] + dir), b = Math.max(a, +m[2] + dir); return `${a}-${b}`; }
+  if (/^\d+$/.test(t)) return String(Math.max(1, +t + dir));
+  return '10';
+}
+function ejStep(btn, dir){
+  const st = btn.closest('.ej-step'), k = st.dataset.k, { card, ex } = ejCtxDe(btn);
+  if (!ex) return;
+  const inp = st.querySelector('input');
+  if (k === 'reps') ejAsignar(ex, 'reps', ejRepsStep(inp.value, dir));
+  else {
+    const c = EJ_STEP[k];
+    const cur = parseFloat(String(inp.value).replace(',', '.'));
+    const base = isNaN(cur) ? (k === 'rir' ? 2 - dir : 0) : cur;
+    let v = base + dir * c.s;
+    v = Math.max(c.min, c.max !== undefined ? Math.min(c.max, v) : v);
+    ejAsignar(ex, k, Math.round(v * 100) / 100);
+  }
+  inp.value = ejValor(ex, k);
+  const calc = card.querySelector('.ej-calc'); if (calc) calc.innerHTML = ejCalcHtml(ex);
+  ejRefrescarCard(card, ex, false);
+}
+function ejStepInput(inp){
+  const st = inp.closest('.ej-step'), k = st.dataset.k, { card, ex } = ejCtxDe(inp);
+  if (!ex) return;
+  const raw = inp.value.trim();
+  if (k === 'reps') ejAsignar(ex, 'reps', raw);
+  else {
+    const v = parseFloat(raw.replace(',', '.'));
+    if (raw === '' || isNaN(v)){
+      if (k === 'series' || k === 'trabajo'){ inp.value = ejValor(ex, k); return; }
+      ejAsignar(ex, k, null);
+    } else {
+      const c = EJ_STEP[k];
+      ejAsignar(ex, k, Math.max(c.min, c.max !== undefined ? Math.min(c.max, v) : v));
+    }
+  }
+  inp.value = ejValor(ex, k);
+  const calc = card.querySelector('.ej-calc'); if (calc) calc.innerHTML = ejCalcHtml(ex);
+  ejRefrescarCard(card, ex, false);
+}
+function ejModo(btn, modo){
+  const { card, ex } = ejCtxDe(btn); if (!ex) return;
+  ex.tiempo_trabajo_seg = modo === 'tiempo' ? (ex.tiempo_trabajo_seg || 30) : null;
+  ejRefrescarCard(card, ex, true);
+}
+function ejOpcion(btn, campo){
+  const { card, ex } = ejCtxDe(btn); if (!ex) return;
+  if (campo === 'unilateral'){
+    const s = Number(ex.series) || 1;
+    ex.series = ex.unilateral ? Math.max(1, Math.round(s / 2)) : s * 2;   // series se guarda siempre como TOTAL
+    ex.unilateral = !ex.unilateral;
+  } else ex[campo] = !ex[campo];
+  ejRefrescarCard(card, ex, true);
+}
+function ejMaterial(btn, k){
+  const { card, ex } = ejCtxDe(btn); if (!ex) return;
+  ex.material = Array.isArray(ex.material) ? ex.material : [];
+  const i = ex.material.indexOf(k);
+  if (i >= 0) ex.material.splice(i, 1); else ex.material.push(k);
+  ejRefrescarCard(card, ex, true);
+}
+function ejTxt(inp, campo){
+  const { card, ex } = ejCtxDe(inp); if (!ex) return;
+  ex[campo] = inp.value;
+  ejRefrescarCard(card, ex, false);
+}
 function ejResumen(ex){
   const p = [];
   const vacio = v => v === null || v === undefined || v === '';
-  if (!vacio(ex.tiempo_trabajo_seg)){
-    p.push(`${ex.series || 1} × ${ex.tiempo_trabajo_seg}s trabajo` + (!vacio(ex.descanso_seg) ? ` / ${ex.descanso_seg}s pausa` : ''));
-  } else {
-    p.push(`${ex.series || 1} × ${ex.repeticiones || '-'}`);
-    if (ex.peso_corporal) p.push('peso corporal');
-    else if (!vacio(ex.peso_sugerido)) p.push(`${ex.peso_sugerido} kg`);
-    if (!vacio(ex.rir)) p.push(`RIR ${ex.rir}`);
-    if (!vacio(ex.descanso_seg)) p.push(`pausa ${ex.descanso_seg}s`);
-  }
-  if (ex.unilateral) p.push('por lado');
-  if (ex.variante) p.push(ejEsc(ex.variante));
-  return p.join(' · ');
+  const uni = !!ex.unilateral, t = ejEsTiempo(ex);
+  const sl = ejFmt(ejSeriesUi(ex));
+  p.push(t ? `${sl} × ${ex.tiempo_trabajo_seg} s${uni ? ' c/lado' : ''}` : `${sl} × ${ex.repeticiones || '-'}${uni ? ' c/lado' : ''}`);
+  if (ex.peso_corporal) p.push(vacio(ex.peso_sugerido) ? 'peso corporal' : `p. corporal + ${ejFmt(ex.peso_sugerido)} kg`);
+  else if (!vacio(ex.peso_sugerido)) p.push(`${ejFmt(ex.peso_sugerido)} kg`);
+  if (!t && !vacio(ex.rir)) p.push(`RIR ${ex.rir}`);
+  if (!vacio(ex.descanso_seg)) p.push(`pausa ${ex.descanso_seg}s`);
+  const mats = (ex.material || []).map(k => matIco(k, 22)).join('');
+  return p.join(' · ') + (mats ? ` <span style="display:inline-flex; gap:2px; vertical-align:middle;">${mats}</span>` : '');
 }
 function ejCardHtml(ctx, idx, ex, ejercicio, cuerpoHtml){
   const uid = ejUid(ex);
@@ -9377,7 +9590,7 @@ function ejMostrarNuevo(uid){
   const card = document.querySelector(`.ej-card[data-uid="${uid}"]`);
   if (!card) return;
   card.scrollIntoView({ block:'center', behavior:'smooth' });
-  const inp = card.querySelector('.ej-body input[type="number"]');
+  const inp = card.querySelector('.ej-campos .ej-step input');
   if (inp) setTimeout(() => { try{ inp.focus({ preventScroll:true }); inp.select(); }catch(e){} }, 250);
 }
 function ejArr(ctx){
@@ -9591,20 +9804,7 @@ function crearConstructorDeDias(prefijo, containerId, headerPrefix){
     const esRot = estado.modoDias === 'rotativa';
     const prog = esRot ? (ex.modo_progresion || 'fijo') : 'fijo';
     const cuerpo = `
-          <div class="row" style="margin-top:6px;">
-            <div class="field" style="min-width:150px;"><label>Bloque</label>${bloqueFieldHtml(`${prefijo}-${diaId}-${idx}`, ex.bloque, (v)=>CONS[prefijo].setBloque(diaId,idx,v))}</div>
-            <div class="field" style="min-width:70px;"><label>Series</label><input inputmode="numeric" type="number" min="1" value="${ex.series}" onchange="CONS['${prefijo}'].estado.dias['${diaId}'].ejercicios[${idx}].series=parseInt(this.value)||1"></div>
-            <div class="field" style="min-width:90px;"><label>Reps</label><input value="${ex.repeticiones}" onchange="CONS['${prefijo}'].estado.dias['${diaId}'].ejercicios[${idx}].repeticiones=this.value"></div>
-            <div class="field" style="min-width:90px;"><label>Peso sug. (kg)</label><input inputmode="decimal" type="number" step="0.5" value="${ex.peso_sugerido ?? ''}" onchange="CONS['${prefijo}'].estado.dias['${diaId}'].ejercicios[${idx}].peso_sugerido=this.value?parseFloat(this.value):null"></div>
-            <div class="field" style="min-width:100px;"><label>Trabajo (s)</label><input inputmode="numeric" type="number" min="1" placeholder="ej: plancha" value="${ex.tiempo_trabajo_seg ?? ''}" onchange="CONS['${prefijo}'].estado.dias['${diaId}'].ejercicios[${idx}].tiempo_trabajo_seg=this.value?parseInt(this.value):null"></div>
-            <div class="field" style="min-width:90px;"><label>Pausa (s)</label><input inputmode="numeric" type="number" value="${ex.descanso_seg ?? ''}" onchange="CONS['${prefijo}'].estado.dias['${diaId}'].ejercicios[${idx}].descanso_seg=this.value?parseInt(this.value):null"></div>
-            <div class="field" style="min-width:70px;"><label>RIR</label><input inputmode="numeric" type="number" min="0" max="5" value="${ex.rir ?? ''}" onchange="CONS['${prefijo}'].estado.dias['${diaId}'].ejercicios[${idx}].rir=this.value?parseInt(this.value):null"></div>
-            <div class="field" style="flex:1; min-width:140px;"><label>Notas</label><input value="${ex.notas ?? ''}" onchange="CONS['${prefijo}'].estado.dias['${diaId}'].ejercicios[${idx}].notas=this.value"></div>
-            <div class="field" style="min-width:100px;"><label>Unilateral</label><label style="display:flex; align-items:center; gap:4px; font-weight:400; height:38px;"><input type="checkbox" ${ex.unilateral?'checked':''} onchange="CONS['${prefijo}'].estado.dias['${diaId}'].ejercicios[${idx}].unilateral=this.checked"> Por lado</label></div>
-            <div class="field" style="min-width:110px;"><label>Peso corporal</label><label style="display:flex; align-items:center; gap:4px; font-weight:400; height:38px;"><input type="checkbox" ${ex.peso_corporal?'checked':''} onchange="CONS['${prefijo}'].estado.dias['${diaId}'].ejercicios[${idx}].peso_corporal=this.checked"> Sin peso extra</label></div>
-            <div class="field" style="min-width:130px;"><label>Variante</label><input placeholder="Ej: Con banda" value="${ex.variante ?? ''}" onchange="CONS['${prefijo}'].estado.dias['${diaId}'].ejercicios[${idx}].variante=this.value"></div>
-            <button class="danger" style="align-self:end;" onclick="CONS['${prefijo}'].quitarEjercicio('${diaId}',${idx})">Quitar</button>
-          </div>
+          ${ejCamposHtml(bloqueFieldHtml(`${prefijo}-${diaId}-${idx}`, ex.bloque, (v)=>CONS[prefijo].setBloque(diaId,idx,v)), `CONS['${prefijo}'].quitarEjercicio('${diaId}',${idx})`, ex)}
           <div class="row" style="margin-top:10px; align-items:center; gap:6px;${esRot ? '' : ' display:none;'}">
             <span class="muted" style="font-size:12px; font-weight:600;">Progresión:</span>
             <span class="chip-toggle ${prog==='fijo'?'active':''}" onclick="CONS['${prefijo}'].setModoProgresion('${diaId}',${idx},'fijo')">Fijo</span>
@@ -9750,7 +9950,7 @@ function crearConstructorDeDias(prefijo, containerId, headerPrefix){
   function agregarEjercicio(diaId, ejercicioJson){
     const ejercicio = typeof ejercicioJson === 'string' ? JSON.parse(ejercicioJson) : ejercicioJson;
     const bloque = (estado.dias[diaId].bloqueActual || '').trim() || 'General';
-    estado.dias[diaId].ejercicios.push({ ejercicio, bloque, series:3, repeticiones:'', peso_sugerido:null, tiempo_trabajo_seg:null, descanso_seg:60, rir:null, notas:'', unilateral:false, peso_corporal:false, variante:'', modo_progresion:'fijo', progresion_incremento_kg:null, progresion_rir_objetivo:null, semanas:[] });
+    estado.dias[diaId].ejercicios.push({ ejercicio, bloque, series:3, repeticiones:'', peso_sugerido:null, tiempo_trabajo_seg:null, descanso_seg:60, rir:null, notas:'', unilateral:false, peso_corporal:false, variante:'', material:[], modo_progresion:'fijo', progresion_incremento_kg:null, progresion_rir_objetivo:null, semanas:[] });
     document.getElementById(`resultados-${diaId}`).style.display='none';
     const lista = estado.dias[diaId].ejercicios;
     const uidNuevo = ejAbrirSoloNuevo(lista.slice(0, -1), lista[lista.length - 1]);
@@ -10579,6 +10779,7 @@ async function guardarRutinaGenerica({ constructor, nombre, tipoAlumnoId, etique
           unilateral: !!ex.unilateral,
           peso_corporal: !!ex.peso_corporal,
           variante: ex.variante || null,
+          material: Array.isArray(ex.material) ? ex.material : [],
           modo_progresion: modoProg,
           progresion_incremento_kg: modoProg === 'autoregulada' ? (ex.progresion_incremento_kg ?? null) : null,
           progresion_rir_objetivo: modoProg === 'autoregulada' ? (ex.progresion_rir_objetivo ?? null) : null,
@@ -10817,7 +11018,7 @@ async function cargarEdicionDia(diaId, contId, opciones){
     // (24/9) Pedido de Martin: poder corregir la fecha de un día ya cargado si se
     // equivocó al armar la rutina — antes no había forma de cambiarla desde acá.
     const [items, diaRows] = await Promise.all([
-      sb(`rutina_ejercicios?select=id,orden,bloque,series,repeticiones,peso_sugerido,tiempo_trabajo_seg,descanso_seg,rir,notas,unilateral,peso_corporal,variante,ejercicios(id,nombre,grupo_muscular,provider_ref_id,video_provider,video_url_propio)&rutina_dia_id=eq.${diaId}&order=orden.asc`),
+      sb(`rutina_ejercicios?select=id,orden,bloque,series,repeticiones,peso_sugerido,tiempo_trabajo_seg,descanso_seg,rir,notas,unilateral,peso_corporal,variante,material,ejercicios(id,nombre,grupo_muscular,provider_ref_id,video_provider,video_url_propio)&rutina_dia_id=eq.${diaId}&order=orden.asc`),
       sb(`rutina_dias?id=eq.${diaId}&select=fecha,nombre_dia,rutinas(modo_dias,es_ajuste)`),
     ]);
     EDICION_DIAS[diaId] = { items, contId, fecha: diaRows[0]?.fecha || '',
@@ -10904,22 +11105,7 @@ async function sincronizarNombreRutinaSiEsGenerica(diaId){
 }
 
 function filaEdicionHtml(diaId, item, idx){
-  const cuerpo = `
-        <div class="row" style="margin-top:6px;">
-          <div class="field" style="min-width:150px;"><label>Bloque</label>${bloqueFieldHtml(`edicion-${diaId}-${item.id}`, item.bloque, (v)=>cambiarBloqueEdicion(diaId,item.id,v))}</div>
-          <div class="field" style="min-width:70px;"><label>Series</label><input inputmode="numeric" type="number" min="1" value="${item.series}" onchange="setCampoEdicion('${diaId}','${item.id}','series',parseInt(this.value)||1)"></div>
-          <div class="field" style="min-width:90px;"><label>Reps</label><input value="${item.repeticiones||''}" onchange="setCampoEdicion('${diaId}','${item.id}','repeticiones',this.value)"></div>
-          <div class="field" style="min-width:90px;"><label>Peso sug. (kg)</label><input inputmode="decimal" type="number" step="0.5" value="${item.peso_sugerido ?? ''}" onchange="setCampoEdicion('${diaId}','${item.id}','peso_sugerido',this.value?parseFloat(this.value):null)"></div>
-          <div class="field" style="min-width:100px;"><label>Trabajo (s)</label><input inputmode="numeric" type="number" min="1" placeholder="ej: plancha" value="${item.tiempo_trabajo_seg ?? ''}" onchange="setCampoEdicion('${diaId}','${item.id}','tiempo_trabajo_seg',this.value?parseInt(this.value):null)"></div>
-          <div class="field" style="min-width:90px;"><label>Pausa (s)</label><input inputmode="numeric" type="number" value="${item.descanso_seg ?? ''}" onchange="setCampoEdicion('${diaId}','${item.id}','descanso_seg',this.value?parseInt(this.value):null)"></div>
-          <div class="field" style="min-width:70px;"><label>RIR</label><input inputmode="numeric" type="number" min="0" max="5" value="${item.rir ?? ''}" onchange="setCampoEdicion('${diaId}','${item.id}','rir',this.value?parseInt(this.value):null)"></div>
-          <div class="field" style="flex:1; min-width:140px;"><label>Notas</label><input value="${item.notas ?? ''}" onchange="setCampoEdicion('${diaId}','${item.id}','notas',this.value)"></div>
-          <div class="field" style="min-width:100px;"><label>Unilateral</label><label style="display:flex; align-items:center; gap:4px; font-weight:400; height:38px;"><input type="checkbox" ${item.unilateral?'checked':''} onchange="setCampoEdicion('${diaId}','${item.id}','unilateral',this.checked)"> Por lado</label></div>
-          <div class="field" style="min-width:110px;"><label>Peso corporal</label><label style="display:flex; align-items:center; gap:4px; font-weight:400; height:38px;"><input type="checkbox" ${item.peso_corporal?'checked':''} onchange="setCampoEdicion('${diaId}','${item.id}','peso_corporal',this.checked)"> Sin peso extra</label></div>
-          <div class="field" style="min-width:130px;"><label>Variante</label><input placeholder="Ej: Con banda" value="${item.variante ?? ''}" onchange="setCampoEdicion('${diaId}','${item.id}','variante',this.value)"></div>
-          <button class="danger" style="align-self:end;" onclick="quitarEjercicioEdicion('${diaId}','${item.id}')">Quitar</button>
-        </div>
-  `;
+  const cuerpo = ejCamposHtml(bloqueFieldHtml(`edicion-${diaId}-${item.id}`, item.bloque, (v)=>cambiarBloqueEdicion(diaId,item.id,v)), `quitarEjercicioEdicion('${diaId}','${item.id}')`, item);
   return ejCardHtml(`edit|${diaId}`, idx, item, item.ejercicios, cuerpo);
 }
 
@@ -11002,6 +11188,7 @@ async function guardarEdicionDia(diaId){
         unilateral: !!item.unilateral,
         peso_corporal: !!item.peso_corporal,
         variante: item.variante || null,
+        material: Array.isArray(item.material) ? item.material : [],
       })
     })));
     toast('Cambios guardados ✓ El alumno los va a ver la próxima vez que entre a ese día.');
@@ -12303,7 +12490,7 @@ async function comenzarEntrenamiento(rutinaDiaId, alumnoId, nombreDia){
   cont.style.display = '';
   cont.innerHTML = '<div class="card">Iniciando entrenamiento...</div>';
   try{
-    const rows = await sb(`rutina_ejercicios?select=id,orden,bloque,series,repeticiones,peso_sugerido,tiempo_trabajo_seg,descanso_seg,rir,notas,unilateral,peso_corporal,variante,modo_progresion,progresion_incremento_kg,progresion_rir_objetivo,ejercicios(id,nombre,grupo_muscular,provider_ref_id,video_provider,video_url_propio)&rutina_dia_id=eq.${rutinaDiaId}&order=orden.asc`);
+    const rows = await sb(`rutina_ejercicios?select=id,orden,bloque,series,repeticiones,peso_sugerido,tiempo_trabajo_seg,descanso_seg,rir,notas,unilateral,peso_corporal,variante,material,modo_progresion,progresion_incremento_kg,progresion_rir_objetivo,ejercicios(id,nombre,grupo_muscular,provider_ref_id,video_provider,video_url_propio)&rutina_dia_id=eq.${rutinaDiaId}&order=orden.asc`);
 
     // (24/9) Feedback de Martin: si ya había un entrenamiento sin terminar para este
     // mismo día (salió y volvió a entrar), retomarlo en vez de crear uno nuevo — así
@@ -12350,7 +12537,7 @@ async function comenzarEntrenamiento(rutinaDiaId, alumnoId, nombreDia){
     const idsFinalizadosConSeries = eeFilas.filter(e => e.finalizado && !e.omitido).map(e => e.id);
     let seriesPorEjecucionEjercicio = {};
     if (idsFinalizadosConSeries.length){
-      const seriesRows = await sb(`series_registradas?ejecucion_ejercicio_id=in.(${idsFinalizadosConSeries.join(',')})&select=ejecucion_ejercicio_id,numero_serie,peso_realizado,repeticiones_realizadas,rir_realizado,tonelaje&order=numero_serie.asc`);
+      const seriesRows = await sb(`series_registradas?ejecucion_ejercicio_id=in.(${idsFinalizadosConSeries.join(',')})&select=ejecucion_ejercicio_id,numero_serie,peso_realizado,repeticiones_realizadas,rir_realizado,tiempo_realizado_seg,tonelaje&order=numero_serie.asc`);
       seriesRows.forEach(s => {
         (seriesPorEjecucionEjercicio[s.ejecucion_ejercicio_id] = seriesPorEjecucionEjercicio[s.ejecucion_ejercicio_id] || []).push(s);
       });
@@ -12586,6 +12773,9 @@ function bloqueHtml(b, idx){
   }
 
   const pesoCorporalAlumno = Number(window._alumnoPesoCorporal) || 0;
+  const esPorTiempo = !!p.tiempo_trabajo_seg;
+  const uni = !!p.unilateral;
+  const dis = b.finalizado ? 'disabled' : '';
   const filasSets = Array.from({length: p.series}).map((_, s) => {
     const numero = s + 1;
     const registrada = (b.seriesPrevias || [])[s];
@@ -12603,46 +12793,61 @@ function bloqueHtml(b, idx){
     }
     const repsDefault = registrada ? (registrada.repeticiones_realizadas ?? '') : ((prev && prev.reps != null) ? prev.reps : '');
     const rirDefault = registrada ? (registrada.rir_realizado ?? '') : ((prev && prev.rir != null) ? prev.rir : (p.rir ?? ''));
-    const dis = b.finalizado ? 'disabled' : '';
-    return `
-    <div class="set-row">
-      <div class="muted">#${numero}</div>
-      <input inputmode="decimal" type="number" step="0.5" placeholder="${p.peso_corporal ? 'Extra (kg)' : 'Peso (kg)'}" id="peso-${idx}-${s}" value="${pesoDefault}" ${dis}>
-      <input inputmode="numeric" type="number" placeholder="Reps" id="reps-${idx}-${s}" value="${repsDefault}" ${dis}>
-      <input inputmode="numeric" type="number" placeholder="RIR" id="rir-${idx}-${s}" value="${rirDefault}" ${dis}>
-      <span class="muted set-sug">${p.peso_corporal ? 'p.corporal' : (p.peso_sugerido ?? '-')+'kg'}×${p.repeticiones || '-'}</span>
-    </div>
-  `;
+    const tiempoDefault = registrada ? (registrada.tiempo_realizado_seg ?? '') : '';
+    const hecha = !!registrada;
+    // (v79) Unilateral: las series se guardan como total y se muestran alternadas Izq / Der (impar = izquierda).
+    const cap = (uni && s % 2 === 0) ? `<div class="sa-cap">Serie ${s / 2 + 1}</div>` : '';
+    const pill = uni ? (s % 2 === 0 ? 'Izq' : 'Der') : (hecha ? '✓' : String(numero));
+    if (esPorTiempo){
+      return `${cap}<div class="sa-row t ${hecha ? 'done' : ''}" id="serie-${idx}-${s}">
+        <div class="sa-n">${pill}</div>
+        <input inputmode="numeric" type="number" min="0" placeholder="${p.tiempo_trabajo_seg}" id="tiempo-${idx}-${s}" value="${tiempoDefault}" ${dis}>
+        <input inputmode="decimal" type="number" step="0.5" placeholder="${p.peso_corporal ? '0' : (p.peso_sugerido ?? '')}" id="peso-${idx}-${s}" value="${pesoDefault}" ${dis}>
+        <button type="button" class="play" id="play-${idx}-${s}" aria-label="Medir con cronómetro" onclick="serieTimerToggle(${idx},${s},${p.tiempo_trabajo_seg})" ${dis}>${hecha ? '✓' : '▶'}</button>
+      </div>`;
+    }
+    return `${cap}<div class="sa-row ${hecha ? 'done' : ''}" id="serie-${idx}-${s}">
+      <div class="sa-n">${pill}</div>
+      <input inputmode="decimal" type="number" step="0.5" placeholder="${p.peso_corporal ? '0' : (p.peso_sugerido ?? '')}" id="peso-${idx}-${s}" value="${pesoDefault}" ${dis}>
+      <input inputmode="numeric" type="number" placeholder="${p.repeticiones || ''}" id="reps-${idx}-${s}" value="${repsDefault}" ${dis}>
+      <input inputmode="numeric" type="number" placeholder="${p.rir ?? ''}" id="rir-${idx}-${s}" value="${rirDefault}" ${dis}>
+    </div>`;
   }).join('');
-  const encabezadoSets = `
-    <div class="set-row" style="margin-bottom:2px;">
-      <div class="muted set-head">#</div>
-      <div class="muted set-head">${p.peso_corporal ? 'Extra' : 'Peso'}</div>
-      <div class="muted set-head">Reps</div>
-      <div class="muted set-head">RIR <span onclick="abrirModalAyudaRir()" style="cursor:pointer; display:inline-flex; align-items:center; justify-content:center; width:14px; height:14px; border-radius:50%; background:var(--panel2); border:1px solid var(--border); font-size:10px; font-weight:700; color:var(--muted); vertical-align:middle;">?</span></div>
-      <div class="muted set-head">Sug.</div>
-    </div>
-  `;
+  const encabezadoSets = esPorTiempo
+    ? `<div class="sa-head t"><span></span><span>Tiempo (s)</span><span>${p.peso_corporal ? 'Extra (kg)' : 'Peso (kg)'}</span><span></span></div>`
+    : `<div class="sa-head"><span></span><span>${p.peso_corporal ? 'Extra (kg)' : 'Peso (kg)'}</span><span>Reps</span><span>RIR <span onclick="abrirModalAyudaRir()" style="cursor:pointer; display:inline-flex; align-items:center; justify-content:center; width:16px; height:16px; border-radius:50%; background:var(--panel2); border:1px solid var(--border); font-size:10px; font-weight:700; color:var(--muted);">?</span></span></div>`;
+  const ult = d[1];
+  const ultimaTxt = (!esPorTiempo && !b.finalizado && ult && ult.peso != null)
+    ? `<div class="sa-ult">Última vez: ${String(ult.peso).replace('.', ',')} kg${ult.reps != null ? ' × ' + ult.reps : ''}${ult.rir != null ? ' · RIR ' + ult.rir : ''}${uni ? ' (por lado)' : ''}</div>` : '';
 
-  const esPorTiempo = !!p.tiempo_trabajo_seg;
-  const porLadoTxt = p.unilateral ? ` · ${formatoPorLado(p.series)}` : '';
-  const detalleSets = esPorTiempo
-    ? `${p.series} series × ${p.tiempo_trabajo_seg}s trabajo${p.descanso_seg ? ' / '+p.descanso_seg+'s pausa' : ''}${porLadoTxt}`
-    : `${p.series} series × ${p.repeticiones || '-'}${porLadoTxt}`;
+  const serTxt = uni
+    ? (Number.isInteger(p.series / 2) ? `${p.series} series (${p.series / 2} por lado)` : `${p.series} series alternando el lado`)
+    : `${p.series} series`;
+  const medidaTxt = esPorTiempo
+    ? `${p.tiempo_trabajo_seg} s${uni ? ' por lado' : ''}`
+    : `${p.repeticiones || '-'}${p.repeticiones ? ' reps' : ''}${uni ? ' por lado' : ''}`;
+  const detalleSets = `${serTxt} × ${medidaTxt}`;
+  const chips = [];
+  if (p.peso_corporal) chips.push(`<span class="ex-chip ac">Peso corporal${p.peso_sugerido ? ' + ' + String(p.peso_sugerido).replace('.', ',') + ' kg' : ''}</span>`);
+  else if (p.peso_sugerido != null) chips.push(`<span class="ex-chip ac">Sugerido ${String(p.peso_sugerido).replace('.', ',')} kg</span>`);
+  if (p.descanso_seg) chips.push(`<span class="ex-chip">Pausa ${p.descanso_seg} s</span>`);
+  (p.material || []).forEach(k => chips.push(`<span class="ex-chip ok">${matIco(k, 22)}${ejEsc(matNombre(k))}</span>`));
 
   return `
     <div class="ex-block" id="bloque-${idx}">
       <div class="ex-header">
         ${mediaTagHtml(b.ejercicioActual, '')}
         <div style="flex:1; min-width:0;">
-          <div class="ex-nombre" style="font-weight:700;">${b.ejercicioActual.nombre} ${p.unilateral ? '<span class="badge-sub">🔄 Unilateral</span>' : ''} ${b.ejercicioActual.id !== p.ejercicios.id ? '<span class="badge-sub">Sustituido</span>' : ''} ${p.variante ? `<span class="badge-sub">${p.variante}</span>` : ''}</div>
+          <div class="ex-nombre" style="font-weight:700;">${b.ejercicioActual.nombre} ${uni ? '<span class="badge-sub">🔄 Unilateral</span>' : ''} ${b.ejercicioActual.id !== p.ejercicios.id ? '<span class="badge-sub">Sustituido</span>' : ''}</div>
           <div class="muted">${b.ejercicioActual.grupo_muscular} · ${detalleSets}</div>
-          ${p.notas ? `<div class="nota-profesor">📋 ${p.notas}</div>` : ''}
+          ${chips.length ? `<div class="ex-chips">${chips.join('')}</div>` : ''}
           ${b.notaProgresion ? `<div class="nota-progresion">${b.notaProgresion}</div>` : ''}
         </div>
       </div>
+      ${p.variante ? `<div class="ex-carga">🎯 <b>Carga:</b> ${ejEsc(p.variante)}</div>` : ''}
+      ${p.notas ? `<div class="nota-profesor" style="margin:0 0 8px;">📋 ${p.notas}</div>` : ''}
       <div id="sustitucion-${idx}"></div>
-      <div id="sets-${idx}">${encabezadoSets}${filasSets}</div>
+      <div id="sets-${idx}">${encabezadoSets}${filasSets}${ultimaTxt}</div>
       <div class="muted" id="tonelajeEj-${idx}" style="margin-top:4px; font-size:12px;">${(b.finalizado && !b.omitido && b.tonelajeEjercicio) ? 'Tonelaje de este ejercicio: '+Number(b.tonelajeEjercicio).toFixed(1)+' kg' : ''}</div>
       <div class="ex-acciones">
         <div class="ex-acciones-secundarias">
@@ -12653,6 +12858,31 @@ function bloqueHtml(b, idx){
       </div>
     </div>
   `;
+}
+
+// (v79) Cronómetro por serie (ejercicios por tiempo): ▶ cuenta hasta el objetivo y deja los segundos cargados.
+window._serieTimers = window._serieTimers || {};
+function serieTimerToggle(idx, s, objetivo){
+  const key = `${idx}-${s}`;
+  const inp = document.getElementById(`tiempo-${idx}-${s}`), btn = document.getElementById(`play-${idx}-${s}`), row = document.getElementById(`serie-${idx}-${s}`);
+  if (!inp || !btn || !row) return;
+  if (window._serieTimers[key]){ serieTimerStop(idx, s); return; }
+  const t0 = Date.now();
+  inp.value = 0;
+  btn.textContent = '■'; btn.classList.add('run'); row.classList.remove('done');
+  window._serieTimers[key] = setInterval(() => {
+    const seg = Math.floor((Date.now() - t0) / 1000);
+    inp.value = seg;
+    if (objetivo && seg >= objetivo){ try{ cronoBeep(880, 250); }catch(e){} serieTimerStop(idx, s); }
+  }, 250);
+}
+function serieTimerStop(idx, s){
+  const key = `${idx}-${s}`;
+  clearInterval(window._serieTimers[key]); delete window._serieTimers[key];
+  const inp = document.getElementById(`tiempo-${idx}-${s}`), btn = document.getElementById(`play-${idx}-${s}`), row = document.getElementById(`serie-${idx}-${s}`);
+  if (!inp || !btn || !row) return;
+  btn.classList.remove('run');
+  if (Number(inp.value) > 0){ row.classList.add('done'); btn.textContent = '✓'; } else btn.textContent = '▶';
 }
 
 function abrirSustitucion(idx){
@@ -12769,8 +12999,10 @@ async function finalizarEjercicio(idx){
   const filas = [];
   for (let s=0; s<p.series; s++){
     const pesoInput = document.getElementById(`peso-${idx}-${s}`).value;
-    const reps = document.getElementById(`reps-${idx}-${s}`).value;
-    const rir = document.getElementById(`rir-${idx}-${s}`).value;
+    const esPorTiempo = !!p.tiempo_trabajo_seg;
+    const reps = esPorTiempo ? '' : document.getElementById(`reps-${idx}-${s}`).value;
+    const rir = esPorTiempo ? '' : document.getElementById(`rir-${idx}-${s}`).value;
+    const tiempo = esPorTiempo ? document.getElementById(`tiempo-${idx}-${s}`).value : '';
     let pesoRealizado;
     if (p.peso_corporal){
       const extra = pesoInput ? parseFloat(pesoInput) : 0;
@@ -12786,6 +13018,9 @@ async function finalizarEjercicio(idx){
       peso_realizado: pesoRealizado,
       repeticiones_realizadas: reps ? parseInt(reps) : null,
       rir_realizado: rir ? parseInt(rir) : null,
+      // (v79) En ejercicios por tiempo los segundos van en su propia columna: repeticiones queda vacía
+      // para que el tonelaje (peso × reps, columna calculada) no se infle con segundos.
+      ...(esPorTiempo ? { tiempo_realizado_seg: tiempo ? parseInt(tiempo) : null } : {}),
     });
   }
   const btn = document.getElementById(`btnFin-${idx}`);
@@ -12794,7 +13029,7 @@ async function finalizarEjercicio(idx){
     await sb('series_registradas', { method:'POST', headers:{Prefer:'return=minimal'}, body: JSON.stringify(filas) });
     await sb(`ejecucion_ejercicios?id=eq.${b.ejecucionEjercicioId}`, { method:'PATCH', headers:{Prefer:'return=minimal'}, body: JSON.stringify({finalizado:true}) });
     b.finalizado = true;
-    b.seriesPrevias = filas.map(f => ({ peso_realizado: f.peso_realizado, repeticiones_realizadas: f.repeticiones_realizadas, rir_realizado: f.rir_realizado }));
+    b.seriesPrevias = filas.map(f => ({ peso_realizado: f.peso_realizado, repeticiones_realizadas: f.repeticiones_realizadas, rir_realizado: f.rir_realizado, tiempo_realizado_seg: f.tiempo_realizado_seg ?? null }));
     // (24/9) Tonelaje de la serie (reps x kg) — se calcula solo y queda guardado en la
     // base (columna calculada en series_registradas). Acá se suma tanto el total de la
     // sesión (se muestra al finalizar el entrenamiento) como el de este ejercicio puntual.
@@ -12805,7 +13040,8 @@ async function finalizarEjercicio(idx){
     if (tonelajeEl) tonelajeEl.textContent = tonelajeEjercicio > 0 ? `Tonelaje de este ejercicio: ${tonelajeEjercicio.toFixed(1)} kg` : '';
     btn.textContent = 'Registrado ✓';
     document.querySelectorAll(`#bloque-${idx} input`).forEach(i=>i.disabled=true);
-    document.querySelectorAll(`#bloque-${idx} button.ghost`).forEach(x=>x.disabled=true);
+    document.querySelectorAll(`#bloque-${idx} button.ghost, #bloque-${idx} .play`).forEach(x=>x.disabled=true);
+    Object.keys(window._serieTimers || {}).filter(k => k.startsWith(idx + '-')).forEach(k => { clearInterval(window._serieTimers[k]); delete window._serieTimers[k]; });
     revisarAvanceBloques(idx);
     toast('Ejercicio registrado ✓');
   }catch(e){
