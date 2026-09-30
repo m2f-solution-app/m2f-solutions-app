@@ -788,6 +788,82 @@
     #modalMediaEjercicio .modal-box{ max-width:520px !important; border-radius:20px; border:0; padding:0; animation:none; }
     #modalMediaEjercicio .modal-box::before{ display:none; }
   }
+  /* ===================================================================================
+     (v74, 30/9) Rediseño — ETAPA 3: experiencia del alumno (barra inferior, Inicio,
+     Turnos/Mis turnos en tarjetas, cabecera de la ejecución con progreso).
+     =================================================================================== */
+  .vista-eyebrow{ font-size:13.5px; color:var(--muted); margin:2px 2px 2px; }
+  .vista-titulo{ font-size:32px; line-height:1.05; font-weight:800; letter-spacing:-.03em; margin:0 2px 16px; }
+  .sec-t{ font-size:17px; font-weight:700; letter-spacing:-.01em; margin:0 0 12px; }
+  .sec-head{ display:flex; align-items:center; justify-content:space-between; padding:16px 18px 6px; }
+  .sec-head .sec-t{ margin:0; }
+  .sec-link{ background:none; border:0; padding:6px 0; color:var(--accent-text); font-weight:700; font-size:13.5px; cursor:pointer; border-radius:8px; }
+  /* Hero de Inicio */
+  .alu-hero{
+    border-radius:26px; padding:22px; min-height:220px; display:flex; flex-direction:column; justify-content:space-between; gap:20px;
+    color:#fff; margin-bottom:14px; box-shadow:var(--shadow-card);
+    background:linear-gradient(160deg,#2e2e35 0%,#0e0e11 100%);
+    background:radial-gradient(120% 90% at 100% 0%, color-mix(in srgb, var(--accent) 42%, transparent), transparent 62%), linear-gradient(160deg,#2e2e35 0%,#0e0e11 100%);
+  }
+  .alu-hero .h-eyebrow{ font-size:13px; font-weight:700; letter-spacing:.02em; color:rgba(255,255,255,.78); margin-bottom:10px; }
+  .alu-hero .h-titulo{ font-size:30px; line-height:1.08; font-weight:800; letter-spacing:-.03em; }
+  .alu-hero .h-sub{ margin-top:8px; font-size:14.5px; color:rgba(255,255,255,.78); line-height:1.4; }
+  .alu-hero .h-cta button{ width:100%; padding:15px 22px; font-size:15px; font-weight:800; }
+  .alu-hero .h-cta button.hero-soft{ background:rgba(255,255,255,.16); color:#fff; border:0; }
+  .alu-tiles{ display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:14px; }
+  .alu-tile{ background:var(--panel); border:1px solid var(--card-bd); border-radius:20px; padding:16px; box-shadow:var(--shadow-card); }
+  .alu-tile .n{ font-size:26px; font-weight:800; letter-spacing:-.03em; line-height:1.1; }
+  .alu-tile .l{ font-size:12.5px; color:var(--muted); margin-top:4px; }
+  .card.flush{ padding:0; overflow:hidden; }
+  /* Tarjetas de turno / rutina */
+  .tcard{ display:flex; align-items:center; flex-wrap:wrap; gap:12px 14px; padding:14px 0; border-top:1px solid var(--border); }
+  .tcard:first-child{ border-top:0; }
+  .card.flush .tcard{ padding:14px 18px; }
+  .tcard.canc, .tcard.venc{ opacity:.55; }
+  .tfecha{ width:52px; flex:none; text-align:center; border-radius:14px; background:var(--panel2); padding:8px 0; color:var(--text); }
+  .tfecha b{ display:block; font-size:20px; line-height:1.05; font-weight:800; }
+  .tfecha span{ display:block; font-size:11px; text-transform:uppercase; color:var(--muted); font-weight:700; margin-top:2px; }
+  .tfecha svg{ width:22px; height:22px; stroke:currentColor; fill:none; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; margin:5px 0; }
+  .tinfo{ flex:1; min-width:0; }
+  .tinfo b{ display:block; font-size:15px; font-weight:700; color:var(--text); }
+  .tinfo .m{ font-size:13px; color:var(--muted); margin-top:2px; }
+  .tstat{ flex:none; font-size:12px; font-weight:700; padding:4px 11px; border-radius:999px; background:var(--panel2); color:var(--muted); }
+  .tstat.hoy{ background:rgba(61,220,132,.16); color:var(--accent2-text); }
+  .tstat.hecho{ background:rgba(61,220,132,.16); color:var(--accent2-text); }
+  .tstat.pend{ background:rgba(255,210,61,.16); color:var(--warn-text); }
+  .tstat.canc{ background:rgba(255,93,93,.14); color:var(--danger-text); }
+  .tacts{ flex-basis:100%; display:flex; gap:8px; padding-left:66px; }
+  .tacts button{ padding:9px 18px; font-size:13.5px; }
+  /* Reservar: día y horarios */
+  .dia-btn{ width:56px; padding:10px 0; border-radius:18px; border-color:var(--field-bd); }
+  .dia-btn.hoy:not(.activo)::after{ content:""; display:block; width:5px; height:5px; border-radius:50%; background:var(--accent2); margin:4px auto 0; }
+  .hora-btn{ padding:14px 10px; border-radius:16px; }
+  .hora-btn .hora{ font-size:17px; letter-spacing:-.01em; }
+  /* Hoja de confirmar turno */
+  .conf-turno{ text-align:center; padding:6px 0 18px; }
+  .conf-turno .hora{ font-size:44px; font-weight:800; letter-spacing:-.04em; line-height:1; }
+  .conf-turno .det{ margin-top:8px; font-size:14.5px; color:var(--muted); }
+  #modalConfirmarTurno .modal-box .row button{ flex:1; }
+  /* Barra inferior del alumno */
+  #bottomNavAlu{ box-shadow:none; background:var(--panel); border-top:1px solid var(--border); padding:6px 6px calc(8px + env(safe-area-inset-bottom)); }
+  #bottomNavAlu .bottom-nav-item{ font-size:11px; font-weight:600; gap:3px; padding:4px 2px; color:var(--muted); background:none; border-radius:0; }
+  #bottomNavAlu .bottom-nav-item .ico{ display:flex; align-items:center; justify-content:center; width:56px; height:30px; border-radius:999px; line-height:0; transition:background .15s; }
+  #bottomNavAlu .bottom-nav-item svg{ width:23px; height:23px; stroke:currentColor; fill:none; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+  #bottomNavAlu .bottom-nav-item.active{ color:var(--text); font-weight:800; }
+  #bottomNavAlu .bottom-nav-item.active .ico{ background:rgba(255,122,48,.18); color:var(--accent-text); }
+  @supports (background: color-mix(in srgb, red 10%, transparent)){
+    #bottomNavAlu .bottom-nav-item.active .ico{ background:color-mix(in srgb, var(--accent) 20%, transparent); }
+  }
+  /* Ejecución: cabecera con progreso */
+  .ejec-top{ display:flex; align-items:center; gap:12px; margin-bottom:12px; }
+  .ejec-top .ejec-back{ flex:none; width:40px; height:40px; padding:0; border-radius:50%; font-size:18px; line-height:1; }
+  .ejec-tit{ flex:1; min-width:0; }
+  .ejec-tit .e{ font-size:12px; color:var(--muted); }
+  .ejec-tit h2{ margin:0; font-size:20px; line-height:1.15; letter-spacing:-.02em; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+  .ejec-top .ejec-fin{ flex:none; padding:10px 18px; font-size:14px; }
+  .ejec-prog{ display:flex; align-items:center; gap:10px; margin-bottom:16px; font-size:12.5px; color:var(--muted); }
+  .ejec-bar{ flex:1; height:8px; border-radius:99px; background:var(--panel2); overflow:hidden; }
+  .ejec-bar i{ display:block; height:100%; width:0; background:var(--accent2); border-radius:99px; transition:width .3s; }
 </style>
 </head>
 <body>
@@ -2136,8 +2212,6 @@
   <select id="aluAlumno" onchange="onCambiarAluAlumno()" style="display:none;"></select>
 
   <div id="alumnoHome" style="display:none;">
-    <div id="alumnoSesionInfo" class="card" style="display:none;"></div>
-
     <div id="bannerCuotaAlu"></div>
 
     <button class="menu-drawer-btn" id="menuDrawerBtnAlu" onclick="abrirMenuAlu()">☰ Menú</button>
@@ -2148,7 +2222,8 @@
         <span class="sidebar-title" style="padding:0;">Menú</span>
         <button onclick="cerrarMenuAlu()">✕</button>
       </div>
-      <div class="side-item active" id="menuAluTurnos" onclick="cambiarSubvistaAlu('turnos')">📅 Turnos</div>
+      <div class="side-item active" id="menuAluInicio" onclick="cambiarSubvistaAlu('inicio')">🏠 Inicio</div>
+      <div class="side-item" id="menuAluTurnos" onclick="cambiarSubvistaAlu('turnos')">📅 Turnos</div>
       <div class="side-item" id="menuAluRutinas" onclick="cambiarSubvistaAlu('rutinas')">🗂️ Mis rutinas</div>
       <div class="side-item" id="menuAluHistorial" onclick="cambiarSubvistaAlu('historial')">📜 Historial</div>
       <div class="side-item" id="menuAluEvolucion" onclick="cambiarSubvistaAlu('evolucion')">📈 Evolución</div>
@@ -2160,9 +2235,22 @@
       <div class="side-item" id="menuAluLogros" onclick="cambiarSubvistaAlu('logros')">🏆 Logros</div>
     </div>
 
-    <div id="subvistaAluTurnos">
+    <div id="subvistaAluInicio">
+      <div class="vista-eyebrow" id="aluSaludo"></div>
+      <div class="vista-titulo">Hoy</div>
+      <div class="alu-hero" id="aluInicioHero">Cargando...</div>
+      <div class="alu-tiles" id="aluInicioTiles"></div>
+      <div class="card flush">
+        <div class="sec-head"><div class="sec-t">Próximos turnos</div><button class="sec-link" onclick="cambiarSubvistaAlu('turnos')">Ver todos</button></div>
+        <div id="aluInicioProx"></div>
+      </div>
+      <div id="alumnoSesionInfo" class="card" style="display:none;"></div>
+    </div>
+
+    <div id="subvistaAluTurnos" style="display:none;">
+      <div class="vista-titulo">Turnos</div>
       <div class="card">
-        <h2 style="margin-top:0">Reservar turno</h2>
+        <div class="sec-t">Reservar turno</div>
         <div class="row">
           <div class="field" style="flex:1; min-width:200px;">
             <label>Profesor</label>
@@ -2182,14 +2270,14 @@
       </div>
 
       <div class="card">
-        <h2 style="margin-top:0">Mis turnos</h2>
+        <div class="sec-t">Mis turnos</div>
         <div id="listaTurnosAlu" class="muted">Elegí tu nombre arriba.</div>
       </div>
     </div>
 
     <div id="subvistaAluRutinas" style="display:none;">
+      <div class="vista-titulo">Mis rutinas</div>
       <div class="card">
-        <h2 style="margin-top:0">Mis rutinas (referencia)</h2>
         <div id="listaRutinasAlu" class="muted">Elegí tu nombre arriba.</div>
       </div>
     </div>
@@ -2240,13 +2328,12 @@
   <!-- ---- Barra inferior de navegación (solo mobile, mientras hay sesión de alumno) ---- -->
   <div class="bottom-nav" id="bottomNavAlu">
     <div class="bottom-nav-inner">
-      <button class="bottom-nav-item" id="bnavTurnos" onclick="cambiarSubvistaAlu('turnos')"><span class="ico">📅</span>Turnos</button>
-      <button class="bottom-nav-item" id="bnavRutinas" onclick="cambiarSubvistaAlu('rutinas')"><span class="ico">🗂️</span>Rutinas</button>
-      <button class="bottom-nav-item principal" id="bnavHoy" onclick="irEntrenamientoHoy()"><span class="ico">🏋️</span>Hoy</button>
-      <!-- (25/9) Pedido de Martin: Seguimiento reemplaza a Evolución acá abajo (Evolución
-           sigue disponible desde el menú ☰). -->
-      <button class="bottom-nav-item" id="bnavSeguimiento" onclick="cambiarSubvistaAlu('seguimiento')"><span class="ico">📈</span>Seguimiento</button>
-      <button class="bottom-nav-item" id="bnavMenu" onclick="abrirMenuAlu()"><span class="ico">☰</span>Menú</button>
+      <button class="bottom-nav-item active" id="bnavInicio" onclick="cambiarSubvistaAlu('inicio')"><span class="ico"><svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h5v-6h4v6h5V10"/></svg></span>Inicio</button>
+      <button class="bottom-nav-item" id="bnavTurnos" onclick="cambiarSubvistaAlu('turnos')"><span class="ico"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M8 3v4M16 3v4M3 10h18"/></svg></span>Turnos</button>
+      <button class="bottom-nav-item" id="bnavRutinas" onclick="cambiarSubvistaAlu('rutinas')"><span class="ico"><svg viewBox="0 0 24 24"><path d="M6 7v10M3 10v4M18 7v10M21 10v4M6 12h12"/></svg></span>Rutinas</button>
+      <!-- (25/9) Seguimiento reemplaza a Evolución acá abajo (Evolución sigue en el menú ☰). -->
+      <button class="bottom-nav-item" id="bnavSeguimiento" onclick="cambiarSubvistaAlu('seguimiento')"><span class="ico"><svg viewBox="0 0 24 24"><path d="M4 20h16"/><path d="M7 16v-5M12 16V6M17 16v-8"/></svg></span>Seguimiento</button>
+      <button class="bottom-nav-item" id="bnavMenu" onclick="abrirMenuAlu()"><span class="ico"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg></span>Menú</button>
     </div>
   </div>
 </div>
@@ -2307,7 +2394,8 @@
 <div class="modal-overlay" id="modalConfirmarTurno">
   <div class="modal-box">
     <h3>Confirmar turno</h3>
-    <p id="modalTurnoTexto">¿Confirmás la reserva?</p>
+    <div class="conf-turno"><div class="hora" id="modalTurnoHora"></div><div class="det" id="modalTurnoDetalle"></div></div>
+    <p id="modalTurnoTexto" style="display:none;">¿Confirmás la reserva?</p>
     <div class="row">
       <button class="btn-cancelar" onclick="cerrarModalTurno()">Cancelar</button>
       <button class="btn-confirmar" onclick="confirmarReservaTurno()">Sí, reservar</button>
@@ -2540,7 +2628,7 @@ const BUCKET = "Ejercicios";
 // un cambio, se incrementa este número — el chequeo de actualización (más abajo) lo compara
 // contra lo que hay publicado y avisa si están desactualizados, sin que nadie tenga que
 // cambiar ningún link a mano.
-const APP_VERSION = 73;
+const APP_VERSION = 74;
 
 // ---------- Instalar como app (PWA): acceso directo en escritorio/celular ----------
 // Chrome/Edge/Android disparan "beforeinstallprompt" cuando el manifest + service worker
@@ -3957,6 +4045,7 @@ function mostrarModoAlumnoLogueado(ficha){
   }
   sel.value = ficha.id;
   sel.disabled = true;
+  cambiarSubvistaAlu('inicio');
   onCambiarAluAlumno();
   actualizarBotonesPush();
 }
@@ -4772,19 +4861,113 @@ function cerrarMenuAlu(){
   document.getElementById('menuAluDrawer').classList.remove('open');
   document.getElementById('menuAluOverlay').classList.remove('show');
 }
+// ---------- Inicio del alumno (v74): hero del día + próximos turnos ----------
+let _INICIO_TOKEN = 0;
+function fechaLocalISO(d){
+  d = d || new Date();
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+const ICONO_RUTINA_SVG = '<svg viewBox="0 0 24 24"><path d="M6 7v10M3 10v4M18 7v10M21 10v4M6 12h12"/></svg>';
+// Tarjeta reutilizable de turno/rutina (Inicio, Mis turnos, Mis rutinas).
+function tcardHtml(o){
+  let izq;
+  if (o.fecha){
+    const d = new Date(o.fecha + 'T00:00:00');
+    const dia = d.toLocaleDateString('es-AR', { weekday:'short' }).replace('.','');
+    izq = `<div class="tfecha"><b>${d.getDate()}</b><span>${dia}</span></div>`;
+  } else {
+    izq = `<div class="tfecha">${ICONO_RUTINA_SVG}</div>`;
+  }
+  return `<div class="tcard ${o.cls || ''}">
+    ${izq}
+    <div class="tinfo"><b>${o.titulo}</b><div class="m">${o.sub || ''}</div></div>
+    ${o.estadoTxt ? `<span class="tstat ${o.estadoCls || ''}">${o.estadoTxt}</span>` : ''}
+    ${o.acciones ? `<div class="tacts">${o.acciones}</div>` : ''}
+  </div>`;
+}
+async function cargarInicioAlu(alumnoId){
+  const hero = document.getElementById('aluInicioHero');
+  if (!hero) return;
+  const tok = ++_INICIO_TOKEN;
+  const nombre = ((ALUMNOS_CACHE.find(a => a.id === alumnoId) || {}).nombre || '').split(' ')[0];
+  const hh = new Date().getHours();
+  document.getElementById('aluSaludo').textContent = (hh < 6 ? 'Buenas noches' : hh < 13 ? 'Buen día' : hh < 20 ? 'Buenas tardes' : 'Buenas noches') + (nombre ? ', ' + nombre : '');
+  try{
+    const hoy = fechaLocalISO();
+    const lunes = new Date(); lunes.setDate(lunes.getDate() - ((lunes.getDay() + 6) % 7));
+    const [turnos, semana] = await Promise.all([
+      sb(`turnos?select=id,fecha,hora,estado,rutina_dia_id,rutina_dias(nombre_dia),profesores(nombre)&alumno_id=eq.${alumnoId}&fecha=gte.${hoy}&estado=neq.cancelado&order=fecha.asc,hora.asc&limit=6`),
+      sb(`ejecuciones?select=id&alumno_id=eq.${alumnoId}&estado=eq.finalizada&fecha=gte.${fechaLocalISO(lunes)}`),
+    ]);
+    const deHoy = turnos.filter(t => t.fecha === hoy);
+    const idsDia = deHoy.map(t => t.rutina_dia_id).filter(Boolean);
+    let hechos = new Set();
+    if (idsDia.length){
+      const ej = await sb(`ejecuciones?select=rutina_dia_id&alumno_id=eq.${alumnoId}&estado=eq.finalizada&rutina_dia_id=in.(${idsDia.join(',')})`);
+      hechos = new Set(ej.map(e => e.rutina_dia_id));
+    }
+    let modo, dia = null, turnoHoy = null;
+    const pendiente = deHoy.find(t => t.rutina_dia_id && !hechos.has(t.rutina_dia_id));
+    if (pendiente){ modo = 'pendiente'; turnoHoy = pendiente; dia = { nombre_dia: pendiente.rutina_dias?.nombre_dia }; }
+    else if (deHoy.some(t => t.rutina_dia_id && hechos.has(t.rutina_dia_id))) modo = 'hecho';
+    else {
+      // Igual que el botón "Comenzar": sin turno con rutina, se busca una rutina asignada para hoy.
+      const d = await resolverDiaSinTurno(alumnoId, hoy);
+      if (d){
+        const ya = await sb(`ejecuciones?select=id&alumno_id=eq.${alumnoId}&rutina_dia_id=eq.${d.id}&estado=eq.finalizada&limit=1`);
+        modo = ya.length ? 'hecho' : 'pendiente'; dia = d; turnoHoy = deHoy[0] || null;
+      } else modo = deHoy.length ? 'sinrutina' : 'libre';
+      if (deHoy.length && !turnoHoy) turnoHoy = deHoy[0];
+    }
+    if (tok !== _INICIO_TOKEN) return;
+    const pintar = (eyebrow, titulo, sub, btn) => {
+      hero.innerHTML = `<div><div class="h-eyebrow">${eyebrow}</div><div class="h-titulo">${titulo}</div>${sub ? `<div class="h-sub">${sub}</div>` : ''}</div><div class="h-cta">${btn}</div>`;
+    };
+    const horaT = turnoHoy ? turnoHoy.hora.slice(0,5) + ' hs' : '';
+    const prof = turnoHoy?.profesores?.nombre ? 'con ' + turnoHoy.profesores.nombre : '';
+    if (modo === 'pendiente') pintar(turnoHoy ? `Hoy · ${horaT}` : 'Hoy · sin turno', dia?.nombre_dia || 'Tu entrenamiento', prof || 'Tu rutina de hoy está lista.', '<button onclick="irEntrenamientoHoy()">Comenzar entrenamiento</button>');
+    else if (modo === 'hecho') pintar('Hoy', '¡Entrenamiento completado!', 'Buen trabajo' + (nombre ? ', ' + nombre : '') + '. Mirá cómo venís en tu seguimiento.', '<button class="hero-soft" onclick="cambiarSubvistaAlu(\'seguimiento\')">Ver mi seguimiento</button>');
+    else if (modo === 'sinrutina') pintar(`Hoy · ${horaT}`, 'Tenés turno hoy', 'Todavía no hay una rutina planificada para este día.', '<button class="hero-soft" onclick="cambiarSubvistaAlu(\'turnos\')">Ver mis turnos</button>');
+    else pintar('Hoy', 'Hoy no tenés entrenamiento', 'Reservá tu próximo turno cuando quieras.', '<button onclick="cambiarSubvistaAlu(\'turnos\')">Reservar turno</button>');
+
+    const prox = turnos[0];
+    let proxTxt = '—';
+    if (prox){
+      const d = new Date(prox.fecha + 'T00:00:00');
+      proxTxt = (prox.fecha === hoy ? 'Hoy' : d.toLocaleDateString('es-AR', { weekday:'short', day:'numeric' }).replace('.','')) + ' · ' + prox.hora.slice(0,5);
+    }
+    document.getElementById('aluInicioTiles').innerHTML =
+      `<div class="alu-tile"><div class="n">${semana.length}</div><div class="l">Entrenamientos esta semana</div></div>
+       <div class="alu-tile"><div class="n" style="font-size:20px; padding-top:5px;">${proxTxt}</div><div class="l">Próximo turno</div></div>`;
+    document.getElementById('aluInicioProx').innerHTML = turnos.length
+      ? turnos.slice(0,4).map(t => tcardHtml({
+          fecha: t.fecha,
+          titulo: t.hora.slice(0,5) + ' hs' + (t.profesores?.nombre ? ' · ' + t.profesores.nombre : ''),
+          sub: t.rutina_dias?.nombre_dia || 'Todavía sin rutina planificada',
+          estadoCls: t.fecha === hoy ? 'hoy' : '', estadoTxt: t.fecha === hoy ? 'Hoy' : 'Próximo',
+        })).join('')
+      : '<div class="empty" style="padding:18px;">No tenés turnos próximos. Reservá uno desde Turnos.</div>';
+  }catch(e){
+    if (tok === _INICIO_TOKEN) hero.innerHTML = '<div class="h-sub">No se pudo cargar tu día. Probá de nuevo en un momento.</div>';
+  }
+}
+
 function cambiarSubvistaAlu(v){
+  document.getElementById('subvistaAluInicio').style.display = v==='inicio' ? '' : 'none';
   document.getElementById('subvistaAluTurnos').style.display = v==='turnos' ? '' : 'none';
   document.getElementById('subvistaAluRutinas').style.display = v==='rutinas' ? '' : 'none';
   document.getElementById('subvistaAluHistorial').style.display = v==='historial' ? '' : 'none';
   document.getElementById('subvistaAluEvolucion').style.display = v==='evolucion' ? '' : 'none';
   document.getElementById('subvistaAluSeguimiento').style.display = v==='seguimiento' ? '' : 'none';
   document.getElementById('subvistaAluLogros').style.display = v==='logros' ? '' : 'none';
+  document.getElementById('menuAluInicio').classList.toggle('active', v==='inicio');
   document.getElementById('menuAluTurnos').classList.toggle('active', v==='turnos');
   document.getElementById('menuAluRutinas').classList.toggle('active', v==='rutinas');
   document.getElementById('menuAluHistorial').classList.toggle('active', v==='historial');
   document.getElementById('menuAluEvolucion').classList.toggle('active', v==='evolucion');
   document.getElementById('menuAluSeguimiento').classList.toggle('active', v==='seguimiento');
   document.getElementById('menuAluLogros').classList.toggle('active', v==='logros');
+  document.getElementById('bnavInicio').classList.toggle('active', v==='inicio');
   document.getElementById('bnavTurnos').classList.toggle('active', v==='turnos');
   document.getElementById('bnavRutinas').classList.toggle('active', v==='rutinas');
   document.getElementById('bnavSeguimiento').classList.toggle('active', v==='seguimiento');
@@ -10797,7 +10980,7 @@ async function cargarRutinasDeAlumno(selectId, contenedorId){
   if (!alumnoId){ cont.innerHTML = 'Elegí tu nombre arriba.'; if (menuItem) menuItem.style.display = ''; return; }
   cont.innerHTML = 'Cargando...';
   try{
-    const hoy = new Date().toISOString().slice(0,10);
+    const hoy = fechaLocalISO();
     const [rows, rotativas, ejecFinalizadas] = await Promise.all([
       sb(`turnos?select=id,fecha,hora,rutina_dia_id,rutina_dias(id,nombre_dia,rutinas(nombre))&alumno_id=eq.${alumnoId}&estado=neq.cancelado&rutina_dia_id=not.is.null&order=fecha.desc,hora.desc&limit=30`),
       listarRutinasRotativasDeAlumno(alumnoId),
@@ -10809,37 +10992,25 @@ async function cargarRutinasDeAlumno(selectId, contenedorId){
     if (!rows.length && !rotativas.length){ cont.innerHTML = '<div class="empty">Todavía no tenés ninguna rutina asignada.</div>'; return; }
 
     // Rotativas primero: no dependen de turno, son la rutina "de fondo" del alumno.
-    const htmlRotativas = rotativas.map(x => `
-      <div class="row" style="justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--border);">
-        <div>
-          <div style="font-weight:600;">${x.rutina.nombre} <span class="pill">Rotativa</span></div>
-          <div class="muted">Te toca: ${x.diaCursor.nombre_dia} (día ${(x.diaCursor.orden ?? 0) + 1} de ${x.totalDias})</div>
-        </div>
-        <button class="secondary" onclick="comenzarEntrenamiento('${x.diaCursor.id}','${alumnoId}','${(x.diaCursor.nombre_dia||'').replace(/'/g,"&apos;")}')">Ver / Empezar</button>
-      </div>
-    `).join('');
+    const esc1 = (x) => String(x || '').replace(/'/g, '&apos;');
+    const htmlRotativas = rotativas.map(x => tcardHtml({
+      titulo: x.rutina.nombre, sub: `Te toca: ${x.diaCursor.nombre_dia} (día ${(x.diaCursor.orden ?? 0) + 1} de ${x.totalDias})`,
+      estadoCls: '', estadoTxt: 'Rotativa',
+      acciones: `<button onclick="comenzarEntrenamiento('${x.diaCursor.id}','${alumnoId}','${esc1(x.diaCursor.nombre_dia)}')">Ver / Empezar</button>`,
+    })).join('');
 
     const htmlTurnos = rows.map(t => {
-      // (v54, 24/9) Antes acá se ofrecía "Ver / Empezar" incluso para turnos futuros (marcados
-      // "Próximo") — eso era justo lo que dejaba arrancar hoy la rutina de un día que todavía
-      // no llegó. Ahora un turno futuro no tiene botón de empezar, solo la fecha en la que va
-      // a estar disponible (comenzarEntrenamiento también lo bloquea si se llega a intentar).
+      // (v54, 24/9) Un turno futuro no ofrece "Ver / Empezar", solo la fecha en la que va a estar
+      // disponible (comenzarEntrenamiento también lo bloquea si se llega a intentar).
       const esFutura = t.fecha > hoy;
       const completado = diasCompletados.has(t.rutina_dia_id);
-      return `
-        <div class="row" style="justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--border);">
-          <div>
-            <div style="font-weight:600;">${t.rutina_dias?.rutinas?.nombre || '-'} · ${t.rutina_dias?.nombre_dia || '-'}</div>
-            <div class="muted">Turno del ${formatearFechaCorta(t.fecha)} · ${t.hora.slice(0,5)}hs${esFutura ? ' <span class="pill">Próximo</span>' : ''}</div>
-          </div>
-          ${completado
-            ? `<span class="pill" style="background:rgba(61,220,132,.12); color:var(--accent2-text); border-color:rgba(61,220,132,.4);">✓ Entrenamiento realizado</span>`
-            : esFutura
-            ? `<span class="muted" style="font-size:12px;">Disponible el ${formatearFechaCorta(t.fecha)}</span>`
-            : `<button class="secondary" onclick="comenzarEntrenamiento('${t.rutina_dia_id}','${alumnoId}','${(t.rutina_dias?.nombre_dia||'').replace(/'/g,"&apos;")}')">Ver / Empezar</button>`
-          }
-        </div>
-      `;
+      return tcardHtml({
+        fecha: t.fecha,
+        titulo: `${t.rutina_dias?.rutinas?.nombre || '-'} · ${t.rutina_dias?.nombre_dia || '-'}`,
+        sub: `Turno de las ${t.hora.slice(0,5)} hs` + (esFutura && !completado ? ` · disponible el ${formatearFechaCorta(t.fecha)}` : ''),
+        estadoCls: completado ? 'hecho' : (t.fecha === hoy ? 'hoy' : ''), estadoTxt: completado ? 'Hecho' : (esFutura ? 'Próximo' : (t.fecha === hoy ? 'Hoy' : 'Pendiente')),
+        acciones: (completado || esFutura) ? '' : `<button onclick="comenzarEntrenamiento('${t.rutina_dia_id}','${alumnoId}','${esc1(t.rutina_dias?.nombre_dia)}')">Ver / Empezar</button>`,
+      });
     }).join('');
 
     cont.innerHTML = htmlRotativas + htmlTurnos;
@@ -10862,6 +11033,9 @@ function onCambiarAluAlumno(){
     cargarSeguimiento('aluSeguimientoContenido', alumnoId);
   } else {
     document.getElementById('listaTurnosAlu').innerHTML = 'Elegí tu nombre arriba.';
+    document.getElementById('aluInicioHero').innerHTML = '';
+    document.getElementById('aluInicioTiles').innerHTML = '';
+    document.getElementById('aluInicioProx').innerHTML = '';
     document.getElementById('historialAlu').innerHTML = 'Elegí tu nombre arriba.';
     document.getElementById('aluFiltroProfesor').innerHTML = '<option value="">Todos los profesores</option>';
     document.getElementById('aluDiasScroll').innerHTML = '';
@@ -11501,7 +11675,7 @@ let PENDIENTE_TURNO_ALU = null; // { profesorId, profesorNombre, hora, fecha }
 function fechaISOAlu(offsetDias){
   const d = new Date();
   d.setDate(d.getDate() + offsetDias);
-  return d.toISOString().slice(0,10);
+  return fechaLocalISO(d);
 }
 
 async function renderTurnosDisponibles(){
@@ -11609,6 +11783,8 @@ function pedirConfirmacionTurno(profesorId, hora, profesorNombre, fecha){
   PENDIENTE_TURNO_ALU = { profesorId, hora, profesorNombre, fecha };
   document.getElementById('modalTurnoTexto').textContent =
     `¿Confirmás la reserva del ${hora.slice(0,5)} hs con ${profesorNombre} (${fechaLegible(fecha)})?`;
+  document.getElementById('modalTurnoHora').textContent = hora.slice(0,5) + ' hs';
+  document.getElementById('modalTurnoDetalle').textContent = `con ${profesorNombre} · ${fechaLegible(fecha)}`;
   document.getElementById('modalConfirmarTurno').classList.add('show');
 }
 
@@ -11693,7 +11869,7 @@ function salirEjecucion(){
 async function irEntrenamientoHoy(){
   const alumnoId = document.getElementById('aluAlumno').value;
   if (!alumnoId){ toast('Iniciá sesión primero.', true); return; }
-  const hoy = new Date().toISOString().slice(0,10);
+  const hoy = fechaLocalISO();
   try{
     const rows = await sb(`turnos?select=id,rutina_dia_id,rutina_dias(nombre_dia)&alumno_id=eq.${alumnoId}&fecha=eq.${hoy}&estado=neq.cancelado&order=hora.asc&limit=1`);
     const t = rows[0];
@@ -11917,6 +12093,7 @@ async function reintentarAsignacion(turnoId, alumnoId, fecha){
 }
 
 async function cargarTurnos(alumnoId){
+  cargarInicioAlu(alumnoId);
   const cont = document.getElementById('listaTurnosAlu');
   cont.innerHTML = 'Cargando...';
   try{
@@ -11946,30 +12123,21 @@ async function cargarTurnos(alumnoId){
       // los ejercicios de otro día. Ahora un turno futuro no ofrece "Comenzar" (sí se puede cancelar).
       const futuro = !cancelado && !completado && diffDias < 0;
       const vencido = !cancelado && !completado && !futuro && diffDias > 7;
-      const estiloFila = cancelado
-        ? 'opacity:0.5;'
-        : completado
-          ? 'opacity:0.75; border-left:3px solid var(--accent2); padding-left:8px;'
-          : vencido
-            ? 'opacity:0.5; filter:grayscale(0.7);'
-            : futuro
-              ? 'border-left:3px solid var(--border); padding-left:8px;'
-              : 'background:rgba(61,220,132,.12); border-left:3px solid var(--accent2); padding-left:8px;';
-      return `
-      <div class="row" style="justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--border); ${estiloFila}">
-        <div>
-          <div style="font-weight:700; font-size:18px;">${formatearFechaCorta(t.fecha)}</div>
-          <div class="muted">${cancelado ? 'Cancelado' : completado ? '✓ Entrenamiento realizado' : vencido ? 'Vencido' : futuro ? 'Próximo · disponible ese día' : (t.rutina_dias ? t.rutina_dias.nombre_dia : 'Todavía sin rutina planificada para este día')}</div>
-        </div>
-        <div class="row" style="gap:6px;">
-          ${(cancelado || completado || vencido || futuro) ? '' : (t.rutina_dia_id
-            ? `<button class="secondary" onclick="comenzarEntrenamiento('${t.rutina_dia_id}','${alumnoId}','${(t.rutina_dias?.nombre_dia||'').replace(/'/g,"&apos;")}')">Comenzar</button>`
-            : `<button class="ghost" onclick="reintentarAsignacion('${t.id}','${alumnoId}','${t.fecha}')">Reintentar</button>`
-          )}
-          ${(cancelado || completado || vencido) ? '' : `<button class="ghost" onclick="cancelarTurno('${t.id}','${alumnoId}')">Cancelar</button>`}
-        </div>
-      </div>
-    `;}).join('');
+      const esc1 = (x) => String(x || '').replace(/'/g, '&apos;');
+      const puedeIniciar = !(cancelado || completado || vencido || futuro);
+      const acciones =
+        (puedeIniciar ? (t.rutina_dia_id
+          ? `<button onclick="comenzarEntrenamiento('${t.rutina_dia_id}','${alumnoId}','${esc1(t.rutina_dias?.nombre_dia)}')">Comenzar</button>`
+          : `<button class="secondary" onclick="reintentarAsignacion('${t.id}','${alumnoId}','${t.fecha}')">Reintentar</button>`) : '')
+        + ((cancelado || completado || vencido) ? '' : `<button class="ghost" onclick="cancelarTurno('${t.id}','${alumnoId}')">Cancelar</button>`);
+      const [cls, txt] = cancelado ? ['canc','Cancelado'] : completado ? ['hecho','Hecho'] : vencido ? ['venc','Vencido'] : futuro ? ['','Próximo'] : diffDias === 0 ? ['hoy','Hoy'] : ['pend','Pendiente'];
+      return tcardHtml({
+        fecha: t.fecha, cls: cancelado ? 'canc' : vencido ? 'venc' : '',
+        titulo: t.hora.slice(0,5) + ' hs' + (t.profesores?.nombre ? ' · ' + t.profesores.nombre : ''),
+        sub: cancelado ? 'Cancelado' : completado ? '✓ Entrenamiento realizado' : vencido ? 'Vencido' : futuro ? 'Disponible ese día' : (t.rutina_dias ? t.rutina_dias.nombre_dia : 'Todavía sin rutina planificada para este día'),
+        estadoCls: cls, estadoTxt: txt, acciones,
+      });
+    }).join('');
   }catch(e){ cont.innerHTML = 'Error: ' + e.message; }
 }
 
@@ -12226,15 +12394,26 @@ function renderEjecucion(ejecucionId, nombreDia, bloques){
 
   cont.innerHTML = `
     <div class="card">
-      <div class="row" style="justify-content:space-between;">
-        <button class="ghost" onclick="salirEjecucion()">← Volver</button>
-        <h2 style="margin:0;">${nombreDia}</h2>
-        <button onclick="abrirModalRpe('${ejecucionId}')">Finalizar entrenamiento</button>
+      <div class="ejec-top">
+        <button class="ghost ejec-back" onclick="salirEjecucion()" aria-label="Volver">←</button>
+        <div class="ejec-tit"><div class="e">Entrenamiento</div><h2>${nombreDia}</h2></div>
+        <button class="ejec-fin" onclick="abrirModalRpe('${ejecucionId}')">Finalizar</button>
       </div>
+      <div class="ejec-prog"><div class="ejec-bar"><i id="ejecProgFill"></i></div><span id="ejecProgTxt"></span></div>
       <div id="bloques">${bloquesHtml}</div>
     </div>
   `;
   window._bloques = bloques;
+  actualizarProgresoEjec();
+}
+
+function actualizarProgresoEjec(){
+  const bl = window._bloques || [];
+  const fill = document.getElementById('ejecProgFill'), txt = document.getElementById('ejecProgTxt');
+  if (!fill || !txt) return;
+  const ok = bl.filter(b => b.finalizado || b.omitido).length;
+  fill.style.width = bl.length ? Math.round(ok * 100 / bl.length) + '%' : '0';
+  txt.textContent = `${ok} de ${bl.length} ejercicios`;
 }
 
 function toggleBloqueSeccion(sIdx){
@@ -12250,6 +12429,7 @@ function toggleBloqueSeccion(sIdx){
 // bloque, lo colapsa solo y abre el siguiente bloque con ejercicios pendientes —
 // asi el alumno va avanzando bloque por bloque sin tener que ir cerrando a mano.
 function revisarAvanceBloques(idxTocado){
+  actualizarProgresoEjec();
   const secciones = window._seccionesOrden || [];
   const porSeccion = window._idxsPorSeccion || {};
   const sIdx = secciones.findIndex(s => (porSeccion[s]||[]).includes(idxTocado));
