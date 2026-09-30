@@ -1543,9 +1543,9 @@
             <div class="field">
               <label>Modo de rutina</label>
               <select id="profModoDias" onchange="CONS['dia'].setModoDias(this.value)">
-                <option value="fecha_fija">Fecha fija</option>
-                <option value="rotativa">Rotativa (sin días fijos, se repite sola)</option>
-                <option value="plantilla">Plantilla (sin fecha: la elegís a mano desde la Agenda)</option>
+                <option value="fecha_fija">Fecha fija · por tipo de entrenamiento</option>
+                <option value="rotativa">Rotativa · para cualquier alumno (se repite sola)</option>
+                <option value="plantilla">Plantilla · para cualquier alumno (la elegís desde la Agenda)</option>
               </select>
             </div>
             <div class="field" id="profDiasObjetivoWrap" style="display:none;">
@@ -1567,7 +1567,7 @@
               <select id="profTipoAlumno"></select>
             </div>
             <div class="field" id="profPlantillaNombreWrap" style="display:none; flex:1; min-width:200px;">
-              <label>Nombre de la plantilla</label>
+              <label id="profNombreLbl">Nombre de la plantilla</label>
               <input id="profPlantillaNombre" maxlength="80" placeholder="Ej: Recovery - tren inferior">
             </div>
           </div>
@@ -1667,6 +1667,18 @@
             </div>
           </div>
           <div class="muted" id="espModoDiasHint" style="font-size:12px; margin-top:6px; display:none;">Rotativa: no hace falta cargar fecha en los días. Sirve tanto para el que también usa turno (por cupo/aforo) como para el que entrena a distancia sin reservar nada — el turno es un tema aparte.</div>
+        </div>
+
+        <!-- (v84) Empezar desde una rutina que ya existe -->
+        <div class="card" id="espBaseCard">
+          <div class="row" style="justify-content:space-between; align-items:center;">
+            <h2 style="margin:0">Empezar desde una rutina existente <span class="muted" style="font-size:12px; font-weight:400;">(opcional)</span></h2>
+            <button type="button" class="ghost" id="espBaseLimpiar" style="display:none;" onclick="espBaseEmpezarDeCero()">Empezar de cero</button>
+          </div>
+          <div class="muted" style="font-size:12px; margin:6px 0 8px;">Buscá una rutina del gimnasio (o una especial de otro alumno) y se copia acá abajo para que la ajustes antes de guardarla para este alumno o equipo. La original no se toca.</div>
+          <input id="espBaseBuscar" placeholder="Buscá por nombre: Gimnasio 4 semanas, Fuerza, Recovery…" autocomplete="off" onfocus="espBaseBuscar()" oninput="espBaseBuscar()" />
+          <div id="espBaseResultados" style="display:none; max-height:260px; overflow:auto; margin-top:8px;"></div>
+          <div id="espBaseEstado" class="muted" style="font-size:12px; margin-top:8px; display:none;"></div>
         </div>
 
         <div class="card">
@@ -2910,7 +2922,7 @@ const BUCKET = "Ejercicios";
 // un cambio, se incrementa este número — el chequeo de actualización (más abajo) lo compara
 // contra lo que hay publicado y avisa si están desactualizados, sin que nadie tenga que
 // cambiar ningún link a mano.
-const APP_VERSION = 82;
+const APP_VERSION = 84;
 
 // ---------- Instalar como app (PWA): acceso directo en escritorio/celular ----------
 // Chrome/Edge/Android disparan "beforeinstallprompt" cuando el manifest + service worker
@@ -10254,12 +10266,17 @@ function crearConstructorDeDias(prefijo, containerId, headerPrefix){
         : hint.dataset.rot;
       hint.style.display = (esRotativa || esPlantilla) ? '' : 'none';
     }
+    // (v83) Plantilla y rotativa valen "para cualquier alumno": no llevan tipo de entrenamiento, pero sí un nombre propio.
     ['PlantillaNombreWrap', 'PlantillaEtiquetaWrap'].forEach(suf => {
       const el = document.getElementById(`${headerPrefix}${suf}`);
-      if (el) el.style.display = esPlantilla ? '' : 'none';
+      if (el) el.style.display = (esPlantilla || esRotativa) ? '' : 'none';
     });
+    const nomLbl = document.getElementById(`${headerPrefix}NombreLbl`);
+    if (nomLbl) nomLbl.textContent = esRotativa ? 'Nombre de la rutina' : 'Nombre de la plantilla';
+    const nomInp = document.getElementById(`${headerPrefix}PlantillaNombre`);
+    if (nomInp) nomInp.placeholder = esRotativa ? 'Ej: Gimnasio 4 semanas - Fuerza' : 'Ej: Recovery - tren inferior';
     const tipoWrap = document.getElementById(`${headerPrefix}TipoWrap`);
-    if (tipoWrap) tipoWrap.style.display = esPlantilla ? 'none' : '';
+    if (tipoWrap) tipoWrap.style.display = (esPlantilla || esRotativa) ? 'none' : '';
     render();
   }
 
@@ -10481,6 +10498,140 @@ CONS['esp'] = crearConstructorDeDias('esp', 'diasContainerEsp', 'esp');
 function agregarDia(){ CONS['dia'].agregarDia(); }
 function agregarDiaEsp(){ CONS['esp'].agregarDia(); }
 
+// ---------- (v84) Especiales: empezar desde una rutina que ya existe ----------
+// Copia (client-side) los días y ejercicios de una rutina guardada al constructor de
+// Especiales. No toca la original: al guardar se crea una rutina nueva asignada al alumno/equipo.
+let ESP_BASE_LISTA = null, ESP_BASE_TS = 0, ESP_BASE_CARGANDO = false;
+
+async function espBaseAsegurarLista(){
+  if (ESP_BASE_LISTA && Date.now() - ESP_BASE_TS < 30000) return;
+  if (ESP_BASE_CARGANDO) return;
+  ESP_BASE_CARGANDO = true;
+  try{
+    const filtroGym = PERFIL_ACTUAL ? `&gimnasio_id=eq.${PERFIL_ACTUAL.gimnasio_id}` : '';
+    const [rutinas, asig] = await Promise.all([
+      sb(`rutinas?select=id,nombre,modo_dias,es_ajuste,tipos_alumno(nombre),rutina_dias(id)&activa=eq.true${filtroGym}&order=nombre.asc`),
+      sb('rutina_asignaciones?select=rutina_id,alumnos(nombre)'),
+    ]);
+    const deAlumno = {};
+    (asig || []).forEach(a => { (deAlumno[a.rutina_id] = deAlumno[a.rutina_id] || []).push(a.alumnos?.nombre || 'alumno'); });
+    ESP_BASE_LISTA = (rutinas || []).filter(r => !r.es_ajuste && (r.rutina_dias || []).length).map(r => ({ ...r, especialDe: deAlumno[r.id] || null }));
+    ESP_BASE_TS = Date.now();
+  }finally{ ESP_BASE_CARGANDO = false; }
+}
+
+async function espBaseBuscar(){
+  const cont = document.getElementById('espBaseResultados');
+  if (!cont) return;
+  cont.style.display = '';
+  if (!ESP_BASE_LISTA) cont.innerHTML = '<div class="muted" style="padding:6px;">Cargando…</div>';
+  try{ await espBaseAsegurarLista(); }catch(e){ cont.innerHTML = 'Error: ' + escaparHtml(e.message); return; }
+  const q = normalizar(document.getElementById('espBaseBuscar').value || '').trim();
+  const terminos = q.split(/\s+/).filter(Boolean);
+  const lista = (ESP_BASE_LISTA || []).filter(r => {
+    const texto = normalizar(`${r.nombre} ${r.tipos_alumno?.nombre || ''} ${(r.especialDe || []).join(' ')}`);
+    return terminos.every(t => texto.includes(t));
+  }).slice(0, 30);
+  if (!lista.length){ cont.innerHTML = '<div class="empty">No encontramos rutinas con ese nombre.</div>'; return; }
+  const etiqueta = r => r.especialDe ? `⭐ Especial de ${escaparHtml(r.especialDe.slice(0, 2).join(', '))}${r.especialDe.length > 2 ? '…' : ''}`
+    : r.modo_dias === 'plantilla' ? '🧩 Plantilla' : r.modo_dias === 'rotativa' ? '🔁 Rotativa' : `🏷️ ${escaparHtml(r.tipos_alumno?.nombre || 'Sin tipo')}`;
+  cont.innerHTML = lista.map(r => `
+    <button type="button" class="ghost" style="width:100%; text-align:left; display:block; margin-bottom:6px;" onclick="espCargarDesdeRutina('${r.id}')">
+      <span style="font-weight:700;">${escaparHtml(r.nombre)}</span>
+      <span class="muted" style="font-size:11px;"> · ${etiqueta(r)} · ${r.rutina_dias.length} día${r.rutina_dias.length === 1 ? '' : 's'}</span>
+    </button>`).join('');
+}
+
+function espBaseEmpezarDeCero(){
+  if (!confirm('¿Descartar lo que hay armado y empezar de cero?')) return;
+  CONS['esp'].limpiar();
+  document.getElementById('espNombreRutina').value = '';
+  document.getElementById('espModoDias').value = 'fecha_fija';
+  document.getElementById('espDiasObjetivo').value = '';
+  document.getElementById('espDuracionSemanas').value = '';
+  document.getElementById('espBaseLimpiar').style.display = 'none';
+  const est = document.getElementById('espBaseEstado'); est.style.display = 'none'; est.textContent = '';
+}
+
+async function espCargarDesdeRutina(rutinaId){
+  const cons = CONS['esp'];
+  const hayAlgo = Object.values(cons.estado.dias).some(d => d.ejercicios.length);
+  if (hayAlgo && !confirm('Ya tenés ejercicios armados en esta pantalla. ¿Reemplazarlos por los de la rutina elegida?')) return;
+  const est = document.getElementById('espBaseEstado');
+  est.style.display = ''; est.textContent = 'Copiando rutina…';
+  try{
+    const [rutina] = await sb(`rutinas?id=eq.${rutinaId}&select=id,nombre,modo_dias,dias_por_semana_objetivo,duracion_semanas`);
+    if (!rutina) throw new Error('No se encontró la rutina.');
+    const dias = await sb(`rutina_dias?rutina_id=eq.${rutinaId}&select=id,fecha,nombre_dia,orden,objetivo,rutina_ejercicios(id,orden,bloque,series,repeticiones,peso_sugerido,tiempo_trabajo_seg,descanso_seg,rir,notas,unilateral,peso_corporal,variante,material,modo_progresion,progresion_incremento_kg,progresion_rir_objetivo,ejercicios(id,nombre,grupo_muscular,provider_ref_id,video_provider,video_url_propio),rutina_ejercicio_semanas(semana,series,repeticiones,peso_sugerido))&order=orden.asc`);
+    dias.sort((a, b) => (a.orden ?? 0) - (b.orden ?? 0));
+
+    // Una especial es para una persona: plantilla se copia como fecha fija (hay que darle fecha a cada día).
+    const modo = rutina.modo_dias === 'rotativa' ? 'rotativa' : 'fecha_fija';
+    cons.limpiar();
+    document.getElementById('espModoDias').value = modo;
+    cons.setModoDias(modo);
+
+    let conSemanas = 0, sinEjercicio = 0;
+    dias.forEach(d => {
+      cons.estado.contador++;
+      const diaId = 'esp' + cons.estado.contador;
+      const ejs = (d.rutina_ejercicios || []).slice().sort((a, b) => (a.orden ?? 0) - (b.orden ?? 0)).map(x => {
+        const cat = (typeof TODOS_EJERCICIOS !== 'undefined' && TODOS_EJERCICIOS.find(e => e.id === x.ejercicios?.id)) || x.ejercicios;
+        if (!cat){ sinEjercicio++; return null; }
+        const semanas = (x.rutina_ejercicio_semanas || []).slice().sort((a, b) => a.semana - b.semana).map(s => ({ semana: s.semana, series: s.series, repeticiones: s.repeticiones || '', peso_sugerido: s.peso_sugerido }));
+        const prog = modo === 'rotativa' ? (x.modo_progresion || 'fijo') : 'fijo';
+        if (prog === 'por_semana') conSemanas++;
+        return {
+          ejercicio: cat, bloque: x.bloque || 'General', series: x.series, repeticiones: x.repeticiones || '',
+          peso_sugerido: x.peso_sugerido, tiempo_trabajo_seg: x.tiempo_trabajo_seg, descanso_seg: x.descanso_seg, rir: x.rir,
+          notas: x.notas || '', unilateral: !!x.unilateral, peso_corporal: !!x.peso_corporal, variante: x.variante || '',
+          material: Array.isArray(x.material) ? x.material : [],
+          modo_progresion: prog,
+          progresion_incremento_kg: prog === 'autoregulada' ? x.progresion_incremento_kg : null,
+          progresion_rir_objetivo: prog === 'autoregulada' ? x.progresion_rir_objetivo : null,
+          semanas: prog === 'por_semana' ? semanas : [],
+        };
+      }).filter(Boolean);
+      const ultimoBloque = ejs.length ? ejs[ejs.length - 1].bloque : 'Bloque 1';
+      cons.estado.dias[diaId] = { nombre_dia: d.nombre_dia || '', fecha: '', objetivo: d.objetivo || '', bloqueActual: ultimoBloque, ejercicios: ejs };
+    });
+    if (modo === 'rotativa'){
+      cons.estado.diasPorSemanaObjetivo = rutina.dias_por_semana_objetivo ? String(rutina.dias_por_semana_objetivo) : null;
+      cons.estado.duracionSemanas = rutina.duracion_semanas || null;
+      document.getElementById('espDiasObjetivo').value = cons.estado.diasPorSemanaObjetivo || '';
+      document.getElementById('espDuracionSemanas').value = cons.estado.duracionSemanas || '';
+    }
+    cons.render();
+
+    const selAlu = document.getElementById('espAlumno');
+    const nomAlu = document.getElementById('espModoDestino').value === 'alumno' && selAlu.value ? (selAlu.options[selAlu.selectedIndex]?.textContent || '').trim() : '';
+    document.getElementById('espNombreRutina').value = nomAlu ? `${rutina.nombre} · ${nomAlu}` : `${rutina.nombre} (personalizada)`;
+    document.getElementById('espBaseLimpiar').style.display = '';
+    document.getElementById('espBaseResultados').style.display = 'none';
+    document.getElementById('espBaseBuscar').value = '';
+    const avisos = [];
+    if (modo === 'fecha_fija') avisos.push('poné la fecha de cada día');
+    if (rutina.modo_dias === 'plantilla') avisos.push('la plantilla se copió como fecha fija');
+    if (sinEjercicio) avisos.push(`${sinEjercicio} ejercicio${sinEjercicio === 1 ? '' : 's'} ya no existe${sinEjercicio === 1 ? '' : 'n'} en el catálogo y no se copiaron`);
+    est.style.display = '';
+    est.textContent = `✓ Copiada "${rutina.nombre}" (${dias.length} día${dias.length === 1 ? '' : 's'}). Ajustala abajo` + (avisos.length ? ' — ' + avisos.join('; ') : '') + '. La original no cambia.';
+    toast('Rutina copiada: ajustala y guardala ✓');
+    document.getElementById('diasContainerEsp')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }catch(e){
+    est.style.display = ''; est.textContent = '';
+    toast('No se pudo copiar la rutina: ' + extraerMensajeError(e), true);
+  }
+}
+
+// Desde 🗂️ Rutinas: "Copiar para un alumno" salta a Especiales con esa rutina ya cargada.
+function copiarRutinaParaAlumno(rutinaId){
+  cambiarSubvista('especiales');
+  const selDest = document.getElementById('espModoDestino');
+  if (selDest.value === 'equipo'){ selDest.value = 'alumno'; cambiarModoDestinoEsp(); }
+  espCargarDesdeRutina(rutinaId);
+}
+
+
 // ---------- Guardar rutina estándar (Armador de Rutina) ----------
 // Nunca se asigna a un alumno puntual acá: queda como base en la biblioteca y
 // se engancha sola por fecha cuando alguien reserva un turno. Para asignar
@@ -10496,18 +10647,21 @@ async function guardarRutina(){
   const fechasOrdenadas = Object.values(CONS['dia'].estado.dias).map(d => d.fecha).filter(Boolean).sort();
   const nombre = `${tipoNombre}${fechasOrdenadas.length ? ' · ' + fechaLegible(fechasOrdenadas[0]) : ''}`;
   const esPlantilla = CONS['dia'].estado.modoDias === 'plantilla';
+  const esRotativaLibre = CONS['dia'].estado.modoDias === 'rotativa'; // (v83) rotativa = para cualquier alumno, sin tipo
+  const sinTipo = esPlantilla || esRotativaLibre;
   const nombrePlantilla = (document.getElementById('profPlantillaNombre').value || '').trim();
   const etiquetaPlantilla = '';
-  if (esPlantilla && !nombrePlantilla){ toast('Ponele un nombre a la plantilla.', true); return; }
+  if (sinTipo && !nombrePlantilla){ toast(esPlantilla ? 'Ponele un nombre a la plantilla.' : 'Ponele un nombre a la rutina.', true); return; }
   await guardarRutinaGenerica({
-    constructor: CONS['dia'], nombre: esPlantilla ? nombrePlantilla : nombre, tipoAlumnoId: esPlantilla ? null : tipoAlumnoId, etiqueta: etiquetaPlantilla,
+    constructor: CONS['dia'], nombre: sinTipo ? nombrePlantilla : nombre, tipoAlumnoId: sinTipo ? null : tipoAlumnoId, etiqueta: etiquetaPlantilla,
     alumnosDestino: [],
     btnId: 'btnGuardarRutina',
     onOk: () => {
       document.getElementById('profTipoAlumno').value = '';
+      document.getElementById('profPlantillaNombre').value = '';
       cargarGrillaRutinas();
     },
-    msgOk: esPlantilla ? 'Plantilla guardada ✓ La vas a poder elegir a mano desde la Agenda (botón "Cambiar por otra sesión").' : 'Rutina guardada ✓ Se va a asignar sola a los alumnos de ese tipo cuando reserven turno para esas fechas.',
+    msgOk: esPlantilla ? 'Plantilla guardada ✓ La vas a poder elegir a mano desde la Agenda (botón "Cambiar por otra sesión").' : esRotativaLibre ? 'Rutina rotativa guardada ✓ Se asigna sola a cualquier alumno que no tenga una especial: arranca en el día 1 y va rotando.' : 'Rutina guardada ✓ Se va a asignar sola a los alumnos de ese tipo cuando reserven turno para esas fechas.',
   });
 }
 
@@ -11209,7 +11363,7 @@ async function guardarRutinaGenerica({ constructor, nombre, tipoAlumnoId, etique
   // (28/9) Rotinas rotativas no llevan fecha por día — se recorren solas. La
   // fecha solo es obligatoria en modo fecha_fija, como siempre.
   if (modoDias === 'fecha_fija' && idsDias.some(d => !constructor.estado.dias[d].fecha)){ toast('Todos los días necesitan una fecha.', true); return; }
-  if ((!alumnosDestino || !alumnosDestino.length) && !tipoAlumnoId && modoDias !== 'plantilla'){ toast('Elegí para qué tipo de entrenamiento es esta rutina.', true); return; }
+  if ((!alumnosDestino || !alumnosDestino.length) && !tipoAlumnoId && modoDias === 'fecha_fija'){ toast('Elegí para qué tipo de entrenamiento es esta rutina.', true); return; }
   // Chequeo defensivo (19/9): si por haber tocado la pestaña "Alumno" en el medio
   // la sesión real ya no es de staff, cortar acá con un mensaje claro en vez de
   // dejar que el POST falle más abajo con un 403 críptico de RLS.
@@ -11381,7 +11535,7 @@ function renderGrillaRutinas(){
         : '<div class="muted" style="font-size:12px;">Sin días cargados.</div>';
       return `
         <div style="background:var(--panel2); border:1px solid var(--border); border-radius:10px; padding:10px 10px 4px; margin-bottom:10px;">
-          <div style="font-weight:700; margin-bottom:8px; display:flex; justify-content:space-between; align-items:flex-start; gap:8px;"><span>${escaparHtml(r.nombre)}${r.creador?.nombre ? ` <span class="muted" style="font-weight:400; font-size:11px;">· creada por ${escaparHtml(r.creador.nombre)}</span>` : ''}</span><button class="ghost" style="color:var(--danger-text); padding:2px 8px; font-size:12px; flex:none;" title="Eliminar rutina" onclick="eliminarRutina('${r.id}')">🗑️ Eliminar</button></div>
+          <div style="font-weight:700; margin-bottom:8px; display:flex; justify-content:space-between; align-items:flex-start; gap:8px;"><span>${escaparHtml(r.nombre)}${r.creador?.nombre ? ` <span class="muted" style="font-weight:400; font-size:11px;">· creada por ${escaparHtml(r.creador.nombre)}</span>` : ''}</span><span style="display:flex; gap:4px; flex:none; flex-wrap:wrap; justify-content:flex-end;"><button class="ghost" style="padding:2px 8px; font-size:12px; flex:none;" title="Copiar esta rutina para un alumno o equipo (se abre en Especiales para ajustarla)" onclick="copiarRutinaParaAlumno('${r.id}')">📋 Copiar para un alumno</button><button class="ghost" style="color:var(--danger-text); padding:2px 8px; font-size:12px; flex:none;" title="Eliminar rutina" onclick="eliminarRutina('${r.id}')">🗑️ Eliminar</button></span></div>
           ${diasHtml}
         </div>`;
     }).join('');
