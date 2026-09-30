@@ -1113,6 +1113,24 @@
     .ip-charts{ grid-template-columns:1.5fr 1fr; }
   }
 
+  /* ===== v82 · Configuración (engranaje ⚙️ en la barra de arriba, para staff y alumno) ===== */
+  #btnConfig{ font-size:16px; }
+  /* Las acciones de cuenta ahora viven en el engranaje: se esconden las sueltas (siguen en el DOM por los ids que usa el JS). */
+  #staffCuentaAcciones, .cuenta-toggle, #staffCambiarPasswordWrap, #alumnoCuentaAcciones{ display:none !important; }
+  .cfg-head{ display:flex; align-items:center; gap:12px; margin:2px 0 12px; padding-right:34px; }
+  .cfg-av{ width:44px; height:44px; border-radius:50%; background:var(--accent); color:#1a1000; font-weight:800; display:flex; align-items:center; justify-content:center; flex:none; }
+  .cfg-head b{ display:block; font-size:16px; overflow-wrap:anywhere; }
+  .cfg-head span{ font-size:12.5px; color:var(--muted); overflow-wrap:anywhere; }
+  .cfg-sec{ font-size:11.5px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); margin:14px 2px 2px; }
+  button.cfg-item{ display:flex; align-items:center; gap:12px; width:100%; padding:13px 14px; margin-top:8px; border-radius:14px; background:var(--panel2); color:var(--text); border:0; font-size:15px; font-weight:600; text-align:left; }
+  button.cfg-item .cfg-ico{ width:26px; text-align:center; font-size:18px; flex:none; }
+  button.cfg-item .cfg-t{ flex:1; min-width:0; }
+  button.cfg-item .cfg-s{ display:block; font-size:12px; font-weight:500; color:var(--muted); margin-top:1px; }
+  button.cfg-item.peligro{ color:var(--danger); }
+  :root[data-tema="claro"] button.cfg-item.peligro{ color:#c0271d; }
+  #cfgPassBox{ display:none; margin-top:8px; padding:12px; border-radius:14px; background:var(--panel2); }
+  #cfgPassBox.abierta{ display:block; }
+
 </style>
 </head>
 <body>
@@ -1190,6 +1208,7 @@
     <a class="btn-soporte-top" id="btnSoporteTop" href="#" onclick="abrirSoporteWhatsapp(); return false;" style="text-decoration:none;">💬 Soporte</a>
     <button class="btn-instalar-app" id="btnInstalarAppTop" onclick="instalarApp()">📲 Instalar app</button>
     <button class="btn-tema" id="btnTema" onclick="ciclarTema()" title="Cambiar tema (oscuro / claro / automático)" aria-label="Cambiar tema">🌙</button>
+    <button class="btn-tema" id="btnConfig" onclick="abrirConfiguracion()" title="Configuración" aria-label="Configuración" style="display:none;">⚙️</button>
     <div class="tabs">
       <div class="tab active" id="tabProf" onclick="cambiarVista('profesor')">Profesor</div>
       <div class="tab" id="tabAlu" onclick="cambiarVista('alumno')">Alumno</div>
@@ -2891,7 +2910,7 @@ const BUCKET = "Ejercicios";
 // un cambio, se incrementa este número — el chequeo de actualización (más abajo) lo compara
 // contra lo que hay publicado y avisa si están desactualizados, sin que nadie tenga que
 // cambiar ningún link a mano.
-const APP_VERSION = 81;
+const APP_VERSION = 82;
 
 // ---------- Instalar como app (PWA): acceso directo en escritorio/celular ----------
 // Chrome/Edge/Android disparan "beforeinstallprompt" cuando el manifest + service worker
@@ -3966,6 +3985,8 @@ supaAuth.auth.onAuthStateChange((_evento, sesion) => {
 function sincronizarTabsRol(){
   const tabs = document.querySelector('.topbar .tabs');
   if (tabs) tabs.style.display = (SESION_ACTUAL && PERFIL_ACTUAL) ? 'none' : '';
+  const cfg = document.getElementById('btnConfig');
+  if (cfg) cfg.style.display = (SESION_ACTUAL && PERFIL_ACTUAL) ? '' : 'none';
 }
 
 function authCambiarTab(t){
@@ -4285,7 +4306,7 @@ function mostrarModoAlumnoLogueado(ficha){
       ${fotoHtml}
       <div>Hola, <strong>${ficha.nombre}</strong></div>
     </div>
-    <div class="row" style="gap:8px;">
+    <div class="row" id="alumnoCuentaAcciones" style="gap:8px;">
       <span class="muted" style="cursor:pointer; text-decoration:underline;" onclick="document.getElementById('miFotoInputAlu').click();">📷 Cambiar foto</span>
       <span class="muted" style="cursor:pointer; text-decoration:underline;" onclick="document.getElementById('alumnoCambiarPasswordWrap').style.display = document.getElementById('alumnoCambiarPasswordWrap').style.display==='none' ? '' : 'none';">Cambiar contraseña</span>
       <button class="ghost btn-push" onclick="activarNotificacionesPush()">🔔 Activar notificaciones</button>
@@ -12075,6 +12096,85 @@ function overlayGenerico(id, maxWidth){
   return ov;
 }
 function cerrarOverlayGenerico(id){ document.getElementById(id)?.classList.remove('show'); }
+
+// ---------- Configuración (v82): engranaje ⚙️ de la barra de arriba ----------
+// Junta en un solo lugar lo de la cuenta —para staff y para alumno—: contraseña, notificaciones,
+// verificación en 2 pasos, tema, foto (alumno), Mi gimnasio (admin), Códigos/Gimnasios (superadmin)
+// y cerrar sesión. Reusa las funciones de siempre; no cambia nada de seguridad.
+function cerrarConfiguracion(){ cerrarOverlayGenerico('modalConfig'); }
+function cfgEtiquetaTema(){ const m = (typeof temaModo === 'function') ? temaModo() : 'oscuro'; return m === 'auto' ? 'Automático (sigue a tu celular)' : m === 'claro' ? 'Claro' : 'Oscuro'; }
+
+function abrirConfiguracion(){
+  if (!PERFIL_ACTUAL) return;
+  const rol = PERFIL_ACTUAL.rol, esAlu = rol === 'alumno', esAdmin = rol === 'admin';
+  const esSuper = (PERFIL_ACTUAL.email || '').toLowerCase() === EMAIL_SUPERADMIN;
+  const nombre = PERFIL_ACTUAL.nombre || PERFIL_ACTUAL.email || 'Mi cuenta';
+  const quien = esAlu ? 'Socio' : esAdmin ? 'Administrador' : 'Profesor';
+  const it = (ico, txt, js, extra) => `<button class="cfg-item ${extra && extra.cls ? extra.cls : ''}" ${extra && extra.id ? `id="${extra.id}"` : ''} onclick="${js}"><span class="cfg-ico">${ico}</span><span class="cfg-t">${txt}${extra && extra.sub ? `<span class="cfg-s" ${extra.subId ? `id="${extra.subId}"` : ''}>${extra.sub}</span>` : ''}</span></button>`;
+  const cerrarY = f => `cerrarConfiguracion(); ${f}`;
+  const ov = overlayGenerico('modalConfig', 420);
+  ov.querySelector('.modal-box').innerHTML = `
+    <div class="x-wrap"><button type="button" class="x-cerrar" aria-label="Cerrar" title="Cerrar" onclick="cerrarConfiguracion()">✕</button></div>
+    <div class="cfg-head"><div class="cfg-av">${ipEsc(iniciales(nombre))}</div><div><b>${ipEsc(nombre)}</b><span>${quien}${PERFIL_ACTUAL.email && !/@m2fsolutions\.local$/i.test(PERFIL_ACTUAL.email) ? ' · ' + ipEsc(PERFIL_ACTUAL.email) : ''}</span></div></div>
+
+    <div class="cfg-sec">Seguridad</div>
+    ${it('🔑', 'Cambiar contraseña', "document.getElementById('cfgPassBox').classList.toggle('abierta'); document.getElementById('cfgNuevaPassword').focus();")}
+    <div id="cfgPassBox">
+      <div class="field" style="margin:0 0 8px;"><label>Nueva contraseña</label><div class="password-wrap"><input type="password" id="cfgNuevaPassword" placeholder="Mínimo ${PASSWORD_MIN} caracteres" autocomplete="new-password"><button type="button" class="toggle-pass" onclick="togglePasswordVisibility('cfgNuevaPassword', this)">👁️</button></div></div>
+      <button style="width:100%;" onclick="cfgGuardarPassword()">Guardar</button>
+      <div id="cfgPassMsg" class="muted" style="margin-top:6px;"></div>
+    </div>
+    ${it('🛡️', 'Verificación en 2 pasos', cerrarY('gestionarDosPasos()'), { id:'cfg2fa', sub:'Cargando...', subId:'cfg2faLbl' })}
+
+    <div class="cfg-sec">Preferencias</div>
+    ${it('🔔', 'Notificaciones', cerrarY('activarNotificacionesPush()'), { id:'cfgPush', sub:'Cargando...', subId:'cfgPushLbl' })}
+    ${it('🌗', 'Tema', "ciclarTema(); document.getElementById('cfgTemaLbl').textContent = cfgEtiquetaTema();", { sub: cfgEtiquetaTema(), subId:'cfgTemaLbl' })}
+    ${esAlu ? it('📷', 'Cambiar foto de perfil', cerrarY("document.getElementById('miFotoInputAlu')?.click()")) : ''}
+
+    ${(!esAlu && esAdmin) || esSuper ? '<div class="cfg-sec">Gimnasio</div>' : ''}
+    ${!esAlu && esAdmin ? it('🏢', 'Mi gimnasio', cerrarY("cambiarSubvista('gimnasio')"), { sub:'Nombre, logo y colores' }) : ''}
+    ${esSuper ? it('🔑', 'Códigos de activación', cerrarY('abrirPanelCodigos()')) : ''}
+    ${esSuper ? it('🏋️', 'Gimnasios', cerrarY('abrirPanelGimnasiosAdmin()')) : ''}
+
+    <div class="cfg-sec">Ayuda</div>
+    ${it('💬', 'Soporte', cerrarY('abrirSoporteWhatsapp()'))}
+    ${it('🚪', esAlu ? 'Cerrar sesión' : 'Salir', cerrarY(esAlu ? 'hacerLogoutAlumno()' : 'hacerLogout()'), { cls:'peligro' })}`;
+  ov.classList.add('show');
+  cfgActualizarEstados();
+}
+
+async function cfgActualizarEstados(){
+  try{
+    const b = document.getElementById('cfgPush'), l = document.getElementById('cfgPushLbl');
+    if (!soportaPush()){ if (b) b.style.display = 'none'; }
+    else {
+      const reg = await navigator.serviceWorker.ready;
+      const sus = await reg.pushManager.getSubscription();
+      const on = !!sus && Notification.permission === 'granted';
+      if (l) l.textContent = on ? 'Activadas en este dispositivo' : 'Tocá para activarlas';
+      if (b) b.disabled = on;
+    }
+  }catch(e){ const l = document.getElementById('cfgPushLbl'); if (l) l.textContent = 'Tocá para activarlas'; }
+  try{
+    const f = await factorTotpVerificado();
+    const l = document.getElementById('cfg2faLbl');
+    if (l) l.textContent = f ? 'Activa' : 'Tocá para activarla';
+  }catch(e){ const l = document.getElementById('cfg2faLbl'); if (l) l.textContent = 'Tocá para activarla'; }
+}
+
+async function cfgGuardarPassword(){
+  const nueva = document.getElementById('cfgNuevaPassword').value;
+  const msg = document.getElementById('cfgPassMsg');
+  { const err = validarPasswordNueva(nueva); if (err){ msg.textContent = err; return; } }
+  try{
+    const { error } = await supaAuth.auth.updateUser({ password: nueva });
+    if (error) throw error;
+    document.getElementById('cfgNuevaPassword').value = '';
+    msg.textContent = 'Contraseña actualizada ✓';
+  }catch(e){ msg.textContent = mensajeErrorPassword(e); }
+}
+
+
 
 function motivoAjuste(alumnoId, extra){
   const w = WELLNESS_DIA[alumnoId];
