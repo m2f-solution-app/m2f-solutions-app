@@ -51,7 +51,12 @@ self.addEventListener('notificationclick', (event) => {
   event.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((lista) => {
       const existente = lista.find((c) => 'focus' in c);
-      if (existente) return existente.focus();
+      if (existente){
+        // App ya abierta: la página no se entera sola de que tocaron el aviso (no hay
+        // cambio de visibilidad), así que se lo decimos para que abra el Wellness/aviso.
+        try { existente.postMessage({ m2f: 'notificacion_tocada', url }); } catch (e) {}
+        return existente.focus();
+      }
       return self.clients.openWindow(url);
     })
   );

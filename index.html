@@ -2359,6 +2359,12 @@
       <div class="vista-eyebrow" id="aluSaludo"></div>
       <div class="vista-titulo">Hoy</div>
       <div class="alu-hero" id="aluInicioHero">Cargando...</div>
+      <div id="wellnessCard" class="card" style="display:none; border-color:var(--accent); cursor:pointer;" onclick="abrirWellness()">
+        <div class="row" style="justify-content:space-between; align-items:center; gap:10px;">
+          <div><div style="font-weight:800;">¿Cómo llegás hoy a entrenar?</div><div class="muted" style="font-size:13px;">Completá tu Wellness (30 seg) para que tu profe ajuste la sesión.</div></div>
+          <button type="button" style="flex-shrink:0;" onclick="event.stopPropagation(); abrirWellness()">Completar</button>
+        </div>
+      </div>
       <div class="alu-tiles" id="aluInicioTiles"></div>
       <div class="card flush">
         <div class="sec-head"><div class="sec-t">Próximos turnos</div><button class="sec-link" onclick="cambiarSubvistaAlu('turnos')">Ver todos</button></div>
@@ -2748,7 +2754,7 @@ const BUCKET = "Ejercicios";
 // un cambio, se incrementa este número — el chequeo de actualización (más abajo) lo compara
 // contra lo que hay publicado y avisa si están desactualizados, sin que nadie tenga que
 // cambiar ningún link a mano.
-const APP_VERSION = 79;
+const APP_VERSION = 80;
 
 // ---------- Instalar como app (PWA): acceso directo en escritorio/celular ----------
 // Chrome/Edge/Android disparan "beforeinstallprompt" cuando el manifest + service worker
@@ -4205,6 +4211,7 @@ async function hacerLogoutAlumno(){
   SESION_ACTUAL = null;
   PERFIL_ACTUAL = null;
   document.getElementById('alumnoSesionInfo').style.display = 'none';
+  WELLNESS_CTX.alumnoId = null; wellnessCardMostrar(false);
   document.getElementById('alumnoHome').style.display = 'none';
   document.getElementById('alumnoAuthGate').style.display = '';
   document.getElementById('bottomNavAlu').classList.remove('show');
@@ -11426,24 +11433,41 @@ let WELLNESS_DIA = {}; // alumno_id -> respuesta del día que se está viendo en
 let WELLNESS_LISTENER_PUESTO = false;
 
 // ----- Lado alumno -----
-async function revisarWellnessPendiente(alumnoId){
+function wellnessCardMostrar(v){
+  const c = document.getElementById('wellnessCard');
+  if (c) c.style.display = v ? '' : 'none';
+}
+
+// forzar=true: el alumno tocó la notificación → se abre sí o sí (ignora el "Ahora no").
+async function revisarWellnessPendiente(alumnoId, forzar){
   try{
     WELLNESS_CTX.alumnoId = alumnoId;
     if (!WELLNESS_LISTENER_PUESTO){
       WELLNESS_LISTENER_PUESTO = true;
-      // Al tocar el push la app vuelve a primer plano: ahí se vuelve a chequear.
-      document.addEventListener('visibilitychange', () => {
-        if (document.visibilityState === 'visible' && WELLNESS_CTX.alumnoId) revisarWellnessPendiente(WELLNESS_CTX.alumnoId);
-      });
+      const rechequear = (f) => { if (document.visibilityState === 'visible' && WELLNESS_CTX.alumnoId) revisarWellnessPendiente(WELLNESS_CTX.alumnoId, f === true); };
+      // Volver a primer plano, recuperar foco o volver desde el caché de páginas.
+      document.addEventListener('visibilitychange', () => rechequear());
+      window.addEventListener('focus', () => rechequear());
+      window.addEventListener('pageshow', () => rechequear());
+      // Con la app abierta, tocar el push NO dispara nada de lo anterior: el Service Worker avisa acá.
+      if ('serviceWorker' in navigator){
+        navigator.serviceWorker.addEventListener('message', (ev) => {
+          if (ev.data && ev.data.m2f === 'notificacion_tocada') rechequear(true);
+        });
+      }
+      // Red de seguridad: si el aviso llega con la app abierta, se detecta a los pocos minutos.
+      setInterval(() => rechequear(), 3*60*1000);
     }
-    if (Date.now() < WELLNESS_POSPUESTO_HASTA) return;
-    if (document.getElementById('modalWellness')?.classList.contains('show')) return;
+    if (!forzar && document.getElementById('modalWellness')?.classList.contains('show')) return;
     const hoy = dateAIso(new Date());
     const [turnos, resp] = await Promise.all([
       sb(`turnos?select=id&alumno_id=eq.${alumnoId}&fecha=eq.${hoy}&estado=neq.cancelado&limit=1`),
       sb(`wellness_respuestas?select=id&alumno_id=eq.${alumnoId}&fecha=eq.${hoy}&limit=1`),
     ]);
-    if (!turnos.length || resp.length) return; // sin turno hoy, o ya lo completó
+    const pendiente = turnos.length > 0 && resp.length === 0;
+    wellnessCardMostrar(pendiente); // la tarjeta queda visible en Inicio aunque diga "Ahora no"
+    if (!pendiente) return;
+    if (!forzar && Date.now() < WELLNESS_POSPUESTO_HASTA) return;
     abrirWellness();
   }catch(e){ /* best-effort: nunca corta el ingreso */ }
 }
@@ -11516,6 +11540,7 @@ async function enviarWellness(){
       method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: JSON.stringify({ leida: true })
     }).catch(() => {});
     document.getElementById('modalWellness').classList.remove('show');
+    wellnessCardMostrar(false);
     toast('¡Gracias! Tu profe ya lo puede ver ✓');
   }catch(e){
     toast('No se pudo enviar: ' + (e.message || e), true);
