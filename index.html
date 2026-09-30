@@ -1018,6 +1018,101 @@
   .sa-row .play.run{ background:var(--danger); color:#fff; }
   .sa-row.done .play{ background:var(--accent2); color:#04210f; }
   .sa-ult{ font-size:12px; color:var(--muted); margin:2px 0 8px; }
+  /* ===== v81 · Inicio del profesor (celu: apilado · PC: 4 paneles) ===== */
+  .ip-head{ display:flex; align-items:flex-end; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:6px; }
+  .ip-head .vista-titulo{ margin-bottom:10px; }
+  .ip-acts{ display:none; gap:10px; align-items:center; margin-bottom:10px; }
+  button.ip-btn{ border-radius:12px; padding:9px 15px; font-size:13px; font-weight:800; background:var(--accent); color:#1a1000; border:0; }
+  button.ip-btn.line{ background:var(--panel); color:var(--text); border:1px solid var(--border); }
+  button.ip-btn.ghost{ background:var(--panel2); color:var(--text); border:0; }
+  button.ip-btn.sm{ padding:6px 11px; font-size:12px; border-radius:10px; }
+  .ip-alcance{ display:flex; gap:6px; margin:0 0 12px; }
+  .ip-alcance button{ padding:6px 12px; font-size:12.5px; border-radius:999px; background:var(--panel); color:var(--muted); border:1px solid var(--border); font-weight:700; }
+  .ip-alcance button.on{ background:var(--note-bg); border-color:var(--accent); color:var(--accent-text); }
+  #ipHero .alu-hero{ min-height:0; }
+  .ip-stats{ display:flex; gap:8px; flex-wrap:wrap; }
+  .ip-stats .st{ background:rgba(255,255,255,.12); border-radius:12px; padding:8px 12px; font-size:12.5px; color:rgba(255,255,255,.85); }
+  .ip-stats .st b{ display:block; font-size:19px; color:#fff; letter-spacing:-.02em; }
+  #ipHero .h-cta{ display:flex; flex-direction:column; gap:8px; }
+  #ipTiles .alu-tile{ position:relative; cursor:pointer; }
+  #ipTiles .alu-tile .dot{ position:absolute; top:14px; right:14px; width:10px; height:10px; border-radius:50%; }
+  .ip-grid{ display:grid; gap:14px; }
+  .ip-pn{ padding:0; margin:0; overflow:hidden; display:flex; flex-direction:column; min-height:0; }
+  .ip-pn-h{ display:flex; align-items:center; justify-content:space-between; gap:10px; padding:14px 18px 8px; }
+  .ip-pn-h b{ font-size:16px; letter-spacing:-.01em; }
+  .ip-sub{ font-size:12px; color:var(--muted); margin-top:1px; }
+  .ip-pn-b{ overflow:auto; flex:1; min-height:0; }
+  .ip-pill{ font-size:11.5px; font-weight:800; padding:3px 10px; border-radius:999px; background:var(--panel2); color:var(--muted); white-space:nowrap; }
+  .ip-pill.ok{ background:color-mix(in srgb, var(--accent2) 18%, transparent); color:var(--accent2-text); }
+  .ip-pill.warn{ background:color-mix(in srgb, var(--warn) 22%, transparent); color:var(--warn-text); }
+  .ip-pill.bad{ background:color-mix(in srgb, var(--danger) 18%, transparent); color:var(--danger-text); }
+  .ip-pill.acc{ background:var(--note-bg); color:var(--note-text); }
+  .ip-turnos{ display:block; }
+  .ip-slots{ display:flex; gap:8px; overflow-x:auto; padding:2px 18px 10px; }
+  .ip-sl{ flex:none; min-width:104px; padding:9px 12px; border-radius:14px; background:var(--panel2); cursor:pointer; border:1.5px solid transparent; }
+  .ip-sl.sel{ border-color:var(--accent); background:var(--note-bg); }
+  .ip-sl.past{ opacity:.7; }
+  .ip-sl .t{ font-weight:800; font-size:16px; display:flex; justify-content:space-between; gap:8px; align-items:baseline; }
+  .ip-sl .t span{ font-size:12px; color:var(--muted); font-weight:700; }
+  .ip-sl .e{ font-size:11.5px; color:var(--muted); margin-top:2px; }
+  .ip-sl .bar{ height:5px; border-radius:9px; background:var(--border); margin-top:7px; overflow:hidden; }
+  .ip-sl .bar i{ display:block; height:100%; background:var(--accent); border-radius:9px; }
+  .ip-sl.past .bar i{ background:var(--accent2); }
+  .ip-lst-h{ display:flex; justify-content:space-between; align-items:center; padding:8px 18px; font-size:12.5px; color:var(--muted); border-top:1px solid var(--border); }
+  .ip-row{ display:flex; align-items:center; gap:11px; padding:10px 18px; border-top:1px solid var(--border); cursor:pointer; }
+  .ip-av{ width:36px; height:36px; border-radius:50%; background:var(--panel2); display:flex; align-items:center; justify-content:center; font-weight:800; font-size:12px; flex:none; position:relative; color:var(--text); }
+  .ip-av i{ position:absolute; right:-1px; bottom:-1px; width:11px; height:11px; border-radius:50%; border:2px solid var(--panel); }
+  .ip-g{ background:var(--accent2); } .ip-y{ background:var(--warn); } .ip-rd{ background:var(--danger); } .ip-n0{ background:var(--muted); }
+  .ip-nm{ flex:1; min-width:0; }
+  .ip-nm b{ display:block; font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .ip-nm span{ font-size:12px; color:var(--muted); }
+  button.ip-chk{ width:32px; height:32px; min-width:32px; padding:0; border-radius:10px; border:1.5px solid var(--border); background:transparent; color:transparent; font-size:15px; font-weight:800; flex:none; }
+  button.ip-chk.on{ background:var(--accent2); border-color:var(--accent2); color:#0b1a10; }
+  button.ip-chk.aus{ border-color:var(--danger); color:var(--danger-text); }
+  .ip-sem{ display:flex; gap:6px; padding:0 18px 10px; flex-wrap:wrap; }
+  .ip-sem button{ display:flex; align-items:center; gap:6px; padding:6px 11px; font-size:12.5px; font-weight:700; border-radius:12px; background:var(--panel2); color:var(--text); border:1px solid var(--border); }
+  .ip-sem button.on{ border-color:var(--accent); background:var(--note-bg); }
+  .ip-sem i{ width:9px; height:9px; border-radius:50%; display:inline-block; }
+  .ip-w{ padding:10px 18px; border-top:1px solid var(--border); }
+  .ip-w .top{ display:flex; align-items:center; gap:11px; }
+  .ip-mini{ display:flex; gap:4px; flex-wrap:wrap; margin:8px 0 0 47px; }
+  .ip-mini span{ font-size:11.5px; padding:2px 7px; border-radius:7px; background:var(--panel2); color:var(--muted); }
+  .ip-mini span.low{ background:color-mix(in srgb,var(--danger) 16%, transparent); color:var(--danger-text); font-weight:700; }
+  .ip-nota{ margin:8px 0 0 47px; padding:7px 10px; border-radius:10px; background:var(--note-bg); border:1px solid var(--note-bd); color:var(--note-text); font-size:12.5px; }
+  .ip-wact{ margin:8px 0 0 47px; display:flex; gap:8px; }
+  .ip-att{ display:flex; align-items:center; gap:12px; padding:12px 18px; border-top:1px solid var(--border); cursor:pointer; }
+  .ip-att:first-child{ border-top:0; }
+  .ip-att .ic{ width:36px; height:36px; border-radius:11px; flex:none; display:flex; align-items:center; justify-content:center; font-size:16px; }
+  .ip-att .tx{ flex:1; min-width:0; } .ip-att .tx b{ display:block; font-size:14px; } .ip-att .tx span{ font-size:12px; color:var(--muted); }
+  .ip-att .go{ color:var(--muted); font-size:18px; }
+  .ip-vacio{ padding:26px 18px; text-align:center; color:var(--muted); font-size:13.5px; }
+  .ip-kpis{ display:grid; grid-template-columns:repeat(2,1fr); gap:10px; padding:0 18px 10px; }
+  .ip-kpi{ background:var(--panel2); border-radius:14px; padding:10px 12px; }
+  .ip-kpi .n{ font-size:22px; font-weight:800; letter-spacing:-.03em; line-height:1.1; }
+  .ip-kpi .l{ font-size:11.5px; color:var(--muted); margin-top:2px; line-height:1.25; }
+  .ip-charts{ display:grid; grid-template-columns:1fr; gap:14px; padding:4px 18px 16px; }
+  .ip-ch{ position:relative; }
+  .ip-ch .ct{ font-size:12.5px; font-weight:700; margin-bottom:4px; } .ip-ch .ct span{ color:var(--muted); font-weight:500; }
+  .ip-ch svg{ width:100%; height:auto; display:block; overflow:visible; }
+  .ip-tip{ position:absolute; pointer-events:none; background:var(--text); color:var(--bg); font-size:11.5px; font-weight:700; padding:5px 9px; border-radius:8px; white-space:nowrap; transform:translate(-50%,-120%); display:none; z-index:5; }
+  @media (max-width:999px){ #ipFechaCorta{ display:none; } }
+  /* Celu: orden pensado para el día a día (turnos → atención → wellness → números) */
+  #ipPnTurnos{ order:1; } #ipPnAlertas{ order:2; } #ipPnWell{ order:3; } #ipPnDash{ order:4; }
+  /* PC: 4 paneles a la vista, sin scroll de página */
+  @media (min-width:1000px){
+    #ipHero, #ipTiles{ display:none; }
+    .ip-acts{ display:flex; }
+    .ip-grid{ grid-template-columns:1fr 1fr; grid-template-rows:1fr 1fr; gap:16px; height:calc(100vh - 330px); min-height:680px; }
+    #ipPnTurnos, #ipPnWell, #ipPnAlertas, #ipPnDash{ order:0; }
+    .ip-turnos{ display:grid; grid-template-columns:150px 1fr; height:100%; }
+    .ip-slots{ flex-direction:column; overflow:auto; padding:0; gap:0; border-right:1px solid var(--border); }
+    .ip-sl{ border-radius:0; min-width:0; background:transparent; border:0; border-bottom:1px solid var(--border); border-left:3px solid transparent; padding:10px 14px; }
+    .ip-sl.sel{ background:var(--note-bg); border-left-color:var(--accent); }
+    .ip-lst{ overflow:auto; }
+    .ip-kpis{ grid-template-columns:repeat(4,1fr); }
+    .ip-charts{ grid-template-columns:1.5fr 1fr; }
+  }
+
 </style>
 </head>
 <body>
@@ -1185,10 +1280,11 @@
   <button class="menu-drawer-btn" id="menuDrawerBtnProf" onclick="abrirMenuProf()">☰ Menú</button>
 
   <div class="top-toolbar" id="topToolbarProf">
+    <button class="tt-btn active" id="ttInicio" onclick="cambiarSubvista('inicio')" title="Inicio"><span class="tt-ico">🏠</span><span class="tt-lbl">Inicio</span></button>
     <button class="tt-btn" id="ttDashboard" onclick="cambiarSubvista('dashboard')" style="display:none;" title="Dashboard"><span class="tt-ico">📊</span><span class="tt-lbl">Dashboard</span></button>
     <button class="tt-btn" id="ttArmador" onclick="cambiarSubvista('armador')" title="Armador de Rutina"><span class="tt-ico">🏋️</span><span class="tt-lbl">Armador de rutinas</span></button>
     <button class="tt-btn" id="ttRutinas" onclick="cambiarSubvista('rutinas')" title="Rutinas"><span class="tt-ico">🗂️</span><span class="tt-lbl">Rutinas</span></button>
-    <button class="tt-btn active" id="ttAgenda" onclick="cambiarSubvista('agenda')" title="Agenda"><span class="tt-ico">📋</span><span class="tt-lbl">Agenda</span></button>
+    <button class="tt-btn" id="ttAgenda" onclick="cambiarSubvista('agenda')" title="Agenda"><span class="tt-ico">📋</span><span class="tt-lbl">Agenda</span></button>
     <button class="tt-btn" id="ttEspeciales" onclick="cambiarSubvista('especiales')" title="Rutinas especiales por alumno"><span class="tt-ico">⭐</span><span class="tt-lbl">Rutinas especiales</span></button>
     <button class="tt-btn" id="ttEquipo" onclick="cambiarSubvista('equipo')" title="Seguimiento Equipo"><span class="tt-ico">⚽</span><span class="tt-lbl">Seguimiento Equipo</span></button>
     <button class="tt-btn" id="ttAlumnos" onclick="cambiarSubvista('alumnos')" style="display:none;" title="Alumnos"><span class="tt-ico">👤</span><span class="tt-lbl">Alumnos</span></button>
@@ -1213,10 +1309,11 @@
         <button onclick="cerrarMenuProf()">✕</button>
       </div>
     </div>
+    <div class="side-item active" id="menuInicio" onclick="cambiarSubvista('inicio')" title="Inicio"><span class="side-ico">🏠</span><span class="side-label">Inicio</span></div>
     <div class="side-item" id="menuDashboard" onclick="cambiarSubvista('dashboard')" style="display:none;" title="Dashboard"><span class="side-ico">📊</span><span class="side-label">Dashboard</span></div>
     <div class="side-item" id="menuArmador" onclick="cambiarSubvista('armador')" title="Armador de Rutina"><span class="side-ico">🏋️</span><span class="side-label">Armador de Rutina</span></div>
     <div class="side-item" id="menuRutinas" onclick="cambiarSubvista('rutinas')" title="Rutinas"><span class="side-ico">🗂️</span><span class="side-label">Rutinas</span></div>
-    <div class="side-item active" id="menuAgenda" onclick="cambiarSubvista('agenda')" title="Agenda"><span class="side-ico">📋</span><span class="side-label">Agenda</span></div>
+    <div class="side-item" id="menuAgenda" onclick="cambiarSubvista('agenda')" title="Agenda"><span class="side-ico">📋</span><span class="side-label">Agenda</span></div>
     <div class="side-item" id="menuEspeciales" onclick="cambiarSubvista('especiales')" title="Rutinas especiales por alumno"><span class="side-ico">⭐</span><span class="side-label">Rutinas especiales por alumno</span></div>
     <div class="side-item" id="menuEquipo" onclick="cambiarSubvista('equipo')" title="Equipo"><span class="side-ico">⚽</span><span class="side-label">Equipo</span></div>
     <div class="side-item" id="menuAlumnos" onclick="cambiarSubvista('alumnos')" title="Alumnos"><span class="side-ico">👤</span><span class="side-label">Alumnos</span></div>
@@ -1234,6 +1331,45 @@
 
   <div class="prof-layout">
     <div class="prof-main">
+
+      <!-- ---- SUBVISTA: INICIO (v81) — lo primero que ve el profesor al entrar ---- -->
+      <div id="subvistaInicio" style="display:none;">
+        <div class="ip-head">
+          <div>
+            <div class="vista-eyebrow" id="ipSaludo"></div>
+            <div class="vista-titulo">Tu agenda de hoy <span id="ipFechaCorta" class="muted" style="font-size:15px; font-weight:600; letter-spacing:0; margin-left:6px;"></span></div>
+          </div>
+          <div class="ip-acts">
+            <button class="ip-btn line" onclick="cambiarSubvista('armador')">Armar rutina</button>
+            <button class="ip-btn" onclick="cambiarSubvista('agenda')">Ver agenda</button>
+          </div>
+        </div>
+        <div class="ip-alcance" id="ipAlcance" style="display:none;"></div>
+        <div id="ipHero"></div>
+        <div class="alu-tiles" id="ipTiles"></div>
+        <div class="ip-grid">
+          <section class="card ip-pn" id="ipPnTurnos">
+            <div class="ip-pn-h"><div><b>Turnos de hoy</b><div class="ip-sub" id="ipTurnosSub"></div></div><button class="sec-link" onclick="cambiarSubvista('agenda')">Ver agenda ›</button></div>
+            <div class="ip-pn-b" id="ipTurnos"><div class="ip-vacio">Cargando...</div></div>
+          </section>
+          <section class="card ip-pn" id="ipPnWell">
+            <div class="ip-pn-h"><div><b>Wellness a revisar</b><div class="ip-sub" id="ipWellSub"></div></div><span class="ip-pill acc" id="ipWellCount"></span></div>
+            <div class="ip-sem" id="ipSem"></div>
+            <div class="ip-pn-b" id="ipWell"></div>
+          </section>
+          <section class="card ip-pn" id="ipPnAlertas">
+            <div class="ip-pn-h"><div><b>Requiere tu atención</b><div class="ip-sub">Lo que conviene resolver hoy</div></div><span class="ip-pill" id="ipAlCount"></span></div>
+            <div class="ip-pn-b" id="ipAl"></div>
+          </section>
+          <section class="card ip-pn" id="ipPnDash">
+            <div class="ip-pn-h"><div><b>Tus números</b><div class="ip-sub">Últimos 14 días</div></div></div>
+            <div class="ip-pn-b"><div class="ip-kpis" id="ipKpis"></div><div class="ip-charts">
+              <div class="ip-ch"><div class="ct">Asistencia diaria <span>· presentes por día</span></div><svg id="ipLine" viewBox="0 0 420 150"></svg><div class="ip-tip" id="ipTip1"></div></div>
+              <div class="ip-ch" id="ipCh2"><div class="ct">Turnos por día <span>· esta semana</span></div><svg id="ipBars" viewBox="0 0 260 150"></svg><div class="ip-tip" id="ipTip2"></div></div>
+            </div></div>
+          </section>
+        </div>
+      </div>
 
       <!-- ---- SUBVISTA: DASHBOARD (solo admin) ---- -->
       <div id="subvistaDashboard" style="display:none;">
@@ -2295,6 +2431,7 @@
   <!-- ---- Barra inferior de navegación (solo mobile) ---- -->
   <div class="bottom-nav show" id="bottomNavProf">
     <div class="bottom-nav-inner">
+      <button class="bottom-nav-item active" id="bnavProfInicio" onclick="cambiarSubvista('inicio')"><span class="ico"><svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg></span>Inicio</button>
       <button class="bottom-nav-item" id="bnavProfRutinas" onclick="cambiarSubvista('rutinas')"><span class="ico"><svg viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13"/><path d="M3.5 6h.01M3.5 12h.01M3.5 18h.01"/></svg></span>Rutinas</button>
       <button class="bottom-nav-item" id="bnavProfArmador" onclick="cambiarSubvista('armador')"><span class="ico"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="M12 8v8M8 12h8"/></svg></span>Armador</button>
       <button class="bottom-nav-item" id="bnavProfAgenda" onclick="cambiarSubvista('agenda')"><span class="ico"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M8 3v4M16 3v4M3 10h18"/></svg></span>Agenda</button>
@@ -2754,7 +2891,7 @@ const BUCKET = "Ejercicios";
 // un cambio, se incrementa este número — el chequeo de actualización (más abajo) lo compara
 // contra lo que hay publicado y avisa si están desactualizados, sin que nadie tenga que
 // cambiar ningún link a mano.
-const APP_VERSION = 80;
+const APP_VERSION = 81;
 
 // ---------- Instalar como app (PWA): acceso directo en escritorio/celular ----------
 // Chrome/Edge/Android disparan "beforeinstallprompt" cuando el manifest + service worker
@@ -3933,7 +4070,7 @@ async function entrarComoStaff(){
   registrarActividadGimnasio();
   sincronizarTabsRol();
   await Promise.all([cargarPersonas(), cargarGimnasioActual(), cargarCategoriasYEquipos()]);
-  cambiarSubvista('agenda'); // lo primero que ve el profesor al entrar es la agenda del día, no el armador
+  cambiarSubvista('inicio'); // (v81) lo primero que ve el staff al entrar es su Inicio (agenda de hoy, Wellness, alertas), no el armador
   // (v61) El catálogo de ejercicios (~430 kB) ya no frena la entrada: solo se usa al armar/buscar rutinas.
   cargarCatalogoEjercicios().catch(e => console.error('No se pudo cargar el catálogo de ejercicios:', e));
   if (PERFIL_ACTUAL.rol === 'admin') revisarNotificacionesStaff();
@@ -4253,6 +4390,326 @@ function cambiarVista(v){
   }
 }
 
+// ---------- Inicio del profesor (v81) ----------
+// Pantalla de entrada del staff: agenda del día, Wellness a revisar, alertas y números
+// propios. En el celu se apila; en la PC (>=1000px) son 4 paneles a la vez. Todo sale de
+// tablas que el profesor ya puede leer (turnos, horarios_trabajo, wellness_respuestas);
+// nada de finanzas ni de la RPC de alertas de admin.
+let INICIO = { alcance:'mio', sel:null, selW:null, filtroW:'todos', d:null };
+const IP_CLS = { verde:'g', amarillo:'y', rojo:'rd' };
+
+const IP_CORTO = { fatiga:'Fatiga', sueno:'Sueño', dolor_muscular:'Dolor', estres:'Estrés', animo:'Ánimo' };
+function ipEsc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function ipSumarDias(iso, n){ const x = new Date(iso + 'T12:00:00'); x.setDate(x.getDate() + n); return dateAIso(x); }
+function ipMin(h){ const p = String(h).split(':'); return (+p[0]) * 60 + (+p[1]); }
+function ipDur(min){ return min >= 60 ? `${Math.floor(min/60)} h${min%60 ? ' ' + (min%60) + ' min' : ''}` : `${min} min`; }
+function ipPlural(n, s, p){ return `${n} ${n === 1 ? s : p}`; }
+
+async function cargarInicioProfesor(){
+  const root = document.getElementById('subvistaInicio');
+  if (!root || root.style.display === 'none') return;
+  try{
+    const ahora = new Date();
+    const hoy = dateAIso(ahora);
+    const dow = ahora.getDay();
+    const esAdmin = PERFIL_ACTUAL?.rol === 'admin';
+    const propio = (PROFESORES_CACHE || []).find(p => p.perfil_id === PERFIL_ACTUAL?.id) || null;
+    let profId = propio ? propio.id : null;
+    if (esAdmin && propio && INICIO.alcance === 'todos') profId = null;
+    const pf = profId ? `&profesor_id=eq.${profId}` : '';
+    const lunes = ipSumarDias(hoy, -((dow + 6) % 7));
+    const domingo = ipSumarDias(lunes, 6);
+    const desde14 = ipSumarDias(hoy, -13);
+    const [tHoy, horarios, tRango, tSinRutina] = await Promise.all([
+      sb(`turnos?select=id,hora,profesor_id,alumno_id,asistio,rutina_dia_id,rutina_ajustada_en,rutina_dias(nombre_dia),alumnos(nombre)&fecha=eq.${hoy}&estado=neq.cancelado${pf}&order=hora`),
+      sb(`horarios_trabajo?select=profesor_id,hora_inicio,hora_fin,cupo_por_turno&dia_semana=eq.${dow}&activo=eq.true${profId ? '&profesor_id=eq.' + profId : ''}`),
+      sb(`turnos?select=fecha,hora,asistio&fecha=gte.${desde14}&fecha=lte.${domingo}&estado=neq.cancelado${pf}&limit=3000`),
+      sb(`turnos?select=alumno_id,fecha,alumnos(nombre)&rutina_dia_id=is.null&fecha=gte.${hoy}&fecha=lte.${ipSumarDias(hoy, 7)}&estado=neq.cancelado${pf}&limit=300`),
+    ]);
+    const [wMap, prog] = await Promise.all([ cargarWellnessDelDia(hoy, tHoy), cargarProgresoTurnos(tHoy) ]);
+
+    const turnos = tHoy.map(t => ({
+      id: t.id, hora: t.hora, h: String(t.hora).slice(0, 5), alumnoId: t.alumno_id, nombre: t.alumnos?.nombre || 'Alumno',
+      asistio: t.asistio, ef: asistenciaEfectiva(t.asistio, hoy, t.hora), rutinaDiaId: t.rutina_dia_id,
+      nombreDia: t.rutina_dias?.nombre_dia || '', ajustada: !!t.rutina_ajustada_en, profId: t.profesor_id,
+      w: wMap[t.alumno_id] || null, prog: prog[t.id] || null,
+    }));
+    const cupoDe = h => horarios.reduce((s, x) => s + ((String(x.hora_inicio).slice(0,5) <= h && h < String(x.hora_fin).slice(0,5)) ? x.cupo_por_turno : 0), 0);
+    const nowMin = ahora.getHours() * 60 + ahora.getMinutes();
+    const horas = [...new Set(turnos.map(t => t.h))].sort();
+    let proximoMarcado = false;
+    const slots = horas.map(h => {
+      const s = ipMin(h);
+      let est, label;
+      if (nowMin >= s + 60){ est = 'past'; label = 'Finalizado'; }
+      else if (nowMin >= s){ est = 'now'; label = 'En curso'; }
+      else if (!proximoMarcado){ est = 'next'; proximoMarcado = true; label = 'En ' + ipDur(s - nowMin); }
+      else { est = 'later'; label = 'Más tarde'; }
+      return { h, est, label, cupo: cupoDe(h), items: turnos.filter(t => t.h === h) };
+    });
+    const alSel = slots.find(s => s.est === 'now') || slots.find(s => s.est === 'next') || slots[slots.length - 1] || null;
+    if (!INICIO.sel || !slots.some(s => s.h === INICIO.sel)) INICIO.sel = alSel ? alSel.h : null;
+
+    // Números propios: asistencia últimos 7 días, turnos de la semana, presentes por día.
+    const efDe = r => asistenciaEfectiva(r.asistio, r.fecha, r.hora);
+    const hace6 = ipSumarDias(hoy, -6);
+    const pasados7 = tRango.filter(r => r.fecha >= hace6 && r.fecha <= hoy && efDe(r) !== null);
+    const pctAsist = pasados7.length ? Math.round(pasados7.filter(r => efDe(r) === true).length / pasados7.length * 100) : null;
+    const serie14 = [], etq14 = [];
+    for (let i = 0; i < 14; i++){
+      const f = ipSumarDias(desde14, i);
+      serie14.push(tRango.filter(r => r.fecha === f && efDe(r) === true).length);
+      etq14.push(+f.slice(8) + '/' + (+f.slice(5, 7)));
+    }
+    const semana = [];
+    for (let i = 0; i < 7; i++){ const f = ipSumarDias(lunes, i); semana.push({ f, n: tRango.filter(r => r.fecha === f).length, hoy: f === hoy }); }
+    const sinRutinaMap = {};
+    tSinRutina.forEach(r => { if (!sinRutinaMap[r.alumno_id]) sinRutinaMap[r.alumno_id] = { nombre: r.alumnos?.nombre || 'Alumno', fecha: r.fecha }; });
+
+    INICIO.d = { hoy, ahora, nowMin, esAdmin, propio, profId, turnos, slots, serie14, etq14, semana, pctAsist,
+                 turnosSemana: semana.reduce((s, x) => s + x.n, 0), sinRutina: Object.values(sinRutinaMap) };
+    ipRenderTodo();
+  }catch(e){
+    console.error('Inicio del profesor:', e);
+    const el = document.getElementById('ipTurnos');
+    if (el) el.innerHTML = `<div class="ip-vacio">No se pudo cargar el inicio: ${ipEsc(e.message || e)}</div>`;
+  }
+}
+
+function ipRenderTodo(){
+  const cont = ['ipTurnos', 'ipWell', 'ipAl'].map(id => document.getElementById(id));
+  const scroll = cont.map(c => c ? c.scrollTop : 0);
+  ipRenderCabecera(); ipRenderTurnos(); ipRenderWell(); ipRenderAlertas(); ipRenderNumeros();
+  cont.forEach((c, i) => { if (c) c.scrollTop = scroll[i]; });
+}
+
+function ipRenderCabecera(){
+  const d = INICIO.d; if (!d) return;
+  const nombre = (PERFIL_ACTUAL?.nombre || '').trim().split(' ')[0];
+  const hr = d.ahora.getHours();
+  const saludo = hr < 12 ? 'Buen día' : hr < 20 ? 'Buenas tardes' : 'Buenas noches';
+  document.getElementById('ipSaludo').textContent = `${saludo}, profe${nombre ? ' ' + nombre : ''}`;
+  const f = fechaLegible(d.hoy);
+  document.getElementById('ipFechaCorta').textContent = f.charAt(0).toUpperCase() + f.slice(1);
+  // Alcance (solo admin que además tiene su propia ficha de profesor)
+  const al = document.getElementById('ipAlcance');
+  if (d.esAdmin && d.propio){
+    al.style.display = '';
+    al.innerHTML = `<button class="${INICIO.alcance === 'mio' ? 'on' : ''}" onclick="ipAlcance('mio')">Mis turnos</button><button class="${INICIO.alcance === 'todos' ? 'on' : ''}" onclick="ipAlcance('todos')">Todo el gimnasio</button>`;
+  } else al.style.display = 'none';
+
+  const alumnos = new Set(d.turnos.map(t => t.alumnoId)).size;
+  const hero = document.getElementById('ipHero');
+  if (!d.slots.length){
+    hero.innerHTML = `<div class="alu-hero">
+      <div><div class="h-eyebrow">Hoy · ${ipEsc(f)}</div><div class="h-titulo">Hoy no tenés turnos</div>
+      <div class="h-sub">Buen momento para armar rutinas o revisar tu agenda de la semana.</div></div>
+      <div class="h-cta"><button onclick="cambiarSubvista('agenda')">Ver agenda de la semana</button><button class="hero-soft" onclick="cambiarSubvista('armador')">Armar una rutina</button></div></div>`;
+  } else {
+    const pos = d.slots.find(s => s.est === 'now') || d.slots.find(s => s.est === 'next');
+    const dados = d.slots.filter(s => s.est === 'past').length;
+    const marcados = d.turnos.filter(t => t.ef === true).length;
+    const sub = pos ? `${pos.est === 'now' ? 'En curso' : 'Próximo'}: <b>${pos.h} hs</b> · ${pos.label.toLowerCase().replace('en curso', 'ahora')} · ${ipPlural(pos.items.length, 'alumno anotado', 'alumnos anotados')}`
+                    : 'Ya terminaste tus turnos de hoy 👏';
+    hero.innerHTML = `<div class="alu-hero">
+      <div><div class="h-eyebrow">Hoy · ${ipEsc(f)}</div><div class="h-titulo">${ipPlural(d.slots.length, 'turno', 'turnos')} · ${ipPlural(alumnos, 'alumno', 'alumnos')}</div>
+      <div class="h-sub">${sub}</div></div>
+      <div class="ip-stats"><div class="st"><b>${dados}</b>ya dados</div><div class="st"><b>${d.slots.length - dados}</b>por dar</div><div class="st"><b>${marcados}/${d.turnos.length}</b>presentes</div></div>
+      <div class="h-cta"><button onclick="cambiarSubvista('agenda')">Ver mi agenda</button></div></div>`;
+  }
+  const w = ipWellStats(d);
+  const revisar = w.rd + w.y;
+  const sinRut = d.sinRutina.length;
+  const sinConf = d.turnos.filter(t => t.asistio === null && t.ef === false).length;
+  document.getElementById('ipTiles').innerHTML = [
+    [alumnos, ipPlural(d.slots.length, 'turno', 'turnos') + ' hoy · alumnos', null, "cambiarSubvista('agenda')"],
+    [revisar, 'Wellness a revisar (rojo / ámbar)', revisar ? (w.rd ? 'var(--danger)' : 'var(--warn)') : null, "ipIrAWell('todos')"],
+    [sinRut, 'Sin rutina en sus próximos turnos', sinRut ? 'var(--warn)' : null, "cambiarSubvista('especiales')"],
+    [sinConf, 'Asistencias sin confirmar', sinConf ? 'var(--muted)' : null, "cambiarSubvista('agenda')"],
+  ].map(t => `<div class="alu-tile" onclick="${t[3]}">${t[2] ? `<span class="dot" style="background:${t[2]}"></span>` : ''}<div class="n">${t[0]}</div><div class="l">${t[1]}</div></div>`).join('');
+}
+
+function ipAlcance(v){ INICIO.alcance = v; INICIO.sel = null; INICIO.selW = null; cargarInicioProfesor(); }
+
+function ipWellStats(d){
+  const r = { rd:0, y:0, g:0, n0:0 };
+  d.turnos.forEach(t => { const k = t.w ? (IP_CLS[t.w.semaforo] || 'n0') : 'n0'; r[k]++; });
+  return r;
+}
+function ipPillW(t){
+  if (!t.w) return '<span class="ip-pill">Pendiente</span>';
+  const c = t.w.semaforo === 'verde' ? 'ok' : t.w.semaforo === 'amarillo' ? 'warn' : 'bad';
+  return `<span class="ip-pill ${c}">${t.w.total}/25</span>`;
+}
+function ipAv(t){ return `<div class="ip-av">${ipEsc(iniciales(t.nombre))}<i class="ip-${t.w ? (IP_CLS[t.w.semaforo] || 'n0') : 'n0'}"></i></div>`; }
+
+function ipRenderTurnos(){
+  const d = INICIO.d, el = document.getElementById('ipTurnos'); if (!d) return;
+  document.getElementById('ipTurnosSub').textContent = d.slots.length
+    ? `${ipPlural(d.slots.length, 'turno', 'turnos')} · ${ipPlural(new Set(d.turnos.map(t => t.alumnoId)).size, 'alumno', 'alumnos')}` : 'Sin turnos hoy';
+  if (!d.slots.length){
+    el.innerHTML = `<div class="ip-vacio">Hoy no tenés turnos.<br><button class="ip-btn sm" style="margin-top:12px;" onclick="cambiarSubvista('agenda')">Ver agenda de la semana</button></div>`;
+    return;
+  }
+  const s = d.slots.find(x => x.h === INICIO.sel) || d.slots[0];
+  const marc = s.items.filter(t => t.ef === true).length;
+  el.innerHTML = `<div class="ip-turnos">
+    <div class="ip-slots">${d.slots.map(x => `<div class="ip-sl ${x.est === 'past' ? 'past' : ''} ${x.h === s.h ? 'sel' : ''}" onclick="ipElegirSlot('${x.h}')">
+      <div class="t">${x.h}<span>${x.items.length}${x.cupo ? '/' + x.cupo : ''}</span></div><div class="e">${ipEsc(x.label)}</div>
+      <div class="bar"><i style="width:${x.cupo ? Math.min(100, x.items.length / x.cupo * 100) : 100}%"></i></div></div>`).join('')}</div>
+    <div class="ip-lst">
+      <div class="ip-lst-h"><span>${s.h} · ${ipPlural(s.items.length, 'anotado', 'anotados')}</span><span>Asistencia ${marc}/${s.items.length}</span></div>
+      ${s.items.map(t => {
+        const rut = t.rutinaDiaId ? `Rutina · ${ipEsc(t.nombreDia || 'asignada')}` : '⚠ Sin rutina asignada';
+        let extra = '';
+        if (t.prog){ extra = (t.prog.total > 0 && t.prog.hechos >= t.prog.total) ? ' · ✅ completa' : ` · 🏋️ ${t.prog.hechos}/${t.prog.total}`; }
+        if (t.ajustada) extra += ' · 🔄 ajustada';
+        const bcls = t.ef === true ? 'on' : t.ef === false ? 'aus' : '';
+        const bico = t.ef === false ? '✕' : '✓';
+        return `<div class="ip-row" onclick="ipAbrirTurno('${t.id}')">${ipAv(t)}
+          <div class="ip-nm"><b>${ipEsc(t.nombre)}</b><span>${rut}${extra}</span></div>${ipPillW(t)}
+          <button class="ip-chk ${bcls}" title="${t.ef === true ? 'Presente (tocá para quitar)' : 'Marcar presente'}" onclick="ipMarcar(event,'${t.id}')">${bico}</button></div>`;
+      }).join('')}
+    </div></div>`;
+}
+
+function ipElegirSlot(h){ INICIO.sel = h; INICIO.selW = h; ipRenderTurnos(); ipRenderWell(); }
+
+function ipAbrirTurno(id){
+  const d = INICIO.d; const t = d && d.turnos.find(x => x.id === id); if (!t) return;
+  abrirModalAsistencia(t.id, t.asistio === true ? true : t.asistio === false ? false : null, d.hoy, t.hora, t.alumnoId, t.nombre, t.rutinaDiaId || null, t.nombreDia || '', t.profId);
+}
+
+async function ipMarcar(ev, id){
+  ev.stopPropagation();
+  const d = INICIO.d; const t = d && d.turnos.find(x => x.id === id); if (!t) return;
+  const valor = t.ef === true ? null : true; // ya presente → quita la marca
+  try{
+    await sb(`turnos?id=eq.${id}`, { method:'PATCH', headers:{ Prefer:'return=minimal' },
+      body: JSON.stringify({ asistio: valor, asistencia_marcada_en: valor === null ? null : new Date().toISOString() }) });
+    toast(valor === null ? 'Marca quitada ✓' : 'Presente ✓');
+    cargarInicioProfesor();
+  }catch(e){ toast('Error marcando asistencia: ' + (e.message || e), true); }
+}
+
+function ipRenderWell(){
+  const d = INICIO.d; if (!d) return;
+  const w = ipWellStats(d);
+  const F = [['todos', 'Todos', d.turnos.length, ''], ['rd', 'Rojo', w.rd, 'var(--danger)'], ['y', 'Ámbar', w.y, 'var(--warn)'], ['g', 'Verde', w.g, 'var(--accent2)'], ['n0', 'Pendiente', w.n0, 'var(--muted)']];
+  document.getElementById('ipWellSub').textContent = INICIO.selW ? `Turno de las ${INICIO.selW}` : 'Todos los turnos de hoy';
+  document.getElementById('ipWellCount').textContent = `${w.rd + w.y} para revisar`;
+  document.getElementById('ipSem').innerHTML = F.map(f => `<button class="${INICIO.filtroW === f[0] ? 'on' : ''}" onclick="ipFiltroW('${f[0]}')">${f[3] ? `<i style="background:${f[3]}"></i>` : ''}${f[1]} <b>${f[2]}</b></button>`).join('')
+    + (INICIO.selW ? `<button onclick="INICIO.selW=null;ipRenderWell()">Turno ${INICIO.selW} ✕</button>` : '');
+  const orden = { rd:0, y:1, n0:2, g:3 };
+  const cls = t => t.w ? (IP_CLS[t.w.semaforo] || 'n0') : 'n0';
+  const l = d.turnos.filter(t => (!INICIO.selW || t.h === INICIO.selW) && (INICIO.filtroW === 'todos' || cls(t) === INICIO.filtroW))
+    .sort((a, b) => orden[cls(a)] - orden[cls(b)] || a.h.localeCompare(b.h));
+  const el = document.getElementById('ipWell');
+  if (!l.length){ el.innerHTML = `<div class="ip-vacio">${d.turnos.length ? 'Nada para mostrar con este filtro.' : 'Sin turnos hoy, sin Wellness para revisar.'}</div>`; return; }
+  el.innerHTML = l.map(t => {
+    const bajo = t.w ? WELLNESS_ITEMS.filter(it => t.w[it.k] != null) : [];
+    const c = cls(t);
+    return `<div class="ip-w"><div class="top">${ipAv(t)}<div class="ip-nm"><b>${ipEsc(t.nombre)}</b><span>Turno ${t.h} · ${t.rutinaDiaId ? ipEsc(t.nombreDia || 'con rutina') : 'Sin rutina'}</span></div>${ipPillW(t)}</div>
+      ${(c === 'rd' || c === 'y') && bajo.length ? `<div class="ip-mini">${bajo.map(it => `<span class="${t.w[it.k] <= 2 ? 'low' : ''}">${ipEsc(IP_CORTO[it.k] || it.titulo)} ${t.w[it.k]}</span>`).join('')}</div>` : ''}
+      ${t.w && t.w.nota ? `<div class="ip-nota">💬 ${ipEsc(t.w.nota)}</div>` : ''}
+      ${c === 'rd' || c === 'y' ? `<div class="ip-wact"><button class="ip-btn sm" onclick="ipAbrirTurno('${t.id}')">Ajustar / ver turno</button></div>` : ''}</div>`;
+  }).join('');
+}
+
+function ipFiltroW(f){ INICIO.filtroW = f; ipRenderWell(); }
+function ipIrAWell(f){
+  INICIO.filtroW = f; INICIO.selW = null; ipRenderWell();
+  document.getElementById('ipPnWell')?.scrollIntoView({ behavior:'smooth', block:'start' });
+}
+
+function ipRenderAlertas(){
+  const d = INICIO.d; if (!d) return;
+  const cls = t => t.w ? (IP_CLS[t.w.semaforo] || 'n0') : 'n0';
+  const nom = arr => { const n = arr.map(t => t.nombre); return n.slice(0, 3).join(', ') + (n.length > 3 ? ` y ${n.length - 3} más` : ''); };
+  const items = [];
+  const rojos = d.turnos.filter(t => cls(t) === 'rd');
+  if (rojos.length === 1) items.push(['🔴', 'var(--danger)', `${rojos[0].nombre} llega con Wellness ${rojos[0].w.total}/25`, rojos[0].w.nota ? rojos[0].w.nota : `Turno ${rojos[0].h}`, "ipIrAWell('rd')"]);
+  else if (rojos.length) items.push(['🔴', 'var(--danger)', `${rojos.length} alumnos con Wellness en rojo`, nom(rojos), "ipIrAWell('rd')"]);
+  const amar = d.turnos.filter(t => cls(t) === 'y');
+  if (amar.length) items.push(['🟡', 'var(--warn)', `${ipPlural(amar.length, 'alumno', 'alumnos')} con Wellness en ámbar`, nom(amar), "ipIrAWell('y')"]);
+  const pend = d.turnos.filter(t => cls(t) === 'n0' && ipMin(t.h) - d.nowMin <= 120 && ipMin(t.h) - d.nowMin > -60);
+  if (pend.length) items.push(['⏳', 'var(--muted)', `${pend.length} sin completar el Wellness`, `Entran en las próximas 2 horas · ${nom(pend)}`, "ipIrAWell('n0')"]);
+  if (d.sinRutina.length) items.push(['📋', 'var(--warn)', `${ipPlural(d.sinRutina.length, 'alumno', 'alumnos')} sin rutina en sus próximos turnos`, nom(d.sinRutina.map(x => ({ nombre: x.nombre }))), "cambiarSubvista('especiales')"]);
+  const sinConf = d.turnos.filter(t => t.asistio === null && t.ef === false);
+  if (sinConf.length) items.push(['🕓', 'var(--accent)', `${ipPlural(sinConf.length, 'asistencia', 'asistencias')} sin confirmar`, `Turnos que ya pasaron · ${nom(sinConf)}`, "cambiarSubvista('agenda')"]);
+  const ajus = d.turnos.filter(t => t.ajustada);
+  if (ajus.length) items.push(['🔄', 'var(--accent)', `${ipPlural(ajus.length, 'sesión ajustada', 'sesiones ajustadas')} hoy`, nom(ajus), "cambiarSubvista('agenda')"]);
+  const cnt = document.getElementById('ipAlCount');
+  cnt.textContent = items.length; cnt.className = 'ip-pill' + (items.length ? (rojos.length ? ' bad' : ' warn') : ' ok');
+  document.getElementById('ipAl').innerHTML = items.length ? items.map(i => `<div class="ip-att" onclick="${i[4]}">
+      <div class="ic" style="background:color-mix(in srgb, ${i[1]} 20%, transparent)">${i[0]}</div>
+      <div class="tx"><b>${ipEsc(i[2])}</b><span>${ipEsc(i[3])}</span></div><span class="go">›</span></div>`).join('')
+    : '<div class="ip-vacio">Todo en orden por hoy 👍</div>';
+}
+
+function ipRenderNumeros(){
+  const d = INICIO.d; if (!d) return;
+  const w = ipWellStats(d);
+  const compl = d.turnos.length - w.n0;
+  document.getElementById('ipKpis').innerHTML = [
+    [new Set(d.turnos.map(t => t.alumnoId)).size, 'Alumnos hoy'],
+    [d.pctAsist == null ? '—' : d.pctAsist + '%', 'Asistencia últimos 7 días'],
+    [d.turnosSemana, 'Turnos de la semana'],
+    [`${compl}/${d.turnos.length}`, 'Wellness completados hoy'],
+  ].map(k => `<div class="ip-kpi"><div class="n">${k[0]}</div><div class="l">${k[1]}</div></div>`).join('');
+  ipDibujarLinea(d); ipDibujarBarras(d);
+}
+
+// Una sola serie → un solo tono; sin doble eje. Hover con guía y tooltip.
+function ipDibujarLinea(d){
+  const svg = document.getElementById('ipLine'), tip = document.getElementById('ipTip1');
+  const V = d.serie14, N = V.length, W = 420, H = 150, pl = 26, pr = 14, pt = 14, pb = 22;
+  const max = Math.max(4, Math.ceil(Math.max(...V) / 4) * 4);
+  const X = i => pl + i * (W - pl - pr) / (N - 1), Y = v => pt + (H - pt - pb) * (1 - v / max);
+  let g = '';
+  [0, max / 2, max].forEach(v => { g += `<line x1="${pl}" x2="${W - pr}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--border)" stroke-width="1"/><text x="${pl - 6}" y="${Y(v) + 4}" text-anchor="end" font-size="10" fill="var(--muted)">${v}</text>`; });
+  const pts = V.map((v, i) => [X(i), Y(v)]);
+  const ln = pts.map((p, i) => (i ? 'L' : 'M') + p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join(' ');
+  svg.innerHTML = g + `<path d="${ln} L${X(N - 1)} ${Y(0)} L${X(0)} ${Y(0)} Z" fill="var(--accent)" opacity=".12"/><path d="${ln}" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`
+    + `<circle cx="${pts[N - 1][0]}" cy="${pts[N - 1][1]}" r="4" fill="var(--accent)" stroke="var(--panel)" stroke-width="2"/>`
+    + [0, 6, N - 1].map(i => `<text x="${X(i)}" y="${H - 5}" text-anchor="${i === 0 ? 'start' : i === N - 1 ? 'end' : 'middle'}" font-size="10" fill="var(--muted)">${d.etq14[i]}</text>`).join('')
+    + `<line id="ipCross" y1="${pt}" y2="${H - pb}" stroke="var(--muted)" stroke-dasharray="3 3" style="display:none"/><circle id="ipDot" r="5" fill="var(--accent)" stroke="var(--panel)" stroke-width="2" style="display:none"/><rect x="0" y="0" width="${W}" height="${H}" fill="transparent" id="ipHit"/>`;
+  const hit = document.getElementById('ipHit'), cross = document.getElementById('ipCross'), dot = document.getElementById('ipDot');
+  const mover = ev => {
+    const r = svg.getBoundingClientRect(); const cx = (ev.touches ? ev.touches[0].clientX : ev.clientX);
+    const x = (cx - r.left) / r.width * W;
+    const i = Math.max(0, Math.min(N - 1, Math.round((x - pl) / ((W - pl - pr) / (N - 1)))));
+    cross.setAttribute('x1', X(i)); cross.setAttribute('x2', X(i)); cross.style.display = ''; dot.setAttribute('cx', X(i)); dot.setAttribute('cy', Y(V[i])); dot.style.display = '';
+    tip.style.display = 'block'; tip.style.left = (X(i) / W * r.width) + 'px'; tip.style.top = (Y(V[i]) / H * r.height + 18) + 'px';
+    tip.textContent = `${d.etq14[i]} · ${ipPlural(V[i], 'presente', 'presentes')}`;
+  };
+  const salir = () => { cross.style.display = 'none'; dot.style.display = 'none'; tip.style.display = 'none'; };
+  hit.addEventListener('mousemove', mover); hit.addEventListener('mouseleave', salir);
+  hit.addEventListener('touchstart', mover, { passive:true }); hit.addEventListener('touchmove', mover, { passive:true }); hit.addEventListener('touchend', salir);
+}
+
+function ipDibujarBarras(d){
+  const svg = document.getElementById('ipBars'), tip = document.getElementById('ipTip2'), box = document.getElementById('ipCh2');
+  const F = d.semana, W = 260, H = 150, pl = 8, pr = 8, pt = 18, pb = 22, bw = 22, gap = (W - pl - pr - 7 * bw) / 6;
+  const max = Math.max(4, Math.ceil(Math.max(...F.map(x => x.n)) / 4) * 4), L = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
+  const NOM = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+  let s = `<line x1="${pl}" x2="${W - pr}" y1="${H - pb}" y2="${H - pb}" stroke="var(--border)"/>`;
+  F.forEach((f, i) => {
+    const x = pl + i * (bw + gap), h = (H - pt - pb) * f.n / max, y = H - pb - h, fut = f.f > d.hoy;
+    s += `<rect class="ipb" data-i="${i}" x="${x}" y="${y}" width="${bw}" height="${Math.max(h, 0)}" rx="4" fill="var(--accent)" opacity="${f.hoy ? 1 : fut ? .3 : .55}"/>`;
+    s += `<text x="${x + bw / 2}" y="${H - 6}" text-anchor="middle" font-size="10.5" font-weight="${f.hoy ? 800 : 500}" fill="${f.hoy ? 'var(--text)' : 'var(--muted)'}">${L[i]}</text>`;
+    if (f.hoy) s += `<text x="${x + bw / 2}" y="${y - 5}" text-anchor="middle" font-size="11" font-weight="700" fill="var(--text)">${f.n}</text>`;
+  });
+  svg.innerHTML = s;
+  svg.querySelectorAll('.ipb').forEach(b => {
+    const mostrar = ev => { const i = +b.dataset.i, cr = box.getBoundingClientRect(); const p = ev.touches ? ev.touches[0] : ev;
+      tip.style.display = 'block'; tip.style.left = (p.clientX - cr.left) + 'px'; tip.style.top = (p.clientY - cr.top) + 'px';
+      tip.textContent = `${NOM[i]}${F[i].hoy ? ' (hoy)' : ''} · ${ipPlural(F[i].n, 'turno', 'turnos')}`; };
+    b.addEventListener('mousemove', mostrar); b.addEventListener('mouseleave', () => tip.style.display = 'none');
+    b.addEventListener('touchstart', mostrar, { passive:true }); b.addEventListener('touchend', () => tip.style.display = 'none');
+  });
+}
+
 let AGENDA_AUTO_REFRESH_TIMER = null;
 
 function cambiarSubvista(v){
@@ -4261,6 +4718,8 @@ function cambiarSubvista(v){
   // tocar nada. Se corta apenas se cambia a cualquier otra pestaña.
   clearInterval(AGENDA_AUTO_REFRESH_TIMER);
   if (v==='agenda') AGENDA_AUTO_REFRESH_TIMER = setInterval(renderAgenda, 25000);
+  if (v==='inicio') AGENDA_AUTO_REFRESH_TIMER = setInterval(cargarInicioProfesor, 60000);
+  document.getElementById('subvistaInicio').style.display = v==='inicio' ? '' : 'none';
   document.getElementById('subvistaDashboard').style.display = v==='dashboard' ? '' : 'none';
   document.getElementById('subvistaArmador').style.display = v==='armador' ? '' : 'none';
   document.getElementById('subvistaRutinas').style.display = v==='rutinas' ? '' : 'none';
@@ -4278,6 +4737,7 @@ function cambiarSubvista(v){
   document.getElementById('subvistaAlertas').style.display = v==='alertas' ? '' : 'none';
   document.getElementById('subvistaEjercicios').style.display = v==='ejercicios' ? '' : 'none';
   document.getElementById('subvistaGimnasio').style.display = v==='gimnasio' ? '' : 'none';
+  document.getElementById('menuInicio').classList.toggle('active', v==='inicio');
   document.getElementById('menuDashboard').classList.toggle('active', v==='dashboard');
   document.getElementById('menuArmador').classList.toggle('active', v==='armador');
   document.getElementById('menuRutinas').classList.toggle('active', v==='rutinas');
@@ -4295,6 +4755,7 @@ function cambiarSubvista(v){
   document.getElementById('menuAlertas').classList.toggle('active', v==='alertas');
   document.getElementById('menuEjercicios').classList.toggle('active', v==='ejercicios');
   document.getElementById('menuGimnasio').classList.toggle('active', v==='gimnasio');
+  document.getElementById('ttInicio').classList.toggle('active', v==='inicio');
   document.getElementById('ttDashboard').classList.toggle('active', v==='dashboard');
   document.getElementById('ttArmador').classList.toggle('active', v==='armador');
   document.getElementById('ttRutinas').classList.toggle('active', v==='rutinas');
@@ -4312,10 +4773,12 @@ function cambiarSubvista(v){
   document.getElementById('ttAlertas').classList.toggle('active', v==='alertas');
   document.getElementById('ttEjercicios').classList.toggle('active', v==='ejercicios');
   document.getElementById('ttGimnasio').classList.toggle('active', v==='gimnasio');
+  document.getElementById('bnavProfInicio').classList.toggle('active', v==='inicio');
   document.getElementById('bnavProfRutinas').classList.toggle('active', v==='rutinas');
   document.getElementById('bnavProfArmador').classList.toggle('active', v==='armador');
   document.getElementById('bnavProfAgenda').classList.toggle('active', v==='agenda');
   document.getElementById('bnavProfAlumnos').classList.toggle('active', v==='alumnos');
+  if (v==='inicio') cargarInicioProfesor();
   if (v==='dashboard') cargarDashboardAdmin();
   if (v==='rutinas') cargarGrillaRutinas();
   if (v==='alumnos') cargarListaAlumnos();
@@ -7305,7 +7768,8 @@ async function guardarAsistencia(turnoId, valor){
       const ctx = ASISTENCIA_MODAL_CTX;
       abrirModalAsistencia(ctx.turnoId, valor, ctx.fecha, ctx.horaStr, ctx.alumnoId, ctx.nombre, ctx.rutinaDiaId, ctx.nombreDia, ctx.profesorId);
     }
-    renderAgenda();
+    if (document.getElementById('subvistaAgenda')?.style.display !== 'none') renderAgenda();
+    if (document.getElementById('subvistaInicio')?.style.display !== 'none') cargarInicioProfesor();
     toast(valor === null ? 'Marca quitada ✓' : valor ? 'Presente ✓' : 'Ausente ✓');
   }catch(e){ toast('Error marcando asistencia: ' + e.message, true); }
 }
