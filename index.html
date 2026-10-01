@@ -1650,11 +1650,6 @@
       <!-- ---- SUBVISTA: RUTINAS (grilla nombre×día + edición + búsqueda puntual) ---- -->
       <div id="subvistaRutinas" style="display:none;">
 
-        <div class="card">
-          <h2 style="margin-top:0">Todas las rutinas</h2>
-          <div id="grillaRutinas" class="muted">Cargando...</div>
-        </div>
-
         <div id="detalleEdicionRutinaWrap" class="card" style="display:none;">
           <div class="row" style="justify-content:space-between; align-items:center;">
             <h2 style="margin:0" id="detalleEdicionRutinaTitulo"></h2>
@@ -1664,19 +1659,21 @@
         </div>
 
         <div class="card">
-          <h2 style="margin-top:0">Buscar una rutina puntual</h2>
-          <div class="row">
-            <div class="field" style="flex:1; min-width:200px;">
-              <label>Nombre</label>
-              <input id="filtroRutinaNombre" placeholder="Ej: Funcional" oninput="filtrarRutinaPuntual()">
-            </div>
-            <div class="field">
-              <label>Fecha</label>
-              <input type="date" id="filtroRutinaFecha" onchange="filtrarRutinaPuntual()">
-            </div>
-            <button class="ghost" style="align-self:end;" onclick="document.getElementById('filtroRutinaNombre').value=''; document.getElementById('filtroRutinaFecha').value=''; filtrarRutinaPuntual();">Limpiar</button>
+          <h2 style="margin-top:0">Rutinas</h2>
+          <div class="field" style="margin-bottom:8px;">
+            <input id="filtroRutinaNombre" type="search" placeholder="🔎 Buscar por nombre, alumno, tipo, día o quién la creó" oninput="filtrarRutinas()" autocomplete="off">
           </div>
-          <div id="resultadoFiltroRutina" class="muted" style="margin-top:10px;">Escribí un nombre o elegí una fecha.</div>
+          <div class="muted" style="margin:6px 0 4px;">Para quién</div>
+          <div id="rutChipsOrigen" style="display:flex; flex-wrap:wrap; gap:6px;"></div>
+          <div class="muted" style="margin:10px 0 4px;">Tipo</div>
+          <div id="rutChipsModo" style="display:flex; flex-wrap:wrap; gap:6px;"></div>
+          <div style="display:flex; gap:8px; align-items:center; margin-top:10px; flex-wrap:wrap;">
+            <span class="muted">Día con fecha</span>
+            <input type="date" id="filtroRutinaFecha" onchange="filtrarRutinas()" style="width:auto; flex:none; padding:6px 8px;">
+            <button class="ghost" style="padding:6px 12px; font-size:13px; flex:none;" onclick="limpiarFiltrosRutinas()">Limpiar</button>
+          </div>
+          <div id="rutContador" class="muted" style="margin:10px 0 6px;"></div>
+          <div id="grillaRutinas" class="muted">Cargando...</div>
         </div>
       </div>
 
@@ -3010,7 +3007,7 @@ const BUCKET = "Ejercicios";
 // un cambio, se incrementa este número — el chequeo de actualización (más abajo) lo compara
 // contra lo que hay publicado y avisa si están desactualizados, sin que nadie tenga que
 // cambiar ningún link a mano.
-const APP_VERSION = 90;
+const APP_VERSION = 91;
 
 // ---------- Instalar como app (PWA): acceso directo en escritorio/celular ----------
 // Chrome/Edge/Android disparan "beforeinstallprompt" cuando el manifest + service worker
@@ -12247,71 +12244,157 @@ async function guardarRutinaGenerica({ constructor, nombre, tipoAlumnoId, etique
 // reserva turno. Las especiales por alumno tienen su propio panel aparte.
 let RUTINAS_CACHE = [];
 
+// (v91) Pantalla Rutinas rehecha: TODAS las rutinas activas del gimnasio (generales, de alumnos,
+// rotativas, por fecha y plantillas), la última creada arriba, agrupadas por "cuándo se creó"
+// (Hoy / Ayer / Últimos 7 días / Este mes / Mes Año), con buscador y filtros arriba.
+let RUT_FILTRO = { origen:'todos', modo:'todos' };
+const RUT_ABIERTAS = new Set();
+const RUT_ORIGENES = [['todos','Todas'],['alumnos','👤 De un alumno'],['generales','🌐 Generales']];
+const RUT_MODOS = [['todos','Todos'],['rotativa','🔁 Rotativas'],['fecha_fija','📅 Por fecha'],['plantilla','🧩 Plantillas']];
+
+function rutNorm(t){ return String(t == null ? '' : t).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase(); }
+
 async function cargarGrillaRutinas(){
   const cont = document.getElementById('grillaRutinas');
   cont.innerHTML = 'Cargando...';
   try{
     const filtroGym = PERFIL_ACTUAL ? `&gimnasio_id=eq.${PERFIL_ACTUAL.gimnasio_id}` : '';
-    const [rutinas, asignaciones] = await Promise.all([
-      sb(`rutinas?select=id,nombre,creado_en,modo_dias,etiqueta,tipos_alumno(nombre),creador:perfiles(nombre),rutina_dias(id,fecha,nombre_dia,orden)&activa=eq.true${filtroGym}&order=nombre.asc`),
-      sb('rutina_asignaciones?select=rutina_id'),
-    ]);
-    const idsConAsignacion = new Set(asignaciones.map(a => a.rutina_id));
-    // Solo mostramos acá las rutinas "libres" (sin asignación directa) — las
-    // especiales por alumno se ven en su propio panel.
-    RUTINAS_CACHE = rutinas.filter(r => !idsConAsignacion.has(r.id));
+    const base = 'id,nombre,creado_en,modo_dias,etiqueta,es_ajuste,duracion_semanas,tipos_alumno(nombre),creador:perfiles(nombre),rutina_dias(id,fecha,nombre_dia,orden),rutina_asignaciones(alumno_id,alumnos(nombre))';
+    let rutinas;
+    try{ rutinas = await sb(`rutinas?select=${base},fecha_inicio&activa=eq.true${filtroGym}&order=creado_en.desc&limit=600`); }
+    catch(e){ rutinas = await sb(`rutinas?select=${base}&activa=eq.true${filtroGym}&order=creado_en.desc&limit=600`); } // falta la columna fecha_inicio
+    RUTINAS_CACHE = (rutinas || []).filter(r => !r.es_ajuste)
+      .sort((a, b) => (b.creado_en || '').localeCompare(a.creado_en || ''));
     renderGrillaRutinas();
     cerrarDetalleEdicionRutina();
-    filtrarRutinaPuntual();
-  }catch(e){ cont.innerHTML = 'Error: ' + e.message; }
+  }catch(e){ cont.innerHTML = 'Error: ' + escaparHtml(e.message); }
 }
 
-// Agrupado por tipo de entrenamiento (las rutinas son del gimnasio, no de un profesor) y, adentro de cada uno, por rutina — cada rutina lista
-// sus días uno debajo del otro (nada de tabla ni scroll horizontal). Cada
-// profesor es una sección plegable para no tapar todo de una si hay muchas.
+function rutAlumnos(r){ return (r.rutina_asignaciones || []).map(a => a.alumnos && a.alumnos.nombre).filter(Boolean); }
+
+function rutEstadoCiclo(r){
+  if (r.modo_dias !== 'rotativa') return null;
+  const hoy = fechaLocalISO(); const ini = r.fecha_inicio || null;
+  const fin = finCicloRotativa(ini, r.duracion_semanas);
+  if (ini && hoy < ini) return { txt:`⏳ Empieza el ${fechaCortaISO(ini)}`, rango: fin ? `${fechaCortaISO(ini)} → ${fechaCortaISO(fin)}` : '' };
+  if (fin && hoy > fin) return { txt:'✔️ Terminada', rango: `${fechaCortaISO(ini)} → ${fechaCortaISO(fin)}` };
+  if (ini) return { txt:'▶️ En curso', rango: fin ? `${fechaCortaISO(ini)} → ${fechaCortaISO(fin)}` : `desde ${fechaCortaISO(ini)}` };
+  return null;
+}
+
+function rutGrupoCreacion(creadoEn){
+  if (!creadoEn) return 'Sin fecha';
+  const d = new Date(creadoEn); if (isNaN(d)) return 'Sin fecha';
+  const hoy = new Date(); const dia = x => new Date(x.getFullYear(), x.getMonth(), x.getDate());
+  const diff = Math.round((dia(hoy) - dia(d)) / 86400000);
+  if (diff <= 0) return 'Hoy';
+  if (diff === 1) return 'Ayer';
+  if (diff <= 7) return 'Últimos 7 días';
+  if (d.getFullYear() === hoy.getFullYear() && d.getMonth() === hoy.getMonth()) return 'Este mes';
+  const m = d.toLocaleDateString('es-AR', { month:'long', year:'numeric' });
+  return m.charAt(0).toUpperCase() + m.slice(1);
+}
+
+function rutFechaCreacion(creadoEn){
+  const d = creadoEn ? new Date(creadoEn) : null; if (!d || isNaN(d)) return '';
+  return d.toLocaleDateString('es-AR', { day:'numeric', month:'short' }).replace('.', '');
+}
+
+function rutPasaFiltros(r, q, fecha){
+  const al = rutAlumnos(r);
+  if (RUT_FILTRO.origen === 'alumnos' && !al.length) return false;
+  if (RUT_FILTRO.origen === 'generales' && al.length) return false;
+  if (RUT_FILTRO.modo !== 'todos' && (r.modo_dias || 'fecha_fija') !== RUT_FILTRO.modo) return false;
+  if (fecha && !(r.rutina_dias || []).some(d => d.fecha === fecha)) return false;
+  if (q){
+    const pajar = rutNorm([r.nombre, r.etiqueta, r.tipos_alumno && r.tipos_alumno.nombre, r.creador && r.creador.nombre, ...al, ...(r.rutina_dias || []).map(d => d.nombre_dia)].filter(Boolean).join(' | '));
+    if (!q.split(/\s+/).every(t => pajar.includes(t))) return false;
+  }
+  return true;
+}
+
+function rutChipsHtml(lista, actual, clave){
+  return lista.map(([v, t]) => `<span class="chip-toggle${actual === v ? ' active' : ''}" onclick="setFiltroRutinas('${clave}','${v}')">${t}</span>`).join('');
+}
+
+function setFiltroRutinas(clave, valor){ RUT_FILTRO[clave] = valor; renderGrillaRutinas(); }
+
+function limpiarFiltrosRutinas(){
+  RUT_FILTRO = { origen:'todos', modo:'todos' };
+  document.getElementById('filtroRutinaNombre').value = '';
+  document.getElementById('filtroRutinaFecha').value = '';
+  renderGrillaRutinas();
+}
+
+function filtrarRutinas(){ renderGrillaRutinas(); }
+const filtrarRutinaPuntual = filtrarRutinas; // compat
+
+function toggleRutinaItem(id){
+  const body = document.getElementById('rutBody-' + id); const caret = document.getElementById('rutCaret-' + id);
+  if (!body) return;
+  const abrir = body.style.display === 'none';
+  body.style.display = abrir ? '' : 'none';
+  if (caret) caret.textContent = abrir ? '▾' : '▸';
+  if (abrir) RUT_ABIERTAS.add(id); else RUT_ABIERTAS.delete(id);
+}
+
+function rutTarjetaHtml(r, abierta){
+  const dias = (r.rutina_dias || []).slice().sort((a, b) => (a.orden ?? 0) - (b.orden ?? 0) || (a.fecha || '').localeCompare(b.fecha || ''));
+  const al = rutAlumnos(r); const est = rutEstadoCiclo(r);
+  const pills = [];
+  if (r.modo_dias === 'rotativa') pills.push(`<span class="pill">🔁 Rotativa · ${dias.length} día${dias.length === 1 ? '' : 's'}${r.duracion_semanas ? ` · ${r.duracion_semanas} sem` : ''}</span>`);
+  else if (r.modo_dias === 'plantilla') pills.push('<span class="pill">🧩 Plantilla</span>');
+  else pills.push(`<span class="pill">📅 Por fecha · ${dias.length} día${dias.length === 1 ? '' : 's'}</span>`);
+  if (al.length) pills.push(`<span class="pill">👤 ${escaparHtml(al.length === 1 ? al[0] : al.length + ' alumnos')}</span>`);
+  else if (r.tipos_alumno && r.tipos_alumno.nombre) pills.push(`<span class="pill">🏷️ ${escaparHtml(r.tipos_alumno.nombre)}</span>`);
+  else pills.push('<span class="pill">🌐 Para todos</span>');
+  if (est) pills.push(`<span class="pill">${est.txt}</span>`);
+  const meta = [rutFechaCreacion(r.creado_en) ? `Creada ${rutFechaCreacion(r.creado_en)}` : '', r.creador && r.creador.nombre ? `por ${escaparHtml(r.creador.nombre)}` : '', est && est.rango ? est.rango : ''].filter(Boolean).join(' · ');
+  const diasHtml = dias.length
+    ? dias.map((d, i) => `<button class="ghost" style="width:100%; text-align:left; margin-bottom:6px; display:block;" onclick="abrirDiaDesdeLista('${r.id}','${d.id}')">${escaparHtml(d.nombre_dia || ('Día ' + (i + 1)))}${d.fecha ? ` <span class="muted" style="font-size:11px;">· ${d.fecha}</span>` : ''} <span class="muted" style="font-size:11px;">✏️ Editar</span></button>`).join('')
+    : '<div class="muted" style="font-size:12px;">Sin días cargados.</div>';
+  return `
+    <div style="background:var(--panel2); border:1px solid var(--border); border-radius:10px; margin-bottom:8px; overflow:hidden;">
+      <div style="padding:10px; cursor:pointer;" onclick="toggleRutinaItem('${r.id}')">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:8px;">
+          <span style="font-weight:700; overflow-wrap:anywhere;">${escaparHtml(r.nombre)}</span>
+          <span class="muted" id="rutCaret-${r.id}" style="flex:none;">${abierta ? '▾' : '▸'}</span>
+        </div>
+        <div style="display:flex; flex-wrap:wrap; gap:4px; margin-top:6px;">${pills.join('')}</div>
+        ${meta ? `<div class="muted" style="font-size:11.5px; margin-top:6px;">${meta}</div>` : ''}
+      </div>
+      <div id="rutBody-${r.id}" style="display:${abierta ? '' : 'none'}; padding:0 10px 10px;">
+        ${diasHtml}
+        <div style="display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end; margin-top:4px;">
+          <button class="ghost" style="padding:2px 8px; font-size:12px;" title="Copiar esta rutina para un alumno o equipo (se abre en Especiales para ajustarla)" onclick="copiarRutinaParaAlumno('${r.id}')">📋 Copiar para un alumno</button>
+          <button class="ghost" style="color:var(--danger-text); padding:2px 8px; font-size:12px;" title="Eliminar rutina" onclick="eliminarRutina('${r.id}')">🗑️ Eliminar</button>
+        </div>
+      </div>
+    </div>`;
+}
+
 function renderGrillaRutinas(){
   const cont = document.getElementById('grillaRutinas');
-  if (!RUTINAS_CACHE.length){ cont.innerHTML = '<div class="empty">No hay rutinas estándar todavía (solo especiales, o ninguna).</div>'; return; }
-
-  const porRutina = RUTINAS_CACHE.map(r => ({
-    ...r,
-    dias: (r.rutina_dias||[]).slice().sort((a,b)=>(a.orden??0)-(b.orden??0) || (a.fecha||'').localeCompare(b.fecha||'')),
-  }));
-
-  const porProfesor = {};
-  porRutina.forEach(r => {
-    const nombreProf = r.modo_dias === 'plantilla' ? '🧩 Plantillas' : (r.modo_dias === 'rotativa' && !r.tipos_alumno) ? '🔁 Rotativas para cualquier alumno' : `🏷️ ${r.tipos_alumno?.nombre || 'Sin tipo (para todos)'}`;
-    (porProfesor[nombreProf] = porProfesor[nombreProf] || []).push(r);
+  document.getElementById('rutChipsOrigen').innerHTML = rutChipsHtml(RUT_ORIGENES, RUT_FILTRO.origen, 'origen');
+  document.getElementById('rutChipsModo').innerHTML = rutChipsHtml(RUT_MODOS, RUT_FILTRO.modo, 'modo');
+  const q = rutNorm(document.getElementById('filtroRutinaNombre').value).trim();
+  const fecha = document.getElementById('filtroRutinaFecha').value;
+  const total = RUTINAS_CACHE.length;
+  const lista = RUTINAS_CACHE.filter(r => rutPasaFiltros(r, q, fecha));
+  const hayFiltro = !!(q || fecha || RUT_FILTRO.origen !== 'todos' || RUT_FILTRO.modo !== 'todos');
+  document.getElementById('rutContador').textContent = total ? (hayFiltro ? `${lista.length} de ${total} rutinas · más nuevas arriba` : `${total} rutina${total === 1 ? '' : 's'} · más nuevas arriba`) : '';
+  if (!total){ cont.innerHTML = '<div class="empty">Todavía no hay rutinas. Armá la primera desde el Armador.</div>'; return; }
+  if (!lista.length){ cont.innerHTML = '<div class="empty">No encontramos ninguna rutina con ese filtro.</div>'; return; }
+  const autoAbrir = !!q && lista.length <= 3;
+  const grupos = []; let ultimo = null;
+  lista.forEach(r => {
+    const g = rutGrupoCreacion(r.creado_en);
+    if (g !== ultimo){ grupos.push({ g, items: [] }); ultimo = g; }
+    grupos[grupos.length - 1].items.push(r);
   });
-  const nombresProfesores = Object.keys(porProfesor).sort((a,b)=>a.localeCompare(b));
-  const abrirSoloUno = nombresProfesores.length === 1;
-
-  cont.innerHTML = nombresProfesores.map((nombreProf, gi) => {
-    const rutinasDelProfe = porProfesor[nombreProf];
-    const idSeccion = `grillaProf${gi}`;
-    const rutinasHtml = rutinasDelProfe.map(r => {
-      const diasHtml = r.dias.length
-        ? r.dias.map((d,i) => `
-            <button class="ghost" style="width:100%; text-align:left; margin-bottom:6px; display:block;" onclick="abrirDetalleEdicionRutina('${d.id}','${r.nombre.replace(/'/g,"&apos;")}','${(d.nombre_dia||'').replace(/'/g,"&apos;")}')">
-              ${d.nombre_dia || ('Día '+(i+1))}${d.fecha ? ` <span class="muted" style="font-size:11px;">· ${d.fecha}</span>` : ''}
-            </button>
-          `).join('')
-        : '<div class="muted" style="font-size:12px;">Sin días cargados.</div>';
-      return `
-        <div style="background:var(--panel2); border:1px solid var(--border); border-radius:10px; padding:10px 10px 4px; margin-bottom:10px;">
-          <div style="font-weight:700; margin-bottom:8px; display:flex; justify-content:space-between; align-items:flex-start; gap:8px;"><span>${escaparHtml(r.nombre)}${r.modo_dias === 'rotativa' ? ` <span class="pill">🔁 Rotativa · ${r.dias.length} día${r.dias.length===1?'':'s'}</span>` : ''}${r.creador?.nombre ? ` <span class="muted" style="font-weight:400; font-size:11px;">· creada por ${escaparHtml(r.creador.nombre)}</span>` : ''}</span><span style="display:flex; gap:4px; flex:none; flex-wrap:wrap; justify-content:flex-end;"><button class="ghost" style="padding:2px 8px; font-size:12px; flex:none;" title="Copiar esta rutina para un alumno o equipo (se abre en Especiales para ajustarla)" onclick="copiarRutinaParaAlumno('${r.id}')">📋 Copiar para un alumno</button><button class="ghost" style="color:var(--danger-text); padding:2px 8px; font-size:12px; flex:none;" title="Eliminar rutina" onclick="eliminarRutina('${r.id}')">🗑️ Eliminar</button></span></div>
-          ${diasHtml}
-        </div>`;
-    }).join('');
-    return `
-      <div style="border:1px solid var(--border); border-radius:10px; margin-bottom:10px; overflow:hidden;">
-        <div class="side-item" style="margin:0; border-radius:0; display:flex; justify-content:space-between; align-items:center;" onclick="toggleGrillaProfesor('${idSeccion}')">
-          <span>${escaparHtml(nombreProf)}</span>
-          <span class="muted" style="font-size:12px;">${rutinasDelProfe.length} rutina${rutinasDelProfe.length===1?'':'s'} <span id="${idSeccion}-caret">${abrirSoloUno?'▾':'▸'}</span></span>
-        </div>
-        <div id="${idSeccion}" style="display:${abrirSoloUno?'':'none'}; padding:10px;">${rutinasHtml}</div>
-      </div>`;
-  }).join('');
+  cont.innerHTML = grupos.map(x => `
+    <div style="font-size:12px; font-weight:800; letter-spacing:.04em; text-transform:uppercase; color:var(--muted); margin:14px 0 6px;">${escaparHtml(x.g)} <span style="font-weight:400;">· ${x.items.length}</span></div>
+    ${x.items.map(r => rutTarjetaHtml(r, autoAbrir || RUT_ABIERTAS.has(r.id))).join('')}`).join('');
 }
 
 // (v70, 29/9) Eliminar rutina. Regla: si algún alumno ya la empezó/hizo (hay `ejecuciones`)
@@ -12336,14 +12419,6 @@ async function eliminarRutina(rutinaId){
   }catch(e){ toast('Error eliminando: ' + extraerMensajeError(e), true); }
 }
 
-function toggleGrillaProfesor(id){
-  const div = document.getElementById(id);
-  const caret = document.getElementById(id+'-caret');
-  const abrir = div.style.display === 'none';
-  div.style.display = abrir ? '' : 'none';
-  if (caret) caret.textContent = abrir ? '▾' : '▸';
-}
-
 function abrirDetalleEdicionRutina(diaId, nombreRutina, nombreDia){
   document.getElementById('detalleEdicionRutinaWrap').style.display = '';
   document.getElementById('detalleEdicionRutinaTitulo').textContent = `${nombreRutina}${nombreDia ? ' · '+nombreDia : ''}`;
@@ -12351,33 +12426,15 @@ function abrirDetalleEdicionRutina(diaId, nombreRutina, nombreDia){
   document.getElementById('detalleEdicionRutinaWrap').scrollIntoView({ behavior:'smooth', block:'start' });
   cargarEdicionDia(diaId, 'rutinasGrillaDetalle');
 }
+// (v91) Los nombres no viajan por el onclick (los apóstrofes lo rompían): se busca por id.
+function abrirDiaDesdeLista(rutinaId, diaId){
+  const r = RUTINAS_CACHE.find(x => x.id === rutinaId);
+  const d = r && (r.rutina_dias || []).find(x => x.id === diaId);
+  abrirDetalleEdicionRutina(diaId, r ? r.nombre : 'Rutina', d ? (d.nombre_dia || '') : '');
+}
 
 function cerrarDetalleEdicionRutina(){
   document.getElementById('detalleEdicionRutinaWrap').style.display = 'none';
-}
-
-// Filtro rápido para ubicar una sola rutina por nombre y/o fecha, sin tener que
-// recorrer toda la grilla (útil cuando hay muchas rutinas o muchos días).
-function filtrarRutinaPuntual(){
-  const nombreQ = (document.getElementById('filtroRutinaNombre').value || '').trim().toLowerCase();
-  const fechaQ = document.getElementById('filtroRutinaFecha').value;
-  const cont = document.getElementById('resultadoFiltroRutina');
-  if (!nombreQ && !fechaQ){ cont.innerHTML = 'Escribí un nombre o elegí una fecha.'; return; }
-
-  let candidatas = RUTINAS_CACHE;
-  if (nombreQ) candidatas = candidatas.filter(r => r.nombre.toLowerCase().includes(nombreQ));
-  if (fechaQ) candidatas = candidatas.filter(r => (r.rutina_dias||[]).some(d => d.fecha === fechaQ));
-  if (!candidatas.length){ cont.innerHTML = '<div class="empty">No encontramos ninguna rutina con ese filtro.</div>'; return; }
-
-  cont.innerHTML = candidatas.map(r => {
-    let dias = (r.rutina_dias||[]).slice().sort((a,b)=>(a.orden??0)-(b.orden??0) || (a.fecha||'').localeCompare(b.fecha||''));
-    if (fechaQ) dias = dias.filter(d => d.fecha === fechaQ); // si filtró por fecha puntual, mostramos solo esa
-    const diasHtml = dias.map(d => `<button class="ghost" style="margin:4px 6px 0 0;" onclick="abrirDetalleEdicionRutina('${d.id}','${r.nombre.replace(/'/g,"&apos;")}','${(d.nombre_dia||'').replace(/'/g,"&apos;")}')">${d.nombre_dia || 'Día'}${d.fecha ? ' · '+d.fecha : ''}</button>`).join('');
-    return `<div style="padding:8px 0; border-bottom:1px solid var(--border);">
-      <div style="font-weight:700;">${r.nombre} <span class="muted">· ${r.profesores?.nombre || 'sin profesor'}</span></div>
-      <div style="margin-top:6px;">${diasHtml || '<span class="muted">Sin días</span>'}</div>
-    </div>`;
-  }).join('');
 }
 
 // ---------- Rutinas especiales ya creadas para un alumno ----------
