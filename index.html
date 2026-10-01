@@ -196,6 +196,7 @@
   .pill{display:inline-block; background:var(--panel2); border:1px solid var(--border); border-radius:999px; padding:2px 10px; font-size:12px; color:var(--muted);}
   .chip-toggle{display:inline-block; font-size:12.5px; font-weight:600; padding:6px 13px; border-radius:999px; background:var(--panel2); border:1px solid var(--border); color:var(--muted); cursor:pointer; user-select:none;}
   .chip-toggle.active{background:var(--accent); border-color:var(--accent); color:#1a0e00;}
+  #espCopiaBanner, #diasContainerEsp, #diasContainer, [id^="diaBlock-"]{ scroll-margin-top:165px; }
   .tabla-semanas th{font-size:11px; text-transform:uppercase; letter-spacing:.03em; color:var(--muted);}
   .tabla-semanas td, .tabla-semanas th{border-bottom:1px solid var(--border);}
   .tabla-semanas input{width:100%;}
@@ -1680,6 +1681,18 @@
       <!-- ---- SUBVISTA: RUTINAS ESPECIALES POR ALUMNO ---- -->
       <div id="subvistaEspeciales" style="display:none;">
 
+        <div id="espCopiaBanner" class="card" style="display:none; border-color:var(--accent); background:var(--note-bg);">
+          <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:8px;">
+            <div id="espCopiaBannerTxt" style="font-weight:700;"></div>
+            <button type="button" class="x-cerrar est" aria-label="Cerrar" title="Cerrar" onclick="ocultarBannerCopia()">✕</button>
+          </div>
+          <div class="muted" id="espCopiaBannerSub" style="margin:6px 0 10px;"></div>
+          <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <button type="button" onclick="guardarRutinaEspecial()">💾 Guardar ahora</button>
+            <button type="button" class="secondary" onclick="document.getElementById('diasContainerEsp').scrollIntoView({ behavior:'smooth', block:'start' })">Ver / editar los días ↓</button>
+          </div>
+        </div>
+
         <div class="card">
           <h2 style="margin-top:0">Rutina especial</h2>
           <div class="row">
@@ -1751,7 +1764,7 @@
           <div id="diasContainerEsp"></div>
         </div>
 
-        <div class="row" style="justify-content:flex-end;">
+        <div class="row armador-guardar" style="justify-content:flex-end;">
           <button onclick="guardarRutinaEspecial()" id="btnGuardarEspecial">Guardar rutina especial</button>
         </div>
 
@@ -2834,6 +2847,37 @@
      misma que ve el alumno al entrenar) — funciona igual para una rutina de
      biblioteca (estándar) o una especial armada para esa persona, porque toma
      el rutina_dia_id que ya quedó guardado en el turno al reservarlo. -->
+<!-- (v92) Copiar una rutina: se elige a quién y se copia sin andar scrolleando -->
+<div class="modal-overlay" id="modalCopiarRutina">
+  <div class="modal-box" style="max-width:460px; text-align:left;">
+    <div class="x-wrap "><button type="button" class="x-cerrar" aria-label="Cerrar" title="Cerrar" onclick="cerrarModalCopiarRutina()">✕</button></div>
+    <h3>📋 Copiar rutina</h3>
+    <div id="mcrOrigen" class="muted" style="margin-bottom:12px;"></div>
+    <div class="muted" style="margin-bottom:4px;">¿A quién se la copiás?</div>
+    <div id="mcrChipsDestino" style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px;"></div>
+    <div id="mcrAlumnoWrap">
+      <input id="mcrBuscar" type="search" placeholder="🔎 Buscar alumno" autocomplete="off" oninput="mcrBuscarAlumno()" onfocus="mcrBuscarAlumno()">
+      <div id="mcrResultados" style="max-height:190px; overflow-y:auto; margin-top:6px;"></div>
+    </div>
+    <div id="mcrEquipoWrap" style="display:none;"><select id="mcrEquipo" onchange="MCR.equipoId=this.value; mcrActualizarNombre()"></select></div>
+    <div id="mcrElegido" style="margin-top:8px;"></div>
+    <div class="field" style="margin-top:12px;">
+      <label>Nombre de la copia</label>
+      <input id="mcrNombre" maxlength="80" oninput="MCR.nombreEditado=true">
+    </div>
+    <div class="field" id="mcrInicioWrap" style="margin-top:8px; display:none;">
+      <label>📅 Inicia el ciclo el (opcional)</label>
+      <input type="date" id="mcrInicio">
+    </div>
+    <div id="mcrError" style="color:var(--danger-text); font-size:13px; margin-top:8px; display:none;"></div>
+    <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:14px;">
+      <button type="button" class="secondary" style="flex:1 1 140px;" onclick="confirmarCopiaRutina(false)">✏️ Copiar y ajustar</button>
+      <button type="button" style="flex:1 1 140px;" id="mcrBtnDirecto" onclick="confirmarCopiaRutina(true)">💾 Copiar y guardar</button>
+    </div>
+    <p style="margin:10px 0 0; font-size:12px;"><b>Copiar y ajustar</b> te lleva a Especiales con todo cargado para que lo edites antes de guardar. <b>Copiar y guardar</b> la deja asignada tal cual. La original no cambia.</p>
+  </div>
+</div>
+
 <div class="modal-overlay" id="modalRutinaDia">
   <div class="modal-box" style="max-width:520px;">
     <div class="x-wrap "><button type="button" class="x-cerrar" aria-label="Cerrar" title="Cerrar" onclick="cerrarModalRutinaDia()">✕</button></div>
@@ -3007,7 +3051,7 @@ const BUCKET = "Ejercicios";
 // un cambio, se incrementa este número — el chequeo de actualización (más abajo) lo compara
 // contra lo que hay publicado y avisa si están desactualizados, sin que nadie tenga que
 // cambiar ningún link a mano.
-const APP_VERSION = 91;
+const APP_VERSION = 92;
 
 // ---------- Instalar como app (PWA): acceso directo en escritorio/celular ----------
 // Chrome/Edge/Android disparan "beforeinstallprompt" cuando el manifest + service worker
@@ -10998,7 +11042,7 @@ function crearConstructorDeDias(prefijo, containerId, headerPrefix){
            </div>`;
 
       return `
-        <div class="day-block">
+        <div class="day-block" id="diaBlock-${diaId}">
           <div class="row" style="justify-content:space-between; align-items:flex-end;">
             <div class="row">
               ${campoDiaHtml}
@@ -11027,7 +11071,7 @@ function crearConstructorDeDias(prefijo, containerId, headerPrefix){
           </div>
         </div>
       `;
-    }).join('');
+    }).join('') + `<div style="margin-top:12px; text-align:center;"><button type="button" class="secondary" style="width:100%;" onclick="agregarDiaYIr('${prefijo}')">+ Agregar día${esRotativa ? ' a la rotación' : ''}</button></div>`;
     // Reemplaza cada <select> de patrón recién insertado por el mismo combo
     // buscable (input + desplegable estilizado) que se usa para alumno/profesor.
     ids.forEach(diaId => armarComboBuscable(`patron-${diaId}`, 'Patrón...', { maxWidth: '140px' }));
@@ -11300,10 +11344,10 @@ function espBaseEmpezarDeCero(){
   const est = document.getElementById('espBaseEstado'); est.style.display = 'none'; est.textContent = '';
 }
 
-async function espCargarDesdeRutina(rutinaId){
+async function espCargarDesdeRutina(rutinaId, opts){
   const cons = CONS['esp'];
   const hayAlgo = Object.values(cons.estado.dias).some(d => d.ejercicios.length);
-  if (hayAlgo && !confirm('Ya tenés ejercicios armados en esta pantalla. ¿Reemplazarlos por los de la rutina elegida?')) return;
+  if (hayAlgo && !confirm('Ya tenés ejercicios armados en esta pantalla. ¿Reemplazarlos por los de la rutina elegida?')) return false;
   const est = document.getElementById('espBaseEstado');
   est.style.display = ''; est.textContent = 'Copiando rutina…';
   try{
@@ -11366,29 +11410,144 @@ async function espCargarDesdeRutina(rutinaId){
     if (sinEjercicio) avisos.push(`${sinEjercicio} ejercicio${sinEjercicio === 1 ? '' : 's'} ya no existe${sinEjercicio === 1 ? '' : 'n'} en el catálogo y no se copiaron`);
     est.style.display = '';
     est.textContent = `✓ Copiada "${rutina.nombre}" (${dias.length} día${dias.length === 1 ? '' : 's'}). Ajustala abajo` + (avisos.length ? ' — ' + avisos.join('; ') : '') + '. La original no cambia.';
-    toast('Rutina copiada: ajustala y guardala ✓');
-    document.getElementById('diasContainerEsp')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    if (!(opts && opts.sinScroll)){
+      toast('Rutina copiada: ajustala y guardala ✓');
+      document.getElementById('diasContainerEsp')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+    return true;
   }catch(e){
     est.style.display = ''; est.textContent = '';
     toast('No se pudo copiar la rutina: ' + extraerMensajeError(e), true);
+    return false;
   }
 }
 
-// Desde 🗂️ Rutinas: "Copiar para un alumno" salta a Especiales con esa rutina ya cargada.
-function copiarRutinaParaAlumno(rutinaId){
-  cambiarSubvista('especiales');
+// (v92) "Copiar" abre un popup para elegir a quién (alumno o equipo) y el nombre, sin tener que
+// buscar el selector arriba. Dos caminos: "Copiar y ajustar" (va a Especiales con todo cargado y
+// un cartel con "Guardar ahora") o "Copiar y guardar" (queda asignada tal cual).
+const MCR = { rutinaId:null, nombreBase:'', modoRutina:'', modo:'alumno', alumnoId:null, alumnoNombre:'', equipoId:null, nombreEditado:false };
+
+async function copiarRutinaParaAlumno(rutinaId){
+  MCR.rutinaId = rutinaId; MCR.modo = 'alumno'; MCR.alumnoId = null; MCR.alumnoNombre = ''; MCR.equipoId = null; MCR.nombreEditado = false;
+  MCR.nombreBase = 'Rutina'; MCR.modoRutina = '';
+  let nDias = 0;
+  try{
+    const [r] = await sb(`rutinas?select=id,nombre,modo_dias,rutina_dias(id)&id=eq.${rutinaId}`);
+    if (r){ MCR.nombreBase = r.nombre; MCR.modoRutina = r.modo_dias || ''; nDias = (r.rutina_dias || []).length; }
+  }catch(e){}
+  // si el nombre ya termina en " · <alumno>" se lo saca para no apilar nombres
+  const m = MCR.nombreBase.match(/^(.*) · ([^·]+)$/);
+  if (m && ALUMNOS_CACHE.some(a => (a.nombre || '').trim() === m[2].trim())) MCR.nombreBase = m[1];
+  document.getElementById('mcrOrigen').innerHTML = `<b>${escaparHtml(MCR.nombreBase)}</b>${nDias ? ` · ${nDias} día${nDias === 1 ? '' : 's'}` : ''}${MCR.modoRutina === 'rotativa' ? ' · 🔁 rotativa' : ''}`;
+  document.getElementById('mcrBuscar').value = '';
+  document.getElementById('mcrResultados').innerHTML = '';
+  document.getElementById('mcrError').style.display = 'none';
+  document.getElementById('mcrInicio').value = '';
+  document.getElementById('mcrInicioWrap').style.display = MCR.modoRutina === 'rotativa' ? '' : 'none';
+  const selEq = document.getElementById('mcrEquipo');
+  selEq.innerHTML = '<option value="">-- elegir equipo --</option>' + (EQUIPOS_CACHE || []).map(e => `<option value="${e.id}">${escaparHtml(e.nombre)}</option>`).join('');
+  mcrPintarDestino();
+  mcrActualizarNombre();
+  document.getElementById('modalCopiarRutina').classList.add('show');
+  mcrBuscarAlumno();
+  setTimeout(() => { try{ document.getElementById('mcrBuscar').focus({ preventScroll:true }); }catch(e){} }, 200);
+}
+
+function cerrarModalCopiarRutina(){ document.getElementById('modalCopiarRutina').classList.remove('show'); }
+
+function mcrPintarDestino(){
+  const hayEquipos = (EQUIPOS_CACHE || []).length > 0;
+  document.getElementById('mcrChipsDestino').innerHTML =
+    `<span class="chip-toggle${MCR.modo === 'alumno' ? ' active' : ''}" onclick="mcrSetModo('alumno')">👤 Un alumno</span>` +
+    (hayEquipos ? `<span class="chip-toggle${MCR.modo === 'equipo' ? ' active' : ''}" onclick="mcrSetModo('equipo')">⚽ Un equipo completo</span>` : '');
+  document.getElementById('mcrAlumnoWrap').style.display = MCR.modo === 'alumno' ? '' : 'none';
+  document.getElementById('mcrEquipoWrap').style.display = MCR.modo === 'equipo' ? '' : 'none';
+  document.getElementById('mcrElegido').innerHTML = (MCR.modo === 'alumno' && MCR.alumnoId)
+    ? `<span class="pill" style="font-size:13px;">👤 ${escaparHtml(MCR.alumnoNombre)} <a href="#" onclick="mcrQuitarAlumno(); return false;" style="margin-left:6px; color:var(--danger-text); text-decoration:none;">✕</a></span>` : '';
+}
+function mcrSetModo(m){ MCR.modo = m; mcrPintarDestino(); mcrActualizarNombre(); }
+
+function mcrBuscarAlumno(){
+  const q = rutNorm(document.getElementById('mcrBuscar').value).trim();
+  const lista = (ALUMNOS_CACHE || []).filter(a => a.nombre && (!q || q.split(/\s+/).every(t => rutNorm(a.nombre).includes(t))))
+    .sort((a, b) => a.nombre.localeCompare(b.nombre)).slice(0, 8);
+  document.getElementById('mcrResultados').innerHTML = lista.length
+    ? lista.map(a => `<button type="button" class="ghost" style="width:100%; text-align:left; margin-bottom:4px; display:block;${a.id === MCR.alumnoId ? ' border-color:var(--accent);' : ''}" onclick="mcrElegirAlumno('${a.id}')">${escaparHtml(a.nombre)}</button>`).join('')
+    : '<div class="muted">Sin resultados.</div>';
+}
+function mcrElegirAlumno(id){
+  const a = (ALUMNOS_CACHE || []).find(x => x.id === id); if (!a) return;
+  MCR.alumnoId = id; MCR.alumnoNombre = (a.nombre || '').trim();
+  document.getElementById('mcrResultados').innerHTML = ''; document.getElementById('mcrBuscar').value = '';
+  document.getElementById('mcrError').style.display = 'none';
+  mcrPintarDestino(); mcrActualizarNombre();
+}
+function mcrQuitarAlumno(){ MCR.alumnoId = null; MCR.alumnoNombre = ''; mcrPintarDestino(); mcrActualizarNombre(); mcrBuscarAlumno(); }
+
+function mcrActualizarNombre(){
+  if (MCR.nombreEditado) return;
+  let suf = '';
+  if (MCR.modo === 'alumno') suf = MCR.alumnoNombre;
+  else { const eq = (EQUIPOS_CACHE || []).find(e => e.id === MCR.equipoId); suf = eq ? eq.nombre : ''; }
+  document.getElementById('mcrNombre').value = suf ? `${MCR.nombreBase} · ${suf}` : `${MCR.nombreBase} (personalizada)`;
+}
+
+function mcrError(msg){ const e = document.getElementById('mcrError'); e.textContent = msg; e.style.display = ''; }
+
+function aplicarDestinoEsp(modo, id){
   const selDest = document.getElementById('espModoDestino');
-  if (selDest.value === 'equipo'){ selDest.value = 'alumno'; cambiarModoDestinoEsp(); }
-  // (v87) Se limpia el alumno elegido antes: la copia es para OTRO alumno y hay que elegirlo a propósito
-  // (evita guardarla sin querer sobre el mismo de donde se copió).
-  const selAlu = document.getElementById('espAlumno');
-  selAlu.value = '';
-  sincronizarComboBuscable('espAlumno');
-  cargarEspecialesDeAlumno();
-  espCargarDesdeRutina(rutinaId).then(() => {
-    const wrap = selAlu.closest('.field') || selAlu;
-    wrap.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  });
+  selDest.value = modo; cambiarModoDestinoEsp();
+  if (modo === 'alumno'){
+    const s = document.getElementById('espAlumno'); s.value = id; sincronizarComboBuscable('espAlumno'); cargarEspecialesDeAlumno();
+  } else {
+    const s = document.getElementById('espEquipo'); s.value = id; sincronizarComboBuscable('espEquipo'); onCambiarEspEquipo();
+  }
+}
+
+async function confirmarCopiaRutina(directo){
+  if (MCR.modo === 'alumno' && !MCR.alumnoId){ mcrError('Elegí el alumno de la lista (tocá su nombre).'); return; }
+  if (MCR.modo === 'equipo' && !MCR.equipoId){ mcrError('Elegí el equipo.'); return; }
+  const nombre = (document.getElementById('mcrNombre').value || '').trim();
+  if (!nombre){ mcrError('Ponele un nombre a la copia.'); return; }
+  const inicio = MCR.modoRutina === 'rotativa' ? (document.getElementById('mcrInicio').value || null) : null;
+  const destinoTxt = MCR.modo === 'alumno' ? MCR.alumnoNombre : ('el equipo ' + ((EQUIPOS_CACHE || []).find(e => e.id === MCR.equipoId)?.nombre || ''));
+  cerrarModalCopiarRutina();
+  cambiarSubvista('especiales');
+  aplicarDestinoEsp(MCR.modo, MCR.modo === 'alumno' ? MCR.alumnoId : MCR.equipoId);
+  const ok = await espCargarDesdeRutina(MCR.rutinaId, { sinScroll:true });
+  if (!ok) return;
+  document.getElementById('espNombreRutina').value = nombre;
+  ESP_NOMBRE_AUTO = { base: MCR.nombreBase, valor: nombre };
+  if (inicio){ CONS['esp'].estado.fechaInicio = inicio; const fi = document.getElementById('espFechaInicio'); if (fi) fi.value = inicio; }
+  if (directo){
+    await guardarRutinaEspecial();
+    if (!Object.keys(CONS['esp'].estado.dias).length){ // se guardó: limpiar() vació el armador
+      document.getElementById('listaEspecialesAlumno')?.scrollIntoView({ behavior:'smooth', block:'center' });
+      return;
+    }
+  }
+  const esRot = CONS['esp'].estado.modoDias === 'rotativa';
+  document.getElementById('espCopiaBannerTxt').textContent = `📋 Copia lista para ${destinoTxt}`;
+  document.getElementById('espCopiaBannerSub').textContent = directo
+    ? 'No se pudo guardar sola (revisá el aviso). Completá lo que falta y tocá "Guardar ahora".'
+    : (esRot ? 'Ajustá lo que quieras (ejercicios, progresión, fecha de inicio del ciclo y duración, acá abajo) y tocá "Guardar ahora".' : 'Poné la fecha de cada día, ajustá lo que quieras y tocá "Guardar ahora".');
+  document.getElementById('espCopiaBanner').style.display = '';
+  document.getElementById('espCopiaBanner').scrollIntoView({ behavior:'smooth', block:'start' });
+}
+
+function ocultarBannerCopia(){ const b = document.getElementById('espCopiaBanner'); if (b) b.style.display = 'none'; }
+
+// (v92) "+ Agregar día" también al final de la lista de días, y te lleva al día nuevo.
+function agregarDiaYIr(prefijo){
+  const c = CONS[prefijo]; const antes = new Set(Object.keys(c.estado.dias));
+  c.agregarDia();
+  const nuevo = Object.keys(c.estado.dias).find(k => !antes.has(k));
+  const el = nuevo && document.getElementById('diaBlock-' + nuevo);
+  if (el){
+    el.scrollIntoView({ behavior:'smooth', block:'start' });
+    const inp = el.querySelector('input[type=text]');
+    if (inp) setTimeout(() => { try{ inp.focus({ preventScroll:true }); }catch(e){} }, 400);
+  }
 }
 
 
@@ -11483,6 +11642,7 @@ async function guardarRutinaEspecial(){
     btnId: 'btnGuardarEspecial',
     onOk: (res) => {
       document.getElementById('espNombreRutina').value = '';
+      ocultarBannerCopia();
       if (modo === 'alumno') cargarEspecialesDeAlumno();
       if (modo === 'alumno') aplicarEspecialAlTurnoSiCorresponde(res, alumnosDestino[0]);
     },
