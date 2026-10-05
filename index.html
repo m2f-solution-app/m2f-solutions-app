@@ -1031,6 +1031,84 @@
   .ej-campos .mt{ width:56px; height:56px; border-radius:16px; border:1px solid var(--field-bd); background:var(--panel); padding:0; display:inline-flex; align-items:center; justify-content:center; }
   .ej-campos .mt.on{ background:rgba(255,122,48,.16); border-color:var(--accent); }
   .mi{ width:40px; height:40px; flex:none; }
+  /* (v96) Calendario de clases */
+  .cl-banner{ background:var(--note-bg); border:1px solid var(--note-bd); border-radius:12px; padding:10px 14px; font-size:13px; margin-bottom:12px; }
+  .cl-tl{ display:grid; grid-template-columns:46px repeat(7,minmax(0,1fr)); border:1px solid var(--border); border-radius:12px; background:var(--panel); overflow:hidden; }
+  .cl-tl.one{ grid-template-columns:46px minmax(0,1fr); }
+  .cl-tl .hd{ padding:8px 6px; font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.04em; color:var(--muted); text-align:center; border-bottom:1px solid var(--border); border-left:1px solid var(--border); background:var(--panel); }
+  .cl-tl .hd0{ border-left:0; }
+  .cl-tl .hd.hoy{ color:var(--accent-text); }
+  .cl-tl .hrs{ position:relative; }
+  .cl-tl .hrs span{ position:absolute; right:6px; font-size:11px; font-weight:600; color:var(--muted); transform:translateY(-50%); }
+  .cl-tl .tcol{ position:relative; border-left:1px solid var(--border); background-image:linear-gradient(var(--border) 1px,transparent 1px),linear-gradient(color-mix(in srgb,var(--border) 40%,transparent) 1px,transparent 1px); background-size:100% var(--px),100% calc(var(--px)/2); background-position:0 10px,0 10px; }
+  .cl-tl .tcol.hoy{ background-color:color-mix(in srgb,var(--accent) 6%,transparent); }
+  .cl-tl .tcol.cli{ cursor:copy; }
+  .cl-tb{ position:absolute; border-left:4px solid var(--c); background:color-mix(in srgb,var(--c) 20%,var(--panel)); border-radius:7px; padding:3px 6px; overflow:hidden; font-size:12px; line-height:1.25; cursor:pointer; z-index:1; }
+  .cl-tb.ro{ cursor:default; }
+  .cl-tb:not(.ro):hover{ background:color-mix(in srgb,var(--c) 32%,var(--panel)); }
+  .cl-tb .t{ font-weight:800; } .cl-tb .n{ font-weight:700; overflow-wrap:anywhere; } .cl-tb .p{ color:var(--muted); font-size:11px; } .cl-tb .p.tbc{ font-style:italic; }
+  .cl-movil .cl-tb{ font-size:13.5px; padding:5px 9px; } .cl-movil .cl-tb .p{ font-size:12px; }
+  .cl-nowl{ position:absolute; left:0; right:0; height:2px; background:var(--danger-text,#e5484d); z-index:3; pointer-events:none; }
+  .cl-nowl::before{ content:''; position:absolute; left:-4px; top:-3px; width:8px; height:8px; border-radius:50%; background:var(--danger-text,#e5484d); }
+  .cl-dpills{ display:flex; gap:6px; overflow-x:auto; padding-bottom:6px; margin-bottom:10px; }
+  .cl-dpills span{ flex:none; min-width:46px; text-align:center; padding:7px 10px; border-radius:12px; border:1px solid var(--border); background:var(--panel); font-weight:700; font-size:13px; cursor:pointer; color:var(--muted); }
+  .cl-dpills span small{ display:block; font-size:10.5px; font-weight:600; }
+  .cl-dpills span.on{ background:var(--accent); border-color:var(--accent); color:#1a0e00; }
+  .cl-dpills span.hoy:not(.on){ border-color:var(--accent); color:var(--accent-text); }
+  .cl-dchips{ display:flex; gap:6px; flex-wrap:wrap; }
+  .cl-dchips span{ width:40px; text-align:center; padding:7px 0; border-radius:10px; border:1px solid var(--border); background:var(--panel2); font-weight:800; cursor:pointer; color:var(--muted); }
+  .cl-dchips span.on{ background:var(--accent); border-color:var(--accent); color:#1a0e00; }
+  .cl-ov{ position:fixed; inset:0; z-index:1500; display:none; align-items:center; justify-content:center; padding:16px; background:rgba(0,0,0,.18); pointer-events:none; }
+  .cl-ov.show{ display:flex; }
+  .cl-ov.desk{ justify-content:flex-end; padding-right:48px; }
+  .cl-mdl{ pointer-events:auto; background:var(--panel); border:1px solid var(--border); border-radius:18px; padding:20px; width:min(520px,100%); max-height:92vh; overflow:auto; box-shadow:0 18px 50px rgba(0,0,0,.5); }
+  .cl-mh{ display:flex; align-items:center; gap:10px; cursor:grab; touch-action:none; user-select:none; margin:-8px -8px 4px; padding:8px; border-radius:12px; }
+  .cl-mh:hover,.cl-mh.dragging{ background:var(--hover); } .cl-mh.dragging{ cursor:grabbing; }
+  .cl-mh h3{ margin:0; flex:1; } .cl-mh .hint{ font-size:11px; color:var(--muted); white-space:nowrap; }
+  .cl-movil .cl-mh .hint, .cl-mh.movil .hint{ display:none; }
+  .cl-lock .cl-tl{ pointer-events:none; }
+  .cl-row2{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  /* (v96) Evaluación por equipo */
+  .em-chips{ display:flex; gap:6px; flex-wrap:wrap; margin-top:4px; }
+  .em-g{ font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); font-weight:800; margin-top:10px; }
+  .em-tbl{ width:100%; border-collapse:collapse; }
+  .em-tbl th{ font-size:11px; text-transform:uppercase; letter-spacing:.04em; color:var(--muted); text-align:left; padding:8px 10px; border-bottom:1px solid var(--border); font-weight:700; white-space:nowrap; position:sticky; top:0; background:var(--panel); }
+  .em-tbl td{ padding:7px 10px; border-bottom:1px solid var(--border); vertical-align:middle; }
+  .em-tbl tr:last-child td{ border-bottom:0; }
+  .em-cell{ display:flex; align-items:center; gap:6px; }
+  .em-cell input{ width:92px; text-align:right; font-weight:700; }
+  .em-cell .u{ font-size:12px; color:var(--muted); min-width:22px; }
+  .em-prev{ font-size:11.5px; color:var(--muted); white-space:nowrap; }
+  .em-dl{ font-size:11.5px; font-weight:800; white-space:nowrap; }
+  .em-dl.ok{ color:var(--accent2-text); } .em-dl.mal{ color:var(--danger-text,#e5484d); } .em-dl.neu{ color:var(--muted); }
+  .em-pc{ background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:10px 12px; margin-bottom:8px; }
+  .em-pc.ok{ border-color:color-mix(in srgb,var(--accent2-text) 45%,transparent); }
+  .em-pc .nm2{ font-weight:800; font-size:15px; margin-bottom:6px; }
+  .em-pc .mrow{ display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:6px; }
+  .em-pc .mrow .l{ font-size:13px; font-weight:600; } .em-pc .mrow .l small{ display:block; font-size:11px; color:var(--muted); font-weight:500; }
+  .em-pc .em-cell input{ width:84px; }
+  .em-bar{ position:sticky; bottom:0; z-index:20; background:var(--panel); border:1px solid var(--border); border-radius:14px; padding:10px 14px; display:flex; gap:10px; justify-content:space-between; align-items:center; flex-wrap:wrap; box-shadow:0 -6px 18px rgba(0,0,0,.25); margin-top:10px; }
+  .em-bar button[disabled]{ opacity:.45; cursor:not-allowed; }
+  .em-prog{ height:6px; border-radius:99px; background:var(--panel2); overflow:hidden; margin-top:6px; width:200px; max-width:100%; }
+  .em-prog i{ display:block; height:100%; background:var(--accent2); }
+  /* (v96) Logros: varios gráficos */
+  .lg-chips{ display:flex; gap:6px; flex-wrap:wrap; max-height:168px; overflow:auto; margin-top:8px; }
+  .lg-ch{ display:grid; gap:12px; grid-template-columns:minmax(0,1fr); margin-top:12px; }
+  @media (min-width:900px){ .lg-ch.n2,.lg-ch.n4{ grid-template-columns:repeat(2,minmax(0,1fr)); } .lg-ch.n3{ grid-template-columns:repeat(3,minmax(0,1fr)); } }
+  .lg-ch .card{ margin:0; }
+  .lg-ch .gh{ display:flex; justify-content:space-between; gap:8px; flex-wrap:wrap; margin-bottom:6px; }
+  .lg-ch .nm{ font-weight:800; font-size:15px; } .lg-ch .gv{ text-align:right; display:flex; flex-direction:column; gap:3px; align-items:flex-end; } .lg-ch .gv b{ font-size:17px; }
+  /* (v96) Récords */
+  .rec-box{ border:1px solid var(--accent2-text); background:rgba(61,220,132,.10); border-radius:14px; padding:12px 14px; margin:14px 0 4px; text-align:left; }
+  .rec-box b{ color:var(--accent2-text); }
+  /* (v95) Medidas del material */
+  .mm-box{ border:1px solid var(--border); background:var(--panel2); border-radius:12px; padding:8px 10px 10px; margin:0 0 10px; }
+  .mm-h{ display:flex; align-items:center; gap:8px; font-size:13px; margin-bottom:8px; }
+  .mm-auto{ margin-top:8px; padding-top:6px; border-top:1px dashed var(--border); }
+  .mm-ar{ display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin-top:8px; font-size:12px; }
+  .mm-ar input{ width:78px; text-align:center; }
+  .tabla-semanas{ display:block; max-width:100%; overflow-x:auto; -webkit-overflow-scrolling:touch; }
+  .tabla-semanas input.mm{ min-width:66px; }
   .ej-campos .lsel{ color:var(--accent-text); text-transform:none; letter-spacing:0; font-weight:700; margin-left:6px; }
   /* alumno */
   .ex-chips{ display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
@@ -1505,6 +1583,7 @@
     <button class="tt-btn" id="ttRutinas" onclick="cambiarSubvista('rutinas')" title="Rutinas"><span class="tt-ico">🗂️</span><span class="tt-lbl">Rutinas</span></button>
     <button class="tt-btn" id="ttRecepcion" onclick="cambiarSubvista('recepcion')" style="display:none;" title="Recepción"><span class="tt-ico">🛎️</span><span class="tt-lbl">Recepción</span></button>
     <button class="tt-btn" id="ttAgenda" onclick="cambiarSubvista('agenda')" title="Agenda"><span class="tt-ico">📋</span><span class="tt-lbl">Agenda</span></button>
+    <button class="tt-btn" id="ttClases" onclick="cambiarSubvista('clases')" title="Clases"><span class="tt-ico">📆</span><span class="tt-lbl">Clases</span></button>
     <button class="tt-btn" id="ttEspeciales" onclick="cambiarSubvista('especiales')" style="display:none;" title="Rutinas especiales por alumno"><span class="tt-ico">⭐</span><span class="tt-lbl">Rutinas especiales</span></button>
     <button class="tt-btn" id="ttEquipo" onclick="cambiarSubvista('equipo')" title="Seguimiento Equipo"><span class="tt-ico">⚽</span><span class="tt-lbl">Seguimiento Equipo</span></button>
     <button class="tt-btn" id="ttAlumnos" onclick="cambiarSubvista('alumnos')" style="display:none;" title="Alumnos"><span class="tt-ico">👤</span><span class="tt-lbl">Alumnos</span></button>
@@ -1519,6 +1598,9 @@
     <button class="tt-btn" id="ttEjercicios" onclick="cambiarSubvista('ejercicios')" title="Ejercicios"><span class="tt-ico">🆕</span><span class="tt-lbl">Ejercicios</span></button>
     <button class="tt-btn" id="ttGimnasio" onclick="cambiarSubvista('gimnasio')" style="display:none;" title="Mi gimnasio"><span class="tt-ico">🏢</span><span class="tt-lbl">Mi gimnasio</span></button>
   </div>
+
+  <!-- (v96) Ventana movible de clases -->
+  <div class="cl-ov" id="clOv"><div class="cl-mdl" id="clMdl"></div></div>
 
   <div class="menu-drawer-overlay" id="menuProfOverlay" onclick="cerrarMenuProf()"></div>
   <div class="menu-drawer" id="menuProfDrawer">
@@ -1535,6 +1617,7 @@
     <div class="side-item" id="menuRutinas" onclick="cambiarSubvista('rutinas')" title="Rutinas"><span class="side-ico">🗂️</span><span class="side-label">Rutinas</span></div>
     <div class="side-item" id="menuRecepcion" onclick="cambiarSubvista('recepcion')" style="display:none;" title="Recepción"><span class="side-ico">🛎️</span><span class="side-label">Recepción</span></div>
     <div class="side-item" id="menuAgenda" onclick="cambiarSubvista('agenda')" title="Agenda"><span class="side-ico">📋</span><span class="side-label">Agenda</span></div>
+    <div class="side-item" id="menuClases" onclick="cambiarSubvista('clases')" title="Clases"><span class="side-ico">📆</span><span class="side-label">Clases</span></div>
     <div class="side-item" id="menuEspeciales" onclick="cambiarSubvista('especiales')" style="display:none;" title="Rutinas especiales por alumno"><span class="side-ico">⭐</span><span class="side-label">Rutinas especiales por alumno</span></div>
     <div class="side-item" id="menuEquipo" onclick="cambiarSubvista('equipo')" title="Equipo"><span class="side-ico">⚽</span><span class="side-label">Equipo</span></div>
     <div class="side-item" id="menuAlumnos" onclick="cambiarSubvista('alumnos')" title="Alumnos"><span class="side-ico">👤</span><span class="side-label">Alumnos</span></div>
@@ -2160,6 +2243,13 @@
 
       <!-- ---- SUBVISTA: EVALUACIONES ESPECIALES (HU15) ---- -->
       <div id="subvistaEvaluaciones" style="display:none;">
+        <div class="card" style="padding:10px 14px;">
+          <div class="row" style="gap:8px; align-items:center;">
+            <span class="chip-toggle active" id="emSegAlumno" onclick="emModo('alumno')">👤 Un alumno</span>
+            <span class="chip-toggle" id="emSegEquipo" onclick="emModo('equipo')">⚽ Por equipo</span>
+          </div>
+        </div>
+        <div id="evalPanelAlumno">
         <div class="card">
           <div class="row">
             <div class="field" style="flex:1; min-width:220px;">
@@ -2201,6 +2291,29 @@
             <h2 style="margin-top:0">Historial de evaluaciones</h2>
             <div id="evalHistorial" class="muted">Elegí un alumno arriba.</div>
           </div>
+        </div>
+        </div>
+        <div id="evalPanelEquipo" style="display:none;">
+          <div class="card">
+            <h2 style="margin-top:0">1 · ¿Qué evaluás?</h2>
+            <div class="muted">Podés elegir una o varias; cada una será una columna. Los tests de fuerza (peso + repeticiones) se cargan por alumno.</div>
+            <div id="emMetricas"></div>
+          </div>
+          <div class="card">
+            <h2 style="margin-top:0">2 · ¿A qué equipo y cuándo?</h2>
+            <div class="row">
+              <div class="field" style="min-width:200px;"><label>Equipo</label><select id="emEquipo" onchange="emCambiarEquipo(this.value)"></select></div>
+              <div class="field" style="min-width:160px;"><label>Fecha</label><input type="date" id="emFecha" onchange="EM.fecha=this.value"></div>
+              <div class="muted" id="emCuenta" style="align-self:end; padding-bottom:10px;"></div>
+            </div>
+          </div>
+          <div class="card">
+            <h2 style="margin-top:0">3 · Resultados de cada jugador</h2>
+            <div class="muted" style="margin-bottom:8px;">Cargá el valor de cada uno (Enter pasa al siguiente). Si alguien faltó, dejalo vacío: no se guarda nada para ese jugador. Al lado se ve la diferencia contra su evaluación anterior.</div>
+            <div id="emResultado"></div>
+            <div id="emContenido"></div>
+          </div>
+          <div class="em-bar" id="emBar"></div>
         </div>
       </div>
 
@@ -2306,6 +2419,17 @@
       </div>
 
       <!-- ---- SUBVISTA: HORARIOS DE TRABAJO (genera turnos cada 1h) ---- -->
+      <!-- (v96) Calendario de clases (staff) -->
+      <div id="subvistaClases" style="display:none;">
+        <div class="card">
+          <div class="row" style="justify-content:space-between; align-items:center;">
+            <h2 style="margin:0;">📆 Clases del gimnasio</h2>
+            <button type="button" id="clBtnNueva" onclick="clEditar(null)">+ Nueva clase</button>
+          </div>
+        </div>
+        <div id="clasesContenido"></div>
+      </div>
+
       <div id="subvistaHorarios" style="display:none;">
         <div class="card">
           <div class="row" style="gap:8px;">
@@ -2816,6 +2940,7 @@
       </div>
       <div class="side-item active" id="menuAluInicio" onclick="cambiarSubvistaAlu('inicio')">🏠 Inicio</div>
       <div class="side-item" id="menuAluTurnos" onclick="cambiarSubvistaAlu('turnos')">📅 Turnos</div>
+      <div class="side-item" id="menuAluClases" onclick="cambiarSubvistaAlu('clases')">📆 Clases</div>
       <div class="side-item" id="menuAluRutinas" onclick="cambiarSubvistaAlu('rutinas')">🗂️ Mis rutinas</div>
       <div class="side-item" id="menuAluHistorial" onclick="cambiarSubvistaAlu('historial')">📜 Historial</div>
       <div class="side-item" id="menuAluEvolucion" onclick="cambiarSubvistaAlu('evolucion')">📈 Evolución</div>
@@ -2917,6 +3042,11 @@
         <div class="muted" style="margin-bottom:10px;">Peso, repeticiones, RIR y tonelaje de cada sesión, ejercicio por ejercicio.</div>
         <div id="aluSeguimientoContenido" class="muted">Elegí tu nombre arriba.</div>
       </div>
+    </div>
+
+    <div id="subvistaAluClases" style="display:none;">
+      <div class="vista-titulo">Clases</div>
+      <div id="aluClasesContenido" class="muted">Cargando...</div>
     </div>
 
     <div id="subvistaAluLogros" style="display:none;">
@@ -3261,8 +3391,8 @@ const BUCKET = "Ejercicios";
 // un cambio, se incrementa este número — el chequeo de actualización (más abajo) lo compara
 // contra lo que hay publicado y avisa si están desactualizados, sin que nadie tenga que
 // cambiar ningún link a mano.
-const APP_VERSION = 94;
-// (v94) Fecha de la última actualización: se cambia junto con APP_VERSION en cada entrega. Se muestra en la
+const APP_VERSION = 96;
+// (v96) Fecha de la última actualización: se cambia junto con APP_VERSION en cada entrega. Se muestra en la
 // pantalla de inicio y en el menú de cuenta ("v94 · actualizada el 5/10/2026").
 const APP_FECHA = '2026-10-05';
 function appVersionTxt(){ const [y, m, d] = APP_FECHA.split('-'); return `v${APP_VERSION} · actualizada el ${+d}/${+m}/${y}`; }
@@ -4816,7 +4946,7 @@ async function cargarInicioProfesor(){
       sb(`turnos?select=fecha,hora,asistio&fecha=gte.${desde14}&fecha=lte.${domingo}&estado=neq.cancelado${pf}&limit=3000`),
       sb(`turnos?select=alumno_id,fecha,alumnos(nombre)&rutina_dia_id=is.null&fecha=gte.${hoy}&fecha=lte.${ipSumarDias(hoy, 7)}&estado=neq.cancelado${pf}&limit=300`),
     ]);
-    const [wMap, prog, rotFin] = await Promise.all([ cargarWellnessDelDia(hoy, tHoy), cargarProgresoTurnos(tHoy), cargarRotativasPorTerminar(hoy) ]);
+    const [wMap, prog, rotFin, recs] = await Promise.all([ cargarWellnessDelDia(hoy, tHoy), cargarProgresoTurnos(tHoy), cargarRotativasPorTerminar(hoy), cargarRecordsRecientes(hoy) ]);
 
     const turnos = tHoy.map(t => ({
       id: t.id, hora: t.hora, h: String(t.hora).slice(0, 5), alumnoId: t.alumno_id, nombre: t.alumnos?.nombre || 'Alumno',
@@ -4857,7 +4987,7 @@ async function cargarInicioProfesor(){
     tSinRutina.forEach(r => { if (!sinRutinaMap[r.alumno_id]) sinRutinaMap[r.alumno_id] = { nombre: r.alumnos?.nombre || 'Alumno', fecha: r.fecha }; });
 
     INICIO.d = { hoy, ahora, nowMin, esAdmin, propio, profId, turnos, slots, serie14, etq14, semana, pctAsist,
-                 turnosSemana: semana.reduce((s, x) => s + x.n, 0), sinRutina: Object.values(sinRutinaMap), rotFin };
+                 turnosSemana: semana.reduce((s, x) => s + x.n, 0), sinRutina: Object.values(sinRutinaMap), rotFin, records: recs };
     ipRenderTodo();
   }catch(e){
     console.error('Inicio del profesor:', e);
@@ -5057,6 +5187,13 @@ function ipRenderAlertas(){
       unico ? `${unico.alumno || 'Rotativa general'}: la rotativa ${cuando(unico)}` : `${d.rotFin.length} rotativas por terminar`,
       (unico ? `${unico.rutina} · falta cargar la siguiente` : d.rotFin.slice(0, 3).map(x => `${x.alumno || x.rutina} (${cuando(x)})`).join(', ') + (d.rotFin.length > 3 ? ` y ${d.rotFin.length - 3} más` : '')),
       alumnosUnicos.length === 1 ? `irAAsignarEspecialDesdeModal('${alumnosUnicos[0]}')` : "cambiarSubvista('especiales')"]);
+  }
+  if (d.records && d.records.length){
+    const nomAl = id => ((ALUMNOS_CACHE || []).find(a => a.id === id) || {}).nombre || 'Alumno';
+    const fk = v => String(Number(v)).replace('.', ',');
+    const r0 = d.records[0];
+    const det = d.records.slice(0, 3).map(r => `${nomAl(r.alumno_id)} · ${r.ejercicio_nombre} ${fk(r.peso_maximo)} kg (antes ${fk(r.previo)})`).join(' — ') + (d.records.length > 3 ? ` y ${d.records.length - 3} más` : '');
+    items.push(['🏆', 'var(--accent2-text)', d.records.length === 1 ? `${nomAl(r0.alumno_id)} batió su récord en ${r0.ejercicio_nombre}` : `${d.records.length} récords nuevos esta semana`, d.records.length === 1 ? `${fk(r0.peso_maximo)} kg (antes ${fk(r0.previo)} kg)` : det, d.esAdmin ? "cambiarSubvista('logros')" : "cambiarSubvista('seguimiento')"]);
   }
   const sinConf = d.turnos.filter(t => t.asistio === null && t.ef === false);
   if (sinConf.length) items.push(['🕓', 'var(--accent)', `${ipPlural(sinConf.length, 'asistencia', 'asistencias')} sin confirmar`, `Turnos que ya pasaron · ${nom(sinConf)}`, "cambiarSubvista('agenda')"]);
@@ -5425,6 +5562,8 @@ async function quitarRecepcion(perfilId, nombre){
 let AGENDA_AUTO_REFRESH_TIMER = null;
 
 function cambiarSubvista(v){
+  medOk();
+  try{ clCerrar(); }catch(e){}
   if (v==='armador') v='especiales'; // (v94) el Armador y las Rutinas especiales son ahora una sola pantalla: "Nueva rutina"
   // Progreso en vivo (24/9): mientras el profe tiene la Agenda abierta, la refresca
   // sola cada 25s para que el avance de los alumnos se vaya viendo sin tener que
@@ -5448,6 +5587,7 @@ function cambiarSubvista(v){
   document.getElementById('subvistaProfesores').style.display = v==='profesores' ? '' : 'none';
   document.getElementById('subvistaAgenda').style.display = v==='agenda' ? '' : 'none';
   document.getElementById('subvistaHorarios').style.display = v==='horarios' ? '' : 'none';
+  document.getElementById('subvistaClases').style.display = v==='clases' ? '' : 'none';
   document.getElementById('subvistaPlanes').style.display = v==='planes' ? '' : 'none';
   document.getElementById('subvistaCobranzas').style.display = v==='cobranzas' ? '' : 'none';
   document.getElementById('subvistaAlertas').style.display = v==='alertas' ? '' : 'none';
@@ -5466,6 +5606,7 @@ function cambiarSubvista(v){
   document.getElementById('menuProfesores').classList.toggle('active', v==='profesores');
   document.getElementById('menuAgenda').classList.toggle('active', v==='agenda');
   document.getElementById('menuHorarios').classList.toggle('active', v==='horarios');
+  document.getElementById('menuClases').classList.toggle('active', v==='clases');
   document.getElementById('menuPlanes').classList.toggle('active', v==='planes');
   document.getElementById('menuCobranzas').classList.toggle('active', v==='cobranzas');
   document.getElementById('menuAlertas').classList.toggle('active', v==='alertas');
@@ -5484,6 +5625,7 @@ function cambiarSubvista(v){
   document.getElementById('ttProfesores').classList.toggle('active', v==='profesores');
   document.getElementById('ttAgenda').classList.toggle('active', v==='agenda');
   document.getElementById('ttHorarios').classList.toggle('active', v==='horarios');
+  document.getElementById('ttClases').classList.toggle('active', v==='clases');
   document.getElementById('ttPlanes').classList.toggle('active', v==='planes');
   document.getElementById('ttCobranzas').classList.toggle('active', v==='cobranzas');
   document.getElementById('ttAlertas').classList.toggle('active', v==='alertas');
@@ -5506,6 +5648,7 @@ function cambiarSubvista(v){
   if (v==='profesores'){ cargarListaProfesores(); cargarListaProfesoresInactivos(); cargarListaRecepcion(); }
   if (v==='agenda') iniciarAgenda();
   if (v==='horarios'){ horCambiarTab('editar'); cargarHorarioProfesorActual(); }
+  if (v==='clases') clIniciarStaff();
   if (v==='planes') cargarPlanes();
   if (v==='cobranzas') cargarCobranzas();
   if (v==='alertas') cargarSeguimientoAlumnos();
@@ -6363,6 +6506,7 @@ function cambiarSubvistaAlu(v){
   document.getElementById('subvistaAluEvolucion').style.display = v==='evolucion' ? '' : 'none';
   document.getElementById('subvistaAluSeguimiento').style.display = v==='seguimiento' ? '' : 'none';
   document.getElementById('subvistaAluLogros').style.display = v==='logros' ? '' : 'none';
+  document.getElementById('subvistaAluClases').style.display = v==='clases' ? '' : 'none';
   document.getElementById('menuAluInicio').classList.toggle('active', v==='inicio');
   document.getElementById('menuAluTurnos').classList.toggle('active', v==='turnos');
   document.getElementById('menuAluRutinas').classList.toggle('active', v==='rutinas');
@@ -6370,6 +6514,7 @@ function cambiarSubvistaAlu(v){
   document.getElementById('menuAluEvolucion').classList.toggle('active', v==='evolucion');
   document.getElementById('menuAluSeguimiento').classList.toggle('active', v==='seguimiento');
   document.getElementById('menuAluLogros').classList.toggle('active', v==='logros');
+  document.getElementById('menuAluClases').classList.toggle('active', v==='clases');
   document.getElementById('bnavInicio').classList.toggle('active', v==='inicio');
   document.getElementById('bnavTurnos').classList.toggle('active', v==='turnos');
   document.getElementById('bnavRutinas').classList.toggle('active', v==='rutinas');
@@ -6382,6 +6527,7 @@ function cambiarSubvistaAlu(v){
   // a pedir los datos — esos paneles solo se cargaban una vez, al elegir el nombre del alumno
   // (onCambiarAluAlumno). Ahora cada vez que se entra a una de estas 3 secciones se refresca
   // con los datos más recientes (sin esperar a que el alumno vuelva a elegir su nombre).
+  if (v === 'clases') clCargar('aluClasesContenido', true, true);
   const alumnoId = document.getElementById('aluAlumno')?.value;
   if (alumnoId){
     if (v === 'logros') renderLogros('aluLogrosContenido', alumnoId);
@@ -10202,6 +10348,7 @@ function iniciarEvaluaciones(){
   document.getElementById('evalNuevaWrap').style.display = 'none';
   document.getElementById('evalEvolucionWrap').style.display = 'none';
   document.getElementById('evalHistorialWrap').style.display = 'none';
+  if (EM.activo) emIniciar();
 }
 
 async function fetchEvaluacionesConMetricas(alumnoId){
@@ -10848,42 +10995,6 @@ async function fetchEvolucionPesoEjercicio(alumnoId){
   return sb(`v_evolucion_peso_ejercicio?alumno_id=eq.${alumnoId}&select=ejercicio_id,ejercicio_nombre,fecha,peso_maximo&order=fecha.asc`);
 }
 
-function evolucionPesoHtml(contId, filas){
-  if (!filas.length){
-    return `<div class="card">
-      <h2 style="margin-top:0;">📈 Evolución de peso por ejercicio</h2>
-      <div class="empty">Todavía no hay series con peso registradas en ningún entrenamiento.</div>
-    </div>`;
-  }
-  const vistos = new Map();
-  filas.forEach(f => { if (!vistos.has(f.ejercicio_id)) vistos.set(f.ejercicio_id, f.ejercicio_nombre); });
-  const opciones = [...vistos.entries()]
-    .sort((a,b) => a[1].localeCompare(b[1]))
-    .map(([id,nombre]) => `<option value="${id}">${nombre}</option>`).join('');
-  return `<div class="card">
-    <h2 style="margin-top:0;">📈 Evolución de peso por ejercicio</h2>
-    <div class="muted" style="margin-bottom:10px;">El peso más alto levantado en cada sesión, ejercicio por ejercicio.</div>
-    <div class="field" style="max-width:280px;">
-      <label>Ejercicio</label>
-      <select id="ejPesoSelect_${contId}" onchange="renderEjPesoChart('${contId}')">${opciones}</select>
-    </div>
-    <div id="ejPesoChart_${contId}" style="margin-top:10px;"></div>
-  </div>`;
-}
-
-function renderEjPesoChart(contId){
-  const cache = EJ_PESO_CACHE[contId];
-  const sel = document.getElementById(`ejPesoSelect_${contId}`);
-  const cont = document.getElementById(`ejPesoChart_${contId}`);
-  if (!cache || !sel || !cont) return;
-  const ejercicioId = sel.value;
-  const puntos = cache
-    .filter(f => f.ejercicio_id === ejercicioId)
-    .map(f => ({ fecha: f.fecha, valor: Number(f.peso_maximo), unidad: 'kg' }))
-    .sort((a,b) => a.fecha.localeCompare(b.fecha));
-  cont.innerHTML = svgChart(`ejPesoChart_${contId}`, puntos);
-}
-
 async function renderLogros(contId, alumnoId){
   const cont = document.getElementById(contId);
   if (!alumnoId){ cont.innerHTML = 'Elegí un alumno.'; return; }
@@ -11124,6 +11235,501 @@ const MATERIALES = [
 ];
 function matNombre(k){ const m = MATERIALES.find(x => x.k === k); return m ? m.n : k; }
 function matIco(k, z){ const m = MATERIALES.find(x => x.k === k); return m ? `<svg class="mi" width="${z}" height="${z}" viewBox="0 0 48 48" aria-hidden="true">${m.svg}</svg>` : ''; }
+// =====================================================================
+// (v96) BLOQUE 3 — Calendario de clases, evaluación por equipo, Logros con varios gráficos y récords
+// SQL: bloque3-clases-records.sql (tabla `clases` y vista `v_records_alumno`). Sin el SQL, cada pieza
+// se desactiva sola con un aviso y el resto de la app funciona igual.
+// =====================================================================
+const esMovilB3 = () => window.matchMedia('(max-width: 760px)').matches;
+
+// ---------- Calendario de clases ----------
+const CL = { rows: [], ok: null, dia: (new Date().getDay() + 6) % 7, contId: null, ro: true, EC: null };
+const CL_DIAS = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'], CL_DL = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
+const CL_PAL = ['#ff7a30', '#3ddc84', '#5aa9ff', '#c084fc', '#ffd23d', '#ff6b9a', '#2dd4bf'];
+const clHoy = () => (new Date().getDay() + 6) % 7;
+const clTm = t => { const [h, m] = String(t).split(':').map(Number); return h * 60 + (m || 0); };
+const clHM = t => String(t).slice(0, 5);
+function clColor(c){ let h = 0; const s = String(c.id); for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0; return CL_PAL[h % CL_PAL.length]; }
+function clDelDia(d){ return CL.rows.filter(c => c.dias.includes(d)).sort((a, b) => clTm(a.ini) - clTm(b.ini) || clTm(a.fin) - clTm(b.fin)); }
+function clRango(){
+  if (!CL.rows.length) return [8, 20];
+  const s = Math.floor(Math.min(...CL.rows.map(c => clTm(c.ini))) / 60), e = Math.ceil(Math.max(...CL.rows.map(c => clTm(c.fin))) / 60);
+  return [Math.max(0, s), Math.min(24, Math.max(e, s + 4))];
+}
+function clLanes(list){
+  const out = []; let cl = [], fin = -1;
+  const flush = () => { const ls = []; cl.forEach(c => { let k = ls.findIndex(e => e <= clTm(c.ini)); if (k < 0){ k = ls.length; ls.push(0); } ls[k] = clTm(c.fin); c._l = k; }); cl.forEach(c => out.push({ c, l: c._l, n: ls.length })); cl = []; };
+  list.forEach(c => { if (cl.length && clTm(c.ini) >= fin) flush(); cl.push(c); fin = Math.max(fin, clTm(c.fin)); });
+  if (cl.length) flush();
+  return out;
+}
+const CL_OFF = 10, clPx = () => esMovilB3() ? 64 : 58;
+function clBloque(o, s){
+  const c = o.c, px = clPx(), ro = CL.ro, top = CL_OFF + (clTm(c.ini) - s * 60) / 60 * px, h = Math.max(22, (clTm(c.fin) - clTm(c.ini)) / 60 * px - 2), w = 100 / o.n;
+  const tip = `${c.ini}–${c.fin} · ${c.nombre}${c.prof ? ' · ' + c.prof : ' · Profesor a confirmar'}${c.nota ? ' · ' + c.nota : ''}`;
+  let body;
+  if (h < 34) body = `<div class="n"><span class="t">${c.ini}</span> ${ejEsc(c.nombre)}</div>`;
+  else {
+    body = `<div class="t">${c.ini} – ${c.fin}</div><div class="n">${ejEsc(c.nombre)}</div>`;
+    if (h >= 50) body += `<div class="p ${c.prof ? '' : 'tbc'}">👤 ${ejEsc(c.prof || 'A confirmar')}</div>`;
+    if (h >= 84 && c.nota) body += `<div class="p">📝 ${ejEsc(c.nota)}</div>`;
+  }
+  return `<div class="cl-tb ${ro ? 'ro' : ''}" title="${ejEsc(tip)}" style="--c:${clColor(c)};top:${top}px;height:${h}px;left:calc(${o.l * w}% + 2px);width:calc(${w}% - 4px)" ${ro ? '' : `onclick="clEditar('${c.id}')"`}>${body}</div>`;
+}
+function clAhora(s, e, d){
+  if (d !== clHoy()) return '';
+  const n = new Date(), m = n.getHours() * 60 + n.getMinutes();
+  if (m < s * 60 || m > e * 60) return '';
+  return `<div class="cl-nowl" style="top:${CL_OFF + (m - s * 60) / 60 * clPx()}px"></div>`;
+}
+function clColumna(d, s, e){
+  const px = clPx(), H = (e - s) * px + CL_OFF * 2, ro = CL.ro;
+  return `<div class="tcol ${d === clHoy() ? 'hoy' : ''} ${ro ? '' : 'cli'}" style="height:${H}px;--px:${px}px" ${ro ? '' : `onclick="clSlot(event,${d},${s})"`}>${clLanes(clDelDia(d)).map(o => clBloque(o, s)).join('')}${clAhora(s, e, d)}</div>`;
+}
+function clHoras(s, e){
+  const px = clPx(); let h = '';
+  for (let i = 0; i <= e - s; i++) h += `<span style="top:${CL_OFF + i * px}px">${String(s + i).padStart(2, '0')}:00</span>`;
+  return `<div class="hrs" style="height:${(e - s) * px + CL_OFF * 2}px">${h}</div>`;
+}
+function clCalendarioHtml(){
+  const [s, e] = clRango(), movil = esMovilB3();
+  if (!movil) return `<div class="cl-tl"><div class="hd0 hd"></div>${CL_DIAS.map((n, d) => `<div class="hd ${d === clHoy() ? 'hoy' : ''}">${n}${d === clHoy() ? ' · hoy' : ''}</div>`).join('')}${clHoras(s, e)}${CL_DIAS.map((n, d) => clColumna(d, s, e)).join('')}</div>${CL.rows.length ? '' : '<div class="card muted" style="margin-top:10px;">Todavía no hay clases cargadas.</div>'}`;
+  const d = CL.dia;
+  return `<div class="cl-dpills">${CL_DIAS.map((n, k) => `<span class="${d === k ? 'on' : ''} ${k === clHoy() ? 'hoy' : ''}" onclick="CL.dia=${k};clRenderEn()">${n}<small>${k === clHoy() ? 'hoy' : '·'}</small></span>`).join('')}</div>
+    <div class="cl-tl one"><div class="hd0 hd"></div><div class="hd ${d === clHoy() ? 'hoy' : ''}">${CL_DIAS[d]}${d === clHoy() ? ' · hoy' : ''}</div>${clHoras(s, e)}${clColumna(d, s, e)}</div>${clDelDia(d).length ? '' : '<div class="card muted" style="margin-top:10px;">No hay clases este día.</div>'}`;
+}
+function clRenderEn(){
+  const cont = document.getElementById(CL.contId); if (!cont) return;
+  const movil = esMovilB3();
+  const aviso = CL.ok === false
+    ? `<div class="cl-banner">⚠️ Falta activar el calendario de clases en la base de datos. Corré <b>bloque3-clases-records.sql</b> en Supabase (SQL Editor) y recargá la app.</div>` : '';
+  const info = CL.ro
+    ? `<div class="cl-banner">ℹ️ <b>Horarios informativos.</b> No hace falta reservar ni hay cupos: es para que sepas qué clases hay cada día.${CL.rolAlumno ? ' Para entrenar con rutina sacá tu turno en <b>Turnos</b>.' : ' Solo el administrador las edita.'}</div>`
+    : `<div class="cl-banner">Tocá una clase para editarla, un lugar vacío para crear una ahí, o <b>+ Nueva clase</b>. El profesor es opcional: si no lo cargás, el alumno ve "Profesor a confirmar". Lo que cambies se ve al instante en la app del alumno.</div>`;
+  cont.innerHTML = `<div class="${movil ? 'cl-movil' : ''}" id="clWrap">${aviso}${CL.ok === false ? '' : info + clCalendarioHtml()}</div>`;
+}
+async function clCargar(contId, ro, rolAlumno){
+  CL.contId = contId; CL.ro = ro; CL.rolAlumno = !!rolAlumno;
+  const cont = document.getElementById(contId); if (!cont) return;
+  cont.innerHTML = '<div class="muted">Cargando clases...</div>';
+  try{
+    const rows = await sb('clases?select=id,nombre,dias,hora_inicio,hora_fin,profesor_id,nota,profesores(nombre)&order=hora_inicio.asc');
+    CL.rows = (rows || []).map(r => ({ id: r.id, nombre: r.nombre, dias: (r.dias || []).map(Number), ini: clHM(r.hora_inicio), fin: clHM(r.hora_fin), profId: r.profesor_id || '', prof: (r.profesores && r.profesores.nombre) || '', nota: r.nota || '' }));
+    CL.ok = true;
+  }catch(e){
+    CL.rows = [];
+    if (/clases|42P01|PGRST205|does not exist|schema cache/i.test(String(e.message || ''))) CL.ok = false;
+    else { cont.innerHTML = `<div class="empty">No se pudieron cargar las clases: ${ejEsc(e.message || e)}</div>`; return; }
+  }
+  clRenderEn();
+}
+function clIniciarStaff(){
+  const admin = PERFIL_ACTUAL?.rol === 'admin';
+  const nueva = document.getElementById('clBtnNueva'); if (nueva) nueva.style.display = admin ? '' : 'none';
+  clCargar('clasesContenido', !admin, false);
+}
+function clSlot(ev, d, s){
+  if (ev.target !== ev.currentTarget) return;
+  const y = ev.offsetY - CL_OFF, m = Math.max(0, Math.round(y / clPx() * 2) / 2) * 60 + s * 60;
+  const ini = Math.min(m, 23 * 60), fin = Math.min(ini + 60, 24 * 60 - 1);
+  const f = x => String(Math.floor(x / 60)).padStart(2, '0') + ':' + String(x % 60).padStart(2, '0');
+  clEditar(null, { dias: [d], ini: f(ini), fin: f(fin) });
+}
+function clEditar(id, pre){
+  if (PERFIL_ACTUAL?.rol !== 'admin') return;
+  const c = id ? CL.rows.find(x => String(x.id) === String(id)) : Object.assign({ id: null, nombre: '', dias: [], ini: '18:00', fin: '19:00', profId: '', nota: '' }, pre || {});
+  if (!c) return;
+  CL.EC = JSON.parse(JSON.stringify(c));
+  const profs = (PROFESORES_CACHE || []).filter(p => p.activo !== false);
+  const m = document.getElementById('clMdl'), movil = esMovilB3();
+  m.innerHTML = `<div class="cl-mh ${movil ? 'movil' : ''}" id="clMh"><h3>${id ? 'Editar clase' : 'Nueva clase'}</h3><span class="hint">⠿ arrastrá para mover</span><button type="button" class="ghost sm" onclick="clCerrar()" aria-label="Cerrar">✕</button></div>
+    <div class="field"><label>Nombre de la clase</label><input id="clNom" value="${ejEsc(c.nombre)}" placeholder="ej: Funcional, Spinning, Yoga"></div>
+    <div class="field"><label>Días en que se repite</label><div class="cl-dchips" id="clDias">${CL_DL.map((l, d) => `<span class="${CL.EC.dias.includes(d) ? 'on' : ''}" onclick="clTogDia(${d})">${l}</span>`).join('')}</div></div>
+    <div class="cl-row2"><div class="field"><label>Desde</label><input type="time" id="clIni" value="${c.ini}"></div><div class="field"><label>Hasta</label><input type="time" id="clFin" value="${c.fin}"></div></div>
+    <div class="field"><label>Profesor (opcional)</label><select id="clProf"><option value="">Sin profesor asignado</option>${profs.map(p => `<option value="${p.id}" ${String(c.profId) === String(p.id) ? 'selected' : ''}>${ejEsc(p.nombre)}</option>`).join('')}</select></div>
+    <div class="field"><label>Nota (opcional)</label><input id="clNota" value="${ejEsc(c.nota)}" placeholder="ej: traer colchoneta"></div>
+    <div class="row" style="justify-content:flex-end; gap:8px; margin-top:14px;">${id ? `<button type="button" class="ghost" style="margin-right:auto; color:var(--danger-text);" onclick="clEliminar('${id}')">🗑️ Eliminar</button>` : ''}<button type="button" class="ghost" onclick="clCerrar()">Cancelar</button><button type="button" id="clBtnGuardar" onclick="clGuardar(${id ? `'${id}'` : 'null'})">Guardar</button></div>`;
+  const ov = document.getElementById('clOv'); m.style.transform = ''; m.dataset.dx = 0; m.dataset.dy = 0;
+  ov.classList.add('show'); ov.classList.toggle('desk', !movil);
+  document.getElementById(CL.contId).classList.add('cl-lock');
+  clArrastrable(document.getElementById('clMh'), m);
+}
+function clTogDia(d){
+  const a = CL.EC.dias, i = a.indexOf(d); if (i >= 0) a.splice(i, 1); else a.push(d);
+  document.querySelectorAll('#clDias span').forEach((s, k) => s.classList.toggle('on', a.includes(k)));
+}
+function clCerrar(){
+  document.getElementById('clOv').classList.remove('show');
+  const c = document.getElementById(CL.contId); if (c) c.classList.remove('cl-lock');
+}
+async function clGuardar(id){
+  const nombre = document.getElementById('clNom').value.trim(), ini = document.getElementById('clIni').value, fin = document.getElementById('clFin').value;
+  if (!nombre){ toast('Poné el nombre de la clase.', true); return; }
+  if (!CL.EC.dias.length){ toast('Elegí al menos un día.', true); return; }
+  if (!ini || !fin || fin <= ini){ toast('La hora de fin tiene que ser después de la de inicio.', true); return; }
+  const body = { nombre, dias: CL.EC.dias.slice().sort((a, b) => a - b), hora_inicio: ini, hora_fin: fin, profesor_id: document.getElementById('clProf').value || null, nota: document.getElementById('clNota').value.trim() || null };
+  const btn = document.getElementById('clBtnGuardar'); if (btn) btn.disabled = true;
+  try{
+    if (id) await sb(`clases?id=eq.${id}`, { method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: JSON.stringify(body) });
+    else await sb('clases', { method: 'POST', headers: { Prefer: 'return=minimal' }, body: JSON.stringify([{ ...body, gimnasio_id: PERFIL_ACTUAL.gimnasio_id }]) });
+    clCerrar(); toast(id ? 'Clase actualizada ✓' : 'Clase creada ✓');
+    await clCargar(CL.contId, CL.ro, CL.rolAlumno);
+  }catch(e){ toast('Error guardando la clase: ' + e.message, true); if (btn) btn.disabled = false; }
+}
+async function clEliminar(id){
+  if (!confirm('¿Eliminar esta clase del calendario?')) return;
+  try{
+    await sb(`clases?id=eq.${id}`, { method: 'DELETE', headers: { Prefer: 'return=minimal' } });
+    clCerrar(); toast('Clase eliminada');
+    await clCargar(CL.contId, CL.ro, CL.rolAlumno);
+  }catch(e){ toast('Error eliminando la clase: ' + e.message, true); }
+}
+function clArrastrable(h, m){
+  let sx, sy, bx, by, on = false;
+  h.onpointerdown = e => { if (e.target.closest('button')) return; on = true; sx = e.clientX; sy = e.clientY; bx = +m.dataset.dx || 0; by = +m.dataset.dy || 0; h.setPointerCapture(e.pointerId); h.classList.add('dragging'); };
+  h.onpointermove = e => {
+    if (!on) return;
+    let dx = bx + e.clientX - sx, dy = by + e.clientY - sy;
+    const r = m.getBoundingClientRect(), cx = +m.dataset.dx || 0, cy = +m.dataset.dy || 0, nl = r.left + (dx - cx), nt = r.top + (dy - cy);
+    if (nl < 8) dx += 8 - nl; if (nl + r.width > innerWidth - 8) dx -= nl + r.width - (innerWidth - 8);
+    if (nt < 8) dy += 8 - nt; if (nt + 60 > innerHeight) dy -= nt + 60 - innerHeight;
+    m.dataset.dx = dx; m.dataset.dy = dy; m.style.transform = `translate(${dx}px,${dy}px)`;
+  };
+  h.onpointerup = h.onpointercancel = () => { on = false; h.classList.remove('dragging'); };
+}
+let CL_RESIZE_T = null, CL_MOVIL_ANT = esMovilB3();
+window.addEventListener('resize', () => {
+  clearTimeout(CL_RESIZE_T);
+  CL_RESIZE_T = setTimeout(() => {
+    const m = esMovilB3();
+    if (m !== CL_MOVIL_ANT){ CL_MOVIL_ANT = m; if (CL.contId && document.getElementById(CL.contId) && document.getElementById(CL.contId).offsetParent) clRenderEn(); if (EM.activo) emRender(); }
+  }, 200);
+});
+
+// ---------- Evaluación por equipo (carga masiva) ----------
+const EM = { activo: false, equipo: '', fecha: '', metr: [], vals: {}, prev: {}, cargandoPrev: false };
+const EM_MENOR = new Set(['Sprint 30 metros', '1km tiempo', '% Grasa corporal', 'Circunferencia cintura']);
+const EM_NEUTRO = new Set(['Peso', 'Circunferencia cadera', 'Circunferencia brazo']);
+function emMetricas(){
+  const out = [];
+  Object.keys(CATALOGO_METRICAS).forEach(cat => CATALOGO_METRICAS[cat].forEach(m => out.push({ k: cat + '|' + m.nombre, cat, nombre: m.nombre, unidad: m.unidad })));
+  return out;
+}
+const emMet = k => emMetricas().find(m => m.k === k);
+const emJugadores = () => (ALUMNOS_CACHE || []).filter(a => a.equipo_id === EM.equipo).sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
+const emPnum = s => { const v = parseFloat(String(s ?? '').replace(',', '.')); return isNaN(v) ? null : v; };
+const emFmt = v => String(Math.round(v * 100) / 100).replace('.', ',');
+function emModo(modo){
+  const eq = modo === 'equipo';
+  EM.activo = eq;
+  document.getElementById('evalPanelAlumno').style.display = eq ? 'none' : '';
+  document.getElementById('evalPanelEquipo').style.display = eq ? '' : 'none';
+  document.getElementById('emSegAlumno').classList.toggle('active', !eq);
+  document.getElementById('emSegEquipo').classList.toggle('active', eq);
+  if (eq) emIniciar();
+}
+function emIniciar(){
+  const sel = document.getElementById('emEquipo');
+  sel.innerHTML = '<option value="">-- elegir equipo --</option>' + (EQUIPOS_CACHE || []).map(e => `<option value="${e.id}">${ejEsc(e.nombre)}</option>`).join('');
+  if (EM.equipo) sel.value = EM.equipo;
+  if (!EM.fecha) EM.fecha = fechaLocalISO();
+  document.getElementById('emFecha').value = EM.fecha;
+  emRender();
+}
+function emToggleMetrica(k){
+  const i = EM.metr.indexOf(k);
+  if (i >= 0) EM.metr.splice(i, 1); else EM.metr.push(k);
+  emRender(); emCargarPrev();
+}
+function emCambiarEquipo(v){ EM.equipo = v; EM.vals = {}; EM.prev = {}; emRender(); emCargarPrev(); }
+async function emCargarPrev(){
+  const js = emJugadores();
+  EM.prev = {};
+  if (!js.length || !EM.metr.length){ emRefrescar(); return; }
+  const nombres = [...new Set(EM.metr.map(k => emMet(k).nombre))];
+  const lista = nombres.map(n => '"' + n.replace(/"/g, '') + '"').map(encodeURIComponent).join(',');
+  try{
+    const rows = await sb(`evaluaciones?select=alumno_id,fecha,evaluacion_metricas(metrica,valor)&alumno_id=in.(${js.map(j => j.id).join(',')})&evaluacion_metricas.metrica=in.(${lista})&order=fecha.desc&limit=1500`);
+    (rows || []).forEach(ev => (ev.evaluacion_metricas || []).forEach(m => {
+      const p = EM.prev[ev.alumno_id] = EM.prev[ev.alumno_id] || {};
+      if (!p[m.metrica]) p[m.metrica] = { v: Number(m.valor), fecha: ev.fecha };   // la más reciente (vienen ordenadas desc)
+    }));
+  }catch(e){ EM.prev = {}; }
+  emRender();
+}
+const emVal = (a, k) => ((EM.vals[a] || {})[k]) || '';
+function emSet(inp){
+  const a = inp.dataset.a, k = inp.dataset.k;
+  (EM.vals[a] = EM.vals[a] || {})[k] = inp.value;
+  emRefrescar();
+}
+const emTiene = a => EM.metr.some(k => emPnum(emVal(a, k)) !== null);
+function emDelta(a, k){
+  const m = emMet(k), v = emPnum(emVal(a, k)), p = (EM.prev[a] || {})[m.nombre];
+  if (v === null || !p) return '';
+  const d = v - p.v;
+  if (Math.abs(d) < 1e-9) return '<span class="em-dl neu">= igual</span>';
+  const mejor = EM_NEUTRO.has(m.nombre) ? null : (EM_MENOR.has(m.nombre) ? d < 0 : d > 0);
+  return `<span class="em-dl ${mejor === null ? 'neu' : mejor ? 'ok' : 'mal'}">${d > 0 ? '▲' : '▼'} ${emFmt(Math.abs(d))}</span>`;
+}
+function emPrevTxt(a, k){
+  const m = emMet(k), p = (EM.prev[a] || {})[m.nombre];
+  return p ? `Anterior: ${emFmt(p.v)} ${m.unidad || ''}`.trim() : 'Sin evaluación previa';
+}
+function emRefrescar(){
+  const js = emJugadores();
+  js.forEach(j => {
+    EM.metr.forEach(k => { const el = document.querySelector(`[data-dl="${j.id}|${k}"]`); if (el) el.innerHTML = emDelta(j.id, k); });
+    const ck = document.querySelector(`[data-ck="${j.id}"]`); if (ck) ck.textContent = emTiene(j.id) ? '✓' : '';
+    const pc = document.querySelector(`[data-pc="${j.id}"]`); if (pc) pc.classList.toggle('ok', emTiene(j.id));
+  });
+  const sb_ = document.getElementById('emBar'); if (sb_) sb_.innerHTML = emBarHtml();
+}
+function emBarHtml(){
+  const js = emJugadores(), n = js.filter(j => emTiene(j.id)).length;
+  return `<div><b>${n} de ${js.length} jugadores con resultado</b><div class="em-prog"><i style="width:${js.length ? n / js.length * 100 : 0}%"></i></div></div><button type="button" ${n ? '' : 'disabled'} onclick="emGuardar()">💾 Guardar evaluaciones (${n})</button>`;
+}
+function emCeldaHtml(j, m){
+  return `<div class="em-cell"><input data-a="${j.id}" data-k="${ejEsc(m.k)}" inputmode="decimal" placeholder="—" value="${ejEsc(emVal(j.id, m.k))}" oninput="emSet(this)" onkeydown="emEnter(event,this)"><span class="u">${ejEsc(m.unidad || '')}</span><span data-dl="${j.id}|${ejEsc(m.k)}">${emDelta(j.id, m.k)}</span></div><div class="em-prev">${ejEsc(emPrevTxt(j.id, m.k))}</div>`;
+}
+function emEnter(e, inp){
+  if (e.key !== 'Enter') return; e.preventDefault();
+  const all = [...document.querySelectorAll(`#emTabla input[data-k="${inp.dataset.k.replace(/"/g, '\\"')}"]`)];
+  const n = all[all.indexOf(inp) + 1]; if (n){ n.focus(); n.select(); }
+}
+function emRender(){
+  const cont = document.getElementById('emContenido'); if (!cont) return;
+  // chips de evaluaciones
+  const cats = [...new Set(emMetricas().map(m => m.cat))];
+  document.getElementById('emMetricas').innerHTML = cats.map(c => `<div class="em-g">${ejEsc(c)}</div><div class="em-chips">${emMetricas().filter(m => m.cat === c).map(m => `<span class="chip-toggle ${EM.metr.includes(m.k) ? 'active' : ''}" onclick="emToggleMetrica(this.dataset.k)" data-k="${ejEsc(m.k)}">${ejEsc(m.nombre)}${m.unidad ? ' · ' + ejEsc(m.unidad) : ''}</span>`).join('')}</div>`).join('');
+  const js = emJugadores(), ms = EM.metr.map(emMet).filter(Boolean);
+  document.getElementById('emCuenta').textContent = EM.equipo ? `⚽ ${js.length} jugador${js.length === 1 ? '' : 'es'}` : '';
+  if (!EM.equipo){ cont.innerHTML = '<div class="empty">Elegí un equipo para ver a sus jugadores.</div>'; document.getElementById('emBar').innerHTML = ''; return; }
+  if (!js.length){ cont.innerHTML = '<div class="empty">Este equipo todavía no tiene jugadores asignados (asignalos desde "👤 Alumnos").</div>'; document.getElementById('emBar').innerHTML = ''; return; }
+  if (!ms.length){ cont.innerHTML = '<div class="empty">Elegí arriba qué evaluás: cada una será una columna.</div>'; document.getElementById('emBar').innerHTML = ''; return; }
+  const a = document.activeElement, foco = a && a.dataset && a.dataset.a ? [a.dataset.a, a.dataset.k, a.selectionStart] : null;
+  if (!esMovilB3()){
+    cont.innerHTML = `<div class="x-scroll" style="overflow-x:auto;"><table class="em-tbl" id="emTabla"><thead><tr><th>#</th><th>Jugador</th>${ms.map(m => `<th>${ejEsc(m.nombre)} (${ejEsc(m.unidad || '')})</th>`).join('')}<th></th></tr></thead><tbody>${js.map((j, i) => `<tr><td class="muted">${i + 1}</td><td><b>${ejEsc(j.nombre)}</b></td>${ms.map(m => `<td>${emCeldaHtml(j, m)}</td>`).join('')}<td style="font-weight:800; color:var(--accent2-text);" data-ck="${j.id}">${emTiene(j.id) ? '✓' : ''}</td></tr>`).join('')}</tbody></table></div>`;
+  } else {
+    cont.innerHTML = `<div id="emTabla">${js.map((j, i) => `<div class="em-pc ${emTiene(j.id) ? 'ok' : ''}" data-pc="${j.id}"><div class="nm2">${i + 1}. ${ejEsc(j.nombre)} <span style="color:var(--accent2-text);" data-ck="${j.id}">${emTiene(j.id) ? '✓' : ''}</span></div>${ms.map(m => `<div class="mrow"><div class="l">${ejEsc(m.nombre)}<small>${ejEsc(emPrevTxt(j.id, m.k))}</small></div><div class="em-cell"><input data-a="${j.id}" data-k="${ejEsc(m.k)}" inputmode="decimal" placeholder="—" value="${ejEsc(emVal(j.id, m.k))}" oninput="emSet(this)"><span class="u">${ejEsc(m.unidad || '')}</span><span data-dl="${j.id}|${ejEsc(m.k)}">${emDelta(j.id, m.k)}</span></div></div>`).join('')}</div>`).join('')}</div>`;
+  }
+  document.getElementById('emBar').innerHTML = emBarHtml();
+  if (foco){ const el = [...document.querySelectorAll('#emTabla input')].find(i => i.dataset.a === foco[0] && i.dataset.k === foco[1]); if (el){ el.focus(); try{ el.setSelectionRange(foco[2], foco[2]); }catch(e){} } }
+}
+async function emGuardar(){
+  const js = emJugadores().filter(j => emTiene(j.id));
+  if (!js.length){ toast('No cargaste ningún resultado.', true); return; }
+  const fecha = document.getElementById('emFecha').value || fechaLocalISO();
+  const equipo = (EQUIPOS_CACHE || []).find(e => e.id === EM.equipo);
+  const profesorId = document.getElementById('profActual')?.value || null;
+  const gym = PERFIL_ACTUAL?.gimnasio_id || null;
+  try{
+    const creadas = await sb('evaluaciones', { method: 'POST', headers: { Prefer: 'return=representation' }, body: JSON.stringify(js.map(j => ({ alumno_id: j.id, profesor_id: profesorId, gimnasio_id: gym, fecha, notas: 'Carga por equipo' + (equipo ? ' · ' + equipo.nombre : '') }))) });
+    const idDe = {}; (creadas || []).forEach(c => { idDe[c.alumno_id] = c.id; });
+    const filas = [];
+    js.forEach(j => EM.metr.forEach(k => { const v = emPnum(emVal(j.id, k)); if (v === null) return; const m = emMet(k); filas.push({ evaluacion_id: idDe[j.id], categoria: m.cat, metrica: m.nombre, valor: v, unidad: m.unidad || null }); }));
+    if (filas.some(f => !f.evaluacion_id)) throw new Error('no se pudo vincular alguna evaluación');
+    await sb('evaluacion_metricas', { method: 'POST', headers: { Prefer: 'return=minimal' }, body: JSON.stringify(filas) });
+    const sin = emJugadores().filter(j => !emTiene(j.id)).map(j => j.nombre);
+    toast(`Se guardaron ${js.length} evaluaciones ✓`);
+    document.getElementById('emResultado').innerHTML = `<div class="cl-banner">✅ Se creó <b>una evaluación por jugador</b> (${js.length}) con fecha ${fecha.split('-').reverse().join('/')}: ${EM.metr.map(k => ejEsc(emMet(k).nombre)).join(', ')}. Ya figuran en el historial y en el gráfico de evolución de cada uno.${sin.length ? `<br>Sin resultado (no se guardó nada): ${sin.map(ejEsc).join(', ')}.` : ''}</div>`;
+    EM.vals = {}; await emCargarPrev();
+  }catch(e){ toast('Error guardando las evaluaciones: ' + e.message, true); }
+}
+
+// ---------- Logros: varios gráficos de evolución a la vez (hasta 4) ----------
+const EJ_SEL = {};   // { [contId]: [ejercicio_id, ...] }
+function lgTogEj(contId, id){
+  const sel = EJ_SEL[contId] = EJ_SEL[contId] || [];
+  const i = sel.indexOf(id);
+  if (i >= 0){ if (sel.length === 1){ toast('Dejá al menos un ejercicio.', true); return; } sel.splice(i, 1); }
+  else { if (sel.length >= 4){ toast('Podés ver hasta 4 gráficos a la vez.', true); return; } sel.push(id); }
+  renderEjPesoChart(contId);
+}
+function lgSoloUno(contId){ const s = EJ_SEL[contId]; if (s && s.length) EJ_SEL[contId] = [s[0]]; renderEjPesoChart(contId); }
+function lgGraficoHtml(contId, id, filas){
+  const pts = filas.filter(f => f.ejercicio_id === id).map(f => ({ fecha: f.fecha, valor: Number(f.peso_maximo), unidad: 'kg' })).sort((a, b) => a.fecha.localeCompare(b.fecha));
+  const nombre = (filas.find(f => f.ejercicio_id === id) || {}).ejercicio_nombre || '';
+  const ult = pts[pts.length - 1], d = pts.length > 1 ? ult.valor - pts[0].valor : 0;
+  const f1 = v => String(Math.round(v * 10) / 10).replace('.', ',');
+  return `<div class="card"><div class="gh"><div><div class="nm">${ejEsc(nombre)}</div><div class="muted" style="font-size:12px;">Peso más alto de cada entrenamiento</div></div><div class="gv">${ult ? `<b>${f1(ult.valor)} kg</b>` : ''}${pts.length > 1 ? `<span class="pill" style="color:${d >= 0 ? 'var(--accent2-text)' : 'var(--danger-text)'};">${d >= 0 ? '▲ +' : '▼ '}${f1(d)} kg</span>` : ''}</div></div>${svgChart(`ejPesoChart_${contId}_${id}`, pts)}</div>`;
+}
+function evolucionPesoHtml(contId, filas){
+  if (!filas.length){
+    return `<div class="card"><h2 style="margin-top:0;">📈 Evolución de peso por ejercicio</h2><div class="empty">Todavía no hay series con peso registradas en ningún entrenamiento.</div></div>`;
+  }
+  const cuenta = new Map(), nombres = new Map();
+  filas.forEach(f => { cuenta.set(f.ejercicio_id, (cuenta.get(f.ejercicio_id) || 0) + 1); nombres.set(f.ejercicio_id, f.ejercicio_nombre); });
+  const validos = new Set(cuenta.keys());
+  let sel = (EJ_SEL[contId] || []).filter(id => validos.has(id));
+  if (!sel.length) sel = [[...cuenta.entries()].sort((a, b) => b[1] - a[1])[0][0]];
+  EJ_SEL[contId] = sel;
+  return `<div class="card"><h2 style="margin-top:0;">📈 Evolución de peso por ejercicio</h2>
+    <div class="muted" style="margin-bottom:4px;">El peso más alto levantado en cada sesión. Tocá los ejercicios que quieras comparar (hasta 4).</div>
+    <div id="ejPesoChips_${contId}"></div>
+    <div id="ejPesoMulti_${contId}"></div></div>`;
+}
+function renderEjPesoChart(contId){
+  const filas = EJ_PESO_CACHE[contId], chips = document.getElementById(`ejPesoChips_${contId}`), cont = document.getElementById(`ejPesoMulti_${contId}`);
+  if (!filas || !chips || !cont) return;
+  const sel = EJ_SEL[contId] || [];
+  const nombres = new Map(); filas.forEach(f => nombres.set(f.ejercicio_id, f.ejercicio_nombre));
+  const lista = [...nombres.entries()].sort((a, b) => a[1].localeCompare(b[1], 'es'));
+  chips.innerHTML = `<div class="row" style="justify-content:space-between; align-items:center; margin-top:6px;"><span class="muted" style="font-size:12px;">${sel.length} de 4 elegidos</span>${sel.length > 1 ? `<button type="button" class="ghost sm" onclick="lgSoloUno('${contId}')">Dejar solo uno</button>` : ''}</div><div class="lg-chips">${lista.map(([id, n]) => `<span class="chip-toggle ${sel.includes(id) ? 'active' : ''}" onclick="lgTogEj('${contId}','${id}')">${sel.includes(id) ? '✓ ' : ''}${ejEsc(n)}</span>`).join('')}</div>`;
+  cont.innerHTML = `<div class="lg-ch n${sel.length}">${sel.map(id => lgGraficoHtml(contId, id, filas)).join('')}</div>`;
+}
+
+// ---------- Récords personales: aviso al alumno y al profesor ----------
+// v_records_alumno (SQL v96): cada día en que el peso máximo de un ejercicio superó al de todos los días anteriores.
+async function recDeEntrenamiento(alumnoId){
+  const hoyLocal = fechaLocalISO(), hoyUtc = new Date().toISOString().slice(0, 10);
+  const ids = new Set(((window._bloques || []).map(b => b.ejercicioActual && b.ejercicioActual.id)).filter(Boolean));
+  const rows = await sb(`v_records_alumno?select=ejercicio_id,ejercicio_nombre,fecha,peso_maximo,previo&alumno_id=eq.${alumnoId}&fecha=gte.${hoyUtc < hoyLocal ? hoyUtc : hoyLocal}&order=fecha.desc`);
+  return (rows || []).filter(r => (r.fecha === hoyLocal || r.fecha === hoyUtc) && (!ids.size || ids.has(r.ejercicio_id)));
+}
+function recHtml(recs){
+  const f = v => String(Number(v)).replace('.', ',');
+  return `<div class="rec-box"><b>🏆 ${recs.length === 1 ? '¡Nuevo récord!' : `¡${recs.length} récords nuevos!`}</b>${recs.map(r => `<div style="margin-top:4px;">${ejEsc(r.ejercicio_nombre)}: <b>${f(r.peso_maximo)} kg</b> <span class="muted">(antes ${f(r.previo)} kg)</span></div>`).join('')}</div>`;
+}
+async function recMostrarEnFin(alumnoId){
+  try{
+    const recs = await recDeEntrenamiento(alumnoId);
+    const el = document.getElementById('finRecords');
+    if (el && recs.length) el.innerHTML = recHtml(recs);
+  }catch(e){ /* sin la vista (falta el SQL) no se muestra nada */ }
+}
+async function cargarRecordsRecientes(hoy){
+  try{
+    return await sb(`v_records_alumno?select=alumno_id,ejercicio_nombre,fecha,peso_maximo,previo&fecha=gte.${ipSumarDias(hoy, -6)}&order=fecha.desc&limit=100`) || [];
+  }catch(e){ return []; }
+}
+
+// ---------- (v95) Medidas del material (kg / cm) ----------
+// Cada material elegido lleva su medida: cajón en cm, pelota/kettlebell/disco en kg, banda en cm de ancho.
+// DB (SQL aparte, medidas-material.sql): rutina_ejercicios.material_medidas = {"cajon":{"v":50,"inc":5}}
+// y rutina_ejercicio_semanas.medidas = {"cajon":55}. Si el SQL todavía no se corrió, medOk() da false y
+// la app se comporta exactamente como antes (sin pedir ni mandar esas columnas).
+const MAT_UNI = {
+  kettlebell:{ u:'kg', s:2, def:12 }, disco:{ u:'kg', s:2.5, def:10 }, banda:{ u:'cm de ancho', s:0.5, def:3 },
+  pelota:{ u:'kg', s:1, def:4 }, cajon:{ u:'cm', s:5, def:40 },
+};
+let MED_OK = null, MED_P = null;
+function medOk(){
+  if (MED_P) return MED_P;
+  MED_P = Promise.all([sb('rutina_ejercicios?select=material_medidas&limit=1'), sb('rutina_ejercicio_semanas?select=medidas&limit=1')])
+    .then(() => { MED_OK = true; medRefrescarUI(); return true; })
+    .catch(e => {
+      if (/42703|does not exist/i.test(String((e && e.message) || ''))){ MED_OK = false; return false; }
+      MED_P = null; return false;   // error de red / permisos: se reintenta la próxima vez
+    });
+  return MED_P;
+}
+async function medF(t){ await medOk(); return MED_OK === true ? (t === 's' ? ',medidas' : ',material_medidas') : ''; }
+function medRefrescarUI(){
+  try{ Object.keys(CONS).forEach(a => { try{ CONS[a].render(); }catch(e){} }); }catch(e){}
+  try{ Object.keys(EDICION_DIAS).forEach(d => { try{ renderEdicionDia(d); }catch(e){} }); }catch(e){}
+}
+function medNum(v){ if (v === null || v === undefined || v === '') return null; const n = Number(v); return isNaN(n) ? null : n; }
+function medUc(k){ return MAT_UNI[k] ? MAT_UNI[k].u.replace(' de ancho', '') : ''; }
+function medNorm(mats, mm){
+  const o = {};
+  (Array.isArray(mats) ? mats : []).forEach(k => { const r = (mm && typeof mm === 'object') ? mm[k] : null; o[k] = { v: medNum(r && r.v), inc: medNum(r && r.inc) }; });
+  return o;
+}
+function medSemNorm(m){ const o = {}; if (m && typeof m === 'object') Object.keys(m).forEach(k => { const n = medNum(m[k]); if (n !== null) o[k] = n; }); return o; }
+function medPayEj(ex){ return MED_OK === true ? { material_medidas: medNorm(ex.material, ex.material_medidas) } : {}; }
+function medPaySem(s){ return MED_OK === true ? { medidas: medSemNorm(s.medidas) } : {}; }
+function medBase(ex){
+  const o = {};
+  (ex.material || []).forEach(k => { const n = medNum(ex.material_medidas && ex.material_medidas[k] && ex.material_medidas[k].v); if (n !== null) o[k] = n; });
+  return o;
+}
+function medMats(ex){ return (ex.material || []).filter(k => MAT_UNI[k]); }
+// Bloque de medidas dentro de la tarjeta del ejercicio (debajo del selector de material)
+function ejMedidasHtml(ex){
+  if (MED_OK !== true) return '';
+  const mats = medMats(ex); if (!mats.length) return '';
+  const prog = ex.modo_progresion || 'fijo';
+  const rows = mats.map(k => {
+    const u = MAT_UNI[k], m = (ex.material_medidas || {})[k] || {};
+    return `<div class="mm-box"><div class="mm-h">${matIco(k, 24)}<b>${matNombre(k)}</b></div>
+      <div class="ej-g3" style="margin:0;">${ejStepHtml('med:' + k, 'Medida (' + u.u + ')', ejNum(m.v), 'decimal')}${prog === 'autoregulada' ? ejStepHtml('minc:' + k, 'Sube + (' + medUc(k) + ')', ejNum(m.inc), 'decimal') : ''}</div></div>`;
+  }).join('');
+  const hint = prog === 'autoregulada' ? '<div class="muted" style="font-size:12px; margin:-4px 0 10px;">Si la vez pasada cumplió todas las series con el RIR objetivo, la medida sube lo indicado sobre la base. Para escalar semana a semana usá "Por semana".</div>' : '';
+  return rows + hint;
+}
+function medSemHead(ex){
+  if (MED_OK !== true) return '';
+  return medMats(ex).map(k => `<th style="text-align:left; padding:4px 6px;">${matNombre(k)} (${medUc(k)})</th>`).join('');
+}
+function medSemCells(ctx, idx, s, ex, si){
+  if (MED_OK !== true) return '';
+  return medMats(ex).map(k => `<td style="padding:4px 6px;"><input class="mm" inputmode="decimal" type="number" step="${MAT_UNI[k].s}" min="0" value="${(s.medidas && s.medidas[k] !== undefined && s.medidas[k] !== null) ? s.medidas[k] : ''}" onchange="medSetSem('${ctx}',${idx},${si},'${k}',this.value)"></td>`).join('');
+}
+function medAutoHtml(ctx, idx, ex){
+  if (MED_OK !== true) return '';
+  const mats = medMats(ex); if (!mats.length) return '';
+  return `<div class="mm-auto"><div class="muted" style="font-size:12px;">Material: la medida base va arriba; acá sumás por semana.</div>${mats.map(k => {
+    const m = (ex.material_medidas || {})[k] || {};
+    return `<div class="mm-ar">${matIco(k, 22)}<b>${matNombre(k)}</b> sumar <input type="number" inputmode="decimal" step="${MAT_UNI[k].s}" min="0" value="${m.inc ?? ''}" placeholder="${ejFmt(MAT_UNI[k].s)}" onchange="medSetInc('${ctx}',${idx},'${k}',this.value)"> ${medUc(k)}/sem <button type="button" class="secondary" style="padding:4px 10px;" onclick="medAutoSem('${ctx}',${idx},'${k}')">↧ Autocompletar</button></div>`;
+  }).join('')}</div>`;
+}
+function medSetSem(ctx, idx, si, k, val){
+  const ex = ejArr(ctx)[idx]; if (!ex || !ex.semanas || !ex.semanas[si]) return;
+  const s = ex.semanas[si]; s.medidas = s.medidas || {};
+  s.medidas[k] = medNum(String(val).replace(',', '.'));
+}
+function medSetInc(ctx, idx, k, val){
+  const ex = ejArr(ctx)[idx]; if (!ex) return;
+  ex.material_medidas = ex.material_medidas || {};
+  const m = ex.material_medidas[k] = ex.material_medidas[k] || { v: null, inc: null };
+  m.inc = medNum(String(val).replace(',', '.'));
+}
+function medRedibujar(ctx){
+  const [t, a] = ctx.split('|');
+  if (t === 'cons') CONS[a].render(); else if (t === 'edit') renderEdicionDia(a);
+}
+function medAutoSem(ctx, idx, k){
+  const ex = ejArr(ctx)[idx]; if (!ex) return;
+  if (!(ex.semanas || []).length){ toast('Primero agregá las semanas.', true); return; }
+  const m = (ex.material_medidas || {})[k] || {};
+  const v = medNum(m.v);
+  if (v === null){ toast('Poné primero la medida base de ' + matNombre(k) + '.', true); return; }
+  const inc = medNum(m.inc) ?? MAT_UNI[k].s;
+  ex.semanas.forEach((s, w) => { s.medidas = s.medidas || {}; s.medidas[k] = Math.round((v + inc * w) * 100) / 100; });
+  medRedibujar(ctx);
+  toast(`Listo: ${matNombre(k)} sube +${ejFmt(inc)} ${medUc(k)} por semana`);
+}
+function ejStepCfg(k){
+  if (k.startsWith('med:') || k.startsWith('minc:')){ const u = MAT_UNI[k.split(':')[1]]; return { s: u ? u.s : 1, min: 0 }; }
+  return EJ_STEP[k];
+}
+// Alumno: medida efectiva del día según la progresión
+function medSubir(p){
+  if (!p.material_medidas) return p;
+  const mm = {};
+  (p.material || []).forEach(k => { const m = p.material_medidas[k]; if (!m) return; const inc = medNum(m.inc);
+    mm[k] = (m.v != null && inc) ? { v: Math.round((m.v + inc) * 100) / 100, inc, d: inc } : m; });
+  return { ...p, material_medidas: mm };
+}
+function medDeSemana(p, fila, prev){
+  if (!p.material_medidas || !fila || !fila.medidas) return p;
+  const mm = {};
+  (p.material || []).forEach(k => {
+    const m = p.material_medidas[k] || {};
+    const v = medNum(fila.medidas[k]) ?? medNum(m.v);
+    const pv = prev && prev.medidas ? medNum(prev.medidas[k]) : null;
+    mm[k] = { v, inc: m.inc ?? null, d: (v !== null && pv !== null) ? Math.round((v - pv) * 100) / 100 : 0 };
+  });
+  return { ...p, material_medidas: mm };
+}
+function medChipHtml(p, k){
+  const m = (p.material_medidas || {})[k], u = MAT_UNI[k];
+  let t = ejEsc(matNombre(k));
+  if (m && m.v !== null && m.v !== undefined && u) t += ' ' + ejFmt(m.v) + ' ' + u.u;
+  if (m && m.d > 0) t += ` <b style="margin-left:4px;">↑ +${ejFmt(m.d)} ${medUc(k)}</b>`;
+  return `<span class="ex-chip ok">${matIco(k, 22)}${t}</span>`;
+}
 function ejEsTiempo(ex){ return ex.tiempo_trabajo_seg !== null && ex.tiempo_trabajo_seg !== undefined && ex.tiempo_trabajo_seg !== ''; }
 function ejFmt(v){ return String(v).replace('.', ','); }
 function ejSeriesUi(ex){ const s = Number(ex.series) || 1; return ex.unilateral ? s / 2 : s; }
@@ -11154,6 +11760,7 @@ function ejDynHtml(ex){
     </div>
     <label class="l">Material<span class="lsel">${mats.map(matNombre).join(' · ')}</span></label>
     <div class="mt-row">${MATERIALES.map(m => `<button type="button" class="mt ${mats.includes(m.k) ? 'on' : ''}" title="${m.n}" aria-label="${m.n}" aria-pressed="${mats.includes(m.k)}" onclick="ejMaterial(this,'${m.k}')">${matIco(m.k, 40)}</button>`).join('')}</div>
+    ${ejMedidasHtml(ex)}
     <label class="l">Aclaración de la carga o variante</label>
     <input class="ej-txt" placeholder="ej: kettlebell en un solo brazo, halo con disco de 5 kg" value="${ejEsc(ex.variante ?? '')}" onchange="ejTxt(this,'variante')">
     <label class="l">Notas para el alumno</label>
@@ -11177,6 +11784,7 @@ function ejRefrescarCard(card, ex, redibujar){
 }
 const EJ_STEP = { series:{s:1,min:1}, trabajo:{s:5,min:5}, peso:{s:2.5,min:0}, rir:{s:1,min:0,max:5}, pausa:{s:15,min:0} };
 function ejValor(ex, k){
+  if (k.startsWith('med:') || k.startsWith('minc:')){ const [a, b] = k.split(':'); const m = (ex.material_medidas || {})[b]; return m ? ejNum(a === 'med' ? m.v : m.inc) : ''; }
   if (k === 'series') return ejFmt(ejSeriesUi(ex));
   if (k === 'trabajo') return ejNum(ex.tiempo_trabajo_seg);
   if (k === 'peso') return ejNum(ex.peso_sugerido);
@@ -11185,6 +11793,11 @@ function ejValor(ex, k){
   return ex.repeticiones ?? '';
 }
 function ejAsignar(ex, k, v){
+  if (k.startsWith('med:') || k.startsWith('minc:')){
+    const [a, b] = k.split(':'); ex.material_medidas = ex.material_medidas || {};
+    const m = ex.material_medidas[b] = ex.material_medidas[b] || { v: null, inc: null };
+    const n = (v !== null && v > 0) ? v : null; if (a === 'med') m.v = n; else m.inc = n; return;
+  }
   if (k === 'series') ex.series = ex.unilateral ? Math.max(2, Math.round(v * 2)) : Math.max(1, Math.round(v));
   else if (k === 'trabajo') ex.tiempo_trabajo_seg = v;
   else if (k === 'peso') ex.peso_sugerido = (v !== null && v > 0) ? v : null;
@@ -11205,9 +11818,9 @@ function ejStep(btn, dir){
   const inp = st.querySelector('input');
   if (k === 'reps') ejAsignar(ex, 'reps', ejRepsStep(inp.value, dir));
   else {
-    const c = EJ_STEP[k];
+    const c = ejStepCfg(k);
     const cur = parseFloat(String(inp.value).replace(',', '.'));
-    const base = isNaN(cur) ? (k === 'rir' ? 2 - dir : 0) : cur;
+    const base = isNaN(cur) ? (k === 'rir' ? 2 - dir : (k.startsWith('med:') && MAT_UNI[k.slice(4)] ? MAT_UNI[k.slice(4)].def - dir * MAT_UNI[k.slice(4)].s : 0)) : cur;
     let v = base + dir * c.s;
     v = Math.max(c.min, c.max !== undefined ? Math.min(c.max, v) : v);
     ejAsignar(ex, k, Math.round(v * 100) / 100);
@@ -11227,7 +11840,7 @@ function ejStepInput(inp){
       if (k === 'series' || k === 'trabajo'){ inp.value = ejValor(ex, k); return; }
       ejAsignar(ex, k, null);
     } else {
-      const c = EJ_STEP[k];
+      const c = ejStepCfg(k);
       ejAsignar(ex, k, Math.max(c.min, c.max !== undefined ? Math.min(c.max, v) : v));
     }
   }
@@ -11253,8 +11866,20 @@ function ejMaterial(btn, k){
   const { card, ex } = ejCtxDe(btn); if (!ex) return;
   ex.material = Array.isArray(ex.material) ? ex.material : [];
   const i = ex.material.indexOf(k);
-  if (i >= 0) ex.material.splice(i, 1); else ex.material.push(k);
+  if (i >= 0){
+    ex.material.splice(i, 1);
+    if (ex.material_medidas) delete ex.material_medidas[k];
+    (ex.semanas || []).forEach(s => { if (s.medidas) delete s.medidas[k]; });
+  } else {
+    ex.material.push(k);
+    if (MED_OK === true && MAT_UNI[k]){
+      ex.material_medidas = ex.material_medidas || {};
+      ex.material_medidas[k] = { v: MAT_UNI[k].def, inc: MAT_UNI[k].s };
+      (ex.semanas || []).forEach(s => { s.medidas = s.medidas || {}; s.medidas[k] = MAT_UNI[k].def; });
+    }
+  }
   ejRefrescarCard(card, ex, true);
+  if (MED_OK === true && ex.modo_progresion === 'por_semana' && (ex.semanas || []).length) medRedibujar(card.dataset.ctx);
 }
 function ejTxt(inp, campo){
   const { card, ex } = ejCtxDe(inp); if (!ex) return;
@@ -11271,7 +11896,7 @@ function ejResumen(ex){
   else if (!vacio(ex.peso_sugerido)) p.push(`${ejFmt(ex.peso_sugerido)} kg`);
   if (!t && !vacio(ex.rir)) p.push(`RIR ${ex.rir}`);
   if (!vacio(ex.descanso_seg)) p.push(`pausa ${ex.descanso_seg}s`);
-  const mats = (ex.material || []).map(k => matIco(k, 22)).join('');
+  const mats = (ex.material || []).map(k => { const m = MED_OK === true && ex.material_medidas && ex.material_medidas[k]; const t = (m && m.v != null && MAT_UNI[k]) ? `<span style="font-size:11px; font-weight:700; margin:0 4px 0 1px;">${ejFmt(m.v)}${medUc(k)}</span>` : ''; return matIco(k, 22) + t; }).join('');
   return p.join(' · ') + (mats ? ` <span style="display:inline-flex; gap:2px; vertical-align:middle;">${mats}</span>` : '');
 }
 function ejCardHtml(ctx, idx, ex, ejercicio, cuerpoHtml){
@@ -11521,7 +12146,7 @@ function crearConstructorDeDias(prefijo, containerId, headerPrefix){
 
   function agregarSemana(diaId, idx){
     const ex = estado.dias[diaId].ejercicios[idx];
-    ex.semanas.push({ semana: ex.semanas.length + 1, series: ex.series || null, repeticiones: ex.repeticiones || '', peso_sugerido: ex.peso_sugerido ?? null });
+    ex.semanas.push({ semana: ex.semanas.length + 1, series: ex.series || null, repeticiones: ex.repeticiones || '', peso_sugerido: ex.peso_sugerido ?? null, medidas: medBase(ex) });
     render();
   }
 
@@ -11560,7 +12185,7 @@ function crearConstructorDeDias(prefijo, containerId, headerPrefix){
           ${prog==='por_semana' ? `
             <div style="margin-top:8px;">
               <table class="tabla-semanas" style="width:100%; border-collapse:collapse;">
-                <thead><tr><th style="text-align:left; padding:4px 6px;">Semana</th><th style="text-align:left; padding:4px 6px;">Series</th><th style="text-align:left; padding:4px 6px;">Reps</th><th style="text-align:left; padding:4px 6px;">Peso (kg)</th><th></th></tr></thead>
+                <thead><tr><th style="text-align:left; padding:4px 6px;">Semana</th><th style="text-align:left; padding:4px 6px;">Series</th><th style="text-align:left; padding:4px 6px;">Reps</th><th style="text-align:left; padding:4px 6px;">Peso (kg)</th>${medSemHead(ex)}<th></th></tr></thead>
                 <tbody>
                   ${(ex.semanas||[]).map((s,si) => `
                     <tr>
@@ -11568,12 +12193,14 @@ function crearConstructorDeDias(prefijo, containerId, headerPrefix){
                       <td style="padding:4px 6px;"><input inputmode="numeric" type="number" min="1" value="${s.series ?? ''}" onchange="CONS['${prefijo}'].setSemanaCampo('${diaId}',${idx},${si},'series',this.value?parseInt(this.value):null)"></td>
                       <td style="padding:4px 6px;"><input value="${s.repeticiones ?? ''}" onchange="CONS['${prefijo}'].setSemanaCampo('${diaId}',${idx},${si},'repeticiones',this.value)"></td>
                       <td style="padding:4px 6px;"><input inputmode="decimal" type="number" step="0.5" value="${s.peso_sugerido ?? ''}" onchange="CONS['${prefijo}'].setSemanaCampo('${diaId}',${idx},${si},'peso_sugerido',this.value?parseFloat(this.value):null)"></td>
+                      ${medSemCells(`cons|${prefijo}|${diaId}`, idx, s, ex, si)}
                       <td style="padding:4px 6px;"><button type="button" class="danger" style="padding:2px 9px;" onclick="CONS['${prefijo}'].quitarSemana('${diaId}',${idx},${si})">✕</button></td>
                     </tr>
                   `).join('')}
                 </tbody>
               </table>
               <button type="button" class="secondary" style="margin-top:6px;" onclick="CONS['${prefijo}'].agregarSemana('${diaId}',${idx})">+ Agregar semana</button>
+              ${medAutoHtml(`cons|${prefijo}|${diaId}`, idx, ex)}
               ${!(ex.semanas||[]).length ? '<div class="muted" style="font-size:12px; margin-top:4px;">Todavía sin semanas — hasta que agregues la primera se usa Series/Reps/Peso de arriba.</div>' : ''}
             </div>
           ` : ''}
@@ -11693,7 +12320,7 @@ function crearConstructorDeDias(prefijo, containerId, headerPrefix){
   function agregarEjercicio(diaId, ejercicioJson){
     const ejercicio = typeof ejercicioJson === 'string' ? JSON.parse(ejercicioJson) : ejercicioJson;
     const bloque = (estado.dias[diaId].bloqueActual || '').trim() || 'General';
-    estado.dias[diaId].ejercicios.push({ ejercicio, bloque, series:3, repeticiones:'', peso_sugerido:null, tiempo_trabajo_seg:null, descanso_seg:60, rir:null, notas:'', unilateral:false, peso_corporal:false, variante:'', material:[], modo_progresion:'fijo', progresion_incremento_kg:null, progresion_rir_objetivo:null, semanas:[] });
+    estado.dias[diaId].ejercicios.push({ ejercicio, bloque, series:3, repeticiones:'', peso_sugerido:null, tiempo_trabajo_seg:null, descanso_seg:60, rir:null, notas:'', unilateral:false, peso_corporal:false, variante:'', material:[], material_medidas:{}, modo_progresion:'fijo', progresion_incremento_kg:null, progresion_rir_objetivo:null, semanas:[] });
     document.getElementById(`resultados-${diaId}`).style.display='none';
     const lista = estado.dias[diaId].ejercicios;
     const uidNuevo = ejAbrirSoloNuevo(lista.slice(0, -1), lista[lista.length - 1]);
@@ -11962,7 +12589,7 @@ async function traerDiaElegirRutina(prefijo, diaId, rutinaId){
   if (!cont) return;
   cont.innerHTML = '<div class="muted" style="padding:6px;">Cargando días…</div>';
   try{
-    const dias = await sb(`rutina_dias?rutina_id=eq.${rutinaId}&select=id,fecha,nombre_dia,orden,objetivo,rutina_ejercicios(id,orden,bloque,series,repeticiones,peso_sugerido,tiempo_trabajo_seg,descanso_seg,rir,notas,unilateral,peso_corporal,variante,material,modo_progresion,progresion_incremento_kg,progresion_rir_objetivo,ejercicios(id,nombre,grupo_muscular,provider_ref_id,video_provider,video_url_propio),rutina_ejercicio_semanas(semana,series,repeticiones,peso_sugerido))&order=orden.asc`);
+    const dias = await sb(`rutina_dias?rutina_id=eq.${rutinaId}&select=id,fecha,nombre_dia,orden,objetivo,rutina_ejercicios(id,orden,bloque,series,repeticiones,peso_sugerido,tiempo_trabajo_seg,descanso_seg,rir,notas,unilateral,peso_corporal,variante,material${await medF('e')},modo_progresion,progresion_incremento_kg,progresion_rir_objetivo,ejercicios(id,nombre,grupo_muscular,provider_ref_id,video_provider,video_url_propio),rutina_ejercicio_semanas(semana,series,repeticiones,peso_sugerido${await medF('s')}))&order=orden.asc`);
     dias.sort((a, b) => (a.orden ?? 0) - (b.orden ?? 0));
     const r = (ESP_BASE_LISTA || []).find(x => x.id === rutinaId);
     TRAER[diaId] = { rutinaNombre: r?.nombre || 'la rutina', dias };
@@ -12008,7 +12635,7 @@ function traerDiaAplicar(prefijo, diaId, idx, modo){
   const ejs = (src.rutina_ejercicios || []).slice().sort((a, b) => (a.orden ?? 0) - (b.orden ?? 0)).map(x => {
     const cat = (typeof TODOS_EJERCICIOS !== 'undefined' && TODOS_EJERCICIOS.find(e => e.id === x.ejercicios?.id)) || x.ejercicios;
     if (!cat){ sinCatalogo++; return null; }
-    const semanas = (x.rutina_ejercicio_semanas || []).slice().sort((a, b) => a.semana - b.semana).map(s => ({ semana: s.semana, series: s.series, repeticiones: s.repeticiones || '', peso_sugerido: s.peso_sugerido }));
+    const semanas = (x.rutina_ejercicio_semanas || []).slice().sort((a, b) => a.semana - b.semana).map(s => ({ semana: s.semana, series: s.series, repeticiones: s.repeticiones || '', peso_sugerido: s.peso_sugerido, medidas: medSemNorm(s.medidas) }));
     const prog = esRot ? (x.modo_progresion || 'fijo') : 'fijo';
     if (!esRot && (x.modo_progresion || 'fijo') !== 'fijo') conSemanasPerdidas++;
     return {
@@ -12016,6 +12643,7 @@ function traerDiaAplicar(prefijo, diaId, idx, modo){
       peso_sugerido: x.peso_sugerido, tiempo_trabajo_seg: x.tiempo_trabajo_seg, descanso_seg: x.descanso_seg, rir: x.rir,
       notas: x.notas || '', unilateral: !!x.unilateral, peso_corporal: !!x.peso_corporal, variante: x.variante || '',
       material: Array.isArray(x.material) ? x.material : [],
+      material_medidas: medNorm(x.material, x.material_medidas),
       modo_progresion: prog,
       progresion_incremento_kg: prog === 'autoregulada' ? x.progresion_incremento_kg : null,
       progresion_rir_objetivo: prog === 'autoregulada' ? x.progresion_rir_objetivo : null,
@@ -12105,7 +12733,7 @@ async function espCargarDesdeRutina(rutinaId, opts){
   try{
     const [rutina] = await sb(`rutinas?id=eq.${rutinaId}&select=id,nombre,modo_dias,dias_por_semana_objetivo,duracion_semanas`);
     if (!rutina) throw new Error('No se encontró la rutina.');
-    const dias = await sb(`rutina_dias?rutina_id=eq.${rutinaId}&select=id,fecha,nombre_dia,orden,objetivo,rutina_ejercicios(id,orden,bloque,series,repeticiones,peso_sugerido,tiempo_trabajo_seg,descanso_seg,rir,notas,unilateral,peso_corporal,variante,material,modo_progresion,progresion_incremento_kg,progresion_rir_objetivo,ejercicios(id,nombre,grupo_muscular,provider_ref_id,video_provider,video_url_propio),rutina_ejercicio_semanas(semana,series,repeticiones,peso_sugerido))&order=orden.asc`);
+    const dias = await sb(`rutina_dias?rutina_id=eq.${rutinaId}&select=id,fecha,nombre_dia,orden,objetivo,rutina_ejercicios(id,orden,bloque,series,repeticiones,peso_sugerido,tiempo_trabajo_seg,descanso_seg,rir,notas,unilateral,peso_corporal,variante,material${await medF('e')},modo_progresion,progresion_incremento_kg,progresion_rir_objetivo,ejercicios(id,nombre,grupo_muscular,provider_ref_id,video_provider,video_url_propio),rutina_ejercicio_semanas(semana,series,repeticiones,peso_sugerido${await medF('s')}))&order=orden.asc`);
     dias.sort((a, b) => (a.orden ?? 0) - (b.orden ?? 0));
 
     // Una especial es para una persona: plantilla se copia como fecha fija (hay que darle fecha a cada día).
@@ -12121,7 +12749,7 @@ async function espCargarDesdeRutina(rutinaId, opts){
       const ejs = (d.rutina_ejercicios || []).slice().sort((a, b) => (a.orden ?? 0) - (b.orden ?? 0)).map(x => {
         const cat = (typeof TODOS_EJERCICIOS !== 'undefined' && TODOS_EJERCICIOS.find(e => e.id === x.ejercicios?.id)) || x.ejercicios;
         if (!cat){ sinEjercicio++; return null; }
-        const semanas = (x.rutina_ejercicio_semanas || []).slice().sort((a, b) => a.semana - b.semana).map(s => ({ semana: s.semana, series: s.series, repeticiones: s.repeticiones || '', peso_sugerido: s.peso_sugerido }));
+        const semanas = (x.rutina_ejercicio_semanas || []).slice().sort((a, b) => a.semana - b.semana).map(s => ({ semana: s.semana, series: s.series, repeticiones: s.repeticiones || '', peso_sugerido: s.peso_sugerido, medidas: medSemNorm(s.medidas) }));
         const prog = modo === 'rotativa' ? (x.modo_progresion || 'fijo') : 'fijo';
         if (prog === 'por_semana') conSemanas++;
         return {
@@ -12129,6 +12757,7 @@ async function espCargarDesdeRutina(rutinaId, opts){
           peso_sugerido: x.peso_sugerido, tiempo_trabajo_seg: x.tiempo_trabajo_seg, descanso_seg: x.descanso_seg, rir: x.rir,
           notas: x.notas || '', unilateral: !!x.unilateral, peso_corporal: !!x.peso_corporal, variante: x.variante || '',
           material: Array.isArray(x.material) ? x.material : [],
+          material_medidas: medNorm(x.material, x.material_medidas),
           modo_progresion: prog,
           progresion_incremento_kg: prog === 'autoregulada' ? x.progresion_incremento_kg : null,
           progresion_rir_objetivo: prog === 'autoregulada' ? x.progresion_rir_objetivo : null,
@@ -13121,6 +13750,7 @@ async function guardarRutinaGenerica({ constructor, nombre, tipoAlumnoId, etique
       method:'POST', headers:{Prefer:'return=representation'}, body: JSON.stringify(diasPayload)
     });
 
+    await medOk();
     const ejerciciosPayload = [];
     // (28/9) Guardamos con qué ejercicio-índice y día-índice se corresponde cada
     // fila para poder, después de crearlas, mandar las semanas de progresión
@@ -13147,6 +13777,7 @@ async function guardarRutinaGenerica({ constructor, nombre, tipoAlumnoId, etique
           peso_corporal: !!ex.peso_corporal,
           variante: ex.variante || null,
           material: Array.isArray(ex.material) ? ex.material : [],
+          ...medPayEj(ex),
           modo_progresion: modoProg,
           progresion_incremento_kg: modoProg === 'autoregulada' ? (ex.progresion_incremento_kg ?? null) : null,
           progresion_rir_objetivo: modoProg === 'autoregulada' ? (ex.progresion_rir_objetivo ?? null) : null,
@@ -13173,6 +13804,7 @@ async function guardarRutinaGenerica({ constructor, nombre, tipoAlumnoId, etique
             series: s.series ?? null,
             repeticiones: s.repeticiones || null,
             peso_sugerido: s.peso_sugerido ?? null,
+            ...medPaySem(s),
           });
         });
       });
@@ -13454,15 +14086,16 @@ async function cargarEdicionDia(diaId, contId, opciones){
     // (24/9) Pedido de Martin: poder corregir la fecha de un día ya cargado si se
     // equivocó al armar la rutina — antes no había forma de cambiarla desde acá.
     const [items, diaRows] = await Promise.all([
-      sb(`rutina_ejercicios?select=id,orden,bloque,series,repeticiones,peso_sugerido,tiempo_trabajo_seg,descanso_seg,rir,notas,unilateral,peso_corporal,variante,material,modo_progresion,progresion_incremento_kg,progresion_rir_objetivo,rutina_ejercicio_semanas(semana,series,repeticiones,peso_sugerido),ejercicios(id,nombre,grupo_muscular,provider_ref_id,video_provider,video_url_propio)&rutina_dia_id=eq.${diaId}&order=orden.asc`),
+      sb(`rutina_ejercicios?select=id,orden,bloque,series,repeticiones,peso_sugerido,tiempo_trabajo_seg,descanso_seg,rir,notas,unilateral,peso_corporal,variante,material${await medF('e')},modo_progresion,progresion_incremento_kg,progresion_rir_objetivo,rutina_ejercicio_semanas(semana,series,repeticiones,peso_sugerido${await medF('s')}),ejercicios(id,nombre,grupo_muscular,provider_ref_id,video_provider,video_url_propio)&rutina_dia_id=eq.${diaId}&order=orden.asc`),
       sb(`rutina_dias?id=eq.${diaId}&select=rutina_id,fecha,nombre_dia,rutinas(modo_dias,es_ajuste)`),
     ]);
     // (v88) En una rotativa se edita también la progresión (fijo / autoregulada / por semana) y la fecha de inicio del ciclo.
     const esRot = (diaRows[0]?.rutinas?.modo_dias === 'rotativa') && !diaRows[0]?.rutinas?.es_ajuste;
     items.forEach(it => {
       it.modo_progresion = it.modo_progresion || 'fijo';
+      it.material_medidas = medNorm(it.material, it.material_medidas);
       it.semanas = (it.rutina_ejercicio_semanas || []).slice().sort((a, b) => a.semana - b.semana)
-        .map(x => ({ semana: x.semana, series: x.series, repeticiones: x.repeticiones || '', peso_sugerido: x.peso_sugerido }));
+        .map(x => ({ semana: x.semana, series: x.series, repeticiones: x.repeticiones || '', peso_sugerido: x.peso_sugerido, medidas: medSemNorm(x.medidas) }));
       it._teniaSemanas = it.semanas.length > 0;
       delete it.rutina_ejercicio_semanas;
     });
@@ -13670,6 +14303,7 @@ function progEdicionHtml(diaId, item){
   const prog = item.modo_progresion || 'fijo';
   const id = item.id;
   const sem = item.semanas || [];
+  const idxE = EDICION_DIAS[diaId].items.indexOf(item);
   return `
     <div class="row" style="margin-top:10px; align-items:center; gap:6px;">
       <span class="muted" style="font-size:12px; font-weight:600;">Progresión:</span>
@@ -13686,7 +14320,7 @@ function progEdicionHtml(diaId, item){
     ${prog==='por_semana' ? `
       <div style="margin-top:8px;">
         <table class="tabla-semanas" style="width:100%; border-collapse:collapse;">
-          <thead><tr><th style="text-align:left; padding:4px 6px;">Semana</th><th style="text-align:left; padding:4px 6px;">Series</th><th style="text-align:left; padding:4px 6px;">Reps</th><th style="text-align:left; padding:4px 6px;">Peso (kg)</th><th></th></tr></thead>
+          <thead><tr><th style="text-align:left; padding:4px 6px;">Semana</th><th style="text-align:left; padding:4px 6px;">Series</th><th style="text-align:left; padding:4px 6px;">Reps</th><th style="text-align:left; padding:4px 6px;">Peso (kg)</th>${medSemHead(item)}<th></th></tr></thead>
           <tbody>
             ${sem.map((x,si) => `
               <tr>
@@ -13694,11 +14328,13 @@ function progEdicionHtml(diaId, item){
                 <td style="padding:4px 6px;"><input inputmode="numeric" type="number" min="1" value="${x.series ?? ''}" onchange="setSemanaEdicion('${diaId}','${id}',${si},'series',this.value?parseInt(this.value):null)"></td>
                 <td style="padding:4px 6px;"><input value="${escaparHtml(x.repeticiones ?? '')}" onchange="setSemanaEdicion('${diaId}','${id}',${si},'repeticiones',this.value)"></td>
                 <td style="padding:4px 6px;"><input inputmode="decimal" type="number" step="0.5" value="${x.peso_sugerido ?? ''}" onchange="setSemanaEdicion('${diaId}','${id}',${si},'peso_sugerido',this.value?parseFloat(this.value):null)"></td>
+                ${medSemCells(`edit|${diaId}`, idxE, x, item, si)}
                 <td style="padding:4px 6px;"><button type="button" class="danger" style="padding:2px 9px;" onclick="quitarSemanaEdicion('${diaId}','${id}',${si})">✕</button></td>
               </tr>`).join('')}
           </tbody>
         </table>
         <button type="button" class="secondary" style="margin-top:6px;" onclick="agregarSemanaEdicion('${diaId}','${id}')">+ Agregar semana</button>
+        ${medAutoHtml(`edit|${diaId}`, idxE, item)}
         ${!sem.length ? '<div class="muted" style="font-size:12px; margin-top:4px;">Todavía sin semanas — hasta que agregues la primera se usa Series/Reps/Peso de arriba.</div>' : ''}
       </div>` : ''}`;
 }
@@ -13719,7 +14355,7 @@ function setModoProgEdicionTodos(diaId, modo){
 }
 function agregarSemanaEdicion(diaId, itemId){
   const it = itemEdicion(diaId, itemId); if (!it) return;
-  it.semanas.push({ semana: it.semanas.length + 1, series: it.series || null, repeticiones: it.repeticiones || '', peso_sugerido: it.peso_sugerido ?? null });
+  it.semanas.push({ semana: it.semanas.length + 1, series: it.series || null, repeticiones: it.repeticiones || '', peso_sugerido: it.peso_sugerido ?? null, medidas: medBase(it) });
   renderEdicionDia(diaId);
 }
 function quitarSemanaEdicion(diaId, itemId, si){
@@ -13831,6 +14467,7 @@ async function guardarEdicionDia(diaId){
   const esRot = !!(EDICION_DIAS[diaId] || {}).esRot;
   ejNormalizar(items);
   items.forEach((it, i) => { it.orden = i; });
+  await medOk();
   try{
     await Promise.all(items.map(item => sb(`rutina_ejercicios?id=eq.${item.id}`, {
       method:'PATCH', headers:{Prefer:'return=minimal'},
@@ -13842,6 +14479,7 @@ async function guardarEdicionDia(diaId){
         peso_corporal: !!item.peso_corporal,
         variante: item.variante || null,
         material: Array.isArray(item.material) ? item.material : [],
+        ...medPayEj(item),
         ...(esRot ? {
           modo_progresion: item.modo_progresion || 'fijo',
           progresion_incremento_kg: item.modo_progresion === 'autoregulada' ? (item.progresion_incremento_kg ?? null) : null,
@@ -13859,7 +14497,7 @@ async function guardarEdicionDia(diaId){
         if (quedan.length) throw new Error('no se pudieron reemplazar las semanas de progresión (falta permiso de borrado en rutina_ejercicio_semanas)');
         if (quiere){
           await sb('rutina_ejercicio_semanas', { method:'POST', headers:{Prefer:'return=minimal'}, body: JSON.stringify(
-            it.semanas.map((x, i) => ({ rutina_ejercicio_id: it.id, semana: i + 1, series: x.series ?? null, repeticiones: x.repeticiones || null, peso_sugerido: x.peso_sugerido ?? null }))
+            it.semanas.map((x, i) => ({ rutina_ejercicio_id: it.id, semana: i + 1, series: x.series ?? null, repeticiones: x.repeticiones || null, peso_sugerido: x.peso_sugerido ?? null, ...medPaySem(x) }))
           ) });
         }
         it._teniaSemanas = !!quiere;
@@ -15318,7 +15956,7 @@ async function comenzarEntrenamiento(rutinaDiaId, alumnoId, nombreDia){
   cont.style.display = '';
   cont.innerHTML = '<div class="card">Iniciando entrenamiento...</div>';
   try{
-    const rows = await sb(`rutina_ejercicios?select=id,orden,bloque,series,repeticiones,peso_sugerido,tiempo_trabajo_seg,descanso_seg,rir,notas,unilateral,peso_corporal,variante,material,modo_progresion,progresion_incremento_kg,progresion_rir_objetivo,ejercicios(id,nombre,grupo_muscular,provider_ref_id,video_provider,video_url_propio)&rutina_dia_id=eq.${rutinaDiaId}&order=orden.asc`);
+    const rows = await sb(`rutina_ejercicios?select=id,orden,bloque,series,repeticiones,peso_sugerido,tiempo_trabajo_seg,descanso_seg,rir,notas,unilateral,peso_corporal,variante,material${await medF('e')},modo_progresion,progresion_incremento_kg,progresion_rir_objetivo,ejercicios(id,nombre,grupo_muscular,provider_ref_id,video_provider,video_url_propio)&rutina_dia_id=eq.${rutinaDiaId}&order=orden.asc`);
 
     // (24/9) Feedback de Martin: si ya había un entrenamiento sin terminar para este
     // mismo día (salió y volvió a entrar), retomarlo en vez de crear uno nuevo — así
@@ -15391,7 +16029,7 @@ async function comenzarEntrenamiento(rutinaDiaId, alumnoId, nombreDia){
     const [semanaActual, semanasPorEjercicio, seriesUltimaVez] = await Promise.all([
       (usaPorSemana && rutinaIdDelDia) ? contarSemanaActualRutina(rutinaIdDelDia, alumnoId) : Promise.resolve(1),
       usaPorSemana
-        ? sb(`rutina_ejercicio_semanas?select=rutina_ejercicio_id,semana,series,repeticiones,peso_sugerido&rutina_ejercicio_id=in.(${rows.filter(r=>r.modo_progresion==='por_semana').map(r=>r.id).join(',')})&order=semana.asc`).catch(()=>[])
+        ? sb(`rutina_ejercicio_semanas?select=rutina_ejercicio_id,semana,series,repeticiones,peso_sugerido${await medF('s')}&rutina_ejercicio_id=in.(${rows.filter(r=>r.modo_progresion==='por_semana').map(r=>r.id).join(',')})&order=semana.asc`).catch(()=>[])
         : Promise.resolve([]),
       usaAutoregulada ? cargarSeriesUltimaVezDelDia(rutinaDiaId, alumnoId) : Promise.resolve({}),
     ]);
@@ -15420,6 +16058,7 @@ async function comenzarEntrenamiento(rutinaDiaId, alumnoId, nombreDia){
           const pesoBaseAnterior = Math.max(...anteriores.map(s => Number(s.peso_realizado) || 0));
           const pesoSugerido = completo ? Math.round((pesoBaseAnterior + inc) * 100) / 100 : pesoBaseAnterior;
           prescripcionEfectiva = { ...r, peso_sugerido: pesoSugerido };
+          if (completo) prescripcionEfectiva = medSubir(prescripcionEfectiva);
           notaProgresion = completo
             ? `⬆️ Subiste a ${pesoSugerido}kg — la vez pasada completaste todas las series con RIR ${rirObj} o menos.`
             : `Repetimos ${pesoSugerido}kg — la vez pasada no llegaste a completar todas las series en RIR ${rirObj} o menos.`;
@@ -15431,6 +16070,7 @@ async function comenzarEntrenamiento(rutinaDiaId, alumnoId, nombreDia){
           const semanaUsar = Math.min(semanaActual, maxSemana);
           const fila = semanas.find(s => s.semana === semanaUsar) || semanas[semanas.length - 1];
           prescripcionEfectiva = { ...r, series: fila.series ?? r.series, repeticiones: fila.repeticiones ?? r.repeticiones, peso_sugerido: fila.peso_sugerido ?? r.peso_sugerido };
+          prescripcionEfectiva = medDeSemana(prescripcionEfectiva, fila, semanas.find(s => s.semana === fila.semana - 1));
           notaProgresion = `📅 Semana ${semanaUsar} de tu plan${semanaActual > maxSemana ? ' (repitiendo la última semana cargada)' : ''}: ${prescripcionEfectiva.series} × ${prescripcionEfectiva.repeticiones}${prescripcionEfectiva.peso_sugerido != null ? ` · ${prescripcionEfectiva.peso_sugerido}kg` : ''}.`;
         }
       }
@@ -15659,7 +16299,7 @@ function bloqueHtml(b, idx){
   if (p.peso_corporal) chips.push(`<span class="ex-chip ac">Peso corporal${p.peso_sugerido ? ' + ' + String(p.peso_sugerido).replace('.', ',') + ' kg' : ''}</span>`);
   else if (p.peso_sugerido != null) chips.push(`<span class="ex-chip ac">Sugerido ${String(p.peso_sugerido).replace('.', ',')} kg</span>`);
   if (p.descanso_seg) chips.push(`<span class="ex-chip">Pausa ${p.descanso_seg} s</span>`);
-  (p.material || []).forEach(k => chips.push(`<span class="ex-chip ok">${matIco(k, 22)}${ejEsc(matNombre(k))}</span>`));
+  (p.material || []).forEach(k => chips.push(medChipHtml(p, k)));
 
   return `
     <div class="ex-block" id="bloque-${idx}">
@@ -15944,11 +16584,13 @@ async function finalizarEntrenamiento(ejecucionId, rpe){
       <div class="card" style="text-align:center;">
         <div style="font-size:20px; font-weight:700; margin-bottom:8px;">Entrenamiento finalizado. ¡Buen trabajo! 💪</div>
         ${tonelajeTotal > 0 ? `<div class="muted" style="margin-bottom:14px;">Tonelaje total de hoy: <strong>${Math.round(tonelajeTotal).toLocaleString('es-AR')} kg</strong></div>` : ''}
+        <div id="finRecords"></div>
         <button onclick="salirEjecucion()">Volver a mi panel</button>
       </div>`;
     window._tonelajeTotal = 0;
     const alumnoId = document.getElementById('aluAlumno').value;
     if (alumnoId) cargarHistorial(alumnoId);
+    if (alumnoId) recMostrarEnFin(alumnoId);
   }catch(e){ toast('Error finalizando: ' + e.message, true); }
 }
 
