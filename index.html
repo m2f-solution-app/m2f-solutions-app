@@ -603,6 +603,12 @@
   @media (max-width:860px){ .ng-dos{ grid-template-columns:1fr; } }
   @media (max-width:560px){ .ng-grid{ grid-template-columns:1fr; } .ng-kpi .v{ font-size:21px; } }
 
+  /* ---- (v101) Cumpleaños ---- */
+  .cum-sec{ font-size:11.5px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); margin:10px 0 0; }
+  .x-arow.cum-hoy{ background:color-mix(in srgb, var(--accent) 9%, transparent); border-radius:12px; padding-left:10px; padding-right:10px; border-bottom-color:transparent; }
+  .x-arow.cum-paso{ opacity:.6; }
+  .badge-sub.cum-b{ background:var(--accent); color:#1a1000; border-color:var(--accent); }
+
   /* ---- Modal de confirmación (reserva de turno) ---- */
   .modal-overlay{
     position:fixed; inset:0; background:rgba(0,0,0,.6); display:none;
@@ -1799,6 +1805,10 @@
               <label>DNI</label>
               <input id="nuevoAlumnoDni" inputmode="numeric" placeholder="Ej: 30123456" />
             </div>
+            <div class="field" style="min-width:150px;">
+              <label>Fecha de nacimiento</label>
+              <input type="date" id="nuevoAlumnoNac" title="Opcional. Sirve para los avisos de cumpleaños y para calcular la edad." />
+            </div>
             <div class="field">
               <label>Tipo de entrenamiento</label>
               <select id="nuevoAlumnoTipo">
@@ -2848,6 +2858,13 @@
             <div class="pill" id="alertasStatReactivados">📈 Reactivados este mes: 0</div>
           </div>
 
+          <details class="plegable card" data-k="ale-0" open><summary><span id="alertasCumpleTit">🎂 Cumpleaños del mes</span><div class="plg-extra">
+                <span class="badge-sub" id="alertasCountCumple">0</span>
+              </div></summary><div class="plg-body">
+            <div class="muted" style="margin:4px 0 6px; font-size:.85em;">Los de hoy primero. A las 7:00 el staff recibe un aviso y el alumno, un saludo del gimnasio.</div>
+            <div id="alertasCumple" class="muted" style="margin-top:6px;">Cargando...</div>
+          </div></details>
+
           <details class="plegable card" data-k="ale-1"><summary><span>🆕 Nuevos con poca asistencia</span><div class="plg-extra">
                 <span class="badge-sub" id="alertasCountOnboarding">0</span>
                 <button class="ghost" style="font-size:12px; padding:3px 8px;" title="Copiar teléfonos de este grupo" onclick="exportarTelefonosGrupo('onboarding')">📤</button>
@@ -3559,6 +3576,67 @@ const BUCKET = "Ejercicios";
 // un cambio, se incrementa este número — el chequeo de actualización (más abajo) lo compara
 // contra lo que hay publicado y avisa si están desactualizados, sin que nadie tenga que
 // cambiar ningún link a mano.
+// ---------- (v101) CUMPLEAÑOS ----------
+// Fuente: alumnos.fecha_nacimiento (ya venía en cargarPersonas → ALUMNOS_CACHE). Se ven en 🔔 Alertas
+// (hoy + todo el mes) y como novedad en el Inicio del staff. El aviso de las 7:00 al staff y el saludo al
+// alumno los manda el servidor (cumpleanos.sql: avisar_cumpleanos() por pg_cron).
+const CUM_MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+function cumPartes(fn){ const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(fn || ''); return m ? { y: +m[1], m: +m[2], d: +m[3] } : null; }
+function cumBisiesto(y){ return (y % 4 === 0 && y % 100 !== 0) || y % 400 === 0; }
+function cumLista(){   // cumpleaños del mes en curso, ordenados por día
+  const h = new Date(), y = h.getFullYear(), mes = h.getMonth() + 1, hoy = h.getDate();
+  return (ALUMNOS_CACHE || []).map(a => {
+    const p = cumPartes(a.fecha_nacimiento); if (!p || p.m !== mes) return null;
+    const dia = (p.m === 2 && p.d === 29 && !cumBisiesto(y)) ? 28 : p.d;   // 29/2 se festeja el 28 si el año no es bisiesto
+    const edad = y - p.y;
+    return { a, dia, edad: (edad >= 1 && edad <= 110) ? edad : null, esHoy: dia === hoy, paso: dia < hoy };
+  }).filter(Boolean).sort((x, z) => x.dia - z.dia || String(x.a.nombre).localeCompare(String(z.a.nombre)));
+}
+function cumHoy(){ return cumLista().filter(x => x.esHoy); }
+function cumMensaje(a){
+  const g = (GIMNASIO_ACTUAL && GIMNASIO_ACTUAL.nombre) || 'el gimnasio';
+  return `¡Feliz cumpleaños, ${String(a.nombre || '').trim().split(/\s+/)[0]}! 🎂 Todo el equipo de ${g} te desea un gran día. ¡A seguir entrenando! 💪`;
+}
+function cumFila(x, conFicha){
+  const a = x.a, mes = CUM_MESES[new Date().getMonth()];
+  const det = x.esHoy ? `🎂 Hoy${x.edad ? ' cumple ' + x.edad + ' años' : ' es su cumpleaños'}`
+    : `${x.dia} de ${mes}${x.edad ? (x.paso ? ' · cumplió ' : ' · cumple ') + x.edad : ''}`;
+  const wa = whatsappUrlAlumno(a.telefono, cumMensaje(a));
+  const waBtn = wa ? `<button onclick='window.open(${JSON.stringify(wa)}, "_blank")' title="Saludar por WhatsApp">💬 Saludar</button>` : '<span class="muted" style="font-size:11px;">Sin teléfono</span>';
+  return `<div class="x-arow${x.esHoy ? ' cum-hoy' : ''}${x.paso ? ' cum-paso' : ''}">
+      <div>${xQuien(a.nombre || '(sin nombre)', null, true, a.foto_url)}</div>
+      <div>${xe(det)}</div>
+      <div class="acts">${waBtn}${conFicha ? `<button class="ghost" onclick="abrirFichaAlumno('${a.id}')">Ver ficha</button>` : ''}</div>
+    </div>`;
+}
+function cumRenderAlertas(){
+  const cont = document.getElementById('alertasCumple'); if (!cont) return;
+  const lista = cumLista(), hoy = lista.filter(x => x.esHoy), prox = lista.filter(x => !x.esHoy && !x.paso), pas = lista.filter(x => x.paso);
+  const mes = CUM_MESES[new Date().getMonth()];
+  const tit = document.getElementById('alertasCumpleTit'); if (tit) tit.textContent = `🎂 Cumpleaños de ${mes}`;
+  const cnt = document.getElementById('alertasCountCumple');
+  if (cnt){ cnt.textContent = hoy.length ? `hoy ${hoy.length}` : String(lista.length); cnt.classList.toggle('cum-b', hoy.length > 0); }
+  const tot = (ALUMNOS_CACHE || []).length, conFecha = (ALUMNOS_CACHE || []).filter(a => a.fecha_nacimiento).length;
+  const falta = tot && conFecha < tot ? `<div class="muted" style="font-size:12px; margin-top:8px;">${conFecha} de ${tot} alumnos tienen la fecha de nacimiento cargada. Se completa en la ficha de cada alumno (✏️ Datos) o al darlo de alta.</div>` : '';
+  if (!lista.length){ cont.innerHTML = `<div class="muted">Nadie cumple años en ${mes}.</div>${falta}`; return; }
+  const sec = (t, arr) => arr.length ? `<div class="cum-sec">${t}</div>${arr.map(x => cumFila(x, true)).join('')}` : '';
+  cont.innerHTML = sec('Hoy', hoy) + sec('Lo que queda del mes', prox) + sec('Ya pasaron', pas) + falta;
+}
+function cumAbrirHoy(){
+  const hoy = cumHoy(); if (!hoy.length) return;
+  const esAdmin = PERFIL_ACTUAL && PERFIL_ACTUAL.rol === 'admin';
+  const ov = overlayGenerico('modalCumple', 460);
+  ov.onclick = e => { if (e.target === ov) cerrarOverlayGenerico('modalCumple'); };
+  ov.querySelector('.modal-box').innerHTML = `
+    <div class="row" style="justify-content:space-between; align-items:center; margin-bottom:6px;">
+      <h3 style="margin:0;">🎂 Cumpleaños de hoy</h3>
+      <button type="button" class="x-cerrar est" aria-label="Cerrar" title="Cerrar" onclick="cerrarOverlayGenerico('modalCumple')">✕</button>
+    </div>
+    ${hoy.map(x => cumFila(x, esAdmin)).join('')}
+    ${esAdmin && modVistaOk('staff', 'alertas') ? `<div style="margin-top:12px;"><button class="ghost" onclick="cerrarOverlayGenerico('modalCumple'); cambiarSubvista('alertas')">Ver todos los del mes ›</button></div>` : ''}`;
+  ov.classList.add('show');
+}
+
 // ---------- (v100) NEGOCIO: dashboard del superadmin (solo Martin) ----------
 // Pantalla aparte, ⚙️ → 📊 Negocio. Una sola llamada (rpc/negocio_resumen, solo superadmin + 2 pasos) trae
 // gimnasios, uso real y pagos de suscripción; el resto se calcula acá. Reusa 💳 Activar y 🧩 Accesos.
@@ -4276,7 +4354,7 @@ function atlIniciarAlu(){
   atlCargarVista('aluAtletismoContenido', id || '');
 }
 
-const APP_VERSION = 100;
+const APP_VERSION = 101;
 // (v96) Fecha de la última actualización: se cambia junto con APP_VERSION en cada entrega. Se muestra en la
 // pantalla de inicio y en el menú de cuenta ("v94 · actualizada el 5/10/2026").
 const APP_FECHA = '2026-10-05';
@@ -6065,6 +6143,8 @@ function ipRenderAlertas(){
   const cls = t => t.w ? (IP_CLS[t.w.semaforo] || 'n0') : 'n0';
   const nom = arr => { const n = arr.map(t => t.nombre); return n.slice(0, 3).join(', ') + (n.length > 3 ? ` y ${n.length - 3} más` : ''); };
   const items = [];
+  const cum = cumHoy();   // (v101) cumpleaños de hoy
+  if (cum.length) items.push(['🎂', 'var(--accent)', cum.length === 1 ? `Hoy cumple años ${cum[0].a.nombre}` : `${cum.length} cumpleaños hoy`, cum.length === 1 ? ((cum[0].edad ? `Cumple ${cum[0].edad} · ` : '') + 'tocá para saludar') : nom(cum.map(x => ({ nombre: x.a.nombre }))), 'cumAbrirHoy()']);
   const rojos = d.turnos.filter(t => cls(t) === 'rd');
   if (rojos.length === 1) items.push(['🔴', 'var(--danger)', `${rojos[0].nombre} llega con Wellness ${rojos[0].w.total}/25`, rojos[0].w.nota ? rojos[0].w.nota : `Turno ${rojos[0].h}`, "ipIrAWell('rd')"]);
   else if (rojos.length) items.push(['🔴', 'var(--danger)', `${rojos.length} alumnos con Wellness en rojo`, nom(rojos), "ipIrAWell('rd')"]);
@@ -6550,6 +6630,7 @@ function guiaFaqBase(rol){
     { adm:true, q:'¿Cómo cargo los horarios de las clases?', r:['Menú ☰ → 📆 Clases.','Tocá un lugar vacío (o ＋ Nueva clase) y completá nombre, días, horas, profesor y nota.','Los alumnos las ven en su menú “Clases”. Es informativo: no hay cupos.'], ir:{ s:'clases' } },
   ];
   const admin = [
+    { q:'¿Dónde veo los cumpleaños de mis alumnos?', r:['Menú ☰ → 🔔 Alertas → 🎂 Cumpleaños del mes: los de hoy primero, con botón para saludar por WhatsApp.','Los de hoy también aparecen en tu Inicio.','A las 7:00 el staff recibe un aviso y el alumno, un saludo del gimnasio.','Para que funcione, cargá la fecha de nacimiento al dar de alta al alumno o desde su ficha (✏️ Datos).'], ir:{ s:'alertas' } },
     { q:'¿Cómo registro el pago de una cuota?', r:['Menú ☰ → 💰 Finanzas → Cobros.','Buscá al alumno y tocá 💰 Cobrar.','Elegí efectivo o transferencia (y meses de pago adelantado si querés) y confirmá.','Podés bajar o mandar por WhatsApp el recibo en PDF.'], ir:{ s:'cobranzas' } },
     { q:'¿Cómo conecto Mercado Pago?', r:['Menú ☰ → 🏢 Mi gimnasio → Cobros online.','Conectá tu cuenta y aceptá los permisos.','Desde ahí, tus alumnos ven “Pagar con Mercado Pago” cuando la cuota está por vencer o vencida.'], ir:{ s:'gimnasio' } },
     { q:'¿Cómo doy de alta a un profesor o a Recepción?', r:['Menú ☰ → 🧑‍🏫 Profesores → Nuevo profesor (nombre y DNI).','La contraseña temporal se muestra UNA sola vez.','Para Recepción: desplegá “Usuarios de Recepción”; esa persona solo ve la pantalla de Recepción.'], ir:{ s:'profesores' } },
@@ -7357,6 +7438,7 @@ async function cargarSeguimientoAlumnos(){
     });
     SEGUIMIENTO_ALUMNOS_CACHE = d;
     estado.style.display = 'none'; wrap.style.display = '';
+    cumRenderAlertas();   // (v101)
     document.getElementById('alertasUmbralInput').value = d.umbral_dias_inactivo ?? 7;
     document.getElementById('alertasStatContactados').textContent = `💬 Contactados esta semana: ${d.contactados_semana ?? 0}`;
     document.getElementById('alertasStatReactivados').textContent = `📈 Reactivados este mes: ${d.reactivados_mes ?? 0}`;
@@ -10936,6 +11018,7 @@ async function crearAlumno(){
   const email = document.getElementById('nuevoAlumnoEmail').value.trim() || null;
   const direccion = document.getElementById('nuevoAlumnoDireccion').value.trim() || null;
   const planId = document.getElementById('nuevoAlumnoPlan').value || null;
+  const fecha_nacimiento = document.getElementById('nuevoAlumnoNac').value || null;   // (v101)
   if (!planId && !confirm('No elegiste un plan para este alumno. Sin plan no va a poder pagar su cuota desde la app ni figurar en cobranzas.\n\n¿Crearlo igual sin plan? (Podés asignárselo después desde su ficha.)')) return;
   const btn = document.getElementById('btnCrearAlumno');
   btn.disabled = true;
@@ -10945,11 +11028,13 @@ async function crearAlumno(){
       body: JSON.stringify([{
         nombre, tipo_alumno_id: tipoAlumnoId, gimnasio_id: PERFIL_ACTUAL?.gimnasio_id || null,
         altura_cm, peso_kg, objetivo: objetivo || null, telefono, email, direccion,
-        plan_id: planId, dni
+        plan_id: planId, dni,
+        ...(fecha_nacimiento ? { fecha_nacimiento } : {})
       }])
     });
     document.getElementById('nuevoAlumnoNombre').value = '';
     document.getElementById('nuevoAlumnoDni').value = '';
+    document.getElementById('nuevoAlumnoNac').value = '';
     document.getElementById('nuevoAlumnoAltura').value = '';
     document.getElementById('nuevoAlumnoPeso').value = '';
     document.getElementById('nuevoAlumnoObjetivo').value = '';
@@ -10979,7 +11064,7 @@ function buscarAlumnoCache(alumnoId){
 }
 
 // ===================== (v93) Bloque 1 — helpers compartidos =====================
-const XSEL_ALU = 'id,nombre,tipo,tipo_alumno_id,gimnasio_id,plan_id,altura_cm,peso_kg,objetivo,telefono,email,direccion,dni,perfil_id,equipo_id,posicion,foto_url,activo,creado_en,equipos(nombre),alumno_categorias(categoria_id,categorias(nombre))';
+const XSEL_ALU = 'id,nombre,tipo,tipo_alumno_id,gimnasio_id,plan_id,altura_cm,peso_kg,objetivo,telefono,email,direccion,dni,perfil_id,equipo_id,posicion,foto_url,fecha_nacimiento,activo,creado_en,equipos(nombre),alumno_categorias(categoria_id,categorias(nombre))';
 let FICHA_PROF = null;
 function xe(s){ return escaparHtml(s == null ? '' : String(s)); }
 function xNorm(s){ return String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, ''); }
@@ -11233,6 +11318,7 @@ function xEditarAlumnoHtml(a){
   return `<div id="editarAlumno${a.id}" style="display:none; margin-top:14px; border-top:1px solid var(--border); padding-top:14px;">
     <div class="row">
       <div class="field"><label>DNI</label><input id="editDni${a.id}" inputmode="numeric" value="${xe(a.dni || '')}"></div>
+      <div class="field"><label>Fecha de nacimiento</label><input type="date" id="editNac${a.id}" value="${xe(a.fecha_nacimiento || '')}"></div>
       <div class="field"><label>Altura (cm)</label><input inputmode="numeric" type="number" id="editAltura${a.id}" value="${a.altura_cm || ''}"></div>
       <div class="field"><label>Peso (kg)</label><input inputmode="decimal" type="number" step="0.1" id="editPeso${a.id}" value="${a.peso_kg || ''}"></div>
       <div class="field" style="flex:1; min-width:180px;"><label>Objetivo</label><input id="editObjetivo${a.id}" value="${xe(a.objetivo || '')}"></div>
@@ -11262,6 +11348,7 @@ function xEditarAlumnoHtml(a){
 function xFichaDat(a){
   const cats = (a.alumno_categorias || []).map(ac => ac.categorias?.nombre).filter(Boolean).join(', ');
   const dl = [['Nombre', a.nombre], ['DNI', a.dni || '—'], ['Teléfono', a.telefono || '—'], ['Email', a.email || '—'], ['Dirección', a.direccion || '—'],
+    ['Nacimiento', a.fecha_nacimiento ? formatearFechaCorta(a.fecha_nacimiento) + (edadDesdeFecha(a.fecha_nacimiento) != null ? ' · ' + edadDesdeFecha(a.fecha_nacimiento) + ' años' : '') : '—'],
     ['Altura', a.altura_cm ? a.altura_cm + ' cm' : '—'], ['Peso', a.peso_kg ? a.peso_kg + ' kg' : '—'], ['Objetivo', a.objetivo || '—'],
     ['Equipo · posición', [a.equipos?.nombre, a.posicion].filter(Boolean).join(' · ') || '—'], ['Categorías', cats || '—']];
   const acceso = a.perfil_id
@@ -11415,6 +11502,8 @@ async function guardarDatosAlumno(alumnoId){
     posicion: document.getElementById(`editPosicion${alumnoId}`).value.trim() || null,
     foto_url: document.getElementById(`editFotoUrl${alumnoId}`).value.trim() || null,
   };
+  const nacEl = document.getElementById(`editNac${alumnoId}`);   // (v101)
+  if (nacEl) body.fecha_nacimiento = nacEl.value || null;
   const idsCategoriasElegidas = Array.from(
     document.querySelectorAll(`#editCategorias${alumnoId} input[type="checkbox"]:checked`)
   ).map(el => el.value);
@@ -16494,7 +16583,10 @@ async function revisarNotificacionesStaff(){
     const gimId = GIMNASIO_ACTUAL?.id;
     if (!gimId) return;
     const pendientes = await sb(`notificaciones_staff?gimnasio_id=eq.${gimId}&leida=eq.false&order=creado_en.asc`);
-    NOTIF_STAFF_PENDIENTES = pendientes || [];
+    const cumHoyK = 'cumple_' + fechaLocalISO().replace(/-/g, '');   // (v101)
+    const cumViejas = (pendientes || []).filter(n => /^cumple_/.test(n.tipo || '') && n.tipo !== cumHoyK);
+    if (cumViejas.length) sb(`notificaciones_staff?id=in.(${cumViejas.map(n => n.id).join(',')})`, { method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: JSON.stringify({ leida: true }) }).catch(() => {});
+    NOTIF_STAFF_PENDIENTES = (pendientes || []).filter(n => !cumViejas.includes(n));
     if (!NOTIF_STAFF_PENDIENTES.length) return; // nada para avisar, no molestamos al admin
     document.getElementById('modalNotifStaffContenido').innerHTML = NOTIF_STAFF_PENDIENTES.map(n =>
       `<div class="warn-banner" style="background:rgba(61,220,132,.12); border-color:rgba(61,220,132,.4); color:var(--accent2-text);"><strong>${n.titulo}</strong><br>${n.mensaje}</div>`
