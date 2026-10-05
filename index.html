@@ -525,6 +525,31 @@
   .gu-vacio{ text-align:center; color:var(--muted); padding:18px 0; font-size:13px; }
   .gu-mail-btn{ display:block; width:100%; margin-top:10px; }
 
+  /* ===== v98 · Atletismo (módulo activable) ===== */
+  .at-tag{ display:inline-flex; gap:6px; align-items:center; font-size:12px; font-weight:800; color:var(--accent-text); background:rgba(255,122,48,.14); border-radius:999px; padding:3px 10px; margin-bottom:10px; }
+  .at-pace{ font-size:12px; color:var(--muted); margin:-4px 0 8px 54px; min-height:14px; }
+  .media-placeholder.at-ico{ font-size:26px; }
+  .at-sel{ display:flex; gap:10px; align-items:flex-end; flex-wrap:wrap; }
+  .at-kpis{ display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; margin:0 0 12px; }
+  .at-kpi{ background:var(--panel); border:1px solid var(--border); border-radius:var(--radius); padding:12px 14px; }
+  .at-kpi .k{ font-size:12px; color:var(--muted); margin-bottom:2px; }
+  .at-kpi .v{ font-size:22px; font-weight:800; line-height:1.15; color:var(--accent-text); }
+  .at-kpi .v small{ font-size:12px; color:var(--muted); font-weight:600; }
+  .at-charts{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; margin-bottom:12px; }
+  .at-charts .card{ margin:0; }
+  .at-svg{ width:100%; height:auto; display:block; }
+  .at-svg text{ fill:var(--muted); font-size:10px; }
+  .at-svg .gl{ stroke:var(--border); stroke-width:1; }
+  .at-chips{ display:flex; gap:6px; flex-wrap:wrap; margin:6px 0 4px; }
+  .at-chip{ padding:5px 11px; border-radius:999px; background:var(--panel2); border:1px solid var(--border); color:var(--muted); font-size:12.5px; font-weight:700; cursor:pointer; width:auto; }
+  .at-chip.on{ background:var(--accent); color:#1a1000; border-color:var(--accent); }
+  .at-leg{ display:flex; gap:14px; font-size:12px; color:var(--muted); margin:2px 0 10px; }
+  .at-leg i{ display:inline-block; width:10px; height:10px; border-radius:3px; margin-right:5px; vertical-align:-1px; }
+  .at-ses{ border-top:1px solid var(--border); padding:8px 0; font-size:13px; line-height:1.45; }
+  .at-ses:first-child{ border-top:0; }
+  @media (max-width:900px){ .at-charts{ grid-template-columns:1fr; } }
+  @media (max-width:720px){ .at-kpis{ grid-template-columns:repeat(2,minmax(0,1fr)); } }
+
   /* ---- Modal de confirmación (reserva de turno) ---- */
   .modal-overlay{
     position:fixed; inset:0; background:rgba(0,0,0,.6); display:none;
@@ -1626,6 +1651,7 @@
     <button class="tt-btn" id="ttRecepcion" onclick="cambiarSubvista('recepcion')" style="display:none;" title="Recepción"><span class="tt-ico">🛎️</span><span class="tt-lbl">Recepción</span></button>
     <button class="tt-btn" id="ttAgenda" onclick="cambiarSubvista('agenda')" title="Agenda"><span class="tt-ico">📋</span><span class="tt-lbl">Agenda</span></button>
     <button class="tt-btn" id="ttClases" onclick="cambiarSubvista('clases')" title="Clases"><span class="tt-ico">📆</span><span class="tt-lbl">Clases</span></button>
+    <button class="tt-btn" id="ttAtletismo" onclick="cambiarSubvista('atletismo')" style="display:none;" title="Atletismo"><span class="tt-ico">🏃</span><span class="tt-lbl">Atletismo</span></button>
     <button class="tt-btn" id="ttEspeciales" onclick="cambiarSubvista('especiales')" style="display:none;" title="Rutinas especiales por alumno"><span class="tt-ico">⭐</span><span class="tt-lbl">Rutinas especiales</span></button>
     <button class="tt-btn" id="ttEquipo" onclick="cambiarSubvista('equipo')" title="Seguimiento Equipo"><span class="tt-ico">⚽</span><span class="tt-lbl">Seguimiento Equipo</span></button>
     <button class="tt-btn" id="ttAlumnos" onclick="cambiarSubvista('alumnos')" style="display:none;" title="Alumnos"><span class="tt-ico">👤</span><span class="tt-lbl">Alumnos</span></button>
@@ -1685,6 +1711,7 @@
     <div class="side-item" id="menuRecepcion" onclick="cambiarSubvista('recepcion')" style="display:none;" title="Recepción"><span class="side-ico">🛎️</span><span class="side-label">Recepción</span></div>
     <div class="side-item" id="menuAgenda" onclick="cambiarSubvista('agenda')" title="Agenda"><span class="side-ico">📋</span><span class="side-label">Agenda</span></div>
     <div class="side-item" id="menuClases" onclick="cambiarSubvista('clases')" title="Clases"><span class="side-ico">📆</span><span class="side-label">Clases</span></div>
+    <div class="side-item" id="menuAtletismo" onclick="cambiarSubvista('atletismo')" style="display:none;" title="Atletismo"><span class="side-ico">🏃</span><span class="side-label">Atletismo</span></div>
     <div class="side-item" id="menuEspeciales" onclick="cambiarSubvista('especiales')" style="display:none;" title="Rutinas especiales por alumno"><span class="side-ico">⭐</span><span class="side-label">Rutinas especiales por alumno</span></div>
     <div class="side-item" id="menuEquipo" onclick="cambiarSubvista('equipo')" title="Equipo"><span class="side-ico">⚽</span><span class="side-label">Equipo</span></div>
     <div class="side-item" id="menuAlumnos" onclick="cambiarSubvista('alumnos')" title="Alumnos"><span class="side-ico">👤</span><span class="side-label">Alumnos</span></div>
@@ -2488,6 +2515,17 @@
       </div>
 
       <!-- ---- SUBVISTA: HORARIOS DE TRABAJO (genera turnos cada 1h) ---- -->
+      <!-- (v98) Atletismo (módulo opcional, lo activa Martin por gimnasio) -->
+      <div id="subvistaAtletismo" style="display:none;">
+        <div class="card x-seg-strip">
+          <div class="field">
+            <label>🏃 Atletismo · alumno</label>
+            <select id="atlAlumno" onchange="atlCambiarAlumno()"></select>
+          </div>
+        </div>
+        <div id="atlContenido"><div class="muted">Elegí un alumno arriba.</div></div>
+      </div>
+
       <!-- (v96) Calendario de clases (staff) -->
       <div id="subvistaClases" style="display:none;">
         <div class="card">
@@ -3010,6 +3048,7 @@
       <div class="side-item active" id="menuAluInicio" onclick="cambiarSubvistaAlu('inicio')">🏠 Inicio</div>
       <div class="side-item" id="menuAluTurnos" onclick="cambiarSubvistaAlu('turnos')">📅 Turnos</div>
       <div class="side-item" id="menuAluClases" onclick="cambiarSubvistaAlu('clases')">📆 Clases</div>
+      <div class="side-item" id="menuAluAtletismo" onclick="cambiarSubvistaAlu('atletismo')" style="display:none;">🏃 Atletismo</div>
       <div class="side-item" id="menuAluRutinas" onclick="cambiarSubvistaAlu('rutinas')">🗂️ Mis rutinas</div>
       <div class="side-item" id="menuAluHistorial" onclick="cambiarSubvistaAlu('historial')">📜 Historial</div>
       <div class="side-item" id="menuAluEvolucion" onclick="cambiarSubvistaAlu('evolucion')">📈 Evolución</div>
@@ -3118,6 +3157,11 @@
     <div id="subvistaAluClases" style="display:none;">
       <div class="vista-titulo">Clases</div>
       <div id="aluClasesContenido" class="muted">Cargando...</div>
+    </div>
+
+    <div id="subvistaAluAtletismo" style="display:none;">
+      <div class="vista-titulo">Atletismo</div>
+      <div id="aluAtletismoContenido" class="muted">Cargando...</div>
     </div>
 
     <div id="subvistaAluLogros" style="display:none;">
@@ -3462,7 +3506,426 @@ const BUCKET = "Ejercicios";
 // un cambio, se incrementa este número — el chequeo de actualización (más abajo) lo compara
 // contra lo que hay publicado y avisa si están desactualizados, sin que nadie tenga que
 // cambiar ningún link a mano.
-const APP_VERSION = 97;
+// ---------- (v98) ATLETISMO: módulo opcional (lo activa solo Martin, gimnasio por gimnasio) ----------
+// Fondos continuos, intermitentes y pasadas combinados con las rutinas de gimnasio. Se arma en "Nueva rutina"
+// como cualquier ejercicio (catálogo "Atletismo"), el alumno carga distancia y tiempo, y el ritmo se calcula solo.
+// DB (SQL aparte, atletismo.sql): ejercicios.tipo_trabajo, rutina_ejercicios.carrera (jsonb),
+// series_registradas.distancia_m + tiempo_exacto_seg, y el módulo 'atletismo' en gimnasio_modulos.
+// Si el SQL todavía no se corrió, atlOk() da false y la app se comporta exactamente como antes.
+const ATL_TIPOS = {
+  fondo:        { ico: '🏃', n: 'Fondo continuo' },
+  intermitente: { ico: '⚡', n: 'Intermitente' },
+  pasadas:      { ico: '🔁', n: 'Pasadas' },
+};
+let ATL_OK = null, ATL_P = null, ATL_ACT = false, ATL_EST = null, ATL_KEY = '';
+const ATL_DATA = {};
+function atlOk(){
+  if (ATL_P) return ATL_P;
+  ATL_P = Promise.all([
+    sb('ejercicios?select=tipo_trabajo&limit=1'),
+    sb('rutina_ejercicios?select=carrera&limit=1'),
+    sb('series_registradas?select=distancia_m,tiempo_exacto_seg&limit=1'),
+  ]).then(() => { ATL_OK = true; return true; })
+    .catch(e => {
+      if (/42703|does not exist/i.test(String((e && e.message) || ''))){ ATL_OK = false; return false; }
+      ATL_P = null; return false;   // error de red / permisos: se reintenta la próxima vez
+    });
+  return ATL_P;
+}
+async function atlF(t){
+  await atlOk();
+  if (ATL_OK !== true) return '';
+  return t === 'e' ? ',carrera' : (t === 'c' ? ',tipo_trabajo' : ',distancia_m,tiempo_exacto_seg');
+}
+function atlEstado(){
+  const key = (typeof SESION_ACTUAL !== 'undefined' && SESION_ACTUAL && SESION_ACTUAL.access_token) || 'anon';
+  if (ATL_EST && ATL_KEY === key) return ATL_EST;
+  ATL_KEY = key;
+  ATL_EST = atlOk().then(ok => ok
+    ? sb('gimnasio_modulos?select=habilitado&modulo=eq.atletismo').then(r => (ATL_ACT = !!(r && r[0] && r[0].habilitado))).catch(() => (ATL_ACT = false))
+    : (ATL_ACT = false));
+  return ATL_EST;
+}
+function atlOn(){ return ATL_OK === true && ATL_ACT === true; }
+function atlAplicarMenu(){
+  const on = atlOn();
+  ['menuAtletismo', 'ttAtletismo', 'menuAluAtletismo'].forEach(id => { const e = document.getElementById(id); if (e) e.style.display = on ? '' : 'none'; });
+}
+async function atlRefrescar(){
+  ATL_EST = null; ATL_KEY = '';
+  await atlEstado();
+  atlAplicarMenu();
+}
+
+// ----- utilidades de tiempo / distancia -----
+function atlParseT(v){   // "22,4" | "1:35" | "1:35,2" | "5:12:03"
+  if (v === null || v === undefined) return NaN;
+  v = String(v).trim().replace(',', '.'); if (!v) return NaN;
+  const p = v.split(':').map(Number); if (p.some(isNaN)) return NaN;
+  return p.reduce((a, x) => a * 60 + x, 0);
+}
+function atlFmtT(s){   // tiempo con décimas: 21,4 · 1:35,2
+  s = Number(s); if (!isFinite(s)) return '–';
+  const d = Math.round(s * 10), m = Math.floor(d / 600), r = (d % 600) / 10;
+  if (!m) return String(r).replace('.', ',');
+  return m + ':' + (r < 10 ? '0' : '') + String(r).replace('.', ',');
+}
+function atlMmss(s){ s = Number(s); if (!isFinite(s)) return '–'; s = Math.round(s); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); }
+function atlNum(x, d){ d = (d === undefined || d === null) ? 1 : d; const f = Math.pow(10, d); return String(Math.round(Number(x) * f) / f).replace('.', ','); }
+function atlRitmo(distM, t){ return (distM > 0 && t > 0) ? t / (distM / 1000) : NaN; }   // seg/km
+function atlDistTxt(m){ m = Number(m); return m >= 1000 ? atlNum(m / 1000, 2) + ' km' : Math.round(m) + ' m'; }
+function atlRitmoTxt(distM, t){
+  if (!(distM > 0 && t > 0)) return '';
+  if (distM < 400) return atlNum(distM / t * 3.6, 1) + ' km/h';
+  return atlMmss(atlRitmo(distM, t)) + ' /km';
+}
+function atlSerieTxt(s){
+  if (!s || s.distancia_m === null || s.distancia_m === undefined) return '';
+  const t = (s.tiempo_exacto_seg !== null && s.tiempo_exacto_seg !== undefined) ? Number(s.tiempo_exacto_seg) : s.tiempo_realizado_seg;
+  return `${atlDistTxt(s.distancia_m)}${t > 0 ? ' en ' + atlFmtT(t) + ' · ' + atlRitmoTxt(s.distancia_m, t) : ''}`;
+}
+
+// ----- editor de rutinas -----
+function atlDefaultEx(ej){
+  if (ATL_OK !== true || !ej || !ej.tipo_trabajo) return {};
+  const t = ej.tipo_trabajo, n = ej.nombre || '';
+  if (t === 'fondo') return { carrera: { tipo: 'fondo', dist_m: 5000, obj_s: null }, series: 1, repeticiones: '5 km', tiempo_trabajo_seg: null, descanso_seg: null };
+  if (t === 'pasadas'){
+    const m = n.match(/(\d+)\s*m\b/), d = m ? +m[1] : 150;
+    return { carrera: { tipo: 'pasadas', dist_m: d, obj_s: null }, series: 6, repeticiones: d + ' m', tiempo_trabajo_seg: null, descanso_seg: 120 };
+  }
+  let w = 30, p = 30;
+  if (/15"/.test(n)){ w = 15; p = 15; } else if (/1'/.test(n)){ w = 60; p = 60; }
+  const porDist = /distancia/i.test(n);
+  return porDist
+    ? { carrera: { tipo: 'intermitente', dist_m: 200, obj_s: null }, series: 8, repeticiones: '200 m', tiempo_trabajo_seg: 40, descanso_seg: 40 }
+    : { carrera: { tipo: 'intermitente', dist_m: null, obj_s: null }, series: 8, repeticiones: w + ' s', tiempo_trabajo_seg: w, descanso_seg: p };
+}
+function atlSync(ex){
+  const c = ex.carrera; if (!c) return;
+  if (c.tipo === 'fondo'){ ex.series = 1; ex.repeticiones = atlNum((c.dist_m || 0) / 1000, 2) + ' km'; ex.tiempo_trabajo_seg = null; }
+  else if (c.tipo === 'pasadas'){ ex.repeticiones = (c.dist_m || 0) + ' m'; ex.tiempo_trabajo_seg = null; }
+  else ex.repeticiones = c.dist_m ? c.dist_m + ' m' : (ex.tiempo_trabajo_seg || 0) + ' s';
+}
+function atlPayEj(ex){ return ATL_OK === true ? { carrera: ex.carrera || null } : {}; }
+function atlEsKey(k){ return k === 'ckm' || k === 'cdist' || k === 'cobj'; }
+function atlValor(ex, k){
+  const c = ex.carrera || {};
+  if (k === 'ckm') return atlNum((c.dist_m || 0) / 1000, 2);
+  if (k === 'cdist') return (c.dist_m === null || c.dist_m === undefined) ? '' : String(c.dist_m);
+  if (c.obj_s === null || c.obj_s === undefined) return '';
+  return c.tipo === 'fondo' ? atlMmss(c.obj_s) : atlFmtT(c.obj_s);
+}
+function atlAsignar(ex, k, v){   // v: número ya parseado o null
+  const c = ex.carrera;
+  if (k === 'ckm') c.dist_m = Math.max(100, Math.round(v * 1000));
+  else if (k === 'cdist') c.dist_m = (v !== null && v > 0) ? Math.round(v) : (c.tipo === 'pasadas' ? (c.dist_m || 150) : null);
+  else c.obj_s = (v !== null && v > 0) ? v : null;
+  atlSync(ex);
+}
+function atlStep(btn, dir){
+  const st = btn.closest('.ej-step'), k = st.dataset.k, inp = st.querySelector('input'), { card, ex } = ejCtxDe(btn);
+  if (!ex || !ex.carrera) return;
+  const c = ex.carrera;
+  let v;
+  if (k === 'ckm'){ const cur = parseFloat(String(inp.value).replace(',', '.')); v = Math.max(0.5, (isNaN(cur) ? (c.dist_m || 5000) / 1000 : cur) + dir * 0.5); }
+  else if (k === 'cdist'){ const cur = parseFloat(String(inp.value).replace(',', '.')); v = Math.max(c.tipo === 'pasadas' ? 10 : 0, (isNaN(cur) ? (c.dist_m || 0) : cur) + dir * 50); }
+  else { const cur = atlParseT(inp.value); const fondo = c.tipo === 'fondo'; v = Math.max(0, (isNaN(cur) ? (fondo ? 330 : 20) - dir * (fondo ? 5 : 0.5) : cur) + dir * (fondo ? 5 : 0.5)); }
+  atlAsignar(ex, k, Math.round(v * 100) / 100);
+  inp.value = atlValor(ex, k);
+  ejRefrescarCard(card, ex, false);
+}
+function atlInput(inp){
+  const st = inp.closest('.ej-step'), k = st.dataset.k, { card, ex } = ejCtxDe(inp);
+  if (!ex || !ex.carrera) return;
+  const raw = inp.value.trim();
+  if (k === 'cobj'){
+    if (!raw) atlAsignar(ex, k, null);
+    else { const t = atlParseT(raw); if (isNaN(t) || t <= 0){ inp.value = atlValor(ex, k); return; } atlAsignar(ex, k, t); }
+  } else {
+    const v = parseFloat(raw.replace(',', '.'));
+    if (isNaN(v) || v < 0){ if (k === 'cdist' && !raw && ex.carrera.tipo !== 'pasadas') atlAsignar(ex, k, null); inp.value = atlValor(ex, k); ejRefrescarCard(card, ex, false); return; }
+    atlAsignar(ex, k, v);
+  }
+  inp.value = atlValor(ex, k);
+  ejRefrescarCard(card, ex, false);
+}
+function atlDynHtml(ex){
+  const c = ex.carrera, t = c.tipo, T = ATL_TIPOS[t] || ATL_TIPOS.fondo;
+  const objLbl = t === 'fondo' ? 'Ritmo obj. (min/km)' : 'Tiempo obj. (s)';
+  let g;
+  if (t === 'fondo'){
+    g = ejStepHtml('ckm', 'Distancia (km)', atlValor(ex, 'ckm'), 'decimal') + ejStepHtml('cobj', objLbl, atlValor(ex, 'cobj'), '');
+  } else if (t === 'pasadas'){
+    g = ejStepHtml('series', 'Repeticiones', ejFmt(ex.series), 'numeric') + ejStepHtml('cdist', 'Distancia (m)', atlValor(ex, 'cdist'), 'numeric')
+      + ejStepHtml('cobj', objLbl, atlValor(ex, 'cobj'), '') + ejStepHtml('pausa', 'Pausa (s)', ejNum(ex.descanso_seg), 'numeric');
+  } else {
+    g = ejStepHtml('series', 'Repeticiones', ejFmt(ex.series), 'numeric') + ejStepHtml('trabajo', 'Trabajo (s)', ejNum(ex.tiempo_trabajo_seg), 'numeric')
+      + ejStepHtml('cdist', 'Distancia (m, opc.)', atlValor(ex, 'cdist'), 'numeric') + ejStepHtml('pausa', 'Pausa (s)', ejNum(ex.descanso_seg), 'numeric');
+  }
+  return `<div class="at-tag">${T.ico} ${T.n} · atletismo</div>
+    <div class="ej-g3">${g}</div>
+    <div class="muted" style="font-size:12px; margin:-4px 0 10px;">El alumno carga distancia y tiempo de cada ${t === 'fondo' ? 'fondo' : 'repetición'} y el ritmo se calcula solo.</div>
+    <label class="l">Notas para el alumno</label>
+    <input class="ej-txt" value="${ejEsc(ex.notas ?? '')}" onchange="ejTxt(this,'notas')">`;
+}
+function atlResumen(ex){
+  const c = ex.carrera, T = ATL_TIPOS[c.tipo] || ATL_TIPOS.fondo, p = [];
+  const pausa = (ex.descanso_seg !== null && ex.descanso_seg !== undefined && ex.descanso_seg !== '') ? `pausa ${ex.descanso_seg}s` : '';
+  if (c.tipo === 'fondo'){
+    p.push(`${atlNum((c.dist_m || 0) / 1000, 2)} km`);
+    if (c.obj_s) p.push(`ritmo obj. ${atlMmss(c.obj_s)}/km`);
+  } else if (c.tipo === 'pasadas'){
+    p.push(`${ejFmt(ex.series)} × ${c.dist_m || '-'} m`);
+    if (pausa) p.push(pausa);
+    if (c.obj_s) p.push(`obj. ${atlFmtT(c.obj_s)} s`);
+  } else {
+    p.push(`${ejFmt(ex.series)} × ${ex.tiempo_trabajo_seg || '-'} s${c.dist_m ? ` (${c.dist_m} m)` : ''}`);
+    if (pausa) p.push(pausa);
+  }
+  return `${T.ico} ` + p.join(' · ');
+}
+
+// ----- ejecución del alumno -----
+function atlFilaHtml(b, idx, s, dis){
+  const p = b.prescripcion, c = p.carrera, fondo = c.tipo === 'fondo';
+  const reg = (b.seriesPrevias || [])[s];
+  const hecha = !!(reg && ((reg.distancia_m !== null && reg.distancia_m !== undefined) || reg.tiempo_realizado_seg));
+  let dv = '', tv = '', pace = '';
+  if (reg){
+    if (reg.distancia_m !== null && reg.distancia_m !== undefined) dv = fondo ? atlNum(reg.distancia_m / 1000, 2) : String(reg.distancia_m);
+    const t = (reg.tiempo_exacto_seg !== null && reg.tiempo_exacto_seg !== undefined) ? Number(reg.tiempo_exacto_seg) : reg.tiempo_realizado_seg;
+    if (t > 0) tv = atlFmtT(t);
+    pace = atlRitmoTxt(reg.distancia_m, t);
+  } else if (c.dist_m) dv = fondo ? atlNum(c.dist_m / 1000, 2) : String(c.dist_m);
+  const phT = fondo ? (c.obj_s && c.dist_m ? atlMmss(c.obj_s * c.dist_m / 1000) : 'mm:ss') : (c.tipo === 'pasadas' ? (c.obj_s ? atlFmtT(c.obj_s) : 'seg') : (p.tiempo_trabajo_seg ? String(p.tiempo_trabajo_seg) : 'seg'));
+  return `<div class="sa-row t ${hecha ? 'done' : ''}" id="serie-${idx}-${s}">
+      <div class="sa-n">${hecha ? '✓' : (s + 1)}</div>
+      <input inputmode="decimal" type="text" id="adist-${idx}-${s}" value="${dv}" placeholder="${fondo ? 'km' : 'm'}" oninput="atlRowCalc(${idx},${s})" ${dis}>
+      <input inputmode="text" type="text" id="atime-${idx}-${s}" value="${tv}" placeholder="${phT}" oninput="atlRowCalc(${idx},${s})" ${dis}>
+      <button type="button" class="play" id="aplay-${idx}-${s}" aria-label="Medir con cronómetro" onclick="atlTimerToggle(${idx},${s})" ${dis}>${hecha ? '✓' : '▶'}</button>
+    </div><div class="at-pace" id="apace-${idx}-${s}">${pace}</div>`;
+}
+function atlBloqueHtml(b, idx){
+  const p = b.prescripcion, c = p.carrera, T = ATL_TIPOS[c.tipo] || ATL_TIPOS.fondo, fondo = c.tipo === 'fondo';
+  const dis = b.finalizado ? 'disabled' : '';
+  const filas = Array.from({ length: p.series || 1 }).map((_, s) => atlFilaHtml(b, idx, s, dis)).join('');
+  const chips = [];
+  if (c.obj_s) chips.push(`<span class="ex-chip ac">${fondo ? 'Ritmo obj. ' + atlMmss(c.obj_s) + ' /km' : 'Obj. ' + atlFmtT(c.obj_s) + ' s'}</span>`);
+  if (p.descanso_seg) chips.push(`<span class="ex-chip">Pausa ${p.descanso_seg} s</span>`);
+  if (c.tipo === 'intermitente' && p.tiempo_trabajo_seg) chips.push(`<span class="ex-chip">Trabajo ${p.tiempo_trabajo_seg} s</span>`);
+  const detalle = fondo ? atlDistTxt(c.dist_m || 0) : `${p.series} × ${c.dist_m ? atlDistTxt(c.dist_m) : (p.tiempo_trabajo_seg || '-') + ' s'}`;
+  return `
+    <div class="ex-block" id="bloque-${idx}">
+      <div class="ex-header">
+        <div class="media-placeholder at-ico">${T.ico}</div>
+        <div style="flex:1; min-width:0;">
+          <div class="ex-nombre" style="font-weight:700;">${b.ejercicioActual.nombre} <span class="badge-sub">${T.ico} Atletismo</span></div>
+          <div class="muted">${T.n} · ${detalle}</div>
+          ${chips.length ? `<div class="ex-chips">${chips.join('')}</div>` : ''}
+        </div>
+      </div>
+      ${p.notas ? `<div class="nota-profesor" style="margin:0 0 8px;">📋 ${p.notas}</div>` : ''}
+      <div id="sustitucion-${idx}"></div>
+      <div id="sets-${idx}">
+        <div class="sa-head t"><span></span><span>Distancia (${fondo ? 'km' : 'm'})</span><span>Tiempo</span><span></span></div>
+        ${filas}
+      </div>
+      <div class="ex-acciones">
+        <div class="ex-acciones-secundarias">
+          <button class="ghost" onclick="abrirSustitucion(${idx})" ${b.finalizado ? 'disabled' : ''}>No puedo hacer este ejercicio</button>
+        </div>
+        <button onclick="finalizarEjercicio(${idx})" ${b.finalizado ? 'disabled' : ''} id="btnFin-${idx}">${b.finalizado ? 'Registrado ✓' : 'Finalizar y registrar'}</button>
+      </div>
+    </div>`;
+}
+function atlLeerFila(idx, s, fondo){
+  const dRaw = (document.getElementById(`adist-${idx}-${s}`) || {}).value || '', tRaw = (document.getElementById(`atime-${idx}-${s}`) || {}).value || '';
+  let d = parseFloat(String(dRaw).replace(',', '.')); d = isNaN(d) ? null : Math.round(fondo ? d * 1000 : d);
+  const t = atlParseT(tRaw);
+  return { d, t: isNaN(t) ? null : t, dRaw: dRaw.trim(), tRaw: tRaw.trim() };
+}
+function atlRowCalc(idx, s){
+  const b = (window._bloques || [])[idx]; if (!b || !b.prescripcion.carrera) return;
+  const f = atlLeerFila(idx, s, b.prescripcion.carrera.tipo === 'fondo');
+  const el = document.getElementById(`apace-${idx}-${s}`);
+  if (el) el.textContent = (f.d > 0 && f.t > 0) ? atlRitmoTxt(f.d, f.t) : '';
+}
+function atlTimerToggle(idx, s){
+  const key = `${idx}-${s}`;
+  window._serieTimers = window._serieTimers || {};
+  const inp = document.getElementById(`atime-${idx}-${s}`), btn = document.getElementById(`aplay-${idx}-${s}`);
+  if (!inp || !btn) return;
+  if (window._serieTimers[key]){
+    clearInterval(window._serieTimers[key]); delete window._serieTimers[key];
+    btn.classList.remove('run'); btn.textContent = '▶';
+    const t = atlParseT(inp.value); if (t > 0) inp.value = atlFmtT(t);
+    atlRowCalc(idx, s);
+    return;
+  }
+  const t0 = Date.now();
+  btn.textContent = '■'; btn.classList.add('run');
+  window._serieTimers[key] = setInterval(() => { inp.value = atlFmtT((Date.now() - t0) / 1000); atlRowCalc(idx, s); }, 100);
+}
+async function atlFinalizar(idx){
+  const b = window._bloques[idx], p = b.prescripcion, fondo = p.carrera.tipo === 'fondo';
+  const filas = [];
+  for (let s = 0; s < (p.series || 1); s++){
+    const f = atlLeerFila(idx, s, fondo);
+    if (f.tRaw && f.t === null){ toast(`La serie ${s + 1} tiene un tiempo que no entiendo. Usá 21,4 o 1:35.`, true); return; }
+    if (f.dRaw && f.d === null){ toast(`La serie ${s + 1} tiene una distancia que no entiendo.`, true); return; }
+    filas.push({
+      ejecucion_ejercicio_id: b.ejecucionEjercicioId, numero_serie: s + 1, repeticiones_sugeridas: p.repeticiones || null,
+      distancia_m: f.d, tiempo_realizado_seg: f.t !== null ? Math.round(f.t) : null, tiempo_exacto_seg: f.t !== null ? Math.round(f.t * 100) / 100 : null,
+    });
+  }
+  const btn = document.getElementById(`btnFin-${idx}`);
+  btn.disabled = true;
+  try{
+    await sb('series_registradas', { method: 'POST', headers: { Prefer: 'return=minimal' }, body: JSON.stringify(filas) });
+    await sb(`ejecucion_ejercicios?id=eq.${b.ejecucionEjercicioId}`, { method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: JSON.stringify({ finalizado: true }) });
+    b.finalizado = true;
+    b.seriesPrevias = filas.map(f => ({ distancia_m: f.distancia_m, tiempo_realizado_seg: f.tiempo_realizado_seg, tiempo_exacto_seg: f.tiempo_exacto_seg }));
+    btn.textContent = 'Registrado ✓';
+    document.querySelectorAll(`#bloque-${idx} input`).forEach(i => i.disabled = true);
+    document.querySelectorAll(`#bloque-${idx} button.ghost, #bloque-${idx} .play`).forEach(x => x.disabled = true);
+    Object.keys(window._serieTimers || {}).filter(k => k.startsWith(idx + '-')).forEach(k => { clearInterval(window._serieTimers[k]); delete window._serieTimers[k]; });
+    revisarAvanceBloques(idx);
+    toast('Ejercicio registrado ✓');
+  }catch(e){
+    toast('Error registrando: ' + e.message, true);
+    btn.disabled = false;
+  }
+}
+
+// ----- vista "Atletismo" (staff por alumno, alumno la suya): marcas, ritmos, km y gimnasio lado a lado -----
+function atlDia(f){ const d = new Date(f); return isNaN(d) ? String(f).slice(0, 10) : `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; }
+function atlLabelDia(dia){ const [, m, d] = dia.split('-'); return `${+d}/${+m}`; }
+function atlLunes(dia){ const d = new Date(dia + 'T12:00:00'); d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); return atlDia(d); }
+function atlSemanas(n){
+  const out = []; const hoy = atlLunes(atlDia(new Date()));
+  for (let i = n - 1; i >= 0; i--){ const d = new Date(hoy + 'T12:00:00'); d.setDate(d.getDate() - 7 * i); out.push(atlDia(d)); }
+  return out;
+}
+function atlChartLinea(vals, labs, fmt, color){
+  const W = 440, H = 170, pl = 44, pr = 14, pt = 16, pb = 26;
+  const mn = Math.min(...vals), mx = Math.max(...vals), pad = (mx - mn || 1) * .25, lo = mn - pad, hi = mx + pad;
+  const X = i => pl + (W - pl - pr) * (vals.length === 1 ? .5 : i / (vals.length - 1)), Y = v => pt + (H - pt - pb) * (1 - (v - lo) / (hi - lo));
+  const grid = [lo + pad, (lo + hi) / 2, hi - pad].map(g => `<line class="gl" x1="${pl}" x2="${W - pr}" y1="${Y(g)}" y2="${Y(g)}"/><text x="${pl - 6}" y="${Y(g) + 4}" text-anchor="end">${fmt(g)}</text>`).join('');
+  const last = vals.length - 1, pts = vals.map((v, i) => `${X(i)},${Y(v)}`).join(' ');
+  const paso = Math.ceil(vals.length / 8);
+  return `<svg class="at-svg" viewBox="0 0 ${W} ${H}" role="img">${grid}
+    <polyline points="${pts}" fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+    ${vals.map((v, i) => `<circle cx="${X(i)}" cy="${Y(v)}" r="${i === last ? 5 : 3.5}" fill="${color}" stroke="var(--panel)" stroke-width="2"><title>${labs[i]}: ${fmt(v)}</title></circle>`).join('')}
+    ${labs.map((l, i) => (i % paso === 0 || i === last) ? `<text x="${X(i)}" y="${H - 8}" text-anchor="middle">${l}</text>` : '').join('')}
+    <text x="${X(last)}" y="${Y(vals[last]) - 10}" text-anchor="end" style="fill:var(--text);font-weight:700;font-size:12px">${fmt(vals[last])}</text></svg>`;
+}
+function atlChartBarras(vals, labs, fmt, color){
+  const W = 440, H = 170, pl = 40, pr = 14, pt = 16, pb = 26, mx = (Math.max(...vals) || 1) * 1.15;
+  const bw = (W - pl - pr) / vals.length, Y = v => pt + (H - pt - pb) * (1 - v / mx);
+  const grid = [0, mx / 2].map(g => `<line class="gl" x1="${pl}" x2="${W - pr}" y1="${Y(g)}" y2="${Y(g)}"/><text x="${pl - 6}" y="${Y(g) + 4}" text-anchor="end">${fmt(g)}</text>`).join('');
+  return `<svg class="at-svg" viewBox="0 0 ${W} ${H}" role="img">${grid}${vals.map((v, i) => {
+    const x = pl + i * bw + bw * .2, w = bw * .6, y = Y(v), h = H - pb - y;
+    const barra = h > 1 ? `<path d="M${x},${H - pb} V${y + 4} Q${x},${y} ${x + 4},${y} H${x + w - 4} Q${x + w},${y} ${x + w},${y + 4} V${H - pb} Z" fill="${color}"><title>${labs[i]}: ${fmt(v)}</title></path>` : '';
+    return `${barra}${v > 0 ? `<text x="${x + w / 2}" y="${y - 5}" text-anchor="middle" style="fill:var(--text);font-weight:${i === vals.length - 1 ? 700 : 400}">${fmt(v)}</text>` : ''}<text x="${x + w / 2}" y="${H - 8}" text-anchor="middle">${labs[i]}</text>`;
+  }).join('')}</svg>`;
+}
+async function atlCargarVista(contId, alumnoId){
+  const cont = document.getElementById(contId); if (!cont) return;
+  if (!alumnoId){ cont.innerHTML = '<div class="muted">Elegí un alumno arriba.</div>'; return; }
+  cont.innerHTML = '<div class="muted">Cargando...</div>';
+  try{
+    await atlOk();
+    if (ATL_OK !== true){ cont.innerHTML = '<div class="card muted">El módulo de atletismo todavía no está disponible en esta cuenta.</div>'; return; }
+    const desde = atlSemanas(8)[0];
+    const [rows, ton] = await Promise.all([
+      sb(`series_registradas?select=numero_serie,distancia_m,tiempo_realizado_seg,tiempo_exacto_seg,ejecucion_ejercicios!inner(ejecucion_id,ejercicios(nombre,tipo_trabajo),ejecuciones!inner(fecha,alumno_id))&distancia_m=not.is.null&ejecucion_ejercicios.ejecuciones.alumno_id=eq.${alumnoId}&limit=5000`),
+      sb(`series_registradas?select=tonelaje,ejecucion_ejercicios!inner(ejecuciones!inner(fecha,alumno_id))&tonelaje=gt.0&ejecucion_ejercicios.ejecuciones.alumno_id=eq.${alumnoId}&ejecucion_ejercicios.ejecuciones.fecha=gte.${desde}&limit=5000`).catch(() => []),
+    ]);
+    const filas = (rows || []).map(r => {
+      const ee = r.ejecucion_ejercicios || {}, ej = ee.ejercicios || {}, ex = ee.ejecuciones || {};
+      const t = (r.tiempo_exacto_seg !== null && r.tiempo_exacto_seg !== undefined) ? Number(r.tiempo_exacto_seg) : r.tiempo_realizado_seg;
+      return { tipo: ej.tipo_trabajo || 'pasadas', nombre: ej.nombre || '', d: r.distancia_m, t, fecha: ex.fecha || '', dia: atlDia(ex.fecha || ''), ejec: ee.ejecucion_id, n: r.numero_serie };
+    }).filter(f => f.d > 0 && f.t > 0);
+    const tonSem = {};
+    (ton || []).forEach(r => { const f = r.ejecucion_ejercicios && r.ejecucion_ejercicios.ejecuciones && r.ejecucion_ejercicios.ejecuciones.fecha; if (!f) return; const w = atlLunes(atlDia(f)); tonSem[w] = (tonSem[w] || 0) + Number(r.tonelaje || 0); });
+    ATL_DATA[contId] = { filas, tonSem, dist: null };
+    atlPintar(contId);
+  }catch(e){
+    cont.innerHTML = `<div class="card muted">No se pudo cargar: ${ejEsc(e.message)}</div>`;
+  }
+}
+function atlElegirDist(contId, d){ if (ATL_DATA[contId]){ ATL_DATA[contId].dist = d; atlPintar(contId); } }
+function atlPintar(contId){
+  const cont = document.getElementById(contId), D = ATL_DATA[contId]; if (!cont || !D) return;
+  const { filas, tonSem } = D;
+  if (!filas.length){
+    cont.innerHTML = '<div class="card muted">Todavía no hay registros de carrera. Cuando se registre un fondo, intermitente o pasadas, acá aparecen marcas, ritmos y kilómetros.</div>';
+    return;
+  }
+  const run = 'var(--accent)', gy = 'var(--accent2)';
+  const km = filas.reduce((a, f) => a + f.d / 1000, 0);
+  const sesiones = new Set(filas.map(f => f.dia)).size;
+  // fondos: ritmo medio por sesión
+  const fPorEjec = {};
+  filas.filter(f => f.tipo === 'fondo' && f.d >= 1000).forEach(f => { const o = fPorEjec[f.ejec] = fPorEjec[f.ejec] || { d: 0, t: 0, fecha: f.fecha, dia: f.dia }; o.d += f.d; o.t += f.t; });
+  const fondos = Object.values(fPorEjec).sort((a, b) => a.fecha.localeCompare(b.fecha)).map(o => ({ dia: o.dia, r: atlRitmo(o.d, o.t) }));
+  const mejorRitmo = fondos.length ? Math.min(...fondos.map(f => f.r)) : NaN;
+  // pasadas / intermitentes con distancia: mejor tiempo por distancia
+  const porDist = {};
+  filas.filter(f => f.tipo !== 'fondo').forEach(f => { (porDist[f.d] = porDist[f.d] || []).push(f); });
+  const dists = Object.keys(porDist).map(Number).sort((a, b) => porDist[b].length - porDist[a].length || a - b).slice(0, 6).sort((a, b) => a - b);
+  if (!D.dist || !porDist[D.dist]) D.dist = dists.length ? dists.slice().sort((a, b) => porDist[b].length - porDist[a].length)[0] : null;
+  let pasHtml = '<div class="muted" style="font-size:13px;">Sin pasadas registradas todavía.</div>', mejorPas = NaN;
+  if (D.dist){
+    const porDia = {};
+    porDist[D.dist].forEach(f => { porDia[f.dia] = Math.min(porDia[f.dia] ?? Infinity, f.t); });
+    const dias = Object.keys(porDia).sort();
+    const vals = dias.map(d => porDia[d]);
+    mejorPas = Math.min(...vals);
+    pasHtml = `<div class="at-chips">${dists.map(d => `<button type="button" class="at-chip ${d === D.dist ? 'on' : ''}" onclick="atlElegirDist('${contId}',${d})">${d} m</button>`).join('')}</div>${atlChartLinea(vals, dias.map(atlLabelDia), v => atlFmtT(v) + ' s', run)}`;
+  }
+  const sem = atlSemanas(8), labS = sem.map(atlLabelDia);
+  const kmSem = sem.map(w => filas.filter(f => atlLunes(f.dia) === w).reduce((a, f) => a + f.d / 1000, 0));
+  const tSem = sem.map(w => (tonSem[w] || 0) / 1000);
+  const hayTon = tSem.some(v => v > 0);
+  // últimas sesiones
+  const dias = [...new Set(filas.map(f => f.dia))].sort().reverse().slice(0, 6);
+  const sesHtml = dias.map(dia => {
+    const del = filas.filter(f => f.dia === dia), nombres = [...new Set(del.map(f => f.nombre))];
+    return `<div class="at-ses"><b>${atlLabelDia(dia)}</b> · ${nombres.map(ejEsc).join(' + ')}<br><span class="muted">${del.sort((a, b) => a.n - b.n).map(f => `${atlDistTxt(f.d)} en ${atlFmtT(f.t)}`).join(' · ')}</span></div>`;
+  }).join('');
+  cont.className = '';
+  cont.innerHTML = `
+    <div class="at-kpis">
+      <div class="at-kpi"><div class="k">Mejor ritmo de fondo</div><div class="v">${isNaN(mejorRitmo) ? '–' : atlMmss(mejorRitmo)}<small> /km</small></div></div>
+      <div class="at-kpi"><div class="k">Mejor ${D.dist ? D.dist + ' m' : 'pasada'}</div><div class="v">${isNaN(mejorPas) ? '–' : atlFmtT(mejorPas)}<small> s</small></div></div>
+      <div class="at-kpi"><div class="k">Km acumulados</div><div class="v">${atlNum(km, 1)}</div></div>
+      <div class="at-kpi"><div class="k">Días con carrera</div><div class="v">${sesiones}</div></div>
+    </div>
+    <div class="at-charts">
+      <div class="card"><b>Ritmo en fondos</b> <span class="muted" style="font-size:12px;">· menos es mejor</span>${fondos.length ? atlChartLinea(fondos.map(f => f.r), fondos.map(f => atlLabelDia(f.dia)), v => atlMmss(v), run) : '<div class="muted" style="font-size:13px; margin-top:8px;">Sin fondos de 1 km o más todavía.</div>'}</div>
+      <div class="card"><b>Mejor tiempo por sesión</b> <span class="muted" style="font-size:12px;">· segundos</span>${pasHtml}</div>
+      <div class="card"><b>Km por semana</b>${atlChartBarras(kmSem, labS, v => atlNum(v, 0), run)}</div>
+      <div class="card"><b>Tonelaje de gimnasio</b> <span class="muted" style="font-size:12px;">· toneladas por semana</span>${hayTon ? atlChartBarras(tSem, labS, v => atlNum(v, 1), gy) : '<div class="muted" style="font-size:13px; margin-top:8px;">Sin cargas de gimnasio en las últimas 8 semanas.</div>'}</div>
+    </div>
+    <div class="at-leg"><span><i style="background:var(--accent)"></i>Carrera</span><span><i style="background:var(--accent2)"></i>Gimnasio</span></div>
+    <div class="card"><b>Últimas sesiones</b><div style="margin-top:6px;">${sesHtml}</div></div>`;
+}
+function atlIniciarStaff(){
+  const sel = document.getElementById('atlAlumno'); if (!sel) return;
+  const prev = sel.value;
+  sel.innerHTML = '<option value="">-- elegir --</option>' + ALUMNOS_CACHE.map(a => `<option value="${a.id}" ${a.id === prev ? 'selected' : ''}>${ejEsc(a.nombre)}</option>`).join('');
+  armarComboBuscable('atlAlumno', 'Buscar alumno por nombre...');
+  document.getElementById('atlContenido').innerHTML = '<div class="muted">Elegí un alumno arriba.</div>';
+}
+function atlCambiarAlumno(){ atlCargarVista('atlContenido', document.getElementById('atlAlumno').value); }
+function atlIniciarAlu(){
+  const id = document.getElementById('aluAlumno')?.value;
+  atlCargarVista('aluAtletismoContenido', id || '');
+}
+
+const APP_VERSION = 98;
 // (v96) Fecha de la última actualización: se cambia junto con APP_VERSION en cada entrega. Se muestra en la
 // pantalla de inicio y en el menú de cuenta ("v94 · actualizada el 5/10/2026").
 const APP_FECHA = '2026-10-05';
@@ -4003,6 +4466,7 @@ async function cargarGimnasiosAdmin(){
           <button class="ghost" style="font-size:11px; padding:2px 6px;" onclick="activarSuscripcionUI('${f.id}')">💳 Activar</button>
           <button class="ghost" style="font-size:11px; padding:2px 6px;" onclick="toggleHistorialSuscripcion('${f.id}')">🧾 Historial</button>
           <button class="ghost" style="font-size:11px; padding:2px 6px;" title="Módulo de proyección de ingresos (Dashboard)" onclick="alternarModuloGimnasio('${f.id}','proyeccion_ingresos',${!MODULOS_GIMNASIOS.some(m => m.gimnasio_id === f.id && m.modulo === 'proyeccion_ingresos' && m.habilitado)})">📈 Proyección: ${MODULOS_GIMNASIOS.some(m => m.gimnasio_id === f.id && m.modulo === 'proyeccion_ingresos' && m.habilitado) ? 'ON' : 'OFF'}</button>
+          <button class="ghost" style="font-size:11px; padding:2px 6px;" title="Módulo de atletismo (fondos, intermitentes, pasadas)" onclick="alternarModuloGimnasio('${f.id}','atletismo',${!MODULOS_GIMNASIOS.some(m => m.gimnasio_id === f.id && m.modulo === 'atletismo' && m.habilitado)})">🏃 Atletismo: ${MODULOS_GIMNASIOS.some(m => m.gimnasio_id === f.id && m.modulo === 'atletismo' && m.habilitado) ? 'ON' : 'OFF'}</button>
         </td>
       </tr>
       <tr id="historialSus${f.id}" style="display:none; border-bottom:1px solid var(--border);">
@@ -4017,6 +4481,7 @@ async function alternarModuloGimnasio(gimnasioId, modulo, habilitar){
     await sb('rpc/configurar_modulo_gimnasio', { method:'POST', body: JSON.stringify({ p_gimnasio_id: gimnasioId, p_modulo: modulo, p_habilitado: habilitar }) });
     toast(habilitar ? 'Módulo activado ✓' : 'Módulo desactivado');
     await cargarGimnasiosAdmin();
+    if (modulo === 'atletismo' && GIMNASIO_ACTUAL && GIMNASIO_ACTUAL.id === gimnasioId){ await atlRefrescar(); cargarCatalogoEjercicios().catch(() => {}); }
   }catch(e){ toast('No se pudo cambiar el módulo: ' + e.message, true); }
 }
 async function toggleHistorialSuscripcion(gimnasioId){
@@ -5932,6 +6397,7 @@ function cambiarSubvista(v){
   document.getElementById('subvistaAgenda').style.display = v==='agenda' ? '' : 'none';
   document.getElementById('subvistaHorarios').style.display = v==='horarios' ? '' : 'none';
   document.getElementById('subvistaClases').style.display = v==='clases' ? '' : 'none';
+  document.getElementById('subvistaAtletismo').style.display = v==='atletismo' ? '' : 'none';
   document.getElementById('subvistaPlanes').style.display = v==='planes' ? '' : 'none';
   document.getElementById('subvistaCobranzas').style.display = v==='cobranzas' ? '' : 'none';
   document.getElementById('subvistaAlertas').style.display = v==='alertas' ? '' : 'none';
@@ -5951,6 +6417,7 @@ function cambiarSubvista(v){
   document.getElementById('menuAgenda').classList.toggle('active', v==='agenda');
   document.getElementById('menuHorarios').classList.toggle('active', v==='horarios');
   document.getElementById('menuClases').classList.toggle('active', v==='clases');
+  document.getElementById('menuAtletismo').classList.toggle('active', v==='atletismo');
   document.getElementById('menuPlanes').classList.toggle('active', v==='planes');
   document.getElementById('menuCobranzas').classList.toggle('active', v==='cobranzas');
   document.getElementById('menuAlertas').classList.toggle('active', v==='alertas');
@@ -5970,6 +6437,7 @@ function cambiarSubvista(v){
   document.getElementById('ttAgenda').classList.toggle('active', v==='agenda');
   document.getElementById('ttHorarios').classList.toggle('active', v==='horarios');
   document.getElementById('ttClases').classList.toggle('active', v==='clases');
+  document.getElementById('ttAtletismo').classList.toggle('active', v==='atletismo');
   document.getElementById('ttPlanes').classList.toggle('active', v==='planes');
   document.getElementById('ttCobranzas').classList.toggle('active', v==='cobranzas');
   document.getElementById('ttAlertas').classList.toggle('active', v==='alertas');
@@ -5993,6 +6461,7 @@ function cambiarSubvista(v){
   if (v==='agenda') iniciarAgenda();
   if (v==='horarios'){ horCambiarTab('editar'); cargarHorarioProfesorActual(); }
   if (v==='clases') clIniciarStaff();
+  if (v==='atletismo') atlIniciarStaff();
   if (v==='planes') cargarPlanes();
   if (v==='cobranzas') cargarCobranzas();
   if (v==='alertas') cargarSeguimientoAlumnos();
@@ -6853,6 +7322,7 @@ function cambiarSubvistaAlu(v){
   document.getElementById('subvistaAluSeguimiento').style.display = v==='seguimiento' ? '' : 'none';
   document.getElementById('subvistaAluLogros').style.display = v==='logros' ? '' : 'none';
   document.getElementById('subvistaAluClases').style.display = v==='clases' ? '' : 'none';
+  document.getElementById('subvistaAluAtletismo').style.display = v==='atletismo' ? '' : 'none';
   document.getElementById('menuAluInicio').classList.toggle('active', v==='inicio');
   document.getElementById('menuAluTurnos').classList.toggle('active', v==='turnos');
   document.getElementById('menuAluRutinas').classList.toggle('active', v==='rutinas');
@@ -6861,6 +7331,7 @@ function cambiarSubvistaAlu(v){
   document.getElementById('menuAluSeguimiento').classList.toggle('active', v==='seguimiento');
   document.getElementById('menuAluLogros').classList.toggle('active', v==='logros');
   document.getElementById('menuAluClases').classList.toggle('active', v==='clases');
+  document.getElementById('menuAluAtletismo').classList.toggle('active', v==='atletismo');
   document.getElementById('bnavInicio').classList.toggle('active', v==='inicio');
   document.getElementById('bnavTurnos').classList.toggle('active', v==='turnos');
   document.getElementById('bnavRutinas').classList.toggle('active', v==='rutinas');
@@ -6874,6 +7345,7 @@ function cambiarSubvistaAlu(v){
   // (onCambiarAluAlumno). Ahora cada vez que se entra a una de estas 3 secciones se refresca
   // con los datos más recientes (sin esperar a que el alumno vuelva a elegir su nombre).
   if (v === 'clases') clCargar('aluClasesContenido', true, true);
+  if (v === 'atletismo') atlIniciarAlu();
   const alumnoId = document.getElementById('aluAlumno')?.value;
   if (alumnoId){
     if (v === 'logros') renderLogros('aluLogrosContenido', alumnoId);
@@ -6892,7 +7364,7 @@ function actualizarPreviewLogo(){
 // ---------- Catálogo completo de ejercicios (cargado una vez, filtro 100% local) ----------
 let TODOS_EJERCICIOS = [];
 async function cargarCatalogoEjercicios(){
-  const CAMPOS_EJ = 'id,nombre,categoria,grupo_muscular,equipamiento,provider_ref_id,video_provider,video_url_propio,creado_por,gym_id,patron_movimiento';
+  const CAMPOS_EJ = 'id,nombre,categoria,grupo_muscular,equipamiento,provider_ref_id,video_provider,video_url_propio,creado_por,gym_id,patron_movimiento' + (await atlF('c'));
   // Catálogo global (gym_id null) + los propios del gimnasio logueado, si hay sesión.
   const filtro = PERFIL_ACTUAL
     ? `&or=(gym_id.is.null,gym_id.eq.${PERFIL_ACTUAL.gimnasio_id})`
@@ -6912,7 +7384,8 @@ async function cargarCatalogoEjercicios(){
 
   const porId = new Map();
   [...base, ...compartidos].forEach(e => porId.set(e.id, e));
-  TODOS_EJERCICIOS = Array.from(porId.values()).sort((a,b) => a.nombre.localeCompare(b.nombre));
+  await atlEstado();   // (v98) los ejercicios de atletismo solo aparecen si el módulo está activo para este gimnasio
+  TODOS_EJERCICIOS = Array.from(porId.values()).filter(e => !e.tipo_trabajo || atlOn()).sort((a,b) => a.nombre.localeCompare(b.nombre));
 }
 function normalizar(s){
   return (s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase();
@@ -7106,6 +7579,7 @@ async function cargarGimnasioActual(){
   renderCobrosOnlineGimnasio();
   renderBannerSuscripcion();
   cargarPlanesPrepago();
+  atlRefrescar().catch(() => {});   // (v98) módulo Atletismo: muestra u oculta su menú
 }
 
 // ---------- Prueba gratuita de 14 días / suscripción (28/9, pedido de Martin) ----------
@@ -11485,7 +11959,7 @@ async function cargarSeguimiento(contId, alumnoId){
   const cont = document.getElementById(contId);
   cont.innerHTML = '<div class="muted">Cargando...</div>';
   try{
-    const rows = await sb(`ejecuciones?select=id,fecha,estado,rpe,rutina_dias(nombre_dia,rutinas(nombre)),ejecucion_ejercicios(id,finalizado,omitido,motivo_omision,sustituido,ejercicios(nombre,grupo_muscular),series_registradas(numero_serie,peso_realizado,repeticiones_realizadas,rir_realizado,tiempo_realizado_seg,tonelaje))&alumno_id=eq.${alumnoId}&order=fecha.desc&limit=20`);
+    const rows = await sb(`ejecuciones?select=id,fecha,estado,rpe,rutina_dias(nombre_dia,rutinas(nombre)),ejecucion_ejercicios(id,finalizado,omitido,motivo_omision,sustituido,ejercicios(nombre,grupo_muscular),series_registradas(numero_serie,peso_realizado,repeticiones_realizadas,rir_realizado,tiempo_realizado_seg,tonelaje${await atlF('s')}))&alumno_id=eq.${alumnoId}&order=fecha.desc&limit=20`);
     SEGUIMIENTO_CACHE[contId] = rows;
     if (contId === 'seguimientoContenido') xSeguimientoExtras(alumnoId, rows);
     if (!rows.length){ cont.innerHTML = '<div class="empty">Todavía no hay entrenamientos registrados.</div>'; return; }
@@ -11532,7 +12006,7 @@ function toggleSeguimientoSesion(contId, i){
       ? series.map(s => `
           <div class="row" style="justify-content:space-between; font-size:13px; padding:3px 0; gap:8px;">
             <span style="min-width:56px;">Serie ${s.numero_serie ?? '-'}</span>
-            <span style="flex:1;">${s.tiempo_realizado_seg != null ? s.tiempo_realizado_seg+' s'+(s.peso_realizado != null ? ' · '+s.peso_realizado+' kg' : '') : `${s.peso_realizado != null ? s.peso_realizado+' kg' : '-'} × ${s.repeticiones_realizadas ?? '-'} reps${s.rir_realizado != null ? ' · RIR '+s.rir_realizado : ''}`}</span>
+            <span style="flex:1;">${s.distancia_m != null ? atlSerieTxt(s) : s.tiempo_realizado_seg != null ? s.tiempo_realizado_seg+' s'+(s.peso_realizado != null ? ' · '+s.peso_realizado+' kg' : '') : `${s.peso_realizado != null ? s.peso_realizado+' kg' : '-'} × ${s.repeticiones_realizadas ?? '-'} reps${s.rir_realizado != null ? ' · RIR '+s.rir_realizado : ''}`}</span>
             <span class="muted" style="white-space:nowrap;">${s.tonelaje ? Number(s.tonelaje).toFixed(1)+' kg' : '-'}</span>
           </div>
         `).join('')
@@ -12088,6 +12562,7 @@ function ejCalcHtml(ex){
   return `↔ <b>${ejFmt(n)} por lado</b> → <b>${t} series en total</b> (${ejFmt(n)} izquierda + ${ejFmt(n)} derecha). El alumno las ve separadas por lado.`;
 }
 function ejDynHtml(ex){
+  if (ex.carrera) return atlDynHtml(ex);   // (v98) bloque de atletismo
   const t = ejEsTiempo(ex), u = !!ex.unilateral, mats = ex.material || [];
   return `
     <label class="l">Medir por</label>
@@ -12125,6 +12600,7 @@ function ejCtxDe(el){
   return { card, ex: card ? ejArr(card.dataset.ctx)[+card.dataset.idx] : null };
 }
 function ejRefrescarCard(card, ex, redibujar){
+  if (ex.carrera) atlSync(ex);   // (v98)
   if (redibujar) card.querySelector('.ej-dyn').innerHTML = ejDynHtml(ex);
   card.querySelector('.ej-res').innerHTML = ejResumen(ex);
 }
@@ -12161,6 +12637,7 @@ function ejRepsStep(txt, dir){
 function ejStep(btn, dir){
   const st = btn.closest('.ej-step'), k = st.dataset.k, { card, ex } = ejCtxDe(btn);
   if (!ex) return;
+  if (atlEsKey(k)){ atlStep(btn, dir); return; }   // (v98)
   const inp = st.querySelector('input');
   if (k === 'reps') ejAsignar(ex, 'reps', ejRepsStep(inp.value, dir));
   else {
@@ -12178,6 +12655,7 @@ function ejStep(btn, dir){
 function ejStepInput(inp){
   const st = inp.closest('.ej-step'), k = st.dataset.k, { card, ex } = ejCtxDe(inp);
   if (!ex) return;
+  if (atlEsKey(k)){ atlInput(inp); return; }   // (v98)
   const raw = inp.value.trim();
   if (k === 'reps') ejAsignar(ex, 'reps', raw);
   else {
@@ -12233,6 +12711,7 @@ function ejTxt(inp, campo){
   ejRefrescarCard(card, ex, false);
 }
 function ejResumen(ex){
+  if (ex.carrera) return atlResumen(ex);   // (v98)
   const p = [];
   const vacio = v => v === null || v === undefined || v === '';
   const uni = !!ex.unilateral, t = ejEsTiempo(ex);
@@ -12252,7 +12731,7 @@ function ejCardHtml(ctx, idx, ex, ejercicio, cuerpoHtml){
     <div class="ej-card ${abierto ? 'abierto' : ''}" data-ctx="${ctx}" data-idx="${idx}" data-uid="${uid}">
       <div class="ej-head">
         <div class="ej-asa" title="Arrastrar para reordenar">⠿</div>
-        ${mediaTagHtml(ejercicio, '')}
+        ${ex.carrera ? `<div class="media-placeholder at-ico">${(ATL_TIPOS[ex.carrera.tipo] || ATL_TIPOS.fondo).ico}</div>` : mediaTagHtml(ejercicio, '')}
         <div class="ej-info" onclick="ejToggle(this)">
           <div class="ej-nom">${ejEsc(ejercicio.nombre)} <span class="pill">${ejEsc(ejercicio.grupo_muscular)}</span>${ejercicio.video_provider==='own_video' ? '<span class="pill-propio">Propio</span>' : ''}</div>
           <div class="ej-res">${ejResumen(ex)}</div>
@@ -12512,10 +12991,10 @@ function crearConstructorDeDias(prefijo, containerId, headerPrefix){
     // (30/9) La progresión solo tiene sentido en rutinas rotativas: en fecha fija cada día
     // se entrena UNA sola vez, así que no hay "la próxima vez" sobre la cual progresar.
     const esRot = estado.modoDias === 'rotativa';
-    const prog = esRot ? (ex.modo_progresion || 'fijo') : 'fijo';
+    const prog = (esRot && !ex.carrera) ? (ex.modo_progresion || 'fijo') : 'fijo';
     const cuerpo = `
           ${ejCamposHtml(bloqueFieldHtml(`${prefijo}-${diaId}-${idx}`, ex.bloque, (v)=>CONS[prefijo].setBloque(diaId,idx,v)), `CONS['${prefijo}'].quitarEjercicio('${diaId}',${idx})`, ex)}
-          <div class="row" style="margin-top:10px; align-items:center; gap:6px;${esRot ? '' : ' display:none;'}">
+          <div class="row" style="margin-top:10px; align-items:center; gap:6px;${(esRot && !ex.carrera) ? '' : ' display:none;'}">
             <span class="muted" style="font-size:12px; font-weight:600;">Progresión:</span>
             <span class="chip-toggle ${prog==='fijo'?'active':''}" onclick="CONS['${prefijo}'].setModoProgresion('${diaId}',${idx},'fijo')">Fijo</span>
             <span class="chip-toggle ${prog==='autoregulada'?'active':''}" onclick="CONS['${prefijo}'].setModoProgresion('${diaId}',${idx},'autoregulada')">Autoregulada</span>
@@ -12666,7 +13145,7 @@ function crearConstructorDeDias(prefijo, containerId, headerPrefix){
   function agregarEjercicio(diaId, ejercicioJson){
     const ejercicio = typeof ejercicioJson === 'string' ? JSON.parse(ejercicioJson) : ejercicioJson;
     const bloque = (estado.dias[diaId].bloqueActual || '').trim() || 'General';
-    estado.dias[diaId].ejercicios.push({ ejercicio, bloque, series:3, repeticiones:'', peso_sugerido:null, tiempo_trabajo_seg:null, descanso_seg:60, rir:null, notas:'', unilateral:false, peso_corporal:false, variante:'', material:[], material_medidas:{}, modo_progresion:'fijo', progresion_incremento_kg:null, progresion_rir_objetivo:null, semanas:[] });
+    estado.dias[diaId].ejercicios.push({ ejercicio, bloque, series:3, repeticiones:'', peso_sugerido:null, tiempo_trabajo_seg:null, descanso_seg:60, rir:null, notas:'', unilateral:false, peso_corporal:false, variante:'', material:[], material_medidas:{}, modo_progresion:'fijo', progresion_incremento_kg:null, progresion_rir_objetivo:null, semanas:[], ...atlDefaultEx(ejercicio) });
     document.getElementById(`resultados-${diaId}`).style.display='none';
     const lista = estado.dias[diaId].ejercicios;
     const uidNuevo = ejAbrirSoloNuevo(lista.slice(0, -1), lista[lista.length - 1]);
@@ -12935,7 +13414,7 @@ async function traerDiaElegirRutina(prefijo, diaId, rutinaId){
   if (!cont) return;
   cont.innerHTML = '<div class="muted" style="padding:6px;">Cargando días…</div>';
   try{
-    const dias = await sb(`rutina_dias?rutina_id=eq.${rutinaId}&select=id,fecha,nombre_dia,orden,objetivo,rutina_ejercicios(id,orden,bloque,series,repeticiones,peso_sugerido,tiempo_trabajo_seg,descanso_seg,rir,notas,unilateral,peso_corporal,variante,material${await medF('e')},modo_progresion,progresion_incremento_kg,progresion_rir_objetivo,ejercicios(id,nombre,grupo_muscular,provider_ref_id,video_provider,video_url_propio),rutina_ejercicio_semanas(semana,series,repeticiones,peso_sugerido${await medF('s')}))&order=orden.asc`);
+    const dias = await sb(`rutina_dias?rutina_id=eq.${rutinaId}&select=id,fecha,nombre_dia,orden,objetivo,rutina_ejercicios(id,orden,bloque,series,repeticiones,peso_sugerido,tiempo_trabajo_seg,descanso_seg,rir,notas,unilateral,peso_corporal,variante,material${await medF('e')}${await atlF('e')},modo_progresion,progresion_incremento_kg,progresion_rir_objetivo,ejercicios(id,nombre,grupo_muscular,provider_ref_id,video_provider,video_url_propio),rutina_ejercicio_semanas(semana,series,repeticiones,peso_sugerido${await medF('s')}))&order=orden.asc`);
     dias.sort((a, b) => (a.orden ?? 0) - (b.orden ?? 0));
     const r = (ESP_BASE_LISTA || []).find(x => x.id === rutinaId);
     TRAER[diaId] = { rutinaNombre: r?.nombre || 'la rutina', dias };
@@ -12990,6 +13469,7 @@ function traerDiaAplicar(prefijo, diaId, idx, modo){
       notas: x.notas || '', unilateral: !!x.unilateral, peso_corporal: !!x.peso_corporal, variante: x.variante || '',
       material: Array.isArray(x.material) ? x.material : [],
       material_medidas: medNorm(x.material, x.material_medidas),
+      carrera: x.carrera || null,
       modo_progresion: prog,
       progresion_incremento_kg: prog === 'autoregulada' ? x.progresion_incremento_kg : null,
       progresion_rir_objetivo: prog === 'autoregulada' ? x.progresion_rir_objetivo : null,
@@ -13079,7 +13559,7 @@ async function espCargarDesdeRutina(rutinaId, opts){
   try{
     const [rutina] = await sb(`rutinas?id=eq.${rutinaId}&select=id,nombre,modo_dias,dias_por_semana_objetivo,duracion_semanas`);
     if (!rutina) throw new Error('No se encontró la rutina.');
-    const dias = await sb(`rutina_dias?rutina_id=eq.${rutinaId}&select=id,fecha,nombre_dia,orden,objetivo,rutina_ejercicios(id,orden,bloque,series,repeticiones,peso_sugerido,tiempo_trabajo_seg,descanso_seg,rir,notas,unilateral,peso_corporal,variante,material${await medF('e')},modo_progresion,progresion_incremento_kg,progresion_rir_objetivo,ejercicios(id,nombre,grupo_muscular,provider_ref_id,video_provider,video_url_propio),rutina_ejercicio_semanas(semana,series,repeticiones,peso_sugerido${await medF('s')}))&order=orden.asc`);
+    const dias = await sb(`rutina_dias?rutina_id=eq.${rutinaId}&select=id,fecha,nombre_dia,orden,objetivo,rutina_ejercicios(id,orden,bloque,series,repeticiones,peso_sugerido,tiempo_trabajo_seg,descanso_seg,rir,notas,unilateral,peso_corporal,variante,material${await medF('e')}${await atlF('e')},modo_progresion,progresion_incremento_kg,progresion_rir_objetivo,ejercicios(id,nombre,grupo_muscular,provider_ref_id,video_provider,video_url_propio),rutina_ejercicio_semanas(semana,series,repeticiones,peso_sugerido${await medF('s')}))&order=orden.asc`);
     dias.sort((a, b) => (a.orden ?? 0) - (b.orden ?? 0));
 
     // Una especial es para una persona: plantilla se copia como fecha fija (hay que darle fecha a cada día).
@@ -13104,6 +13584,7 @@ async function espCargarDesdeRutina(rutinaId, opts){
           notas: x.notas || '', unilateral: !!x.unilateral, peso_corporal: !!x.peso_corporal, variante: x.variante || '',
           material: Array.isArray(x.material) ? x.material : [],
           material_medidas: medNorm(x.material, x.material_medidas),
+          carrera: x.carrera || null,
           modo_progresion: prog,
           progresion_incremento_kg: prog === 'autoregulada' ? x.progresion_incremento_kg : null,
           progresion_rir_objetivo: prog === 'autoregulada' ? x.progresion_rir_objetivo : null,
@@ -14096,7 +14577,7 @@ async function guardarRutinaGenerica({ constructor, nombre, tipoAlumnoId, etique
       method:'POST', headers:{Prefer:'return=representation'}, body: JSON.stringify(diasPayload)
     });
 
-    await medOk();
+    await medOk(); await atlOk();
     const ejerciciosPayload = [];
     // (28/9) Guardamos con qué ejercicio-índice y día-índice se corresponde cada
     // fila para poder, después de crearlas, mandar las semanas de progresión
@@ -14124,6 +14605,7 @@ async function guardarRutinaGenerica({ constructor, nombre, tipoAlumnoId, etique
           variante: ex.variante || null,
           material: Array.isArray(ex.material) ? ex.material : [],
           ...medPayEj(ex),
+          ...atlPayEj(ex),
           modo_progresion: modoProg,
           progresion_incremento_kg: modoProg === 'autoregulada' ? (ex.progresion_incremento_kg ?? null) : null,
           progresion_rir_objetivo: modoProg === 'autoregulada' ? (ex.progresion_rir_objetivo ?? null) : null,
@@ -14432,7 +14914,7 @@ async function cargarEdicionDia(diaId, contId, opciones){
     // (24/9) Pedido de Martin: poder corregir la fecha de un día ya cargado si se
     // equivocó al armar la rutina — antes no había forma de cambiarla desde acá.
     const [items, diaRows] = await Promise.all([
-      sb(`rutina_ejercicios?select=id,orden,bloque,series,repeticiones,peso_sugerido,tiempo_trabajo_seg,descanso_seg,rir,notas,unilateral,peso_corporal,variante,material${await medF('e')},modo_progresion,progresion_incremento_kg,progresion_rir_objetivo,rutina_ejercicio_semanas(semana,series,repeticiones,peso_sugerido${await medF('s')}),ejercicios(id,nombre,grupo_muscular,provider_ref_id,video_provider,video_url_propio)&rutina_dia_id=eq.${diaId}&order=orden.asc`),
+      sb(`rutina_ejercicios?select=id,orden,bloque,series,repeticiones,peso_sugerido,tiempo_trabajo_seg,descanso_seg,rir,notas,unilateral,peso_corporal,variante,material${await medF('e')}${await atlF('e')},modo_progresion,progresion_incremento_kg,progresion_rir_objetivo,rutina_ejercicio_semanas(semana,series,repeticiones,peso_sugerido${await medF('s')}),ejercicios(id,nombre,grupo_muscular,provider_ref_id,video_provider,video_url_propio)&rutina_dia_id=eq.${diaId}&order=orden.asc`),
       sb(`rutina_dias?id=eq.${diaId}&select=rutina_id,fecha,nombre_dia,rutinas(modo_dias,es_ajuste)`),
     ]);
     // (v88) En una rotativa se edita también la progresión (fijo / autoregulada / por semana) y la fecha de inicio del ciclo.
@@ -14535,7 +15017,7 @@ async function sincronizarNombreRutinaSiEsGenerica(diaId){
 
 function filaEdicionHtml(diaId, item, idx){
   const cuerpo = ejCamposHtml(bloqueFieldHtml(`edicion-${diaId}-${item.id}`, item.bloque, (v)=>cambiarBloqueEdicion(diaId,item.id,v)), `quitarEjercicioEdicion('${diaId}','${item.id}')`, item)
-    + (EDICION_DIAS[diaId].esRot ? progEdicionHtml(diaId, item) : '');
+    + ((EDICION_DIAS[diaId].esRot && !item.carrera) ? progEdicionHtml(diaId, item) : '');
   return ejCardHtml(`edit|${diaId}`, idx, item, item.ejercicios, cuerpo);
 }
 
@@ -14587,12 +15069,13 @@ async function agregarEjercicioEdicion(diaId, ejercicioJson){
     const ordenSiguiente = EDICION_DIAS[diaId].items.length
       ? Math.max(...EDICION_DIAS[diaId].items.map(i => i.orden||0)) + 1
       : 1;
+    await atlOk(); const atlD = atlDefaultEx(ejercicio);
     const [creado] = await sb('rutina_ejercicios', {
       method:'POST', headers:{Prefer:'return=representation'},
       body: JSON.stringify([{
         rutina_dia_id: diaId, ejercicio_id: ejercicio.id, orden: ordenSiguiente,
         bloque: 'General', series: 3, repeticiones: '', peso_sugerido: null,
-        tiempo_trabajo_seg: null, descanso_seg: 60, rir: null, notas: ''
+        tiempo_trabajo_seg: null, descanso_seg: 60, rir: null, notas: '', ...atlD
       }])
     });
     creado.ejercicios = ejercicio;
@@ -14813,7 +15296,7 @@ async function guardarEdicionDia(diaId){
   const esRot = !!(EDICION_DIAS[diaId] || {}).esRot;
   ejNormalizar(items);
   items.forEach((it, i) => { it.orden = i; });
-  await medOk();
+  await medOk(); await atlOk();
   try{
     await Promise.all(items.map(item => sb(`rutina_ejercicios?id=eq.${item.id}`, {
       method:'PATCH', headers:{Prefer:'return=minimal'},
@@ -14826,6 +15309,7 @@ async function guardarEdicionDia(diaId){
         variante: item.variante || null,
         material: Array.isArray(item.material) ? item.material : [],
         ...medPayEj(item),
+        ...atlPayEj(item),
         ...(esRot ? {
           modo_progresion: item.modo_progresion || 'fijo',
           progresion_incremento_kg: item.modo_progresion === 'autoregulada' ? (item.progresion_incremento_kg ?? null) : null,
@@ -16302,7 +16786,7 @@ async function comenzarEntrenamiento(rutinaDiaId, alumnoId, nombreDia){
   cont.style.display = '';
   cont.innerHTML = '<div class="card">Iniciando entrenamiento...</div>';
   try{
-    const rows = await sb(`rutina_ejercicios?select=id,orden,bloque,series,repeticiones,peso_sugerido,tiempo_trabajo_seg,descanso_seg,rir,notas,unilateral,peso_corporal,variante,material${await medF('e')},modo_progresion,progresion_incremento_kg,progresion_rir_objetivo,ejercicios(id,nombre,grupo_muscular,provider_ref_id,video_provider,video_url_propio)&rutina_dia_id=eq.${rutinaDiaId}&order=orden.asc`);
+    const rows = await sb(`rutina_ejercicios?select=id,orden,bloque,series,repeticiones,peso_sugerido,tiempo_trabajo_seg,descanso_seg,rir,notas,unilateral,peso_corporal,variante,material${await medF('e')}${await atlF('e')},modo_progresion,progresion_incremento_kg,progresion_rir_objetivo,ejercicios(id,nombre,grupo_muscular,provider_ref_id,video_provider,video_url_propio)&rutina_dia_id=eq.${rutinaDiaId}&order=orden.asc`);
 
     // (24/9) Feedback de Martin: si ya había un entrenamiento sin terminar para este
     // mismo día (salió y volvió a entrar), retomarlo en vez de crear uno nuevo — así
@@ -16349,7 +16833,7 @@ async function comenzarEntrenamiento(rutinaDiaId, alumnoId, nombreDia){
     const idsFinalizadosConSeries = eeFilas.filter(e => e.finalizado && !e.omitido).map(e => e.id);
     let seriesPorEjecucionEjercicio = {};
     if (idsFinalizadosConSeries.length){
-      const seriesRows = await sb(`series_registradas?ejecucion_ejercicio_id=in.(${idsFinalizadosConSeries.join(',')})&select=ejecucion_ejercicio_id,numero_serie,peso_realizado,repeticiones_realizadas,rir_realizado,tiempo_realizado_seg,tonelaje&order=numero_serie.asc`);
+      const seriesRows = await sb(`series_registradas?ejecucion_ejercicio_id=in.(${idsFinalizadosConSeries.join(',')})&select=ejecucion_ejercicio_id,numero_serie,peso_realizado,repeticiones_realizadas,rir_realizado,tiempo_realizado_seg,tonelaje${await atlF('s')}&order=numero_serie.asc`);
       seriesRows.forEach(s => {
         (seriesPorEjecucionEjercicio[s.ejecucion_ejercicio_id] = seriesPorEjecucionEjercicio[s.ejecucion_ejercicio_id] || []).push(s);
       });
@@ -16586,6 +17070,7 @@ function bloqueHtml(b, idx){
     `;
   }
 
+  if (p.carrera) return atlBloqueHtml(b, idx);   // (v98) fondo / intermitente / pasadas
   const pesoCorporalAlumno = Number(window._alumnoPesoCorporal) || 0;
   const esPorTiempo = !!p.tiempo_trabajo_seg;
   const uni = !!p.unilateral;
@@ -16809,6 +17294,7 @@ async function marcarEjercicioOmitido(idx){
 async function finalizarEjercicio(idx){
   const b = window._bloques[idx];
   const p = b.prescripcion;
+  if (p.carrera) return atlFinalizar(idx);   // (v98)
   const pesoCorporalAlumno = Number(window._alumnoPesoCorporal) || 0;
   const filas = [];
   for (let s=0; s<p.series; s++){
