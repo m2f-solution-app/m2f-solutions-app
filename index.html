@@ -1645,6 +1645,7 @@
         <div class="field" style="margin-bottom:10px;"><label id="labelNombreSignup">Tu nombre</label><input id="signupNombre" /></div>
         <div class="field" style="margin-bottom:10px;" id="campoNombreGimnasio"><label>Nombre de tu gimnasio</label><input id="signupGimnasio" placeholder="Ej: PowerZone Fitness" /></div>
         <div class="field" style="margin-bottom:10px;"><label>Email</label><input type="email" id="signupEmail" /></div>
+        <div class="field" style="margin-bottom:10px;"><label>WhatsApp de contacto</label><input type="tel" inputmode="tel" autocomplete="tel" id="signupTelefono" placeholder="Con código de área. Ej: 341 555 1234" /></div>
         <div class="field" style="margin-bottom:14px;"><label>Contraseña</label><div class="password-wrap"><input type="password" id="signupPassword" placeholder="Mínimo 8 caracteres, con letras" /><button type="button" class="toggle-pass" onclick="togglePasswordVisibility('signupPassword', this)">👁️</button></div></div>
         <div class="field" style="margin-bottom:6px;"><label>Código de activación (opcional)</label><input id="signupCodigo" placeholder="Si no tenés uno, dejalo vacío" /></div>
         <p class="muted" style="font-size:12px; margin:0 0 14px;">Sin código arrancás con <strong>14 días de prueba gratis</strong>, sin compromiso.</p>
@@ -2970,6 +2971,14 @@
             </div>
             <button onclick="guardarGimnasio()" id="btnGuardarGimnasio" style="align-self:end;">Guardar</button>
           </div>
+          <div class="row" id="gimTelefonoWrap" style="display:none; margin-top:12px; align-items:end;">
+            <div class="field" style="flex:1; min-width:220px; max-width:320px;">
+              <label>WhatsApp de contacto</label>
+              <input id="gimTelefono" type="tel" inputmode="tel" autocomplete="tel" placeholder="Con código de área. Ej: 341 555 1234" />
+            </div>
+            <button class="secondary" onclick="telGuardar(document.getElementById('gimTelefono').value)">Guardar WhatsApp</button>
+            <div class="muted" style="font-size:12px; flex-basis:100%;">Lo usa M2F Solutions para avisarte de novedades de tu cuenta y darte soporte. No lo ven tus alumnos.</div>
+          </div>
           <div class="row" style="margin-top:10px;">
             <img id="gimLogoPreview" src="" alt="" style="width:64px;height:64px;object-fit:cover;border-radius:8px;background:#000;display:none;" onerror="this.style.display='none'" />
           </div>
@@ -3576,6 +3585,85 @@ const BUCKET = "Ejercicios";
 // un cambio, se incrementa este número — el chequeo de actualización (más abajo) lo compara
 // contra lo que hay publicado y avisa si están desactualizados, sin que nadie tenga que
 // cambiar ningún link a mano.
+// ---------- (v102) WHATSAPP DE CONTACTO DEL GIMNASIO + sesión cerrada desde otro lado ----------
+// Contacto: gimnasios.telefono_contacto (contacto-gimnasio.sql). Se pide obligatorio al crear la cuenta, y a los
+// gimnasios que ya existen con un aviso al entrar (admin). Se edita en Mi gimnasio. Lo ve solo M2F (panel Negocio).
+// Sin el SQL: TEL_OK = false → no se muestra el campo ni se pide nada.
+let TEL_OK = null, TEL_PEDIDO = false;
+function telValido(v){ return String(v || '').replace(/\D/g, '').length >= 8; }
+async function telCargar(){
+  if (!GIMNASIO_ACTUAL || !PERFIL_ACTUAL || PERFIL_ACTUAL.rol !== 'admin') return;
+  try{
+    const r = await sb(`gimnasios?select=telefono_contacto&id=eq.${GIMNASIO_ACTUAL.id}`);
+    TEL_OK = true;
+    if (GIMNASIO_ACTUAL) GIMNASIO_ACTUAL.telefono_contacto = (r && r[0] && r[0].telefono_contacto) || null;
+  }catch(e){ if (/42703|does not exist/i.test(String((e && e.message) || ''))) TEL_OK = false; return; }
+  telPintarCampo();
+  telPedirSiFalta();
+}
+function telPintarCampo(){
+  const w = document.getElementById('gimTelefonoWrap'); if (!w) return;
+  w.style.display = (TEL_OK === true && PERFIL_ACTUAL && PERFIL_ACTUAL.rol === 'admin') ? '' : 'none';
+  const i = document.getElementById('gimTelefono');
+  if (i && document.activeElement !== i) i.value = (GIMNASIO_ACTUAL && GIMNASIO_ACTUAL.telefono_contacto) || '';
+}
+async function telGuardar(valor){
+  valor = String(valor || '').trim();
+  if (!telValido(valor)){ toast('Ingresá un WhatsApp válido, con código de área.', true); return false; }
+  try{
+    const t = await sb('rpc/guardar_telefono_gimnasio', { method: 'POST', body: JSON.stringify({ p_telefono: valor }) });
+    if (GIMNASIO_ACTUAL) GIMNASIO_ACTUAL.telefono_contacto = (typeof t === 'string' && t) || valor;
+    telPintarCampo();
+    toast('WhatsApp de contacto guardado ✓');
+    return true;
+  }catch(e){ toast('No se pudo guardar: ' + extraerMensajeError(e), true); return false; }
+}
+function telPedirSiFalta(){
+  if (TEL_OK !== true || TEL_PEDIDO || !PERFIL_ACTUAL || PERFIL_ACTUAL.rol !== 'admin' || !GIMNASIO_ACTUAL || GIMNASIO_ACTUAL.telefono_contacto) return;
+  try{ const s = Number(localStorage.getItem('m2f_tel_despues') || 0); if (s && Date.now() - s < 3 * 86400000) return; }catch(e){}
+  TEL_PEDIDO = true;
+  setTimeout(() => {
+    if (!PERFIL_ACTUAL || !GIMNASIO_ACTUAL || GIMNASIO_ACTUAL.telefono_contacto) return;
+    if (document.querySelector('.modal-overlay.show')){ TEL_PEDIDO = false; return; }   // hay otra ventana abierta: se pide la próxima vez
+    const ov = overlayGenerico('modalTelContacto', 420);
+    ov.querySelector('.modal-box').innerHTML = `
+      <h3 style="margin:0 0 6px;">📱 Dejanos un WhatsApp de contacto</h3>
+      <div class="muted" style="font-size:13px; margin-bottom:12px;">Lo usa M2F Solutions para avisarte de novedades de tu cuenta y darte soporte. No lo ven tus alumnos y lo podés cambiar en Mi gimnasio.</div>
+      <div class="field" style="margin-bottom:12px;"><label>WhatsApp (con código de área)</label><input id="telContactoInput" type="tel" inputmode="tel" autocomplete="tel" placeholder="Ej: 341 555 1234"></div>
+      <div class="row" style="justify-content:flex-end; gap:8px;">
+        <button class="ghost" onclick="telDespues()">Más tarde</button>
+        <button id="telContactoBtn" onclick="telGuardarDesdeModal()">Guardar</button>
+      </div>`;
+    ov.classList.add('show');
+  }, 2600);
+}
+function telDespues(){ try{ localStorage.setItem('m2f_tel_despues', String(Date.now())); }catch(e){} cerrarOverlayGenerico('modalTelContacto'); }
+async function telGuardarDesdeModal(){
+  const b = document.getElementById('telContactoBtn'); if (b) b.disabled = true;
+  const ok = await telGuardar(document.getElementById('telContactoInput').value);
+  if (b) b.disabled = false;
+  if (ok) cerrarOverlayGenerico('modalTelContacto');
+}
+
+// Sesión cerrada con la app abierta (otra pestaña, otro dispositivo, o venció): antes la pantalla quedaba "a medias"
+// (listas vacías y errores 401 "permission denied"). Ahora avisa y vuelve al login. También si en otra pestaña
+// se entró con OTRA cuenta. El cierre de sesión propio no entra acá: para cuando se revisa, PERFIL_ACTUAL ya es null.
+let SESION_PERDIDA = false;
+function sesionCambio(evento, sesion){
+  SESION_ACTUAL = sesion;
+  setTimeout(() => {
+    if (SESION_PERDIDA || !PERFIL_ACTUAL) return;
+    const otra = !!(SESION_ACTUAL && SESION_ACTUAL.user && SESION_ACTUAL.user.id && SESION_ACTUAL.user.id !== PERFIL_ACTUAL.id);
+    if (!SESION_ACTUAL || otra) sesionPerdida(otra);
+  }, 1500);
+}
+function sesionPerdida(otra){
+  if (SESION_PERDIDA) return;
+  SESION_PERDIDA = true;
+  toast(otra ? 'Entraste con otra cuenta en otra pestaña. Actualizando…' : 'Tu sesión se cerró. Iniciá sesión de nuevo.', true);
+  setTimeout(() => location.reload(), 1800);
+}
+
 // ---------- (v101) CUMPLEAÑOS ----------
 // Fuente: alumnos.fecha_nacimiento (ya venía en cargarPersonas → ALUMNOS_CACHE). Se ven en 🔔 Alertas
 // (hoy + todo el mes) y como novedad en el Inicio del staff. El aviso de las 7:00 al staff y el saludo al
@@ -3737,6 +3825,7 @@ function negTarjeta(g, c, propio){
     <div class="ng-fila">🏃 ${g.entrenos_7d} entreno${Number(g.entrenos_7d) === 1 ? '' : 's'} esta semana · ${g.entrenos_30d} en 30 días</div>
     <div class="ng-fila muted">${uso}</div>
     <div class="ng-fila">${semaforoActividad(g.ultima_actividad)} <span class="muted">· última vez ${negHace(g.ultima_actividad)} · alta ${negFecha(g.creado_en)}</span></div>
+    ${(g.contacto || g.email) ? `<div class="ng-fila">${g.contacto ? '📞 ' + escaparHtml(g.contacto) : ''}${g.contacto && g.email ? ' · ' : ''}${g.email ? '✉️ ' + escaparHtml(g.email) : ''}</div>` : (propio ? '' : '<div class="ng-fila muted">Sin datos de contacto todavía</div>')}
     ${propio ? '' : `<div class="ng-fila">💳 Le corresponde: <b>${escaparHtml(sug.nombre)} · ${negPesos(sug.precio)}</b> <span class="muted">· cobrado total ${negPesos(g.cobrado_total)}${g.ultimo_pago ? ' · último pago ' + negFecha(g.ultimo_pago) : ''}</span></div>`}
     ${mods}${sinPagos}
     <div class="ng-btns">
@@ -4354,7 +4443,7 @@ function atlIniciarAlu(){
   atlCargarVista('aluAtletismoContenido', id || '');
 }
 
-const APP_VERSION = 101;
+const APP_VERSION = 102;
 // (v96) Fecha de la última actualización: se cambia junto con APP_VERSION en cada entrega. Se muestra en la
 // pantalla de inicio y en el menú de cuenta ("v94 · actualizada el 5/10/2026").
 const APP_FECHA = '2026-10-05';
@@ -5316,6 +5405,7 @@ function chequearBloqueoEscrituraStaff(path, opts){
     'rpc/generar_codigo_activacion', 'rpc/listar_codigos_activacion', 'rpc/actualizar_codigo_activacion',
     'rpc/activar_suscripcion_gimnasio', 'rpc/configurar_modulo_gimnasio', 'notificaciones_staff',
     'rpc/configurar_modulos_gimnasio', 'rpc/listar_modulos_gimnasios', 'rpc/negocio_resumen', 'rpc/negocio_probar_aviso',
+    'rpc/guardar_telefono_gimnasio',
   ];
   if (permitidas.some(p => path.startsWith(p))) return;
   throw new Error('Tu período de prueba venció. Activá tu suscripción para poder crear o editar — mientras tanto podés seguir viendo todo.');
@@ -5374,6 +5464,7 @@ async function sb(path, opts = {}, _retry, _redReintento){
       toast('Tu sesión venció, iniciá sesión de nuevo', true);
       setTimeout(()=> location.reload(), 1500);
     }
+    if (resp.status === 401 && !SESION_ACTUAL && PERFIL_ACTUAL) sesionPerdida(false);   // (v102) la pantalla seguía abierta sin sesión
     throw new Error(`${resp.status} ${path}: ${text.slice(0,300)}`);
   }
   if (!text) return null;
@@ -5428,9 +5519,7 @@ let PERFIL_ACTUAL = null; // { id, gimnasio_id, rol, nombre, email }
 // siempre y sb() sigue usándolo hasta que el server lo rechaza con "JWT expired".
 // Con este listener, cada vez que la librería renueva el token (o cierra sesión),
 // SESION_ACTUAL se actualiza solo — así el 401 ni llega a pasar en el caso normal.
-supaAuth.auth.onAuthStateChange((_evento, sesion) => {
-  SESION_ACTUAL = sesion;
-});
+supaAuth.auth.onAuthStateChange((_evento, sesion) => { sesionCambio(_evento, sesion); });   // (v102) además detecta la sesión cerrada desde otro lado
 
 // La pestaña "Profesor / Alumno" de arriba de todo solo tiene sentido ANTES de loguearse
 // (para elegir qué formulario de login mostrar). Una vez que hay una sesión real, se oculta:
@@ -5601,10 +5690,14 @@ async function hacerSignup(){
   const email = document.getElementById('signupEmail').value.trim();
   const password = document.getElementById('signupPassword').value;
   const codigoActivacion = document.getElementById('signupCodigo').value.trim();
+  const telefonoContacto = document.getElementById('signupTelefono').value.trim();   // (v102)
   const msg = document.getElementById('authMsg');
   msg.textContent = '';
   if (!nombre || (!esIndependiente && !nombreGimnasio) || !email || !password){
     msg.textContent = 'Completá todos los campos.'; return;
+  }
+  if (!telValido(telefonoContacto)){
+    msg.textContent = 'Dejanos un WhatsApp de contacto válido, con código de área.'; return;
   }
   if (password.length < PASSWORD_MIN || /^\d+$/.test(password)){
     msg.textContent = `La contraseña tiene que tener al menos ${PASSWORD_MIN} caracteres y alguna letra.`; return;
@@ -5619,6 +5712,7 @@ async function hacerSignup(){
         nombre_gimnasio: esIndependiente ? null : nombreGimnasio,
         tipo_gimnasio: esIndependiente ? 'independiente' : 'gimnasio',
         codigo_activacion: codigoActivacion,
+        telefono_contacto: telefonoContacto,
       } }
     });
     if (error) throw error;
@@ -6913,6 +7007,7 @@ function cambiarSubvista(v){
     document.getElementById('gimColorSecundario').value = GIMNASIO_ACTUAL?.color_secundario || COLORES_DEFECTO_TEMA.secundario;
     actualizarPreviewLogo();
     cargarCategoriasYEquipos();
+    telPintarCampo();   // (v102)
   }
   cerrarMenuProf();
 }
@@ -8019,6 +8114,7 @@ async function cargarGimnasioActual(){
   renderCobrosOnlineGimnasio();
   renderBannerSuscripcion();
   cargarPlanesPrepago();
+  telCargar().catch(() => {});   // (v102) WhatsApp de contacto del gimnasio
   modulosCargar().catch(() => {});   // (v99) qué secciones tiene este gimnasio
   atlRefrescar().catch(() => {});   // (v98) módulo Atletismo: muestra u oculta su menú
 }
