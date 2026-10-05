@@ -550,6 +550,20 @@
   @media (max-width:900px){ .at-charts{ grid-template-columns:1fr; } }
   @media (max-width:720px){ .at-kpis{ grid-template-columns:repeat(2,minmax(0,1fr)); } }
 
+  /* ---- (v99) Accesos por módulo (panel de Martin) ---- */
+  #modalAccesos{ z-index:620; }
+  .mo-presets{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-bottom:12px; }
+  .mo-presets button.active{ border-color:var(--accent); color:var(--accent-text, var(--accent)); background:color-mix(in srgb, var(--accent) 12%, transparent); }
+  .mo-lista{ display:flex; flex-direction:column; gap:6px; }
+  .mo-row{ display:flex; align-items:center; gap:10px; padding:9px 10px; border:1px solid var(--border); border-radius:12px; background:var(--panel2); cursor:pointer; font-size:13px; text-transform:none; letter-spacing:0; font-weight:500; margin:0; }
+  .mo-row.on{ border-color:color-mix(in srgb, var(--accent2) 55%, var(--border)); }
+  .mo-row input{ width:18px; height:18px; flex:none; accent-color:var(--accent2); margin:0; }
+  .mo-row .mo-n{ flex:1; min-width:0; }
+  .mo-fija{ cursor:default; opacity:.75; }
+  .mo-tag{ font-size:11px; color:var(--muted); white-space:nowrap; }
+  .mo-srv{ color:var(--accent2-text, var(--accent2)); }
+  @media (max-width:560px){ .mo-tag{ display:none; } }
+
   /* ---- Modal de confirmación (reserva de turno) ---- */
   .modal-overlay{
     position:fixed; inset:0; background:rgba(0,0,0,.6); display:none;
@@ -3506,6 +3520,158 @@ const BUCKET = "Ejercicios";
 // un cambio, se incrementa este número — el chequeo de actualización (más abajo) lo compara
 // contra lo que hay publicado y avisa si están desactualizados, sin que nadie tenga que
 // cambiar ningún link a mano.
+// ---------- (v99) ACCESOS POR MÓDULO: qué secciones ve cada gimnasio (lo maneja solo Martin) ----------
+// Cada gimnasio tiene un conjunto de módulos activos (agenda, clases, finanzas, evaluaciones, etc.).
+// Lo que no esté activo se OCULTA en los menús (staff y alumno), se bloquea al navegar y sale de la Guía.
+// En el servidor, accesos-modulos.sql además bloquea las tablas de los módulos de la "etapa 1"
+// (clases, evaluaciones, alertas, finanzas, recepción). Sin ese SQL todo se ve como antes.
+// Fuente única: RPC modulos_efectivos() (gimnasio del usuario logueado). 'atletismo' sigue su propio chequeo (v98).
+let MOD_MAP = null;        // { modulo: boolean } — null = no cargado / sin SQL → todo visible
+let MOD_CAT = null;        // catálogo (solo se usa en el panel de Martin)
+let MOD_EDIT = null;       // edición en curso del modal de accesos
+const MOD_REQ = { equipo: 'evaluaciones' };   // este módulo necesita que el otro esté activo
+const MOD_VISTAS = { agenda:'agenda', horarios:'agenda', clases:'clases', recepcion:'recepcion', planes:'planes', cobranzas:'finanzas',
+  alertas:'alertas', evaluaciones:'evaluaciones', equipo:'equipo', seguimiento:'seguimiento', logros:'logros', dashboard:'dashboard', atletismo:'atletismo' };
+const MOD_VISTAS_ALU = { turnos:'agenda', clases:'clases', atletismo:'atletismo', evolucion:'evaluaciones', seguimiento:'seguimiento', logros:'logros' };
+const MOD_IDS = {   // elementos de menú / barra / navegación inferior por módulo
+  agenda:       ['menuAgenda', 'ttAgenda', 'bnavProfAgenda', 'menuHorarios', 'ttHorarios', 'menuAluTurnos', 'bnavTurnos'],
+  clases:       ['menuClases', 'ttClases', 'menuAluClases'],
+  recepcion:    ['menuRecepcion', 'ttRecepcion'],
+  planes:       ['menuPlanes', 'ttPlanes'],
+  finanzas:     ['menuCobranzas', 'ttCobranzas', 'horTabBtnFacturar'],
+  alertas:      ['menuAlertas', 'ttAlertas'],
+  evaluaciones: ['menuEvaluaciones', 'ttEvaluaciones', 'menuAluEvolucion'],
+  equipo:       ['menuEquipo', 'ttEquipo'],
+  seguimiento:  ['menuSeguimiento', 'ttSeguimiento', 'menuAluSeguimiento', 'bnavSeguimiento'],
+  logros:       ['menuLogros', 'ttLogros', 'menuAluLogros'],
+  dashboard:    ['menuDashboard', 'ttDashboard'],
+};
+// Presets de venta (editables acá): se aplican de un toque y después se ajusta a mano.
+const MOD_PRESETS = {
+  independiente: { n: 'Independiente', ico: '🧍', on: ['agenda', 'evaluaciones', 'logros', 'seguimiento', 'planes', 'finanzas'] },
+  gimnasio:      { n: 'Gimnasio',      ico: '🏋️', on: ['agenda', 'evaluaciones', 'logros', 'seguimiento', 'planes', 'finanzas', 'recepcion', 'clases', 'alertas', 'equipo'] },
+  pro:           { n: 'Pro',           ico: '🚀', on: '*' },
+};
+const MOD_BLOQUEO_SERVIDOR = ['clases', 'evaluaciones', 'alertas', 'finanzas', 'recepcion', 'proyeccion_ingresos'];   // etapa 1 (SQL) + proyección (ya la valida su RPC)
+function modOn(k){
+  if (k === 'atletismo') return atlOn();
+  if (!k || !MOD_MAP) return true;
+  if (MOD_MAP[k] === false) return false;
+  const req = MOD_REQ[k];
+  return !(req && MOD_MAP[req] === false);
+}
+function modVistaOk(kind, v){
+  const m = (kind === 'alu' ? MOD_VISTAS_ALU : MOD_VISTAS)[v];
+  return !m || modOn(m);
+}
+function modAvisoBloqueada(){ toast('Esta sección no está incluida en tu plan.', true); }
+function modGuiaOk(x){   // para filtrar pasos / preguntas de la Guía según lo que el gimnasio tiene
+  const ir = x && x.ir;
+  if (!ir) return true;
+  if (ir.s) return modVistaOk('staff', ir.s);
+  if (ir.a) return modVistaOk('alu', ir.a);
+  return true;
+}
+function modAplicarMenu(){
+  const roles = new Set([...(typeof MENU_SOLO_ADMIN !== 'undefined' ? MENU_SOLO_ADMIN : []), ...(typeof BNAV_SOLO_ADMIN !== 'undefined' ? BNAV_SOLO_ADMIN : []), 'menuRecepcion', 'ttRecepcion']);
+  Object.keys(MOD_IDS).forEach(k => {
+    const on = modOn(k);
+    MOD_IDS[k].forEach(id => {
+      const e = document.getElementById(id); if (!e) return;
+      if (!on) e.style.display = 'none';
+      else if (!roles.has(id)) e.style.display = '';
+    });
+  });
+}
+async function modulosCargar(){
+  try{
+    const r = await sb('rpc/modulos_efectivos', { method: 'POST', body: JSON.stringify({}) });
+    if (Array.isArray(r) && r.length){ MOD_MAP = {}; r.forEach(x => { MOD_MAP[x.modulo] = !!x.habilitado; }); }
+    else MOD_MAP = null;
+  }catch(e){ MOD_MAP = null; }   // SQL todavía sin correr / sin sesión: se ve todo, como antes
+  try{ aplicarPermisosPorRol(); }catch(e){ modAplicarMenu(); }
+}
+
+// ----- Panel de Martin: modal "🧩 Accesos" por gimnasio -----
+function modEfectivoGim(gimId, c){
+  if (c.nucleo) return true;
+  const o = MODULOS_GIMNASIOS.find(m => m.gimnasio_id === gimId && m.modulo === c.modulo);
+  return o ? !!o.habilitado : !!c.default_habilitado;
+}
+function modPresetDe(vals){
+  const mods = (MOD_CAT || []).filter(c => !c.nucleo);
+  for (const k of Object.keys(MOD_PRESETS)){
+    const p = MOD_PRESETS[k];
+    if (mods.every(c => !!vals[c.modulo] === (p.on === '*' || p.on.includes(c.modulo)))) return p.n;
+  }
+  return null;
+}
+function modFilaBotones(f){
+  if (!MOD_CAT || !MOD_CAT.length){   // sin el SQL de accesos: quedan los dos interruptores de antes
+    const on = m => MODULOS_GIMNASIOS.some(x => x.gimnasio_id === f.id && x.modulo === m && x.habilitado);
+    return `<button class="ghost" style="font-size:11px; padding:2px 6px;" title="Módulo de proyección de ingresos (Dashboard)" onclick="alternarModuloGimnasio('${f.id}','proyeccion_ingresos',${!on('proyeccion_ingresos')})">📈 Proyección: ${on('proyeccion_ingresos') ? 'ON' : 'OFF'}</button>
+          <button class="ghost" style="font-size:11px; padding:2px 6px;" title="Módulo de atletismo (fondos, intermitentes, pasadas)" onclick="alternarModuloGimnasio('${f.id}','atletismo',${!on('atletismo')})">🏃 Atletismo: ${on('atletismo') ? 'ON' : 'OFF'}</button>`;
+  }
+  const mods = MOD_CAT.filter(c => !c.nucleo), vals = {};
+  mods.forEach(c => { vals[c.modulo] = modEfectivoGim(f.id, c); });
+  const n = mods.filter(c => vals[c.modulo]).length, p = modPresetDe(vals);
+  return `<button class="ghost" style="font-size:11px; padding:2px 6px;" title="Qué secciones ve este gimnasio" onclick="modAccesosAbrir('${f.id}')">🧩 Accesos ${n}/${mods.length}${p ? ' · ' + escaparHtml(p) : ''}</button>`;
+}
+function modAccesosAbrir(gimId){
+  const f = GIMNASIOS_ADMIN_CACHE.find(g => g.id === gimId);
+  if (!f || !MOD_CAT || !MOD_CAT.length){ toast('Primero corré accesos-modulos.sql en Supabase.', true); return; }
+  const vals = {};
+  MOD_CAT.filter(c => !c.nucleo).forEach(c => { vals[c.modulo] = modEfectivoGim(gimId, c); });
+  MOD_EDIT = { gimId, nombre: f.nombre, vals };
+  modAccesosPintar();
+  document.getElementById('modalAccesos').classList.add('show');
+}
+function modAccesosCerrar(){ const m = document.getElementById('modalAccesos'); if (m) m.classList.remove('show'); MOD_EDIT = null; }
+function modAccesosPreset(k){
+  if (!MOD_EDIT) return;
+  const p = MOD_PRESETS[k]; if (!p) return;
+  MOD_CAT.filter(c => !c.nucleo).forEach(c => { MOD_EDIT.vals[c.modulo] = p.on === '*' || p.on.includes(c.modulo); });
+  modAccesosPintar();
+}
+function modAccesosSet(m, v){ if (MOD_EDIT){ MOD_EDIT.vals[m] = !!v; modAccesosPintar(); } }
+function modAccesosPintar(){
+  if (!MOD_EDIT) return;
+  const box = document.getElementById('modalAccesosBox'); if (!box) return;
+  const v = MOD_EDIT.vals, preset = modPresetDe(v);
+  const filas = MOD_CAT.map(c => {
+    if (c.nucleo) return `<div class="mo-row mo-fija"><span class="mo-n">${escaparHtml(c.nombre)}</span><span class="mo-tag">siempre incluido</span></div>`;
+    const req = MOD_REQ[c.modulo], bloqReq = req && !v[req];
+    const srv = MOD_BLOQUEO_SERVIDOR.includes(c.modulo) ? '<span class="mo-tag mo-srv" title="El servidor también rechaza el acceso">🔒 bloqueo total</span>' : '<span class="mo-tag" title="Se oculta en la app; el bloqueo en el servidor llega en la etapa 2">👁 oculta menú</span>';
+    return `<label class="mo-row${v[c.modulo] ? ' on' : ''}"><input type="checkbox" ${v[c.modulo] ? 'checked' : ''} onchange="modAccesosSet('${c.modulo}', this.checked)"><span class="mo-n">${escaparHtml(c.nombre)}${bloqReq ? ' <i class="muted">(necesita Evaluaciones)</i>' : ''}</span>${srv}</label>`;
+  }).join('');
+  const n = MOD_CAT.filter(c => !c.nucleo && v[c.modulo]).length;
+  box.innerHTML = `
+    <div class="row" style="justify-content:space-between; align-items:center; margin-bottom:4px;">
+      <h3 style="margin:0;">🧩 Accesos · ${escaparHtml(MOD_EDIT.nombre)}</h3>
+      <button type="button" class="x-cerrar est" aria-label="Cerrar" title="Cerrar" onclick="modAccesosCerrar()">✕</button>
+    </div>
+    <div class="x-sub" style="margin-bottom:10px;">Lo que apagues deja de verse en la app (staff y alumnos) y se saca de la Guía. Los datos no se borran: al volver a activarlo, reaparece todo.</div>
+    <div class="mo-presets">${Object.keys(MOD_PRESETS).map(k => `<button type="button" class="ghost${preset === MOD_PRESETS[k].n ? ' active' : ''}" onclick="modAccesosPreset('${k}')">${MOD_PRESETS[k].ico} ${MOD_PRESETS[k].n}</button>`).join('')}<span class="muted" style="font-size:12px;">${preset ? 'Plan: ' + escaparHtml(preset) : 'Personalizado'} · ${n} módulos opcionales</span></div>
+    <div class="mo-lista">${filas}</div>
+    <div class="x-btns"><button class="ghost" onclick="modAccesosCerrar()">Cancelar</button><button id="btnModAccesosGuardar" onclick="modAccesosGuardar()">Guardar accesos</button></div>`;
+}
+async function modAccesosGuardar(){
+  if (!MOD_EDIT) return;
+  const { gimId } = MOD_EDIT, body = {};
+  MOD_CAT.filter(c => !c.nucleo).forEach(c => { body[c.modulo] = !!MOD_EDIT.vals[c.modulo]; });
+  const btn = document.getElementById('btnModAccesosGuardar'); if (btn){ btn.disabled = true; btn.textContent = 'Guardando...'; }
+  try{
+    await sb('rpc/configurar_modulos_gimnasio', { method: 'POST', body: JSON.stringify({ p_gimnasio_id: gimId, p_modulos: body }) });
+    toast('Accesos guardados ✓');
+    modAccesosCerrar();
+    await cargarGimnasiosAdmin();
+    if (GIMNASIO_ACTUAL && GIMNASIO_ACTUAL.id === gimId){ await modulosCargar(); await atlRefrescar(); cargarCatalogoEjercicios().catch(() => {}); }
+  }catch(e){
+    toast('No se pudieron guardar los accesos: ' + e.message, true);
+    if (btn){ btn.disabled = false; btn.textContent = 'Guardar accesos'; }
+  }
+}
+
 // ---------- (v98) ATLETISMO: módulo opcional (lo activa solo Martin, gimnasio por gimnasio) ----------
 // Fondos continuos, intermitentes y pasadas combinados con las rutinas de gimnasio. Se arma en "Nueva rutina"
 // como cualquier ejercicio (catálogo "Atletismo"), el alumno carga distancia y tiempo, y el ritmo se calcula solo.
@@ -3925,7 +4091,7 @@ function atlIniciarAlu(){
   atlCargarVista('aluAtletismoContenido', id || '');
 }
 
-const APP_VERSION = 98;
+const APP_VERSION = 99;
 // (v96) Fecha de la última actualización: se cambia junto con APP_VERSION en cada entrega. Se muestra en la
 // pantalla de inicio y en el menú de cuenta ("v94 · actualizada el 5/10/2026").
 const APP_FECHA = '2026-10-05';
@@ -4448,11 +4614,13 @@ async function cargarGimnasiosAdmin(){
   const tbody = document.getElementById('gimnasiosAdminTbody');
   tbody.innerHTML = '<tr><td colspan="6" class="muted" style="padding:10px;">Cargando...</td></tr>';
   try{
-    const [filas, mods] = await Promise.all([
+    const [filas, mods, cat] = await Promise.all([
       sb('rpc/listar_gimnasios_admin', { method:'POST', body: JSON.stringify({}) }),
       sb('rpc/listar_modulos_gimnasios', { method:'POST', body: JSON.stringify({}) }).catch(() => []),
+      sb('modulos_catalogo?select=modulo,nombre,default_habilitado,nucleo,orden&order=orden.asc').catch(() => null),   // (v99) null = todavía no corrieron accesos-modulos.sql
     ]);
     MODULOS_GIMNASIOS = mods || [];
+    MOD_CAT = (cat && cat.length) ? cat : null;
     GIMNASIOS_ADMIN_CACHE = filas || [];
     if (!GIMNASIOS_ADMIN_CACHE.length){ tbody.innerHTML = '<tr><td colspan="6" class="muted" style="padding:10px;">Todavía no hay gimnasios dados de alta.</td></tr>'; return; }
     tbody.innerHTML = GIMNASIOS_ADMIN_CACHE.map(f => `
@@ -4465,8 +4633,7 @@ async function cargarGimnasiosAdmin(){
         <td style="padding:6px; white-space:nowrap;">
           <button class="ghost" style="font-size:11px; padding:2px 6px;" onclick="activarSuscripcionUI('${f.id}')">💳 Activar</button>
           <button class="ghost" style="font-size:11px; padding:2px 6px;" onclick="toggleHistorialSuscripcion('${f.id}')">🧾 Historial</button>
-          <button class="ghost" style="font-size:11px; padding:2px 6px;" title="Módulo de proyección de ingresos (Dashboard)" onclick="alternarModuloGimnasio('${f.id}','proyeccion_ingresos',${!MODULOS_GIMNASIOS.some(m => m.gimnasio_id === f.id && m.modulo === 'proyeccion_ingresos' && m.habilitado)})">📈 Proyección: ${MODULOS_GIMNASIOS.some(m => m.gimnasio_id === f.id && m.modulo === 'proyeccion_ingresos' && m.habilitado) ? 'ON' : 'OFF'}</button>
-          <button class="ghost" style="font-size:11px; padding:2px 6px;" title="Módulo de atletismo (fondos, intermitentes, pasadas)" onclick="alternarModuloGimnasio('${f.id}','atletismo',${!MODULOS_GIMNASIOS.some(m => m.gimnasio_id === f.id && m.modulo === 'atletismo' && m.habilitado)})">🏃 Atletismo: ${MODULOS_GIMNASIOS.some(m => m.gimnasio_id === f.id && m.modulo === 'atletismo' && m.habilitado) ? 'ON' : 'OFF'}</button>
+          ${modFilaBotones(f)}
         </td>
       </tr>
       <tr id="historialSus${f.id}" style="display:none; border-bottom:1px solid var(--border);">
@@ -6132,7 +6299,8 @@ function guiaPushOk(){ try{ return typeof Notification !== 'undefined' && Notifi
 function guiaInstalada(){ try{ return !!(window.matchMedia('(display-mode: standalone)').matches || navigator.standalone); }catch(e){ return false; } }
 
 // ---------- Contenido (también es la base para el asistente de ayuda con IA de la etapa 2) ----------
-function guiaPasos(rol){
+function guiaPasos(rol){ return guiaPasosBase(rol).filter(modGuiaOk); }   // (v99) sin pasos de secciones que el gimnasio no tiene
+function guiaPasosBase(rol){
   const gim = { id:'gim', ico:'🏢', t:'Poné nombre y logo a tu gimnasio', d:'Se ve en la barra de la app, en los recibos y en la ficha del alumno.', ir:{ s:'gimnasio' }, auto:c => !!(c.g && c.g.logo_url),
     det:['Menú ☰ → Mi gimnasio.','Escribí el nombre y subí el logo (se guarda solo).','Elegí tus colores de marca y tocá Guardar.'] };
   const hor = { id:'hor', ico:'🕒', t:'Cargá los horarios de trabajo', d:'Son la base de los turnos que reservan los alumnos y de sus cupos.', ir:{ s:'horarios' }, auto:c => c.horarios > 0,
@@ -6182,7 +6350,8 @@ function guiaPasos(rol){
   ];
 }
 
-function guiaFaq(rol){
+function guiaFaq(rol){ return guiaFaqBase(rol).filter(modGuiaOk); }   // (v99)
+function guiaFaqBase(rol){
   const staff = [
     { q:'¿Cómo creo una rutina?', r:['Menú ☰ → 🏋️ Nueva rutina.','Paso 1: elegí para quién es (un alumno, un tipo de entrenamiento, un equipo o una plantilla).','Paso 2: fecha fija o rotativa. Paso 3: nombre (y días por semana si es rotativa).','Paso 4: agregá días y ejercicios con el buscador; cargá series, reps, carga, pausa y RIR.','Tocá 💾 Guardar rutina: el alumno la ve al instante.'], ir:{ s:'especiales' } },
     { q:'¿Cómo le asigno una rutina a un alumno?', r:['Al crearla, en el paso 1 elegí “Un alumno”: tiene prioridad sobre la de biblioteca.','Si es por tipo de entrenamiento, se engancha sola cuando el alumno reserva turno ese día.','Una rotativa la ve el alumno en “Mis rutinas” aunque no tenga turno.'], ir:{ s:'especiales' } },
@@ -6370,6 +6539,7 @@ function guiaPintarBotonCorreo(email){
 }
 
 function cambiarSubvista(v){
+  if (!modVistaOk('staff', v)){ modAvisoBloqueada(); return; }   // (v99) sección no incluida en el plan del gimnasio
   medOk();
   try{ clCerrar(); }catch(e){}
   guiaVisita('staff', v==='armador' ? 'especiales' : v);
@@ -7312,6 +7482,7 @@ async function cargarInicioAlu(alumnoId){
 }
 
 function cambiarSubvistaAlu(v){
+  if (!modVistaOk('alu', v)){ modAvisoBloqueada(); return; }   // (v99)
   guiaVisita('alu', v);
   if (v==='inicio') guiaRenderCards();
   document.getElementById('subvistaAluInicio').style.display = v==='inicio' ? '' : 'none';
@@ -7579,6 +7750,7 @@ async function cargarGimnasioActual(){
   renderCobrosOnlineGimnasio();
   renderBannerSuscripcion();
   cargarPlanesPrepago();
+  modulosCargar().catch(() => {});   // (v99) qué secciones tiene este gimnasio
   atlRefrescar().catch(() => {});   // (v98) módulo Atletismo: muestra u oculta su menú
 }
 
@@ -7726,6 +7898,7 @@ function aplicarPermisosPorRol(){
     const el = document.getElementById(id);
     if (el) el.style.display = esRecep ? 'none' : '';
   });
+  modAplicarMenu();   // (v99) oculta lo que el plan del gimnasio no incluye
 }
 function idAleatorio(){
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
@@ -17775,6 +17948,11 @@ if ('serviceWorker' in navigator){
       </table>
     </div>
   </div>
+</div>
+
+<!-- (v99) Modal "🧩 Accesos" por gimnasio (solo Martin): qué secciones ve cada gimnasio, con presets. -->
+<div class="modal-overlay" id="modalAccesos" onclick="if(event.target===this)modAccesosCerrar()">
+  <div class="modal-box x-box" id="modalAccesosBox" style="width:min(620px,100%);"></div>
 </div>
 
 <!-- Modal "Activar suscripción" (28/9, solo Martin) — reemplaza el prompt() de
