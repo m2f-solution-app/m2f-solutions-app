@@ -1166,6 +1166,37 @@
   :root[data-tema="claro"] button.cfg-item.peligro{ color:#c0271d; }
   #cfgPassBox{ display:none; margin-top:8px; padding:12px; border-radius:14px; background:var(--panel2); }
   #cfgPassBox.abierta{ display:block; }
+  /* ===================================================================================
+     (v94) Pantalla única "Nueva rutina": 4 pasos guiados (para quién → cómo se repite →
+     datos → días y ejercicios). Prefijo nr-.
+     =================================================================================== */
+  .nr-stp{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:14px; }
+  .nr-stp .s{ display:flex; align-items:center; gap:6px; font-size:12.5px; color:var(--muted); font-weight:700; }
+  .nr-stp .s.clk{ cursor:pointer; } .nr-stp .s.clk:hover{ text-decoration:underline; }
+  .nr-stp .n{ width:22px; height:22px; border-radius:50%; border:1.5px solid var(--border); display:flex; align-items:center; justify-content:center; font-size:11px; }
+  .nr-stp .s.on{ color:var(--text); } .nr-stp .s.on .n{ border-color:var(--accent); background:var(--accent); color:#1a0e00; }
+  .nr-stp .s.done .n{ border-color:var(--accent2-text); color:var(--accent2-text); }
+  .nr-stp .ln{ width:18px; height:2px; background:var(--border); }
+  @media (max-width:720px){ .nr-stp .ln{ display:none; } }
+  .nr-opts{ display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; }
+  .nr-opts.two{ grid-template-columns:repeat(2,minmax(0,1fr)); }
+  @media (max-width:720px){ .nr-opts{ grid-template-columns:1fr 1fr; } }
+  .nr-opt{ border:1.5px solid var(--border); border-radius:14px; padding:14px; cursor:pointer; background:var(--panel2); transition:.12s; }
+  .nr-opt:hover{ border-color:var(--muted); }
+  .nr-opt.on{ border-color:var(--accent); background:var(--note-bg, rgba(255,122,48,.1)); }
+  .nr-opt .ic{ font-size:24px; } .nr-opt .t{ font-weight:800; margin-top:6px; } .nr-opt .d{ font-size:12px; color:var(--muted); margin-top:3px; }
+  .nr-res{ display:flex; align-items:center; gap:10px; justify-content:space-between; flex-wrap:wrap; background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:10px 14px; margin-bottom:10px; }
+  .nr-res .l{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+  .nr-explica{ font-size:12.5px; color:var(--muted); margin-top:10px; }
+  .nr-sbar{ position:sticky; bottom:0; z-index:30; background:var(--panel); border:1px solid var(--border); border-radius:14px; padding:10px 14px; display:flex; gap:10px; justify-content:space-between; align-items:center; flex-wrap:wrap; box-shadow:0 -6px 18px rgba(0,0,0,.22); margin-top:10px; }
+  .nr-sbar .info{ display:flex; gap:6px; flex-wrap:wrap; align-items:center; flex:1; min-width:0; }
+  .nr-sbar button[disabled]{ opacity:.45; cursor:not-allowed; }
+  .nr-sbar .ghost{ white-space:nowrap; }
+  @media (max-width:720px){
+    .nr-sbar{ bottom:calc(84px + env(safe-area-inset-bottom)); }
+    .nr-sbar .info{ flex:1 1 100%; order:-1; }
+    .nr-sbar #btnGuardarEspecial{ flex:1; padding:13px 18px; font-weight:800; }
+  }
 
   /* ===================================================================================
      (v93) Bloque 1 — Alumnos / Profesores / Seguimiento / Planes / Finanzas / Alertas:
@@ -1360,6 +1391,7 @@
     <div style="position:relative; z-index:2; margin-top:18px;">
       <button class="btn-instalar-app" id="btnInstalarAppLanding" onclick="instalarApp()">📲 Instalar app</button>
     </div>
+    <div id="lcVersion" style="position:relative; z-index:2; margin-top:12px; font-size:11.5px; opacity:.65; text-align:center;"></div>
   </div>
 </div>
 
@@ -1469,11 +1501,11 @@
   <div class="top-toolbar" id="topToolbarProf">
     <button class="tt-btn active" id="ttInicio" onclick="cambiarSubvista('inicio')" title="Inicio"><span class="tt-ico">🏠</span><span class="tt-lbl">Inicio</span></button>
     <button class="tt-btn" id="ttDashboard" onclick="cambiarSubvista('dashboard')" style="display:none;" title="Dashboard"><span class="tt-ico">📊</span><span class="tt-lbl">Dashboard</span></button>
-    <button class="tt-btn" id="ttArmador" onclick="cambiarSubvista('armador')" title="Armador de Rutina"><span class="tt-ico">🏋️</span><span class="tt-lbl">Armador de rutinas</span></button>
+    <button class="tt-btn" id="ttArmador" onclick="cambiarSubvista('especiales')" title="Nueva rutina"><span class="tt-ico">🏋️</span><span class="tt-lbl">Nueva rutina</span></button>
     <button class="tt-btn" id="ttRutinas" onclick="cambiarSubvista('rutinas')" title="Rutinas"><span class="tt-ico">🗂️</span><span class="tt-lbl">Rutinas</span></button>
     <button class="tt-btn" id="ttRecepcion" onclick="cambiarSubvista('recepcion')" style="display:none;" title="Recepción"><span class="tt-ico">🛎️</span><span class="tt-lbl">Recepción</span></button>
     <button class="tt-btn" id="ttAgenda" onclick="cambiarSubvista('agenda')" title="Agenda"><span class="tt-ico">📋</span><span class="tt-lbl">Agenda</span></button>
-    <button class="tt-btn" id="ttEspeciales" onclick="cambiarSubvista('especiales')" title="Rutinas especiales por alumno"><span class="tt-ico">⭐</span><span class="tt-lbl">Rutinas especiales</span></button>
+    <button class="tt-btn" id="ttEspeciales" onclick="cambiarSubvista('especiales')" style="display:none;" title="Rutinas especiales por alumno"><span class="tt-ico">⭐</span><span class="tt-lbl">Rutinas especiales</span></button>
     <button class="tt-btn" id="ttEquipo" onclick="cambiarSubvista('equipo')" title="Seguimiento Equipo"><span class="tt-ico">⚽</span><span class="tt-lbl">Seguimiento Equipo</span></button>
     <button class="tt-btn" id="ttAlumnos" onclick="cambiarSubvista('alumnos')" style="display:none;" title="Alumnos"><span class="tt-ico">👤</span><span class="tt-lbl">Alumnos</span></button>
     <button class="tt-btn" id="ttEvaluaciones" onclick="cambiarSubvista('evaluaciones')" title="Evaluaciones"><span class="tt-ico">📏</span><span class="tt-lbl">Evaluaciones</span></button>
@@ -1499,11 +1531,11 @@
     </div>
     <div class="side-item active" id="menuInicio" onclick="cambiarSubvista('inicio')" title="Inicio"><span class="side-ico">🏠</span><span class="side-label">Inicio</span></div>
     <div class="side-item" id="menuDashboard" onclick="cambiarSubvista('dashboard')" style="display:none;" title="Dashboard"><span class="side-ico">📊</span><span class="side-label">Dashboard</span></div>
-    <div class="side-item" id="menuArmador" onclick="cambiarSubvista('armador')" title="Armador de Rutina"><span class="side-ico">🏋️</span><span class="side-label">Armador de Rutina</span></div>
+    <div class="side-item" id="menuArmador" onclick="cambiarSubvista('especiales')" title="Nueva rutina"><span class="side-ico">🏋️</span><span class="side-label">Nueva rutina</span></div>
     <div class="side-item" id="menuRutinas" onclick="cambiarSubvista('rutinas')" title="Rutinas"><span class="side-ico">🗂️</span><span class="side-label">Rutinas</span></div>
     <div class="side-item" id="menuRecepcion" onclick="cambiarSubvista('recepcion')" style="display:none;" title="Recepción"><span class="side-ico">🛎️</span><span class="side-label">Recepción</span></div>
     <div class="side-item" id="menuAgenda" onclick="cambiarSubvista('agenda')" title="Agenda"><span class="side-ico">📋</span><span class="side-label">Agenda</span></div>
-    <div class="side-item" id="menuEspeciales" onclick="cambiarSubvista('especiales')" title="Rutinas especiales por alumno"><span class="side-ico">⭐</span><span class="side-label">Rutinas especiales por alumno</span></div>
+    <div class="side-item" id="menuEspeciales" onclick="cambiarSubvista('especiales')" style="display:none;" title="Rutinas especiales por alumno"><span class="side-ico">⭐</span><span class="side-label">Rutinas especiales por alumno</span></div>
     <div class="side-item" id="menuEquipo" onclick="cambiarSubvista('equipo')" title="Equipo"><span class="side-ico">⚽</span><span class="side-label">Equipo</span></div>
     <div class="side-item" id="menuAlumnos" onclick="cambiarSubvista('alumnos')" title="Alumnos"><span class="side-ico">👤</span><span class="side-label">Alumnos</span></div>
     <div class="side-item" id="menuEvaluaciones" onclick="cambiarSubvista('evaluaciones')" title="Evaluaciones"><span class="side-ico">📏</span><span class="side-label">Evaluaciones</span></div>
@@ -1924,37 +1956,66 @@
           </div>
         </div>
 
-        <div class="card">
-          <h2 style="margin-top:0">Rutina especial</h2>
-          <div class="row">
-            <div class="field">
-              <label>Asignar a</label>
-              <select id="espModoDestino" onchange="cambiarModoDestinoEsp()">
-                <option value="alumno">Un alumno</option>
-                <option value="equipo">Un equipo completo</option>
-              </select>
+        <div class="vista-titulo">Nueva rutina</div>
+        <div id="nrStepper" class="nr-stp"></div>
+
+        <!-- Paso 1 · ¿Para quién? -->
+        <div id="nrRes1" class="nr-res" style="display:none;"></div>
+        <div class="card" id="nrPaso1">
+          <h2 style="margin-top:0">1 · ¿Para quién es la rutina?</h2>
+          <div class="nr-opts">
+            <div class="nr-opt" id="nrOpt-alumno" onclick="nrSetPara('alumno')"><div class="ic">👤</div><div class="t">Un alumno</div><div class="d">Solo la ve esa persona</div></div>
+            <div class="nr-opt" id="nrOpt-tipo" onclick="nrSetPara('tipo')"><div class="ic">🏷️</div><div class="t">Un tipo de entrenamiento</div><div class="d">Todos los de Funcional, Fuerza, etc.</div></div>
+            <div class="nr-opt" id="nrOpt-equipo" onclick="nrSetPara('equipo')"><div class="ic">⚽</div><div class="t">Un equipo</div><div class="d">Jugadores de un equipo completo</div></div>
+            <div class="nr-opt" id="nrOpt-plantilla" onclick="nrSetPara('plantilla')"><div class="ic">🧩</div><div class="t">Plantilla</div><div class="d">Queda guardada y la elegís a mano</div></div>
+          </div>
+          <select id="espModoDestino" style="display:none;" onchange="cambiarModoDestinoEsp()">
+            <option value="alumno">Un alumno</option>
+            <option value="tipo">Un tipo de entrenamiento</option>
+            <option value="equipo">Un equipo completo</option>
+            <option value="plantilla">Plantilla</option>
+          </select>
+          <div class="row" style="margin-top:12px;">
+            <div class="field" id="espAlumnoWrap" style="min-width:240px; max-width:380px;">
+              <label>¿Qué alumno?</label>
+              <select id="espAlumno" onchange="cargarEspecialesDeAlumno(); nrTarget()"></select>
             </div>
-            <div class="field" id="espAlumnoWrap">
-              <label>Alumno</label>
-              <select id="espAlumno" onchange="cargarEspecialesDeAlumno()"></select>
+            <div class="field" id="espEquipoWrap" style="display:none; min-width:240px; max-width:380px;">
+              <label>¿Qué equipo?</label>
+              <select id="espEquipo" onchange="onCambiarEspEquipo(); nrTarget()"></select>
             </div>
-            <div class="field" id="espEquipoWrap" style="display:none;">
-              <label>Equipo</label>
-              <select id="espEquipo" onchange="onCambiarEspEquipo()"></select>
-            </div>
-            <div class="field" style="flex:1; min-width:200px;">
-              <label>Nombre de la rutina</label>
-              <input id="espNombreRutina" placeholder="Ej: Plan especial - Semana 1" />
+            <div class="field" id="espTipoWrap" style="display:none; min-width:240px; max-width:380px;">
+              <label>¿Qué tipo de entrenamiento?</label>
+              <select id="espTipo" onchange="nrTarget()"></select>
             </div>
           </div>
           <div id="espEquipoInfo" class="muted" style="margin-top:6px;"></div>
-          <div class="row" style="margin-top:14px;">
-            <div class="field">
-              <label>Modo de rutina</label>
-              <select id="espModoDias" onchange="CONS['esp'].setModoDias(this.value)">
-                <option value="fecha_fija">Fecha fija</option>
-                <option value="rotativa">Rotativa (sin días fijos, se repite sola)</option>
-              </select>
+          <div id="nrMantener" style="display:none; margin-top:12px;"><button type="button" onclick="nrListo()">✓ Listo, mantener lo que armé</button></div>
+        </div>
+
+        <!-- Paso 2 · ¿Cómo se repite? -->
+        <div id="nrRes2" class="nr-res" style="display:none;"></div>
+        <div class="card" id="nrPaso2" style="display:none;">
+          <h2 style="margin-top:0">2 · ¿Cómo se repite?</h2>
+          <div class="nr-opts two">
+            <div class="nr-opt" id="nrOptM-fecha_fija" onclick="nrSetModo('fecha_fija')"><div class="ic">📅</div><div class="t">Fecha fija</div><div class="d">Cada día va con su fecha del calendario. Ej: la semana del 12 al 18.</div></div>
+            <div class="nr-opt" id="nrOptM-rotativa" onclick="nrSetModo('rotativa')"><div class="ic">🔁</div><div class="t">Rotativa</div><div class="d">Los días se repiten solos (A → B → C → A), sin fechas. Permite progresión semanal.</div></div>
+          </div>
+          <select id="espModoDias" style="display:none;" onchange="CONS['esp'].setModoDias(this.value); nrRender()">
+            <option value="fecha_fija">Fecha fija</option>
+            <option value="rotativa">Rotativa (sin días fijos, se repite sola)</option>
+            <option value="plantilla">Plantilla</option>
+          </select>
+          <div id="nrVolver2" class="row" style="display:none; margin-top:12px; gap:10px; align-items:center;"><button type="button" class="ghost" onclick="nrListo()">← Volver sin cambiar</button><span class="muted">Tus días y ejercicios se conservan.</span></div>
+        </div>
+
+        <!-- Paso 3 · Datos -->
+        <div class="card" id="nrPaso3" style="display:none;">
+          <h2 style="margin-top:0">3 · Datos</h2>
+          <div class="row">
+            <div class="field" style="flex:1; min-width:220px;">
+              <label id="nrNombreLbl">Nombre de la rutina</label>
+              <input id="espNombreRutina" placeholder="Ej: Plan especial - Semana 1" />
             </div>
             <div class="field" id="espDiasObjetivoWrap" style="display:none;">
               <label>Días por semana (objetivo)</label>
@@ -1973,6 +2034,7 @@
             </div>
           </div>
           <div class="muted" id="espModoDiasHint" style="font-size:12px; margin-top:6px; display:none;">Rotativa: no hace falta cargar fecha en los días. Sirve tanto para el que también usa turno (por cupo/aforo) como para el que entrena a distancia sin reservar nada — el turno es un tema aparte.</div>
+          <div class="nr-explica" id="nrExplica"></div>
         </div>
 
         <!-- (v84) Empezar desde una rutina que ya existe -->
@@ -1995,15 +2057,19 @@
           <div id="diasContainerEsp"></div>
         </div>
 
-        <div class="row armador-guardar" style="justify-content:flex-end;">
-          <button onclick="guardarRutinaEspecial()" id="btnGuardarEspecial">Guardar rutina especial</button>
+        <div class="nr-sbar" id="nrSbar">
+          <button type="button" class="ghost" id="nrAtras" onclick="nrAtras()">← Atrás</button>
+          <div class="info" id="nrSbarInfo"></div>
+          <button onclick="guardarRutinaEspecial()" id="btnGuardarEspecial">💾 Guardar rutina</button>
         </div>
 
+        <div id="nrAlumnoExtra">
         <div id="espAsignadaAlumno" class="card" style="display:none;"></div>
 
         <div class="card">
           <h2 style="margin-top:0">Rutinas especiales ya creadas para este alumno</h2>
           <div id="listaEspecialesAlumno" class="muted">Elegí un alumno arriba.</div>
+        </div>
         </div>
       </div>
 
@@ -2702,7 +2768,7 @@
     <div class="bottom-nav-inner">
       <button class="bottom-nav-item active" id="bnavProfInicio" onclick="cambiarSubvista('inicio')"><span class="ico"><svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg></span>Inicio</button>
       <button class="bottom-nav-item" id="bnavProfRutinas" onclick="cambiarSubvista('rutinas')"><span class="ico"><svg viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13"/><path d="M3.5 6h.01M3.5 12h.01M3.5 18h.01"/></svg></span>Rutinas</button>
-      <button class="bottom-nav-item" id="bnavProfArmador" onclick="cambiarSubvista('armador')"><span class="ico"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="M12 8v8M8 12h8"/></svg></span>Armador</button>
+      <button class="bottom-nav-item" id="bnavProfArmador" onclick="cambiarSubvista('especiales')"><span class="ico"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="M12 8v8M8 12h8"/></svg></span>Nueva</button>
       <button class="bottom-nav-item" id="bnavProfAgenda" onclick="cambiarSubvista('agenda')"><span class="ico"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M8 3v4M16 3v4M3 10h18"/></svg></span>Agenda</button>
       <button class="bottom-nav-item" id="bnavProfAlumnos" onclick="cambiarSubvista('alumnos')"><span class="ico"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.6-3.6 3.2-5.5 6.5-5.5s5.9 1.9 6.5 5.5"/><path d="M16 4.7a3.5 3.5 0 0 1 0 6.6M18 14.7c1.9.7 3.2 2.4 3.5 5.3"/></svg></span>Alumnos</button>
       <button class="bottom-nav-item" id="bnavProfMenu" onclick="abrirMenuProf()"><span class="ico"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg></span>Menú</button>
@@ -3195,7 +3261,12 @@ const BUCKET = "Ejercicios";
 // un cambio, se incrementa este número — el chequeo de actualización (más abajo) lo compara
 // contra lo que hay publicado y avisa si están desactualizados, sin que nadie tenga que
 // cambiar ningún link a mano.
-const APP_VERSION = 93;
+const APP_VERSION = 94;
+// (v94) Fecha de la última actualización: se cambia junto con APP_VERSION en cada entrega. Se muestra en la
+// pantalla de inicio y en el menú de cuenta ("v94 · actualizada el 5/10/2026").
+const APP_FECHA = '2026-10-05';
+function appVersionTxt(){ const [y, m, d] = APP_FECHA.split('-'); return `v${APP_VERSION} · actualizada el ${+d}/${+m}/${y}`; }
+(function(){ const el = document.getElementById('lcVersion'); if (el) el.textContent = 'M2F Solutions · ' + appVersionTxt(); })();
 
 // ---------- Instalar como app (PWA): acceso directo en escritorio/celular ----------
 // Chrome/Edge/Android disparan "beforeinstallprompt" cuando el manifest + service worker
@@ -5354,6 +5425,7 @@ async function quitarRecepcion(perfilId, nombre){
 let AGENDA_AUTO_REFRESH_TIMER = null;
 
 function cambiarSubvista(v){
+  if (v==='armador') v='especiales'; // (v94) el Armador y las Rutinas especiales son ahora una sola pantalla: "Nueva rutina"
   // Progreso en vivo (24/9): mientras el profe tiene la Agenda abierta, la refresca
   // sola cada 25s para que el avance de los alumnos se vaya viendo sin tener que
   // tocar nada. Se corta apenas se cambia a cualquier otra pestaña.
@@ -5383,7 +5455,7 @@ function cambiarSubvista(v){
   document.getElementById('subvistaGimnasio').style.display = v==='gimnasio' ? '' : 'none';
   document.getElementById('menuInicio').classList.toggle('active', v==='inicio');
   document.getElementById('menuDashboard').classList.toggle('active', v==='dashboard');
-  document.getElementById('menuArmador').classList.toggle('active', v==='armador');
+  document.getElementById('menuArmador').classList.toggle('active', v==='especiales');
   document.getElementById('menuRutinas').classList.toggle('active', v==='rutinas');
   document.getElementById('menuEspeciales').classList.toggle('active', v==='especiales');
   document.getElementById('menuEquipo').classList.toggle('active', v==='equipo');
@@ -5401,7 +5473,7 @@ function cambiarSubvista(v){
   document.getElementById('menuGimnasio').classList.toggle('active', v==='gimnasio');
   document.getElementById('ttInicio').classList.toggle('active', v==='inicio');
   document.getElementById('ttDashboard').classList.toggle('active', v==='dashboard');
-  document.getElementById('ttArmador').classList.toggle('active', v==='armador');
+  document.getElementById('ttArmador').classList.toggle('active', v==='especiales');
   document.getElementById('ttRutinas').classList.toggle('active', v==='rutinas');
   document.getElementById('ttEspeciales').classList.toggle('active', v==='especiales');
   document.getElementById('ttEquipo').classList.toggle('active', v==='equipo');
@@ -5419,13 +5491,14 @@ function cambiarSubvista(v){
   document.getElementById('ttGimnasio').classList.toggle('active', v==='gimnasio');
   document.getElementById('bnavProfInicio').classList.toggle('active', v==='inicio');
   document.getElementById('bnavProfRutinas').classList.toggle('active', v==='rutinas');
-  document.getElementById('bnavProfArmador').classList.toggle('active', v==='armador');
+  document.getElementById('bnavProfArmador').classList.toggle('active', v==='especiales');
   document.getElementById('bnavProfAgenda').classList.toggle('active', v==='agenda');
   document.getElementById('bnavProfAlumnos').classList.toggle('active', v==='alumnos');
   if (v==='inicio') cargarInicioProfesor();
   if (v==='recepcion') iniciarRecepcion();
   if (v==='dashboard') cargarDashboardAdmin();
   if (v==='rutinas') cargarGrillaRutinas();
+  if (v==='especiales'){ nrInit(); nrAlAbrir(); }
   if (v==='alumnos') cargarListaAlumnos();
   if (v==='evaluaciones') iniciarEvaluaciones();
   if (v==='seguimiento') iniciarSeguimiento();
@@ -7010,6 +7083,7 @@ function renderListaTiposAlumno(){
 }
 
 function poblarSelectsTipoAlumno(){
+  if (typeof nrPoblarTipos === 'function') nrPoblarTipos();
   const optsConVacio = `<option value="">-- sin definir --</option>` + TIPOS_ALUMNO_CACHE.map(t => `<option value="${t.id}">${t.nombre}</option>`).join('');
   const selAlta = document.getElementById('nuevoAlumnoTipo');
   if (selAlta) selAlta.innerHTML = optsConVacio;
@@ -11661,6 +11735,172 @@ CONS['esp'] = crearConstructorDeDias('esp', 'diasContainerEsp', 'esp');
 function agregarDia(){ CONS['dia'].agregarDia(); }
 function agregarDiaEsp(){ CONS['esp'].agregarDia(); }
 
+// ---------- (v94) Nueva rutina: pantalla única guiada (reemplaza Armador + Rutinas especiales) ----------
+// Reusa por completo el motor de Especiales (CONS['esp'], espModoDestino/espAlumno/espEquipo/espModoDias,
+// espCargarDesdeRutina, copiar rutina, turno→rutina nueva): el asistente solo ordena la pantalla en pasos
+// y suma los destinos "Un tipo de entrenamiento" y "Plantilla" (que antes vivían en el Armador).
+const NR = { paraTocado:false, modoTocado:false, edit:0 };
+const nrEl = id => document.getElementById(id);
+const nrValDestino = () => (nrEl('espModoDestino') || {}).value || 'alumno';
+
+function nrPoblarTipos(){
+  const sel = nrEl('espTipo'); if (!sel) return;
+  const actual = sel.value;
+  const rot = typeof CONS !== 'undefined' && CONS['esp'] && CONS['esp'].estado.modoDias === 'rotativa';
+  sel.innerHTML = '<option value="">-- elegir --</option>'
+    + (rot ? '<option value="__todos">Cualquier tipo (todos los alumnos)</option>' : '')
+    + (TIPOS_ALUMNO_CACHE || []).map(t => `<option value="${t.id}">${escaparHtml(t.nombre)}</option>`).join('');
+  if (actual && [...sel.options].some(o => o.value === actual)) sel.value = actual;
+}
+
+function nrPaso1Ok(){
+  const d = nrValDestino();
+  if (d === 'alumno') return !!nrEl('espAlumno').value;
+  if (d === 'equipo') return !!nrEl('espEquipo').value;
+  if (d === 'tipo') return !!nrEl('espTipo').value;
+  if (d === 'plantilla') return NR.paraTocado;
+  return false;
+}
+function nrPara(){ return (NR.paraTocado || nrPaso1Ok()) ? nrValDestino() : null; }
+function nrCantDias(){ return Object.keys(CONS['esp'].estado.dias).length; }
+function nrCantEj(){ return Object.values(CONS['esp'].estado.dias).reduce((a, d) => a + d.ejercicios.length, 0); }
+function nrModoOk(){ const p = nrPara(); return !!p && nrPaso1Ok() && (p === 'plantilla' || NR.modoTocado || nrCantDias() > 0); }
+
+function nrDestinoTxt(){
+  const d = nrValDestino();
+  if (d === 'alumno'){ const s = nrEl('espAlumno'); return '👤 ' + ((s.options[s.selectedIndex] || {}).textContent || '').trim(); }
+  if (d === 'equipo'){ const s = nrEl('espEquipo'); return '⚽ ' + ((s.options[s.selectedIndex] || {}).textContent || '').trim(); }
+  if (d === 'tipo'){ const s = nrEl('espTipo'); return s.value === '__todos' ? '🏷️ Cualquier tipo' : '🏷️ Tipo ' + ((s.options[s.selectedIndex] || {}).textContent || '').trim(); }
+  return '🧩 Plantilla';
+}
+function nrModoTxt(){
+  const m = CONS['esp'].estado.modoDias;
+  return m === 'rotativa' ? '🔁 Rotativa' : m === 'plantilla' ? '🧩 Plantilla' : '📅 Fecha fija';
+}
+function nrExplicaTxt(){
+  const d = nrValDestino(), rot = CONS['esp'].estado.modoDias === 'rotativa';
+  if (d === 'alumno') return `Solo la ve <b>${escaparHtml((nrDestinoTxt() || '').replace('👤 ', ''))}</b>. Tiene prioridad sobre las rutinas generales.`;
+  if (d === 'tipo'){
+    if (nrEl('espTipo').value === '__todos') return 'Se asigna sola a cualquier alumno que no tenga una especial: arranca en el día 1 y va rotando.';
+    return `Se asigna sola a los alumnos de tipo <b>${escaparHtml(nrDestinoTxt().replace('🏷️ Tipo ', ''))}</b>${rot ? ' (a cada uno le toca el día siguiente de su rotación)' : ' cuando reservan turno para esas fechas'}.`;
+  }
+  if (d === 'equipo'){
+    const id = nrEl('espEquipo').value, n = (ALUMNOS_CACHE || []).filter(a => a.equipo_id === id).length;
+    return `Se crea una sola rutina y se asigna a los <b>${n} jugador${n === 1 ? '' : 'es'}</b> del equipo; cada uno registra su propia ejecución.`;
+  }
+  return 'No se asigna sola: la elegís a mano desde la Agenda ("Cambiar por otra sesión").';
+}
+
+function nrRender(){
+  if (!nrEl('nrPaso1')) return;
+  const cons = CONS['esp'], d = nrValDestino(), ok1 = nrPaso1Ok(), para = nrPara(), modoOk = nrModoOk();
+  const plant = para === 'plantilla';
+  const modoMotor = cons.estado.modoDias;
+  // si el destino es un tipo y el modo cambió, hay que sumar / sacar la opción "Cualquier tipo"
+  nrPoblarTipos();
+  // tarjetas de destino
+  ['alumno', 'tipo', 'equipo', 'plantilla'].forEach(k => nrEl('nrOpt-' + k).classList.toggle('on', para === k));
+  // paso 1: abierto si falta elegir o si se está editando
+  const abre1 = !ok1 || NR.edit === 1;
+  nrEl('nrPaso1').style.display = abre1 ? '' : 'none';
+  const r1 = nrEl('nrRes1');
+  r1.style.display = abre1 ? 'none' : '';
+  r1.innerHTML = `<div class="l"><b>1 · Para quién:</b><span class="pill">${escaparHtml(nrDestinoTxt())}</span></div><button type="button" class="ghost" style="padding:4px 12px; font-size:12px;" onclick="nrCambiar(1)">Cambiar</button>`;
+  nrEl('nrMantener').style.display = (abre1 && ok1 && modoOk) ? '' : 'none';
+  // paso 2 (no aplica a plantilla)
+  const hay2 = ok1 && !plant;
+  const abre2 = hay2 && (!modoOk || NR.edit === 2);
+  nrEl('nrPaso2').style.display = abre2 ? '' : 'none';
+  const r2 = nrEl('nrRes2');
+  r2.style.display = (hay2 && !abre2) ? '' : 'none';
+  r2.innerHTML = `<div class="l"><b>2 · Cómo se repite:</b><span class="pill">${nrModoTxt()}</span></div><button type="button" class="ghost" style="padding:4px 12px; font-size:12px;" onclick="nrCambiar(2)">Cambiar</button>`;
+  ['fecha_fija', 'rotativa'].forEach(m => nrEl('nrOptM-' + m).classList.toggle('on', modoOk && modoMotor === m));
+  nrEl('nrVolver2').style.display = nrCantDias() ? '' : 'none';
+  // pasos 3 y 4
+  const ver34 = ok1 && modoOk;
+  nrEl('nrPaso3').style.display = ver34 ? '' : 'none';
+  const base = nrEl('espBaseCard'); if (base) base.style.display = ver34 ? '' : 'none';
+  const p4 = nrEl('nrPaso4'); if (p4) p4.style.display = ver34 ? '' : 'none';
+  const lbl = nrEl('nrNombreLbl');
+  if (lbl) lbl.textContent = plant ? 'Nombre de la plantilla' : 'Nombre de la rutina';
+  const inp = nrEl('espNombreRutina');
+  if (inp && !inp.dataset.nrTocado){
+    inp.placeholder = plant ? 'Ej: Recovery - tren inferior' : d === 'tipo' ? (modoMotor === 'rotativa' ? 'Ej: Gimnasio 4 semanas - Fuerza' : 'Si lo dejás vacío se arma solo: tipo + fecha') : 'Ej: Plan especial - Semana 1';
+  }
+  nrEl('nrExplica').innerHTML = ver34 ? 'ℹ️ ' + nrExplicaTxt() : '';
+  // extras del alumno (rutina asignada + especiales ya creadas)
+  const ex = nrEl('nrAlumnoExtra'); if (ex) ex.style.display = (para === 'alumno' && ok1) ? '' : 'none';
+  // stepper
+  const done = [ok1, modoOk, ver34, ver34 && nrCantEj() > 0];
+  const cur = !done[0] ? 0 : !done[1] ? 1 : 3;
+  const L = ['Para quién', 'Cómo se repite', 'Datos', 'Días y ejercicios'];
+  const clk = i => done[i] || i === cur;
+  nrEl('nrStepper').innerHTML = L.map((t, i) => `<span class="s ${done[i] && i !== cur ? 'done' : ''} ${i === cur ? 'on' : ''} ${clk(i) ? 'clk' : ''}" ${clk(i) ? `onclick="nrIrPaso(${i})"` : ''}><span class="n">${done[i] && i !== cur ? '✓' : i + 1}</span>${t}</span>${i < 3 ? '<span class="ln"></span>' : ''}`).join('');
+  // barra fija de abajo
+  const ejs = nrCantEj(), nd = nrCantDias();
+  nrEl('nrSbarInfo').innerHTML = (para && ok1) ? `<span class="pill">${escaparHtml(nrDestinoTxt())}</span>` + (modoOk ? `<span class="pill">${nrModoTxt()}</span><span class="pill">${nd} día${nd === 1 ? '' : 's'} · ${ejs} ejercicio${ejs === 1 ? '' : 's'}</span>` : '') : '<span class="muted">' + (para ? 'Elegí a quién se la asignás' : 'Elegí para quién es la rutina') + '</span>';
+  const atras = nrEl('nrAtras'); atras.style.display = para ? '' : 'none'; atras.disabled = (NR.edit === 1 || !ok1);
+  nrEl('btnGuardarEspecial').disabled = !(ok1 && modoOk && ejs > 0);
+}
+
+function nrCambiar(n){ NR.edit = n; nrRender(); }
+function nrListo(){ NR.edit = 0; nrRender(); }
+function nrIrPaso(i){
+  if (i === 0) return nrCambiar(1);
+  if (i === 1) return nrCambiar(2);
+  NR.edit = 0; nrRender();
+  const el = nrEl(i === 2 ? 'nrPaso3' : 'nrPaso4'); if (el) el.scrollIntoView({ behavior:'smooth', block:'start' });
+}
+function nrAtras(){
+  if (NR.edit === 2) return nrCambiar(1);
+  if (NR.edit === 1) return;
+  if (nrModoOk() && nrPara() !== 'plantilla') return nrCambiar(2);
+  if (nrPara()) return nrCambiar(1);
+}
+function nrSetPara(k){
+  NR.paraTocado = true;
+  nrEl('espModoDestino').value = k;
+  cambiarModoDestinoEsp();
+  NR.edit = k === 'plantilla' ? 0 : 1;
+  nrRender();
+}
+function nrSetModo(m){
+  NR.modoTocado = true; NR.edit = 0;
+  nrEl('espModoDias').value = m;
+  CONS['esp'].setModoDias(m);
+  nrRender();
+}
+// después de guardar: alumno se queda (para ver sus rutinas); el resto vuelve a empezar
+function nrDespuesDeGuardar(destino){
+  NR.modoTocado = false; NR.edit = 0;
+  const inp = nrEl('espNombreRutina'); if (inp) delete inp.dataset.nrTocado;
+  if (destino !== 'alumno'){
+    NR.paraTocado = false;
+    nrEl('espModoDestino').value = 'alumno';
+    ['espAlumno', 'espEquipo', 'espTipo'].forEach(id => { const s = nrEl(id); if (s) s.value = ''; });
+    ['espAlumno', 'espEquipo'].forEach(id => { try{ sincronizarComboBuscable(id); }catch(e){} });
+    cambiarModoDestinoEsp();
+  }
+  nrRender();
+  setTimeout(nrRender, 50);
+}
+function nrAlAbrir(){
+  nrPoblarTipos();
+  nrRender();
+}
+// Arma el DOM la primera vez (ids de la tarjeta de días y observador para actualizar contadores)
+function nrInit(){
+  const cont = nrEl('diasContainerEsp'); if (!cont || cont.dataset.nrInit) return;
+  cont.dataset.nrInit = '1';
+  const card = cont.closest('.card'); if (card){ card.id = 'nrPaso4'; const h = card.querySelector('h2'); if (h) h.textContent = '4 · Días y ejercicios'; }
+  const inp = nrEl('espNombreRutina'); if (inp) inp.addEventListener('input', () => { inp.dataset.nrTocado = '1'; });
+  let t = null;
+  new MutationObserver(() => { clearTimeout(t); t = setTimeout(nrRender, 80); }).observe(cont, { childList:true, subtree:false });
+  nrPoblarTipos(); nrRender();
+}
+
+function nrTarget(){ NR.edit = 0; nrRender(); }
+
 // ---------- (v86) Traer un día de otra rutina al día que estoy armando ----------
 // Sirve en el Armador y en Especiales: dentro de cada día hay un botón que busca una rutina
 // ya guardada (de una sola fecha, rotativa, plantilla o especial de otro alumno), muestra sus
@@ -11853,6 +12093,7 @@ function espBaseEmpezarDeCero(){
   document.getElementById('espDuracionSemanas').value = '';
   document.getElementById('espBaseLimpiar').style.display = 'none';
   const est = document.getElementById('espBaseEstado'); est.style.display = 'none'; est.textContent = '';
+  NR.modoTocado = false; cambiarModoDestinoEsp();
 }
 
 async function espCargarDesdeRutina(rutinaId, opts){
@@ -11868,7 +12109,7 @@ async function espCargarDesdeRutina(rutinaId, opts){
     dias.sort((a, b) => (a.orden ?? 0) - (b.orden ?? 0));
 
     // Una especial es para una persona: plantilla se copia como fecha fija (hay que darle fecha a cada día).
-    const modo = rutina.modo_dias === 'rotativa' ? 'rotativa' : 'fecha_fija';
+    const modo = document.getElementById('espModoDestino').value === 'plantilla' ? 'plantilla' : (rutina.modo_dias === 'rotativa' ? 'rotativa' : 'fecha_fija');
     cons.limpiar();
     document.getElementById('espModoDias').value = modo;
     cons.setModoDias(modo);
@@ -11921,6 +12162,7 @@ async function espCargarDesdeRutina(rutinaId, opts){
     if (sinEjercicio) avisos.push(`${sinEjercicio} ejercicio${sinEjercicio === 1 ? '' : 's'} ya no existe${sinEjercicio === 1 ? '' : 'n'} en el catálogo y no se copiaron`);
     est.style.display = '';
     est.textContent = `✓ Copiada "${rutina.nombre}" (${dias.length} día${dias.length === 1 ? '' : 's'}). Ajustala abajo` + (avisos.length ? ' — ' + avisos.join('; ') : '') + '. La original no cambia.';
+    nrRender();
     if (!(opts && opts.sinScroll)){
       toast('Rutina copiada: ajustala y guardala ✓');
       document.getElementById('diasContainerEsp')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -12013,6 +12255,7 @@ function aplicarDestinoEsp(modo, id){
   } else {
     const s = document.getElementById('espEquipo'); s.value = id; sincronizarComboBuscable('espEquipo'); onCambiarEspEquipo();
   }
+  NR.edit = 0; nrRender();
 }
 
 async function confirmarCopiaRutina(directo){
@@ -12100,12 +12343,21 @@ function cambiarModoDestinoEsp(){
   const modo = document.getElementById('espModoDestino').value;
   document.getElementById('espAlumnoWrap').style.display = modo === 'alumno' ? '' : 'none';
   document.getElementById('espEquipoWrap').style.display = modo === 'equipo' ? '' : 'none';
+  const tw = document.getElementById('espTipoWrap'); if (tw) tw.style.display = modo === 'tipo' ? '' : 'none';
   document.getElementById('espEquipoInfo').textContent = '';
-  if (modo === 'equipo'){
-    document.getElementById('listaEspecialesAlumno').innerHTML = 'Elegí "Un alumno" arriba para ver el historial de rutinas especiales de una persona en particular.';
-  } else {
-    cargarEspecialesDeAlumno();
+  // (v94) Plantilla es un modo del motor: al elegirla se fuerza; al salir se vuelve a fecha fija (los días cargados se conservan)
+  const cons = CONS['esp'], sm = document.getElementById('espModoDias');
+  if (modo === 'plantilla'){
+    if (cons.estado.modoDias !== 'plantilla'){ sm.value = 'plantilla'; cons.setModoDias('plantilla'); }
+  } else if (cons.estado.modoDias === 'plantilla'){
+    sm.value = 'fecha_fija'; cons.setModoDias('fecha_fija'); NR.modoTocado = false;
   }
+  if (modo === 'alumno'){
+    cargarEspecialesDeAlumno();
+  } else {
+    document.getElementById('listaEspecialesAlumno').innerHTML = 'Elegí "Un alumno" arriba para ver el historial de rutinas especiales de una persona en particular.';
+  }
+  nrRender();
 }
 
 function poblarSelectEquipoEsp(){
@@ -12134,6 +12386,42 @@ async function guardarRutinaEspecial(){
   let alumnosDestino = [];
   let msgOk = 'Rutina especial guardada y asignada ✓';
 
+  // (v94) Destinos que antes vivían en el Armador: un tipo de entrenamiento o una plantilla (no se asignan a nadie puntual)
+  if (modo === 'tipo' || modo === 'plantilla'){
+    const cons = CONS['esp'], modoDias = cons.estado.modoDias;
+    let tipoId = null, nombreFinal = nombre, msg;
+    if (modo === 'tipo'){
+      const v = document.getElementById('espTipo').value;
+      if (!v){ toast('Elegí el tipo de entrenamiento para esta rutina.', true); return; }
+      tipoId = v === '__todos' ? null : v;
+      if (modoDias === 'rotativa'){
+        if (!nombreFinal){ toast('Ponele un nombre a la rutina.', true); return; }
+        msg = tipoId ? 'Rutina rotativa guardada ✓ Se asigna sola a los alumnos de ese tipo que no tengan una especial: arranca en el día 1 y va rotando.'
+                     : 'Rutina rotativa guardada ✓ Se asigna sola a cualquier alumno que no tenga una especial: arranca en el día 1 y va rotando.';
+      } else {
+        const fechas = Object.values(cons.estado.dias).map(d => d.fecha).filter(Boolean).sort();
+        const tn = (TIPOS_ALUMNO_CACHE.find(t => t.id === tipoId) || {}).nombre || 'General';
+        if (!nombreFinal) nombreFinal = `${tn}${fechas.length ? ' · ' + fechaLegible(fechas[0]) : ''}`;
+        msg = 'Rutina guardada ✓ Se va a asignar sola a los alumnos de ese tipo cuando reserven turno para esas fechas.';
+      }
+    } else {
+      if (!nombreFinal){ toast('Ponele un nombre a la plantilla.', true); return; }
+      msg = 'Plantilla guardada ✓ La vas a poder elegir a mano desde la Agenda (botón "Cambiar por otra sesión").';
+    }
+    await guardarRutinaGenerica({
+      constructor: cons, nombre: nombreFinal, tipoAlumnoId: tipoId, etiqueta: '', alumnosDestino: [],
+      btnId: 'btnGuardarEspecial',
+      onOk: () => {
+        document.getElementById('espNombreRutina').value = '';
+        ocultarBannerCopia();
+        nrDespuesDeGuardar(modo);
+        cargarGrillaRutinas();
+      },
+      msgOk: msg,
+    });
+    return;
+  }
+
   if (modo === 'equipo'){
     const equipoId = document.getElementById('espEquipo').value;
     if (!equipoId){ toast('Elegí el equipo para esta rutina.', true); return; }
@@ -12156,6 +12444,7 @@ async function guardarRutinaEspecial(){
       ocultarBannerCopia();
       if (modo === 'alumno') cargarEspecialesDeAlumno();
       if (modo === 'alumno') aplicarEspecialAlTurnoSiCorresponde(res, alumnosDestino[0]);
+      nrDespuesDeGuardar(modo);
     },
     msgOk,
   });
@@ -14053,7 +14342,8 @@ function abrirConfiguracion(){
 
     <div class="cfg-sec">Ayuda</div>
     ${it('💬', 'Soporte', cerrarY('abrirSoporteWhatsapp()'))}
-    ${it('🚪', esAlu ? 'Cerrar sesión' : 'Salir', cerrarY(esAlu ? 'hacerLogoutAlumno()' : 'hacerLogout()'), { cls:'peligro' })}`;
+    ${it('🚪', esAlu ? 'Cerrar sesión' : 'Salir', cerrarY(esAlu ? 'hacerLogoutAlumno()' : 'hacerLogout()'), { cls:'peligro' })}
+    <div class="muted" style="text-align:center; font-size:11.5px; margin-top:12px;">M2F Solutions · ${appVersionTxt()}</div>`;
   ov.classList.add('show');
   cfgActualizarEstados();
 }
