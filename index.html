@@ -564,6 +564,45 @@
   .mo-srv{ color:var(--accent2-text, var(--accent2)); }
   @media (max-width:560px){ .mo-tag{ display:none; } }
 
+  /* ---- (v100) Negocio (dashboard del superadmin) ---- */
+  .toast{ z-index:700; }
+  #modalActivarSuscripcion{ z-index:620; }
+  #panelNegocio{ display:none; position:fixed; inset:0; z-index:190; background:var(--bg); overflow-y:auto; }
+  .ng-wrap{ max-width:1180px; margin:0 auto; padding:18px 16px 40px; }
+  .ng-head{ display:flex; justify-content:space-between; align-items:flex-start; gap:12px; flex-wrap:wrap; margin-bottom:14px; }
+  .ng-head h2{ margin:0; font-size:22px; letter-spacing:-.01em; }
+  .ng-acciones{ display:flex; gap:8px; flex-wrap:wrap; }
+  .ng-acciones button{ width:auto; }
+  .ng-kpis{ display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:10px; margin-bottom:12px; }
+  .ng-kpi{ background:var(--panel); border:1px solid var(--border); border-radius:var(--radius); padding:13px 15px; min-width:0; }
+  .ng-kpi .k{ font-size:12px; color:var(--muted); margin-bottom:3px; }
+  .ng-kpi .v{ font-size:24px; font-weight:800; line-height:1.15; color:var(--text); }
+  .ng-kpi .s{ font-size:12px; color:var(--muted); margin-top:3px; overflow-wrap:anywhere; }
+  .ng-dos{ display:grid; grid-template-columns:minmax(0,1.3fr) minmax(0,1fr); gap:12px; }
+  .ng-dos .card{ margin:0; }
+  .ng-t{ margin:0 0 8px; font-size:14px; }
+  .ng-prox{ display:flex; align-items:center; gap:8px; padding:7px 0; border-top:1px solid var(--border); font-size:13px; flex-wrap:wrap; }
+  .ng-prox:first-of-type{ border-top:0; }
+  .ng-prox-n{ font-weight:700; flex:1; min-width:110px; }
+  .ng-prox button, .ng-wa{ width:auto; padding:3px 9px; font-size:12px; }
+  .ng-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(330px,1fr)); gap:12px; }
+  .ng-card{ background:var(--panel); border:1px solid var(--border); border-radius:var(--radius); padding:14px 15px; font-size:13px; line-height:1.5; min-width:0; }
+  .ng-card.propio{ opacity:.85; border-style:dashed; }
+  .ng-card-h{ display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin-bottom:6px; font-size:15px; }
+  .ng-card-h b{ margin-right:2px; }
+  .ng-fila{ margin:2px 0; }
+  .ng-chip{ display:inline-block; font-size:11.5px; padding:2px 9px; border-radius:999px; background:var(--panel2); border:1px solid var(--border); color:var(--muted); white-space:nowrap; }
+  .ng-chip.ok{ color:var(--accent2-text); border-color:color-mix(in srgb, var(--accent2) 45%, var(--border)); }
+  .ng-chip.warn{ color:var(--warn-text); border-color:color-mix(in srgb, var(--warn) 50%, var(--border)); }
+  .ng-chip.bad{ color:var(--danger-text); border-color:color-mix(in srgb, var(--danger) 50%, var(--border)); }
+  .ng-btns{ display:flex; gap:6px; flex-wrap:wrap; margin-top:10px; }
+  .ng-btns button, .ng-btns .ng-wa{ width:auto; padding:5px 11px; font-size:12px; }
+  a.ng-wa{ display:inline-block; border:1px solid var(--border); border-radius:999px; color:var(--accent2-text); text-decoration:none; background:var(--panel2); font-weight:600; }
+  .ng-pagos{ margin-top:8px; border-top:1px solid var(--border); padding-top:6px; }
+  .ng-pago{ display:flex; justify-content:space-between; gap:10px; padding:3px 0; font-size:12.5px; }
+  @media (max-width:860px){ .ng-dos{ grid-template-columns:1fr; } }
+  @media (max-width:560px){ .ng-grid{ grid-template-columns:1fr; } .ng-kpi .v{ font-size:21px; } }
+
   /* ---- Modal de confirmación (reserva de turno) ---- */
   .modal-overlay{
     position:fixed; inset:0; background:rgba(0,0,0,.6); display:none;
@@ -3520,6 +3559,151 @@ const BUCKET = "Ejercicios";
 // un cambio, se incrementa este número — el chequeo de actualización (más abajo) lo compara
 // contra lo que hay publicado y avisa si están desactualizados, sin que nadie tenga que
 // cambiar ningún link a mano.
+// ---------- (v100) NEGOCIO: dashboard del superadmin (solo Martin) ----------
+// Pantalla aparte, ⚙️ → 📊 Negocio. Una sola llamada (rpc/negocio_resumen, solo superadmin + 2 pasos) trae
+// gimnasios, uso real y pagos de suscripción; el resto se calcula acá. Reusa 💳 Activar y 🧩 Accesos.
+// Avisos al celular (SQL negocio.sql): gimnasio nuevo y prueba por vencer, vía el push que ya existe.
+let NEG = null, NEG_FILTRO = 'todos';
+const NEG_TZ = 'America/Argentina/Buenos_Aires';
+const NEG_MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+function negPesos(n){ return '$' + Math.round(Number(n) || 0).toLocaleString('es-AR'); }
+function negCorto(n){ n = Number(n) || 0; return n >= 1e6 ? '$' + (n / 1e6).toFixed(1).replace('.', ',') + ' M' : n >= 1e3 ? '$' + Math.round(n / 1e3) + ' mil' : '$' + Math.round(n); }
+function negMesClave(iso){ return new Date(iso).toLocaleDateString('en-CA', { timeZone: NEG_TZ }).slice(0, 7); }   // 'AAAA-MM' en hora argentina
+function negDias(iso){ return Math.ceil((new Date(iso).getTime() - Date.now()) / 86400000); }
+function negFecha(iso){ return iso ? new Date(iso).toLocaleDateString('es-AR', { timeZone: NEG_TZ, day: '2-digit', month: '2-digit' }) : '—'; }
+function negHace(iso){
+  if (!iso) return 'nunca';
+  const d = Math.floor((Date.now() - new Date(iso).getTime()) / 86400000);
+  return d <= 0 ? 'hoy' : d === 1 ? 'ayer' : 'hace ' + d + ' días';
+}
+function negPlanSugerido(socios){
+  let i = PLANES_SUSCRIPCION_M2F.findIndex(p => p.hasta && (socios || 0) <= p.hasta);
+  if (i === -1) i = PLANES_SUSCRIPCION_M2F.length - 1;
+  const p = PLANES_SUSCRIPCION_M2F[i];
+  return { nombre: p.nombre, precio: calcularPrecioPlanSuscripcion(p, socios) };
+}
+function negWhatsapp(contacto){
+  const t = String(contacto || '').replace(/\D/g, '');
+  if (t.length < 8) return '';
+  return 'https://wa.me/' + (t.length === 10 ? '549' + t : t);
+}
+function negCalc(){
+  const gs = NEG.gimnasios, pagos = NEG.pagos, propio = PERFIL_ACTUAL && PERFIL_ACTUAL.gimnasio_id;
+  const cli = gs.filter(g => g.id !== propio);
+  const ult = {}; pagos.forEach(p => { if (!ult[p.gimnasio_id]) ult[p.gimnasio_id] = p; });   // pagos vienen del más nuevo al más viejo
+  const porMes = {}; pagos.forEach(p => { const k = negMesClave(p.creado_en); porMes[k] = (porMes[k] || 0) + Number(p.monto || 0); });
+  const hoyK = negMesClave(new Date().toISOString());
+  const claves = []; { const d = new Date(); d.setDate(1); for (let i = 5; i >= 0; i--){ const x = new Date(d.getFullYear(), d.getMonth() - i, 1); claves.push(x.getFullYear() + '-' + String(x.getMonth() + 1).padStart(2, '0')); } }
+  const prevK = claves[claves.length - 2];
+  const activos = cli.filter(g => g.estado === 'activa'), pruebas = cli.filter(g => g.estado === 'trial'), bloq = cli.filter(g => g.estado === 'bloqueada');
+  const mrr = activos.reduce((s, g) => { const p = ult[g.id]; return s + (p && p.meses ? Number(p.monto || 0) / p.meses : 0); }, 0);
+  const potencial = pruebas.reduce((s, g) => s + negPlanSugerido(g.socios_activos).precio, 0);
+  const vence = g => g.estado === 'activa' ? g.suscripcion_vence_en : g.estado === 'trial' ? g.prueba_vence_en : null;
+  const por7 = cli.filter(g => { const v = vence(g); return v && negDias(v) <= 7 && negDias(v) >= 0; });
+  return { gs, cli, ult, porMes, claves, hoyK, prevK, activos, pruebas, bloq, mrr, potencial, vence, por7,
+    cobradoMes: porMes[hoyK] || 0, cobradoPrev: porMes[prevK] || 0,
+    socios: cli.reduce((s, g) => s + Number(g.socios_activos || 0), 0), entrenos7: cli.reduce((s, g) => s + Number(g.entrenos_7d || 0), 0) };
+}
+async function negAbrir(){
+  document.getElementById('panelNegocio').style.display = 'block';
+  await negCargar();
+}
+function negCerrar(){ document.getElementById('panelNegocio').style.display = 'none'; }
+function negAbierto(){ const p = document.getElementById('panelNegocio'); return !!p && p.style.display !== 'none'; }
+function negRefrescarSiAbierto(){ if (negAbierto()) return negCargar(true); }
+async function negCargar(silencioso){
+  const cont = document.getElementById('negContenido');
+  if (!silencioso) cont.innerHTML = '<div class="muted" style="padding:20px;">Cargando...</div>';
+  try{
+    const [res, mods, cat] = await Promise.all([
+      sb('rpc/negocio_resumen', { method: 'POST', body: JSON.stringify({}) }),
+      sb('rpc/listar_modulos_gimnasios', { method: 'POST', body: JSON.stringify({}) }).catch(() => []),
+      sb('modulos_catalogo?select=modulo,nombre,default_habilitado,nucleo,orden&order=orden.asc').catch(() => null),
+    ]);
+    NEG = res; MODULOS_GIMNASIOS = mods || []; MOD_CAT = (cat && cat.length) ? cat : null;
+    GIMNASIOS_ADMIN_CACHE = (res.gimnasios || []).map(g => Object.assign({}, g));   // lo usan 💳 Activar y 🧩 Accesos
+    negPintar();
+  }catch(e){
+    const falta = /negocio_resumen|function|404|PGRST202/i.test(String(e && e.message));
+    cont.innerHTML = `<div class="card" style="margin:16px;">${falta ? 'Falta correr <b>negocio.sql</b> en Supabase (SQL Editor).' : 'No se pudo cargar: ' + escaparHtml(e.message || '')}</div>`;
+  }
+}
+async function negProbarAviso(){
+  try{
+    await sb('rpc/negocio_probar_aviso', { method: 'POST', body: JSON.stringify({}) });
+    toast('Aviso enviado ✓ Debería llegarte al celular en unos segundos.');
+  }catch(e){ toast('No se pudo enviar el aviso: ' + e.message, true); }
+}
+function negFiltrar(f){ NEG_FILTRO = f; negPintar(); }
+function negTogglePagos(id){ const e = document.getElementById('negPagos' + id); if (e) e.style.display = e.style.display === 'none' ? '' : 'none'; }
+function negChipEstado(g){
+  if (g.estado === 'activa') return `<span class="ng-chip ok">🟢 Activa · hasta ${negFecha(g.suscripcion_vence_en)}</span>`;
+  if (g.estado === 'trial'){ const d = negDias(g.prueba_vence_en); return `<span class="ng-chip warn">🟡 Prueba · ${d} día${d === 1 ? '' : 's'}</span>`; }
+  return '<span class="ng-chip bad">🔴 Bloqueada</span>';
+}
+function negTarjeta(g, c, propio){
+  const pagosG = NEG.pagos.filter(p => p.gimnasio_id === g.id);
+  const sug = negPlanSugerido(g.socios_activos);
+  let mods = '';
+  if (MOD_CAT){
+    const m = MOD_CAT.filter(x => !x.nucleo), vals = {}; m.forEach(x => { vals[x.modulo] = modEfectivoGim(g.id, x); });
+    const p = modPresetDe(vals);
+    mods = `<div class="ng-fila">🧩 Accesos: ${m.filter(x => vals[x.modulo]).length}/${m.length}${p ? ' · plan ' + escaparHtml(p) : ' · personalizado'}</div>`;
+  }
+  const wa = negWhatsapp(g.contacto);
+  const sinPagos = g.estado === 'activa' && !pagosG.length && !propio ? '<div class="ng-fila muted">⚠️ Activa sin pagos registrados (alta por código): cargá el cobro con 💳 Activar.</div>' : '';
+  const uso = Number(g.socios_activos) ? `${g.alumnos_activos_30d}/${g.socios_activos} socios entrenaron en 30 días` : 'sin socios cargados todavía';
+  return `<div class="ng-card${propio ? ' propio' : ''}">
+    <div class="ng-card-h"><b>${escaparHtml(g.nombre || 'Sin nombre')}</b>${propio ? '<span class="ng-chip">tu gimnasio</span>' : ''}<span class="ng-chip">${escaparHtml(g.tipo || '')}</span>${negChipEstado(g)}</div>
+    <div class="ng-fila">👥 ${g.socios_activos} socios activos <span class="muted">(${g.alumnos_total} cargados · ${g.staff} de staff)</span></div>
+    <div class="ng-fila">🏃 ${g.entrenos_7d} entreno${Number(g.entrenos_7d) === 1 ? '' : 's'} esta semana · ${g.entrenos_30d} en 30 días</div>
+    <div class="ng-fila muted">${uso}</div>
+    <div class="ng-fila">${semaforoActividad(g.ultima_actividad)} <span class="muted">· última vez ${negHace(g.ultima_actividad)} · alta ${negFecha(g.creado_en)}</span></div>
+    ${propio ? '' : `<div class="ng-fila">💳 Le corresponde: <b>${escaparHtml(sug.nombre)} · ${negPesos(sug.precio)}</b> <span class="muted">· cobrado total ${negPesos(g.cobrado_total)}${g.ultimo_pago ? ' · último pago ' + negFecha(g.ultimo_pago) : ''}</span></div>`}
+    ${mods}${sinPagos}
+    <div class="ng-btns">
+      <button class="ghost" onclick="activarSuscripcionUI('${g.id}')">💳 Activar</button>
+      <button class="ghost" onclick="modAccesosAbrir('${g.id}')">🧩 Accesos</button>
+      ${pagosG.length ? `<button class="ghost" onclick="negTogglePagos('${g.id}')">🧾 Pagos (${pagosG.length})</button>` : ''}
+      ${wa ? `<a class="ng-wa" href="${wa}" target="_blank" rel="noopener">💬 Contactar</a>` : ''}
+    </div>
+    <div id="negPagos${g.id}" style="display:none;" class="ng-pagos">${pagosG.map(p => `<div class="ng-pago"><span>${negFecha(p.creado_en)} · ${p.meses} mes${p.meses === 1 ? '' : 'es'}${p.plan_nombre ? ' · ' + escaparHtml(p.plan_nombre) : ''}${p.medio_pago ? ' · ' + escaparHtml(etiquetaMedioPagoSuscripcion(p.medio_pago)) : ''}</span><b>${negPesos(p.monto)}</b></div>`).join('')}</div>
+  </div>`;
+}
+function negPintar(){
+  const cont = document.getElementById('negContenido'); if (!cont || !NEG) return;
+  const c = negCalc(), propio = PERFIL_ACTUAL && PERFIL_ACTUAL.gimnasio_id;
+  document.getElementById('negSub').textContent = `${c.cli.length} cliente${c.cli.length === 1 ? '' : 's'} · actualizado ${new Date(NEG.generado).toLocaleTimeString('es-AR', { timeZone: NEG_TZ, hour: '2-digit', minute: '2-digit' })}`;
+  const delta = c.cobradoPrev ? Math.round((c.cobradoMes - c.cobradoPrev) / c.cobradoPrev * 100) : null;
+  const kpis = [
+    ['Cobrado este mes', negPesos(c.cobradoMes), delta === null ? `mes anterior ${negPesos(c.cobradoPrev)}` : `${delta >= 0 ? '▲' : '▼'} ${Math.abs(delta)}% vs mes anterior`],
+    ['Ingreso mensual (MRR)', negPesos(c.mrr), `${c.activos.length} cliente${c.activos.length === 1 ? '' : 's'} activo${c.activos.length === 1 ? '' : 's'}`],
+    ['Clientes', String(c.cli.length), `activos ${c.activos.length} · en prueba ${c.pruebas.length} · bloqueados ${c.bloq.length}`],
+    ['Si convierten las pruebas', negPesos(c.potencial), `${c.pruebas.length} en prueba × plan sugerido`],
+    ['Vencen en 7 días', String(c.por7.length), c.por7.length ? c.por7.map(g => escaparHtml(g.nombre)).join(', ').slice(0, 60) : 'nada por vencer'],
+    ['Uso real', String(c.socios), `socios activos · ${c.entrenos7} entrenos en 7 días`],
+  ].map(k => `<div class="ng-kpi"><div class="k">${k[0]}</div><div class="v">${k[1]}</div><div class="s">${k[2]}</div></div>`).join('');
+  const vals = c.claves.map(k => c.porMes[k] || 0), labs = c.claves.map(k => NEG_MESES[Number(k.slice(5)) - 1]);
+  const grafico = vals.some(v => v > 0)
+    ? atlChartBarras(vals, labs, negCorto, 'var(--accent2)')
+    : '<div class="muted" style="padding:18px 4px;">Todavía no hay pagos de suscripción registrados. Se cargan con 💳 Activar en cada gimnasio y acá aparece el cobrado por mes.</div>';
+  const prox = c.cli.filter(g => c.vence(g)).sort((a, b) => new Date(c.vence(a)) - new Date(c.vence(b))).slice(0, 8);
+  const proxHtml = prox.length ? prox.map(g => { const d = negDias(c.vence(g)), wa = negWhatsapp(g.contacto);
+    return `<div class="ng-prox"><span class="ng-prox-n">${escaparHtml(g.nombre)}</span><span class="muted">${g.estado === 'trial' ? 'prueba' : 'suscripción'} · ${negFecha(c.vence(g))}</span><span class="ng-chip ${d <= 3 ? 'bad' : d <= 7 ? 'warn' : ''}">${d < 0 ? 'venció' : d === 0 ? 'hoy' : 'en ' + d + ' d'}</span><button class="ghost" onclick="activarSuscripcionUI('${g.id}')">💳</button>${wa ? `<a class="ng-wa" href="${wa}" target="_blank" rel="noopener">💬</a>` : ''}</div>`; }).join('')
+    : '<div class="muted">Sin vencimientos próximos.</div>';
+  const F = [['todos', 'Todos', c.gs.length], ['trial', 'En prueba', c.pruebas.length], ['activa', 'Activos', c.activos.length], ['bloqueada', 'Bloqueados', c.bloq.length], ['por7', 'Vencen ≤ 7 días', c.por7.length]];
+  const lista = c.gs.filter(g => NEG_FILTRO === 'todos' ? true : NEG_FILTRO === 'por7' ? c.por7.includes(g) : g.estado === NEG_FILTRO && g.id !== propio)
+    .sort((a, b) => (a.id === propio) - (b.id === propio) || new Date(c.vence(a) || '2100-01-01') - new Date(c.vence(b) || '2100-01-01'));
+  cont.innerHTML = `
+    <div class="ng-kpis">${kpis}</div>
+    <div class="ng-dos">
+      <div class="card"><h3 class="ng-t">Cobrado por mes</h3>${grafico}</div>
+      <div class="card"><h3 class="ng-t">Próximos vencimientos</h3>${proxHtml}</div>
+    </div>
+    <div class="at-chips" style="margin:14px 0 8px;">${F.map(f => `<button class="at-chip${NEG_FILTRO === f[0] ? ' on' : ''}" onclick="negFiltrar('${f[0]}')">${f[1]} · ${f[2]}</button>`).join('')}</div>
+    <div class="ng-grid">${lista.map(g => negTarjeta(g, c, g.id === propio)).join('') || '<div class="muted">Ninguno con este filtro.</div>'}</div>`;
+}
+
 // ---------- (v99) ACCESOS POR MÓDULO: qué secciones ve cada gimnasio (lo maneja solo Martin) ----------
 // Cada gimnasio tiene un conjunto de módulos activos (agenda, clases, finanzas, evaluaciones, etc.).
 // Lo que no esté activo se OCULTA en los menús (staff y alumno), se bloquea al navegar y sale de la Guía.
@@ -3665,6 +3849,7 @@ async function modAccesosGuardar(){
     toast('Accesos guardados ✓');
     modAccesosCerrar();
     await cargarGimnasiosAdmin();
+    negRefrescarSiAbierto();   // (v100)
     if (GIMNASIO_ACTUAL && GIMNASIO_ACTUAL.id === gimId){ await modulosCargar(); await atlRefrescar(); cargarCatalogoEjercicios().catch(() => {}); }
   }catch(e){
     toast('No se pudieron guardar los accesos: ' + e.message, true);
@@ -4091,7 +4276,7 @@ function atlIniciarAlu(){
   atlCargarVista('aluAtletismoContenido', id || '');
 }
 
-const APP_VERSION = 99;
+const APP_VERSION = 100;
 // (v96) Fecha de la última actualización: se cambia junto con APP_VERSION en cada entrega. Se muestra en la
 // pantalla de inicio y en el menú de cuenta ("v94 · actualizada el 5/10/2026").
 const APP_FECHA = '2026-10-05';
@@ -4754,6 +4939,7 @@ async function confirmarActivarSuscripcion(){
     mostrarExitoActivarSuscripcion(pago, f ? f.nombre : '');
     toast('Suscripción activada ✓');
     await cargarGimnasiosAdmin();
+    negRefrescarSiAbierto();   // (v100)
   }catch(e){ toast('Error: ' + e.message, true); }
   finally{ btn.disabled = false; }
 }
@@ -5051,6 +5237,7 @@ function chequearBloqueoEscrituraStaff(path, opts){
     'rpc/registrar_actividad_gimnasio', 'rpc/listar_gimnasios_admin',
     'rpc/generar_codigo_activacion', 'rpc/listar_codigos_activacion', 'rpc/actualizar_codigo_activacion',
     'rpc/activar_suscripcion_gimnasio', 'rpc/configurar_modulo_gimnasio', 'notificaciones_staff',
+    'rpc/configurar_modulos_gimnasio', 'rpc/listar_modulos_gimnasios', 'rpc/negocio_resumen', 'rpc/negocio_probar_aviso',
   ];
   if (permitidas.some(p => path.startsWith(p))) return;
   throw new Error('Tu período de prueba venció. Activá tu suscripción para poder crear o editar — mientras tanto podés seguir viendo todo.');
@@ -15979,6 +16166,7 @@ function abrirConfiguracion(){
     ${(!esAlu && esAdmin) || esSuper ? '<div class="cfg-sec">Gimnasio</div>' : ''}
     ${!esAlu && esAdmin ? it('🏢', 'Mi gimnasio', cerrarY("cambiarSubvista('gimnasio')"), { sub:'Nombre, logo y colores' }) : ''}
     ${esSuper ? it('🔑', 'Códigos de activación', cerrarY('abrirPanelCodigos()')) : ''}
+    ${esSuper ? it('📊', 'Negocio', cerrarY('negAbrir()'), { sub:'Ingresos, uso y vencimientos' }) : ''}
     ${esSuper ? it('🏋️', 'Gimnasios', cerrarY('abrirPanelGimnasiosAdmin()')) : ''}
 
     <div class="cfg-sec">Ayuda</div>
@@ -17947,6 +18135,21 @@ if ('serviceWorker' in navigator){
         <tbody id="gimnasiosAdminTbody"><tr><td colspan="6" class="muted" style="padding:10px;">Cargando...</td></tr></tbody>
       </table>
     </div>
+  </div>
+</div>
+
+<!-- (v100) Pantalla "📊 Negocio" (solo Martin): ingresos, estado de clientes, uso real y vencimientos. Datos: rpc/negocio_resumen. -->
+<div id="panelNegocio">
+  <div class="ng-wrap">
+    <div class="ng-head">
+      <div><h2>📊 Negocio</h2><div class="muted" id="negSub" style="font-size:13px;"></div></div>
+      <div class="ng-acciones">
+        <button class="ghost" onclick="negProbarAviso()" title="Te manda un aviso de prueba al celular">🔔 Probar aviso</button>
+        <button class="ghost" onclick="negCargar()">↻ Actualizar</button>
+        <button class="ghost" onclick="negCerrar()">✕ Cerrar</button>
+      </div>
+    </div>
+    <div id="negContenido"></div>
   </div>
 </div>
 
