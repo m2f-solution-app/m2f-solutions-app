@@ -1167,6 +1167,138 @@
   #cfgPassBox{ display:none; margin-top:8px; padding:12px; border-radius:14px; background:var(--panel2); }
   #cfgPassBox.abierta{ display:block; }
 
+  /* ===================================================================================
+     (v93) Bloque 1 — Alumnos / Profesores / Seguimiento / Planes / Finanzas / Alertas:
+     tabla en compu, "lista simple" en celular, fichas en ventana emergente.
+     Prefijo x- para no pisar estilos existentes.
+     =================================================================================== */
+  .x-head{ display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:14px; }
+  .x-head .vista-titulo{ margin:0; }
+  .x-count{ font-size:14px; font-weight:600; letter-spacing:0; }
+  .x-toolbar{ display:flex; gap:8px 10px; flex-wrap:wrap; align-items:center; margin-bottom:10px; }
+  .x-toolbar input[type=search]{ flex:1 1 240px; min-width:160px; }
+  .x-chips{ display:flex; gap:6px; flex-wrap:wrap; }
+  .x-chip{ display:inline-block; font-size:12.5px; font-weight:600; padding:6px 12px; border-radius:999px; background:var(--panel2); border:1px solid var(--border); color:var(--muted); cursor:pointer; user-select:none; white-space:nowrap; }
+  button.x-chip{ font-family:inherit; background:var(--panel2); color:var(--muted); border:1px solid var(--border); padding:6px 12px; font-size:12.5px; font-weight:600; border-radius:999px; }
+  .x-chip.on, .x-chip.activo, button.x-chip.activo, button.x-chip.on{ background:rgba(255,122,48,.14); border-color:var(--accent); color:var(--accent-text); }
+  .x-tbl{ width:100%; border-collapse:collapse; }
+  .x-tbl th{ font-size:11px; text-transform:uppercase; letter-spacing:.04em; color:var(--muted); text-align:left; padding:8px 12px; border-bottom:1px solid var(--border); font-weight:700; white-space:nowrap; }
+  .x-tbl td{ padding:10px 12px; border-bottom:1px solid var(--border); vertical-align:middle; }
+  .x-tbl tr:last-child td{ border-bottom:0; }
+  .x-tbl tbody tr{ cursor:pointer; }
+  .x-tbl tbody tr:hover{ background:var(--note-bg, rgba(255,255,255,.04)); }
+  .x-tbl .r{ text-align:right; white-space:nowrap; }
+  .x-who{ display:flex; align-items:center; gap:10px; min-width:0; }
+  .x-av{ flex:none; width:36px; height:36px; border-radius:50%; background:var(--panel2); border:1px solid var(--border); color:var(--accent-text); font-weight:800; font-size:12px; display:flex; align-items:center; justify-content:center; object-fit:cover; overflow:hidden; }
+  .x-nm{ font-weight:700; font-size:15px; overflow-wrap:anywhere; color:var(--text); }
+  .x-nm.big{ font-size:17px; }
+  .x-sub{ font-size:12px; color:var(--muted); overflow-wrap:anywhere; }
+  .pill.ok{ color:var(--accent2-text); border-color:rgba(61,220,132,.4); background:rgba(61,220,132,.1); }
+  .pill.warn{ color:var(--warn-text); border-color:rgba(255,210,61,.45); background:rgba(255,210,61,.12); }
+  .pill.bad{ color:var(--danger-text); border-color:rgba(255,93,93,.45); background:rgba(255,93,93,.1); }
+  .t-ok{ color:var(--accent2-text); } .t-warn{ color:var(--warn-text); } .t-bad{ color:var(--danger-text); }
+  .x-lst{ display:none; background:var(--panel); border:1px solid var(--border); border-radius:14px; overflow:hidden; }
+  .x-li{ display:flex; align-items:center; gap:12px; padding:13px 14px; border-bottom:1px solid var(--border); cursor:pointer; }
+  .x-li:last-child{ border-bottom:0; }
+  .x-li:active{ background:var(--panel2); }
+  .x-li .mid{ flex:1; min-width:0; }
+  .x-li .end{ text-align:right; flex:none; max-width:42%; }
+  .x-li .go{ color:var(--muted); font-size:18px; flex:none; }
+  @media (max-width:720px){
+    .x-tbl-wrap{ display:none; }
+    .x-lst{ display:block; }
+    .x-hide-m{ display:none !important; }
+  }
+  .x-vacio{ padding:22px; text-align:center; color:var(--muted); }
+  /* KPIs */
+  .x-kpis{ display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; margin-bottom:14px; }
+  .x-kpi{ background:var(--panel); border:1px solid var(--border); border-radius:var(--radius); padding:12px 14px; }
+  .x-kpi .v{ font-size:21px; font-weight:800; line-height:1.15; }
+  .x-kpi .k{ font-size:12px; color:var(--muted); margin-bottom:2px; }
+  @media (max-width:720px){ .x-kpis{ grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; } .x-kpi{ padding:10px; } .x-kpi .v{ font-size:16px; } }
+  /* Fichas / modales */
+  #modalFicha, #modalNuevoAlumno, #modalNuevoProfesor{ z-index:190; }
+  .modal-box.x-box{ max-width:none; width:min(560px,100%); text-align:left; padding:20px; max-height:92vh; overflow-y:auto; }
+  .modal-box.x-box.x-ficha{ width:min(880px,100%); padding:0; }
+  .modal-box.x-box.x-cobro{ width:min(560px,100%); }
+  .modal-box.x-box .row{ justify-content:flex-start; }
+  .modal-box.x-box button{ flex:none; }
+  .modal-box.x-box h3{ font-size:18px; margin:0 0 4px; }
+  .x-fi-head{ display:flex; gap:14px; align-items:center; padding:18px 20px 12px; position:sticky; top:0; background:var(--panel); z-index:3; border-radius:var(--radius) var(--radius) 0 0; }
+  .x-fi-head .x-av{ width:54px; height:54px; font-size:18px; }
+  .x-fi-head .tt{ flex:1; min-width:0; }
+  .x-fi-head .x-nm{ font-size:20px; }
+  .x-fi-head .pill{ white-space:nowrap; }
+  .x-fi-acts{ display:flex; gap:6px; flex-wrap:wrap; align-items:center; }
+  .x-fi-tabs{ display:flex; gap:6px; padding:0 20px 12px; overflow-x:auto; position:sticky; top:90px; background:var(--panel); z-index:3; border-bottom:1px solid var(--border); }
+  .x-fi-body{ padding:16px 20px 22px; }
+  .x-fi-two{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .x-dl{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px 20px; }
+  .x-dl .k{ font-size:11px; text-transform:uppercase; letter-spacing:.04em; color:var(--muted); font-weight:700; }
+  .x-dl .v{ font-weight:600; margin-top:2px; overflow-wrap:anywhere; }
+  .x-mini{ width:100%; border-collapse:collapse; }
+  .x-mini th{ font-size:11px; text-transform:uppercase; letter-spacing:.04em; color:var(--muted); text-align:left; padding:6px 8px; border-bottom:1px solid var(--border); }
+  .x-mini td{ padding:9px 8px; border-bottom:1px solid var(--border); }
+  .x-mini tr:last-child td{ border-bottom:0; }
+  .x-item{ border:1px solid var(--border); background:var(--panel2); border-radius:12px; padding:12px 14px; margin-bottom:10px; display:flex; justify-content:space-between; gap:10px; align-items:center; }
+  .x-sec{ font-size:11.5px; font-weight:800; letter-spacing:.05em; text-transform:uppercase; color:var(--muted); margin:16px 2px 8px; }
+  .x-box .card{ box-shadow:none; }
+  .x-box h2{ font-size:15px; margin:0 0 8px; letter-spacing:-.01em; }
+  .x-btns{ display:flex; gap:8px; flex-wrap:wrap; margin-top:12px; }
+  @media (max-width:560px){
+    .modal-box.x-box.x-ficha{ padding:0; }
+    .modal-box.x-box.x-ficha::before{ display:none; }
+    .x-fi-head{ padding:14px 14px 10px; flex-wrap:wrap; border-radius:26px 26px 0 0; }
+    .x-fi-head .x-av{ width:44px; height:44px; font-size:15px; }
+    .x-fi-head .x-nm{ font-size:18px; }
+    .x-fi-head .tt{ flex:1 1 0; order:1; }
+    .x-fi-head .x-cerrar{ order:2; }
+    .x-fi-acts{ order:3; flex-basis:100%; }
+    .x-fi-tabs{ padding:0 14px 10px; top:96px; }
+    .x-fi-body{ padding:14px 14px calc(18px + env(safe-area-inset-bottom)); }
+    .x-fi-two, .x-dl{ grid-template-columns:1fr; }
+    .x-fi-body .x-kpis{ grid-template-columns:1fr 1fr; }
+  }
+  /* Finanzas */
+  .x-frow{ display:grid; grid-template-columns:minmax(0,2.2fr) 120px 150px 150px auto; gap:12px; align-items:center; padding:12px 14px; border-bottom:1px solid var(--border); cursor:pointer; }
+  .x-frow:last-child{ border-bottom:0; }
+  .x-frow:hover{ background:var(--note-bg, rgba(255,255,255,.04)); }
+  .x-frow.h{ font-size:11px; text-transform:uppercase; letter-spacing:.04em; color:var(--muted); font-weight:700; padding-top:8px; padding-bottom:8px; cursor:default; }
+  .x-frow.h:hover{ background:none; }
+  .x-frow .money{ font-weight:800; font-size:15px; text-align:right; }
+  /* Alertas */
+  .x-arow{ display:grid; grid-template-columns:minmax(0,1.3fr) minmax(0,1.6fr) auto; gap:12px; align-items:center; padding:12px 0; border-bottom:1px solid var(--border); }
+  .x-arow:last-child{ border-bottom:0; }
+  .x-arow .acts{ display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end; align-items:center; }
+  .x-arow .acts button{ font-size:12.5px; padding:5px 10px; }
+  @media (max-width:720px){ .x-arow{ grid-template-columns:1fr; gap:8px; } .x-arow .acts{ justify-content:flex-start; } }
+  /* Planes: formulario en un renglón */
+  .x-fgrid{ display:flex; flex-wrap:wrap; gap:10px; align-items:flex-end; }
+  .x-fgrid .field{ margin:0; }
+  .x-fgrid .field input{ width:100%; }
+  @media (max-width:720px){ .x-fgrid .field{ flex:1 1 44% !important; width:auto !important; min-width:0 !important; } .x-fgrid button{ flex:1 1 100%; } }
+  /* Seguimiento: aprovecha el ancho en compu */
+  .x-seg-strip{ display:flex; gap:14px 24px; flex-wrap:wrap; align-items:flex-end; }
+  .x-seg-strip .field{ flex:0 1 300px; min-width:220px; margin:0; }
+  .x-seg-kpis{ display:flex; gap:10px 22px; flex-wrap:wrap; margin-left:auto; }
+  .x-seg-kpis .k{ font-size:12px; color:var(--muted); } .x-seg-kpis b{ font-size:18px; }
+  .x-seg-g2, .x-seg-g3{ display:grid; gap:14px; align-items:start; margin-top:14px; }
+  .x-seg-g2 > .card, .x-seg-g3 > .card{ margin:0; }
+  @media (min-width:1000px){
+    .x-seg-g2{ grid-template-columns:minmax(0,1fr) minmax(0,1.5fr); }
+    .x-seg-g3{ grid-template-columns:minmax(0,2fr) minmax(0,1fr); }
+  }
+  .x-bar-lbl{ font-size:11px; fill:var(--muted); }
+  /* Cuenta del staff: "Profesor: [select]" en un solo renglón */
+  #staffCuentaCard{ padding:8px 14px; }
+  #staffCuentaCard .row{ flex-wrap:nowrap; gap:10px; }
+  #staffCuentaCard .field{ flex:0 1 auto; min-width:0; display:flex; flex-direction:row; align-items:center; gap:10px; margin:0; }
+  #staffCuentaCard .field label{ margin:0; white-space:nowrap; font-weight:700; }
+  #staffCuentaCard .combo-wrap{ flex:1 1 220px; min-width:160px; max-width:360px; }
+  @media (max-width:720px){ #staffCuentaCard .field{ flex:1 1 auto; } #staffCuentaCard .combo-wrap{ max-width:none; } }
+  #subvistaSeguimiento h2, #subvistaAlumnos h2, #subvistaProfesores h2{ font-size:17px; letter-spacing:-.01em; }
+  .x-frow button, .x-tbl button{ padding:6px 14px; font-size:13px; }
+
 </style>
 </head>
 <body>
@@ -1309,7 +1441,7 @@
   <div class="card" id="staffCuentaCard" style="margin-bottom:12px;">
     <div class="row" style="justify-content:space-between; align-items:center;">
       <div class="field" style="min-width:220px;">
-        <label>Profesor</label>
+        <label>Profesor:</label>
         <select id="profActual" onchange="onCambiarProfesorActual()"></select>
       </div>
       <button class="ghost cuenta-toggle" onclick="document.getElementById('staffCuentaAcciones').classList.toggle('abierta')">⚙️ Cuenta</button>
@@ -1384,6 +1516,105 @@
     <div class="side-item" id="menuAlertas" onclick="cambiarSubvista('alertas')" title="Alertas"><span class="side-ico">🔔</span><span class="side-label">Alertas</span></div>
     <div class="side-item" id="menuEjercicios" onclick="cambiarSubvista('ejercicios')" title="Ejercicios"><span class="side-ico">🆕</span><span class="side-label">Ejercicios</span></div>
     <div class="side-item" id="menuGimnasio" onclick="cambiarSubvista('gimnasio')" title="Mi gimnasio"><span class="side-ico">🏢</span><span class="side-label">Mi gimnasio</span></div>
+  </div>
+
+  <!-- (v93) Ventanas emergentes: alta corta de alumno / profesor y ficha (alumno, profesor, cobro) -->
+  <div class="modal-overlay" id="modalNuevoAlumno" onclick="if(event.target===this)cerrarModalNuevoAlumno()">
+    <div class="modal-box x-box">
+      <div class="row" style="justify-content:space-between; align-items:center; margin-bottom:6px;">
+        <h3 style="margin:0;">Nuevo alumno</h3>
+        <button type="button" class="x-cerrar est" aria-label="Cerrar" title="Cerrar" onclick="cerrarModalNuevoAlumno()">✕</button>
+      </div>
+      <div class="x-sub" style="margin-bottom:12px;">Solo lo necesario. Lo demás (contacto, datos físicos, plan) se completa después desde su ficha.</div>
+      <div id="nuevoAlumnoForm">
+          <div class="row">
+            <div class="field" style="flex:1; min-width:200px;">
+              <label>Nombre</label>
+              <input id="nuevoAlumnoNombre" placeholder="Nombre y apellido" />
+            </div>
+            <div class="field" style="min-width:140px;">
+              <label>DNI</label>
+              <input id="nuevoAlumnoDni" inputmode="numeric" placeholder="Ej: 30123456" />
+            </div>
+            <div class="field">
+              <label>Tipo de entrenamiento</label>
+              <select id="nuevoAlumnoTipo">
+                <option value="">-- sin definir --</option>
+              </select>
+            </div>
+            <button onclick="crearAlumno()" id="btnCrearAlumno" style="align-self:end;">Agregar alumno</button>
+          </div>
+          <div class="muted" style="margin-top:6px;">
+            El DNI se usa para generar el acceso a la app del alumno (usuario y contraseña inicial). Es opcional al crearlo, pero necesario para darle acceso.
+          </div>
+
+          <div style="margin-top:10px;">
+            <span class="muted" style="cursor:pointer; text-decoration:underline;" onclick="toggleDatosNuevoAlumno()" id="toggleDatosNuevoAlumno">+ Agregar datos de contacto y físicos (opcional)</span>
+          </div>
+          <div id="datosNuevoAlumno" style="display:none; margin-top:10px;">
+            <div class="row">
+              <div class="field"><label>Altura (cm)</label><input inputmode="numeric" type="number" id="nuevoAlumnoAltura" placeholder="Ej: 175"></div>
+              <div class="field"><label>Peso (kg)</label><input inputmode="decimal" type="number" step="0.1" id="nuevoAlumnoPeso" placeholder="Ej: 72.5"></div>
+              <div class="field" style="flex:1; min-width:180px;">
+                <label>Objetivo</label>
+                <select id="nuevoAlumnoObjetivo" onchange="document.getElementById('nuevoAlumnoObjetivoOtro').style.display = this.value==='otro' ? '' : 'none';">
+                  <option value="">-- sin definir --</option>
+                  <option value="Bajar de peso">Bajar de peso</option>
+                  <option value="Ganar masa muscular">Ganar masa muscular</option>
+                  <option value="Tonificar">Tonificar</option>
+                  <option value="Rendimiento deportivo">Rendimiento deportivo</option>
+                  <option value="Salud general">Salud general</option>
+                  <option value="Rehabilitación">Rehabilitación</option>
+                  <option value="otro">Otro (especificar)</option>
+                </select>
+              </div>
+              <div class="field" style="flex:1; min-width:180px; display:none;" id="nuevoAlumnoObjetivoOtro">
+                <label>¿Cuál?</label>
+                <input id="nuevoAlumnoObjetivoOtroTexto" placeholder="Especificar objetivo">
+              </div>
+            </div>
+            <div class="row" style="margin-top:8px;">
+              <div class="field" style="flex:1; min-width:160px;"><label>Teléfono</label><input id="nuevoAlumnoTelefono" placeholder="Ej: 11 2345 6789"></div>
+              <div class="field" style="flex:1; min-width:200px;"><label>Email</label><input type="email" id="nuevoAlumnoEmail" placeholder="alumno@mail.com"></div>
+              <div class="field" style="flex:2; min-width:220px;"><label>Dirección</label><input id="nuevoAlumnoDireccion" placeholder="Calle, número, ciudad"></div>
+            </div>
+            <hr>
+            <div class="row">
+              <div class="field" style="flex:1; min-width:180px;">
+                <label>Plan</label>
+                <select id="nuevoAlumnoPlan">
+                  <option value="">-- sin plan por ahora --</option>
+                </select>
+              </div>
+              <div class="muted" style="align-self:end; padding-bottom:10px;">La forma de pago y el monto se cargan aparte, en "💰 Finanzas", el día que el alumno pague.</div>
+            </div>
+          </div>
+          </div>
+
+    </div>
+  </div>
+  <div class="modal-overlay" id="modalNuevoProfesor" onclick="if(event.target===this)cerrarModalNuevoProfesor()">
+    <div class="modal-box x-box">
+      <div class="row" style="justify-content:space-between; align-items:center; margin-bottom:6px;">
+        <h3 style="margin:0;">Nuevo profesor</h3>
+        <button type="button" class="x-cerrar est" aria-label="Cerrar" title="Cerrar" onclick="cerrarModalNuevoProfesor()">✕</button>
+      </div>
+      <div class="x-sub" style="margin-bottom:12px;">Se crea con acceso a la app: entra con su DNI y una contraseña temporal que te mostramos al crearlo.</div>
+      <div class="row">
+        <div class="field" style="flex:1; min-width:180px;">
+          <label>Nombre</label>
+          <input id="nuevoProfesorNombre" placeholder="Nombre y apellido" />
+        </div>
+        <div class="field" style="min-width:140px;">
+          <label>DNI</label>
+          <input id="nuevoProfesorDni" inputmode="numeric" placeholder="Ej: 30123456" />
+        </div>
+      </div>
+      <div class="x-btns"><button class="ghost" onclick="cerrarModalNuevoProfesor()">Cancelar</button><button onclick="crearProfesor()" id="btnCrearProfesor">Crear profesor</button></div>
+    </div>
+  </div>
+  <div class="modal-overlay" id="modalFicha" onclick="if(event.target===this)cerrarFicha()">
+    <div class="modal-box x-box x-ficha" id="fichaBox"></div>
   </div>
 
   <div class="prof-layout">
@@ -1841,89 +2072,23 @@
       <!-- ---- SUBVISTA: ALUMNOS (alta + tipo estándar/especial) ---- -->
       <div id="subvistaAlumnos" style="display:none;">
 
-        <div class="vista-titulo">Alumnos</div>
-        <div class="card">
-          <div class="row" style="justify-content:space-between; align-items:center;">
-            <div class="sec-t" style="margin:0">Nuevo alumno</div>
-            <button class="ghost" id="btnToggleNuevoAlumno" onclick="toggleFormNuevoAlumno()">＋ Agregar</button>
-          </div>
-          <div id="nuevoAlumnoForm" style="display:none; margin-top:14px;">
-          <div class="row">
-            <div class="field" style="flex:1; min-width:200px;">
-              <label>Nombre</label>
-              <input id="nuevoAlumnoNombre" placeholder="Nombre y apellido" />
-            </div>
-            <div class="field" style="min-width:140px;">
-              <label>DNI</label>
-              <input id="nuevoAlumnoDni" inputmode="numeric" placeholder="Ej: 30123456" />
-            </div>
-            <div class="field">
-              <label>Tipo de entrenamiento</label>
-              <select id="nuevoAlumnoTipo">
-                <option value="">-- sin definir --</option>
-              </select>
-            </div>
-            <button onclick="crearAlumno()" id="btnCrearAlumno" style="align-self:end;">Agregar alumno</button>
-          </div>
-          <div class="muted" style="margin-top:6px;">
-            El DNI se usa para generar el acceso a la app del alumno (usuario y contraseña inicial). Es opcional al crearlo, pero necesario para darle acceso.
-          </div>
-
-          <div style="margin-top:10px;">
-            <span class="muted" style="cursor:pointer; text-decoration:underline;" onclick="toggleDatosNuevoAlumno()" id="toggleDatosNuevoAlumno">+ Agregar datos de contacto y físicos (opcional)</span>
-          </div>
-          <div id="datosNuevoAlumno" style="display:none; margin-top:10px;">
-            <div class="row">
-              <div class="field"><label>Altura (cm)</label><input inputmode="numeric" type="number" id="nuevoAlumnoAltura" placeholder="Ej: 175"></div>
-              <div class="field"><label>Peso (kg)</label><input inputmode="decimal" type="number" step="0.1" id="nuevoAlumnoPeso" placeholder="Ej: 72.5"></div>
-              <div class="field" style="flex:1; min-width:180px;">
-                <label>Objetivo</label>
-                <select id="nuevoAlumnoObjetivo" onchange="document.getElementById('nuevoAlumnoObjetivoOtro').style.display = this.value==='otro' ? '' : 'none';">
-                  <option value="">-- sin definir --</option>
-                  <option value="Bajar de peso">Bajar de peso</option>
-                  <option value="Ganar masa muscular">Ganar masa muscular</option>
-                  <option value="Tonificar">Tonificar</option>
-                  <option value="Rendimiento deportivo">Rendimiento deportivo</option>
-                  <option value="Salud general">Salud general</option>
-                  <option value="Rehabilitación">Rehabilitación</option>
-                  <option value="otro">Otro (especificar)</option>
-                </select>
-              </div>
-              <div class="field" style="flex:1; min-width:180px; display:none;" id="nuevoAlumnoObjetivoOtro">
-                <label>¿Cuál?</label>
-                <input id="nuevoAlumnoObjetivoOtroTexto" placeholder="Especificar objetivo">
-              </div>
-            </div>
-            <div class="row" style="margin-top:8px;">
-              <div class="field" style="flex:1; min-width:160px;"><label>Teléfono</label><input id="nuevoAlumnoTelefono" placeholder="Ej: 11 2345 6789"></div>
-              <div class="field" style="flex:1; min-width:200px;"><label>Email</label><input type="email" id="nuevoAlumnoEmail" placeholder="alumno@mail.com"></div>
-              <div class="field" style="flex:2; min-width:220px;"><label>Dirección</label><input id="nuevoAlumnoDireccion" placeholder="Calle, número, ciudad"></div>
-            </div>
-            <hr>
-            <div class="row">
-              <div class="field" style="flex:1; min-width:180px;">
-                <label>Plan</label>
-                <select id="nuevoAlumnoPlan">
-                  <option value="">-- sin plan por ahora --</option>
-                </select>
-              </div>
-              <div class="muted" style="align-self:end; padding-bottom:10px;">La forma de pago y el monto se cargan aparte, en "💰 Finanzas", el día que el alumno pague.</div>
-            </div>
-          </div>
-          </div>
+        <div class="x-head">
+          <div class="vista-titulo">Alumnos <span class="muted x-count" id="aluTotal"></span></div>
+          <button id="btnToggleNuevoAlumno" onclick="toggleFormNuevoAlumno()">＋ Nuevo alumno</button>
         </div>
-
         <div class="card">
-          <div class="row" style="justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
-            <div class="sec-t" style="margin:0">Alumnos cargados</div>
-            <div class="row" style="gap:6px;">
-              <button class="ghost filtro-estado-alu activo" id="filtroAluActivos" onclick="cambiarFiltroEstadoAlumnos('activos')">🟢 Activos</button>
-              <button class="ghost filtro-estado-alu" id="filtroAluInactivos" onclick="cambiarFiltroEstadoAlumnos('inactivos')">⚪ Inactivos</button>
-              <button class="ghost filtro-estado-alu" id="filtroAluTodos" onclick="cambiarFiltroEstadoAlumnos('todos')">Todos</button>
+          <div class="x-toolbar">
+            <input type="search" id="aluBuscar" placeholder="🔎 Buscar alumno, DNI o tipo" oninput="renderListaAlumnos()">
+            <div class="x-chips">
+              <button class="x-chip filtro-estado-alu activo" id="filtroAluActivos" onclick="cambiarFiltroEstadoAlumnos('activos')">🟢 Activos</button>
+              <button class="x-chip filtro-estado-alu" id="filtroAluInactivos" onclick="cambiarFiltroEstadoAlumnos('inactivos')">⚪ Inactivos</button>
+              <button class="x-chip filtro-estado-alu" id="filtroAluTodos" onclick="cambiarFiltroEstadoAlumnos('todos')">Todos</button>
+              <button class="x-chip" id="filtroAluVenc" onclick="setFiltroAluExtra('vencida')">🔴 Cuota vencida</button>
+              <button class="x-chip" id="filtroAluSinRut" onclick="setFiltroAluExtra('sinrut')">📋 Sin rutina asignada</button>
             </div>
           </div>
-          <div class="muted" style="font-size:12px; margin-top:6px;">Dar de baja no borra al alumno ni su historial — solo lo saca de las listas activas. Se puede reactivar en cualquier momento.</div>
-          <div id="listaAlumnos" class="muted" style="margin-top:10px;">Cargando...</div>
+          <div class="muted" id="aluContador" style="font-size:12.5px; margin-bottom:8px;"></div>
+          <div id="listaAlumnos" class="muted">Cargando...</div>
         </div>
       </div>
 
@@ -1991,36 +2156,30 @@
            "Logros" de arriba) pueda consultar el peso/reps/RIR que carga el alumno al
            entrenar, sesión por sesión, más el tonelaje por serie y por ejercicio. ---- -->
       <div id="subvistaSeguimiento" style="display:none;">
-        <div class="card">
-          <div class="row">
-            <div class="field" style="flex:1; min-width:220px;">
-              <label>Alumno</label>
-              <select id="seguimientoAlumno" onchange="onCambiarSeguimientoAlumno()"></select>
-            </div>
+        <div class="card x-seg-strip">
+          <div class="field">
+            <label>Alumno</label>
+            <select id="seguimientoAlumno" onchange="onCambiarSeguimientoAlumno()"></select>
           </div>
+          <div class="x-seg-kpis" id="seguimientoResumen"></div>
         </div>
-        <div id="seguimientoAsignada" class="card" style="display:none;"></div>
-        <div id="seguimientoContenido" class="muted">Elegí un alumno arriba.</div>
+        <div class="x-seg-g2">
+          <div id="seguimientoAsignada" class="card" style="display:none;"></div>
+          <div id="seguimientoVolumen" class="card" style="display:none;"></div>
+        </div>
+        <div class="x-seg-g3">
+          <div id="seguimientoContenido" class="muted">Elegí un alumno arriba.</div>
+          <div id="seguimientoPRs" class="card" style="display:none;"></div>
+        </div>
       </div>
 
       <!-- ---- SUBVISTA: PROFESORES (cuentas de login para tu staff) ---- -->
       <div id="subvistaProfesores" style="display:none;">
 
-        <div class="vista-titulo">Profesores</div>
-        <details class="plegable card" data-k="prof-nuevo"><summary>Nuevo profesor</summary><div class="plg-body">
-          <div class="row">
-            <div class="field" style="flex:1; min-width:180px;">
-              <label>Nombre</label>
-              <input id="nuevoProfesorNombre" placeholder="Nombre y apellido" />
-            </div>
-            <div class="field" style="min-width:140px;">
-              <label>DNI</label>
-              <input id="nuevoProfesorDni" inputmode="numeric" placeholder="Ej: 30123456" />
-            </div>
-            <button onclick="crearProfesor()" id="btnCrearProfesor" style="align-self:end;">Crear profesor</button>
-          </div>
-        </div></details>
-
+        <div class="x-head">
+          <div class="vista-titulo">Profesores <span class="muted x-count" id="profTotal"></span></div>
+          <button onclick="toggleFormNuevoProfesor()">＋ Nuevo profesor</button>
+        </div>
         <details class="plegable card" data-k="prof-recepcion"><summary>Usuarios de Recepción</summary><div class="plg-body">
           <div class="muted" style="font-size:12px; margin-bottom:8px;">Un usuario de Recepción solo ve la pantalla 🛎️ Recepción: buscar socios, marcar la llegada y sacar turnos por el alumno. No ve finanzas, alumnos ni rutinas. Entra con su DNI y una contraseña temporal.</div>
           <div class="row">
@@ -2162,35 +2321,15 @@
         <div class="card">
           <h2 style="margin-top:0" id="tituloFormPlan">Nuevo plan</h2>
           <input type="hidden" id="planEditandoId" value="">
-          <div class="row">
-            <div class="field" style="flex:1; min-width:180px;">
-              <label>Nombre</label>
-              <input id="planNombre" placeholder="Ej: 3 días por semana" />
-            </div>
-            <div class="field">
-              <label>Días por semana</label>
-              <input inputmode="numeric" type="number" min="0" id="planDiasSemana" placeholder="Vacío = Libre" oninput="sugerirTurnosPorMes()">
-            </div>
-            <div class="field">
-              <label>Turnos por mes (aviso)</label>
-              <input inputmode="numeric" type="number" min="0" id="planTurnosMes" placeholder="Vacío = sin límite">
-            </div>
-          </div>
-          <div class="row" style="margin-top:8px;">
-            <div class="field">
-              <label>Precio transferencia</label>
-              <input inputmode="decimal" type="number" min="0" step="0.01" id="planPrecio" oninput="previewPrecioEfectivoPlan()">
-            </div>
-            <div class="field">
-              <label>Dura (días)</label>
-              <input inputmode="numeric" type="number" min="1" id="planDuracionDias" value="30">
-            </div>
-            <div class="field">
-              <label>Precio en efectivo (con descuento)</label>
-              <input disabled id="planPrecioEfectivoPreview" placeholder="—">
-            </div>
-            <button onclick="guardarPlan()" id="btnGuardarPlan" style="align-self:end;">Guardar plan</button>
-            <button class="ghost" onclick="cancelarEdicionPlan()" style="align-self:end; display:none;" id="btnCancelarEdicionPlan">Cancelar edición</button>
+          <div class="x-fgrid">
+            <div class="field" style="flex:1 1 220px;"><label>Nombre</label><input id="planNombre" placeholder="Ej: 3 días por semana" /></div>
+            <div class="field" style="width:96px;"><label>Días/sem</label><input inputmode="numeric" type="number" min="0" id="planDiasSemana" placeholder="Libre" oninput="sugerirTurnosPorMes()"></div>
+            <div class="field" style="width:112px;"><label>Turnos/mes</label><input inputmode="numeric" type="number" min="0" id="planTurnosMes" placeholder="Sin límite"></div>
+            <div class="field" style="width:92px;"><label>Dura (días)</label><input inputmode="numeric" type="number" min="1" id="planDuracionDias" value="30"></div>
+            <div class="field" style="width:136px;"><label>Precio transf.</label><input inputmode="decimal" type="number" min="0" step="0.01" id="planPrecio" oninput="previewPrecioEfectivoPlan()"></div>
+            <div class="field" style="width:164px;"><label>Efectivo (con desc.)</label><input disabled id="planPrecioEfectivoPreview" placeholder="—"></div>
+            <button onclick="guardarPlan()" id="btnGuardarPlan">Guardar plan</button>
+            <button class="ghost" onclick="cancelarEdicionPlan()" style="display:none;" id="btnCancelarEdicionPlan">Cancelar edición</button>
           </div>
         </div>
         <div class="card">
@@ -2211,7 +2350,12 @@
         </div>
 
         <div id="cobTabCobros">
-          <div class="card">
+          <div class="x-kpis" id="cobKpis"></div>
+          <div class="card" style="padding:0;">
+            <div class="x-toolbar" style="padding:12px 14px; margin:0;">
+              <input type="search" id="cobBuscar" placeholder="🔎 Buscar alumno" oninput="renderCobranzas()">
+              <div class="x-chips" id="cobChips"></div>
+            </div>
             <div id="listaCobranzas" class="muted">Cargando...</div>
           </div>
         </div>
@@ -3051,7 +3195,7 @@ const BUCKET = "Ejercicios";
 // un cambio, se incrementa este número — el chequeo de actualización (más abajo) lo compara
 // contra lo que hay publicado y avisa si están desactualizados, sin que nadie tenga que
 // cambiar ningún link a mano.
-const APP_VERSION = 92;
+const APP_VERSION = 93;
 
 // ---------- Instalar como app (PWA): acceso directo en escritorio/celular ----------
 // Chrome/Edge/Android disparan "beforeinstallprompt" cuando el manifest + service worker
@@ -5943,20 +6087,20 @@ function filaAlertaAlumno(a, tipo){
   }
   const waUrl = whatsappUrlAlumno(a.telefono, mensaje);
   const waBtn = waUrl
-    ? `<button class="ghost" style="font-size:12px; padding:3px 8px;" onclick='window.open(${JSON.stringify(waUrl)}, "_blank"); marcarContactoAlumno(${JSON.stringify(a.id)}, ${JSON.stringify(tipo)});' title="Escribir por WhatsApp">💬 WhatsApp</button>`
+    ? `<button onclick='window.open(${JSON.stringify(waUrl)}, "_blank"); marcarContactoAlumno(${JSON.stringify(a.id)}, ${JSON.stringify(tipo)});' title="Escribir por WhatsApp">💬 WhatsApp</button>`
     : `<span class="muted" style="font-size:11px;">Sin teléfono</span>`;
   const contactoTag = a.ultimo_contacto
     ? etiquetaUltimoContacto(a.ultimo_contacto).replace('<span class="badge-verde"', `<span class="badge-verde" id="contactoTag-${a.id}-${tipo}"`)
     : `<span id="contactoTag-${a.id}-${tipo}"></span>`;
   return `
-    <div class="row" style="justify-content:space-between; align-items:center; padding:7px 0; border-bottom:1px solid var(--border); gap:8px; flex-wrap:wrap;">
-      <div>
-        <div style="font-weight:600;">${a.nombre || '(sin nombre)'}</div>
-        <div class="muted" style="font-size:.85em;">${detalle}</div>
-      </div>
-      <div class="row" style="gap:8px; align-items:center;">
+    <div class="x-arow">
+      <div>${xQuien(a.nombre || '(sin nombre)', null, true)}</div>
+      <div>${xe(detalle)}</div>
+      <div class="acts">
         ${contactoTag}
         ${waBtn}
+        <button class="ghost" onclick="marcarContactoAlumno('${a.id}', '${tipo}'); toast('Marcado como contactado ✓')">✓ Contactado</button>
+        <button class="ghost" onclick="abrirFichaAlumno('${a.id}')">Ver ficha</button>
       </div>
     </div>`;
 }
@@ -7093,6 +7237,7 @@ async function crearProfesor(){
     mostrarCredenciales({ titulo: 'Profesor creado ✓', nombre, usuario: r.usuario, password: r.password_temporal });
     document.getElementById('nuevoProfesorNombre').value = '';
     document.getElementById('nuevoProfesorDni').value = '';
+    cerrarModalNuevoProfesor();
     await cargarPersonas();
     cargarListaProfesores();
     const creado = PROFESORES_CACHE.find(p => p.dni === dni);
@@ -7107,32 +7252,100 @@ async function crearProfesor(){
   finally{ btn.disabled = false; }
 }
 
-function cargarListaProfesores(){
+// ---------- (v93) Profesores: una fila por profesor + ficha en ventana emergente ----------
+let PROF_STATS = {};
+function renderListaProfesores(){
   const cont = document.getElementById('listaProfesores');
+  if (!cont) return;
   if (!PROFESORES_CACHE.length){ cont.innerHTML = '<div class="empty">Todavía no cargaste ningún profesor.</div>'; return; }
-  cont.innerHTML = PROFESORES_CACHE.map(p => {
-    const rol = p.perfiles?.rol;
-    const controlRol = p.perfil_id
-      ? `<select onchange="cambiarRolProfesor('${p.perfil_id}','${(p.nombre||'').replace(/'/g,"&apos;")}',this.value)" style="width:auto;">
-          <option value="profesor" ${rol==='profesor'?'selected':''}>Profesor</option>
-          <option value="admin" ${rol==='admin'?'selected':''}>Administrador</option>
-        </select>`
-      : '<span class="pill">sin cuenta (cargado antes del login)</span>';
-    return `
-      <div style="padding:8px 0; border-bottom:1px solid var(--border);">
-        <div class="row" style="justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
-          <div style="font-weight:600;">${p.nombre}${p.dni ? ` <span class="muted" style="font-weight:400;">· DNI ${p.dni}</span>` : ''}</div>
-          ${controlRol}
-        </div>
-        <div class="row" style="gap:14px; flex-wrap:wrap; align-items:center; margin-top:6px;">
-          <label class="muted" style="font-size:12px; display:flex; align-items:center; gap:4px;">Tarifa/hora $<input inputmode="decimal" type="number" step="0.01" min="0" value="${p.tarifa_hora ?? ''}" style="width:90px;" onchange="actualizarTarifaProfesor('${p.id}','tarifa_hora',this.value)"></label>
-          <label class="muted" style="font-size:12px; display:flex; align-items:center; gap:4px;">Impuesto/carga %<input inputmode="decimal" type="number" step="0.1" min="0" value="${p.impuesto_pct ?? 0}" style="width:60px;" onchange="actualizarTarifaProfesor('${p.id}','impuesto_pct',this.value)"></label>
-          ${(p.perfil_id && rol === 'profesor' && !(PERFIL_ACTUAL && p.perfil_id === PERFIL_ACTUAL.id)) ? `<span class="muted" style="font-size:12px; cursor:pointer; text-decoration:underline;" onclick="abrirGestionAccesoProfesor('${p.id}')">🔁 Acceso</span>` : ''}
-          <span style="color:var(--danger-text); font-size:12px; cursor:pointer; font-weight:700; margin-left:auto;" onclick="abrirModalBajaProfesor('${p.id}','${(p.nombre||'').replace(/'/g,"&apos;")}')">Dar de baja</span>
-        </div>
+  const st = id => (PROF_STATS && PROF_STATS[id]) || { hoy: 0, sem: 0 };
+  const cargado = PROF_STATS !== null;
+  const rolPill = p => p.perfil_id ? `<span class="pill ${p.perfiles?.rol === 'admin' ? 'warn' : ''}">${p.perfiles?.rol === 'admin' ? 'Administrador' : 'Profesor'}</span>` : '<span class="pill">Sin cuenta</span>';
+  const rows = PROFESORES_CACHE.map(p => `<tr onclick="abrirFichaProfesor('${p.id}')">
+      <td>${xQuien(p.nombre, p.dni ? 'DNI ' + p.dni : 'Sin DNI')}</td><td>${rolPill(p)}</td>
+      <td>${cargado ? st(p.id).hoy : '…'}</td><td>${cargado ? st(p.id).sem : '…'}</td>
+      <td>${p.tarifa_hora != null && p.tarifa_hora !== '' ? xe(formatearMonto(p.tarifa_hora)) : '<span class="muted">—</span>'}</td>
+      <td class="r"><button class="ghost" onclick="event.stopPropagation();abrirFichaProfesor('${p.id}')">Ver ficha</button></td></tr>`).join('');
+  const lista = PROFESORES_CACHE.map(p => `<div class="x-li" onclick="abrirFichaProfesor('${p.id}')">${xAv(p.nombre)}<div class="mid"><div class="x-nm">${xe(p.nombre)}</div><div class="x-sub">${cargado ? `${st(p.id).hoy} turnos hoy · ${st(p.id).sem} en 7 días` : 'Cargando…'}</div>${p.perfil_id ? '' : '<div style="margin-top:5px"><span class="pill warn">Sin cuenta</span></div>'}</div><span class="go">›</span></div>`).join('');
+  cont.className = '';
+  cont.innerHTML = `<div class="x-tbl-wrap" style="overflow-x:auto;"><table class="x-tbl"><thead><tr><th>Profesor</th><th>Rol</th><th>Turnos hoy</th><th>Próx. 7 días</th><th>Tarifa/hora</th><th></th></tr></thead><tbody>${rows}</tbody></table></div><div class="x-lst">${lista}</div>`;
+}
+async function cargarListaProfesores(){
+  const tit = document.getElementById('profTotal'); if (tit) tit.textContent = `· ${PROFESORES_CACHE.length}`;
+  PROF_STATS = {};
+  renderListaProfesores();
+  if (!PROFESORES_CACHE.length) return;
+  try{
+    const hoy = fechaLocalISO(), en7 = ipSumarDias(hoy, 7);
+    const ids = PROFESORES_CACHE.map(p => p.id);
+    const ts = await sb(`turnos?select=profesor_id,fecha&profesor_id=in.(${ids.join(',')})&fecha=gte.${hoy}&fecha=lte.${en7}&estado=neq.cancelado&limit=5000`);
+    ts.forEach(t => { const s = PROF_STATS[t.profesor_id] = PROF_STATS[t.profesor_id] || { hoy: 0, sem: 0 }; s.sem++; if (t.fecha === hoy) s.hoy++; });
+  }catch(e){ PROF_STATS = null; }
+  renderListaProfesores();
+  if (FICHA_PROF) pintarFichaProfesor();
+}
+const FICHA_PROF_TABS = [['res','Resumen'],['dat','Datos'],['age','Agenda'],['acc','Acceso']];
+function abrirFichaProfesor(id, tab){
+  FICHA_ALU = null; FICHA_PROF = { id, tab: tab || 'res' };
+  document.getElementById('fichaBox').className = 'modal-box x-box x-ficha';
+  xAbrirModal('modalFicha');
+  pintarFichaProfesor();
+}
+function fichaProfTab(t){ if (!FICHA_PROF) return; FICHA_PROF.tab = t; pintarFichaProfesor(); }
+function pintarFichaProfesor(){
+  const F = FICHA_PROF; if (!F) return;
+  const p = PROFESORES_CACHE.find(x => x.id === F.id);
+  if (!p){ cerrarFicha(); return; }
+  const st = (PROF_STATS && PROF_STATS[p.id]) || { hoy: 0, sem: 0 };
+  const rol = p.perfiles?.rol;
+  const box = document.getElementById('fichaBox');
+  box.className = 'modal-box x-box x-ficha';
+  box.innerHTML = `<div class="x-fi-head">${xAv(p.nombre)}<div class="tt"><div class="x-nm">${xe(p.nombre)}</div><div style="margin-top:4px;display:flex;gap:5px;flex-wrap:wrap;"><span class="pill ${p.perfil_id ? 'ok' : ''}">${p.perfil_id ? 'Con acceso' : 'Sin cuenta'}</span> <span class="pill">${rol === 'admin' ? 'Administrador' : 'Profesor'}</span></div></div>
+    <button type="button" class="x-cerrar est" aria-label="Cerrar" title="Cerrar" onclick="cerrarFicha()">✕</button></div>
+    <div class="x-fi-tabs">${FICHA_PROF_TABS.map(r => `<span class="x-chip ${F.tab === r[0] ? 'on' : ''}" onclick="fichaProfTab('${r[0]}')">${r[1]}</span>`).join('')}</div>
+    <div class="x-fi-body" id="fichaTabBody"></div>`;
+  const body = document.getElementById('fichaTabBody');
+  const tok = ++FICHA_TOK;
+  if (F.tab === 'res'){
+    body.innerHTML = `<div class="x-kpis"><div class="x-kpi"><div class="k">Turnos hoy</div><div class="v">${st.hoy}</div></div><div class="x-kpi"><div class="k">Próximos 7 días</div><div class="v">${st.sem}</div></div><div class="x-kpi"><div class="k">Rol</div><div class="v" style="font-size:15px;">${rol === 'admin' ? 'Administrador' : 'Profesor'}</div></div><div class="x-kpi"><div class="k">Tarifa/hora</div><div class="v" style="font-size:15px;">${p.tarifa_hora != null && p.tarifa_hora !== '' ? xe(formatearMonto(p.tarifa_hora)) : '—'}</div></div></div>
+      <div class="card" style="margin:0;"><h2 style="margin-top:0;">Agenda de hoy</h2><div id="fichaProfHoy" class="muted">Cargando…</div></div>`;
+    xFichaProfHoy(p, tok);
+  } else if (F.tab === 'dat'){
+    body.innerHTML = `<div class="x-dl"><div><div class="k">Nombre</div><div class="v">${xe(p.nombre)}</div></div><div><div class="k">DNI</div><div class="v">${xe(p.dni || '—')}</div></div></div>
+      <div class="x-sec">Facturación de horas</div>
+      <div class="row" style="gap:14px; align-items:center;">
+        <label class="x-sub" style="display:flex; align-items:center; gap:6px;">Tarifa/hora $<input inputmode="decimal" type="number" step="0.01" min="0" value="${p.tarifa_hora ?? ''}" style="width:110px;" onchange="actualizarTarifaProfesor('${p.id}','tarifa_hora',this.value)"></label>
+        <label class="x-sub" style="display:flex; align-items:center; gap:6px;">Impuesto/carga %<input inputmode="decimal" type="number" step="0.1" min="0" value="${p.impuesto_pct ?? 0}" style="width:80px;" onchange="actualizarTarifaProfesor('${p.id}','impuesto_pct',this.value)"></label>
       </div>
-    `;
-  }).join('');
+      <div class="x-sec">Rol</div>
+      ${p.perfil_id ? `<select onchange="cambiarRolProfesor('${p.perfil_id}','${(p.nombre || '').replace(/'/g, '&apos;')}',this.value)" style="width:auto;"><option value="profesor" ${rol === 'profesor' ? 'selected' : ''}>Profesor</option><option value="admin" ${rol === 'admin' ? 'selected' : ''}>Administrador</option></select>` : '<span class="pill">sin cuenta (cargado antes del login)</span>'}
+      <div class="x-sec">Baja</div>
+      <button class="ghost" style="color:var(--danger-text);" onclick="cerrarFicha();abrirModalBajaProfesor('${p.id}','${(p.nombre || '').replace(/'/g, '&apos;')}')">Dar de baja</button>
+      <div class="x-sub" style="margin-top:8px;">Si tiene turnos pendientes, te va a pedir reasignarlos o cancelarlos antes de confirmar.</div>`;
+  } else if (F.tab === 'age'){
+    body.innerHTML = '<div class="muted">Cargando…</div>'; xFichaProfAgenda(p, tok);
+  } else if (F.tab === 'acc'){
+    const puedeGestion = p.perfil_id && rol === 'profesor' && !(PERFIL_ACTUAL && p.perfil_id === PERFIL_ACTUAL.id);
+    body.innerHTML = `<div class="x-item"><div><div style="font-weight:700;">Acceso a la app</div><div class="x-sub">${p.perfil_id ? 'Entra con su DNI y una contraseña propia.' : 'Cargado antes del login: todavía no tiene cuenta.'}</div></div><span class="pill ${p.perfil_id ? 'ok' : 'warn'}">${p.perfil_id ? 'Activo' : 'Sin cuenta'}</span></div>
+      ${puedeGestion ? `<div class="x-btns" style="margin-top:0;"><button onclick="abrirGestionAccesoProfesor('${p.id}')">🔁 Gestionar acceso</button></div><div class="x-sub" style="margin-top:10px;">Desde ahí restablecés la clave o quitás el acceso.</div>` : ''}`;
+  }
+}
+async function xFichaProfHoy(p, tok){
+  const el = () => (tok === FICHA_TOK) ? document.getElementById('fichaProfHoy') : null;
+  try{
+    const ts = await sb(`turnos?select=hora,asistio,alumnos(nombre),rutina_dias(nombre_dia)&profesor_id=eq.${p.id}&fecha=eq.${fechaLocalISO()}&estado=neq.cancelado&order=hora.asc`);
+    const e = el(); if (!e) return;
+    e.className = '';
+    e.innerHTML = ts.length ? ts.map(t => `<div style="display:flex;gap:12px;padding:8px 0;border-bottom:1px solid var(--border);align-items:center;"><b style="width:52px;">${xe((t.hora || '').slice(0, 5))}</b><span style="flex:1;">${xe(t.alumnos?.nombre || '—')}</span>${t.rutina_dias?.nombre_dia ? `<span class="pill">${xe(t.rutina_dias.nombre_dia)}</span>` : ''}${t.asistio === true ? '<span class="t-ok">✓</span>' : ''}</div>`).join('') : '<div class="muted">Sin turnos hoy.</div>';
+  }catch(err){ const e = el(); if (e) e.textContent = 'No se pudo cargar: ' + err.message; }
+}
+async function xFichaProfAgenda(p, tok){
+  const body = () => (tok === FICHA_TOK) ? document.getElementById('fichaTabBody') : null;
+  try{
+    const hs = await sb(`horarios_trabajo?select=dia_semana,hora_inicio,hora_fin,cupo_por_turno&profesor_id=eq.${p.id}&activo=eq.true&order=dia_semana.asc,hora_inicio.asc`);
+    const b = body(); if (!b) return;
+    b.innerHTML = hs.length ? `<div style="overflow-x:auto;"><table class="x-mini"><thead><tr><th>Día</th><th>Horario</th><th>Cupo por turno</th></tr></thead><tbody>${hs.map(h => `<tr><td><b>${xe(DIAS_NOMBRE_AGENDA[h.dia_semana] || h.dia_semana)}</b></td><td>${xe((h.hora_inicio || '').slice(0, 5))} – ${xe((h.hora_fin || '').slice(0, 5))}</td><td class="muted">${h.cupo_por_turno ?? '—'}</td></tr>`).join('')}</tbody></table></div>` : '<div class="muted">No tiene horarios de trabajo cargados (se cargan en 🕒 Horarios).</div>';
+  }catch(err){ const b = body(); if (b) b.innerHTML = '<div class="muted">Error: ' + xe(err.message) + '</div>'; }
 }
 
 // Lista de profesores inactivos (dados de baja), con opción de reactivar sin
@@ -8519,6 +8732,7 @@ function cerrarModalRutinaDia(){
 // Fallback cuando el turno no tiene ninguna rutina enganchada todavía: manda a
 // armarle una especial, con esa persona ya elegida en el buscador.
 function irAAsignarEspecialDesdeModal(alumnoId){
+  cerrarFicha();
   cerrarModalRutinaDia();
   cerrarMenuProf();
   cambiarSubvista('especiales');
@@ -8556,22 +8770,12 @@ async function cargarPlanes(){
     PLANES_CACHE = gimId ? await sb(`planes?gimnasio_id=eq.${gimId}&order=precio_transferencia.asc`) : [];
     if (!PLANES_CACHE.length){ cont.innerHTML = '<div class="empty">Todavía no cargaste ningún plan.</div>'; return; }
     const pct = GIMNASIO_ACTUAL?.descuento_efectivo_pct ?? 10;
-    cont.innerHTML = PLANES_CACHE.map(p => {
-      const precioEfectivo = (p.precio_transferencia * (1 - pct/100)).toFixed(2);
-      const diasTxt = p.dias_por_semana ? `${p.dias_por_semana} día(s)/semana` : 'Libre (todos los días)';
-      return `
-      <div class="row" style="justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--border); ${p.activo?'':'opacity:.5;'}">
-        <div>
-          <div style="font-weight:600;">${p.nombre} ${p.activo?'':'<span class="pill">inactivo</span>'}</div>
-          <div class="muted">${diasTxt}${p.turnos_por_mes?` · hasta ${p.turnos_por_mes} turnos/mes`:''} · dura ${p.duracion_dias} días</div>
-          <div class="muted">Transferencia: $${p.precio_transferencia} · Efectivo: $${precioEfectivo}</div>
-        </div>
-        <div class="row" style="gap:6px;">
-          <button class="ghost" onclick="editarPlan('${p.id}')">Editar</button>
-          <button class="ghost" onclick="togglePlanActivo('${p.id}', ${!p.activo})">${p.activo?'Desactivar':'Activar'}</button>
-        </div>
-      </div>`;
-    }).join('');
+    const ef = p => formatearMonto(p.precio_transferencia * (1 - pct / 100));
+    const acc = p => `<button class="ghost" onclick="editarPlan('${p.id}')">✏️ Editar</button> <button class="ghost" onclick="togglePlanActivo('${p.id}', ${!p.activo})">${p.activo ? 'Desactivar' : 'Activar'}</button>`;
+    const rows = PLANES_CACHE.map(p => `<tr style="cursor:default; ${p.activo ? '' : 'opacity:.5;'}"><td><b>${xe(p.nombre)}</b>${p.activo ? '' : ' <span class="pill">inactivo</span>'}</td><td>${p.dias_por_semana ?? 'Libre'}</td><td>${p.turnos_por_mes ?? 'Sin límite'}</td><td>${p.duracion_dias} días</td><td>${xe(formatearMonto(p.precio_transferencia))}</td><td>${xe(ef(p))}</td><td class="r">${acc(p)}</td></tr>`).join('');
+    const lista = PLANES_CACHE.map(p => `<div class="x-item" style="display:block; ${p.activo ? '' : 'opacity:.5;'}"><div style="font-weight:700;">${xe(p.nombre)}${p.activo ? '' : ' <span class="pill">inactivo</span>'}</div><div class="x-sub" style="margin:2px 0 6px;">${p.dias_por_semana ? p.dias_por_semana + ' día(s)/semana' : 'Libre'}${p.turnos_por_mes ? ` · hasta ${p.turnos_por_mes} turnos/mes` : ''} · dura ${p.duracion_dias} días</div><div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;"><span>Transferencia <b>${xe(formatearMonto(p.precio_transferencia))}</b></span><span>Efectivo <b>${xe(ef(p))}</b></span></div><div class="x-btns" style="margin-top:8px;">${acc(p)}</div></div>`).join('');
+    cont.className = '';
+    cont.innerHTML = `<div class="x-tbl-wrap" style="overflow-x:auto;"><table class="x-tbl"><thead><tr><th>Plan</th><th>Días/sem</th><th>Turnos/mes</th><th>Dura</th><th>Transferencia</th><th>Efectivo</th><th></th></tr></thead><tbody>${rows}</tbody></table></div><div class="x-lst" style="padding:10px; background:none; border:0;">${lista}</div>`;
   }catch(e){ cont.innerHTML = 'Error: ' + e.message; }
 }
 
@@ -8644,6 +8848,17 @@ async function togglePlanActivo(planId, nuevoActivo){
 // ---------- Cobranzas (vencimientos de cuota, panel profesor/admin) ----------
 let COBRANZAS_CACHE = {}; // alumno_id -> fila de v_plan_vigente_alumno
 
+// ---------- (v93) Finanzas · Cobros: nombre grande y separado, lista simple en celu, detalle en ventana emergente ----------
+let COBRANZAS_FILAS = [], COB_FILTRO = 'todos', COB_COBRADO_MES = null;
+const COB_ESTADOS = { vencido:['Vencido','bad'], por_vencer:['Por vencer','warn'], sin_pagos:['Nunca pagó','warn'], al_dia:['Al día','ok'], sin_plan:['Sin plan',''] };
+function xCobTexto(p){
+  if (!p || !p.plan_id) return 'Sin plan asignado';
+  if (p.estado_pago === 'vencido') return `Venció hace ${Math.abs(Math.round(Number(p.dias_para_vencer)))} día(s)`;
+  if (p.estado_pago === 'por_vencer') return `Vence en ${Math.round(Number(p.dias_para_vencer))} día(s)`;
+  if (p.estado_pago === 'sin_pagos') return 'Nunca pagó';
+  return `Vence el ${formatearFechaCorta(p.vigencia_hasta)}`;
+}
+function xCobEstado(p){ return (!p || !p.plan_id) ? 'sin_plan' : (p.estado_pago || 'al_dia'); }
 async function cargarCobranzas(){
   const cont = document.getElementById('listaCobranzas');
   cont.innerHTML = 'Cargando...';
@@ -8651,71 +8866,109 @@ async function cargarCobranzas(){
     const gimId = PERFIL_ACTUAL?.gimnasio_id;
     if (!gimId){ cont.innerHTML = '<div class="empty">Necesitás estar logueado.</div>'; return; }
     await cargarPlanesEnSelectAlumno();
-    const alumnosGym = await sb(`alumnos?select=id,nombre&gimnasio_id=eq.${gimId}&activo=eq.true`);
+    const alumnosGym = await sb(`alumnos?select=id,nombre,telefono,foto_url&gimnasio_id=eq.${gimId}&activo=eq.true`);
     if (!alumnosGym.length){ cont.innerHTML = '<div class="empty">Todavía no hay alumnos.</div>'; return; }
     const idsAlumnos = alumnosGym.map(a => a.id);
     const vigentes = await sb(`v_plan_vigente_alumno?alumno_id=in.(${idsAlumnos.join(',')})`);
     COBRANZAS_CACHE = {};
     vigentes.forEach(v => COBRANZAS_CACHE[v.alumno_id] = v);
     const orden = { vencido: 0, por_vencer: 1, sin_pagos: 2, al_dia: 3, sin_plan: 4 };
-    const filas = alumnosGym.map(a => ({ alumno: a, plan: COBRANZAS_CACHE[a.id] || null }))
-      .sort((x,y) => orden[x.plan?.estado_pago || 'sin_plan'] - orden[y.plan?.estado_pago || 'sin_plan']);
-    const colores = { vencido: 'background:rgba(255,93,93,.15); color:var(--danger-text); border-color:rgba(255,93,93,.4);',
-                       por_vencer: 'background:rgba(255,210,61,.15); color:var(--warn-text); border-color:rgba(255,210,61,.4);',
-                       sin_pagos: 'background:rgba(255,210,61,.15); color:var(--warn-text); border-color:rgba(255,210,61,.4);',
-                       al_dia: 'background:rgba(61,220,132,.15); color:var(--accent2-text); border-color:rgba(61,220,132,.4);' };
-    const etiqueta = (p) => {
-      if (p.estado_pago === 'vencido') return `Vencido hace ${Math.abs(p.dias_para_vencer)} día(s)`;
-      if (p.estado_pago === 'por_vencer') return `Vence en ${p.dias_para_vencer} día(s)`;
-      if (p.estado_pago === 'sin_pagos') return 'Nunca pagó';
-      return `Vence el ${formatearFechaCorta(p.vigencia_hasta)}`;
-    };
-    cont.innerHTML = filas.map(({alumno, plan}) => {
-      if (!plan || !plan.plan_id){
-        return `<div style="padding:8px 0; border-bottom:1px solid var(--border);">
-          <div class="row" style="justify-content:space-between;">
-            <div style="font-weight:600;">${alumno.nombre}</div>
-            <span class="pill">Sin plan asignado</span>
-          </div>
-        </div>`;
-      }
-      return `<div style="padding:8px 0; border-bottom:1px solid var(--border);">
-        <div class="row cob-head" style="justify-content:space-between;">
-          <div>
-            <div style="font-weight:600;">${alumno.nombre}</div>
-            <div class="muted">${plan.plan_nombre} · $${plan.precio_transferencia}</div>
-          </div>
-          <div class="row cob-acts">
-            <span class="pill" style="${colores[plan.estado_pago]}">${etiqueta(plan)}</span>
-            <button onclick="toggleCobrar('${alumno.id}')">💰 Cobrar</button>
-            ${GIMNASIO_ACTUAL?.mp_conectado ? `<button class="ghost" onclick="abrirModalCobrarQR('${alumno.id}')">📲 Cobrar con QR</button>` : ''}
-            <button onclick="toggleHistorialPagos('${alumno.id}')">🧾 Historial</button>
-          </div>
-        </div>
-        <div id="cobrarForm${alumno.id}" style="display:none; margin-top:10px;">
-          <div class="row">
-            <div class="field">
-              <label>Forma de pago</label>
-              <select id="cobrarMetodo${alumno.id}" onchange="previewMontoCobro('${alumno.id}')">
-                <option value="transferencia">Transferencia</option>
-                <option value="efectivo">Efectivo (con descuento)</option>
-              </select>
-            </div>
-            <div class="field">
-              <label>Meses a pagar</label>
-              <select id="cobrarMeses${alumno.id}" onchange="previewMontoCobro('${alumno.id}')">
-                <option value="">1 mes</option>
-                ${PLANES_PREPAGO_CACHE.filter(p => p.activo).map(p => `<option value="${p.id}">${p.nombre}</option>`).join('')}
-              </select>
-            </div>
-            <div class="field"><label>Monto a pagar</label><input disabled id="cobrarMonto${alumno.id}"></div>
-            <button style="align-self:end;" onclick="confirmarCobro('${alumno.id}')">Confirmar pago</button>
-          </div>
-        </div>
-        <div id="historialPagos${alumno.id}" style="display:none; margin-top:10px;"></div>
-      </div>`;
-    }).join('');
+    COBRANZAS_FILAS = alumnosGym.map(a => ({ alumno: a, plan: COBRANZAS_CACHE[a.id] || null }))
+      .sort((x, y) => orden[xCobEstado(x.plan)] - orden[xCobEstado(y.plan)] || (x.alumno.nombre || '').localeCompare(y.alumno.nombre || ''));
+    COB_COBRADO_MES = null;
+    renderCobranzas();
+    try{
+      const d = new Date(), mesIni = fechaLocalISO(new Date(d.getFullYear(), d.getMonth(), 1));
+      const pagos = await sb(`pagos?select=monto&alumno_id=in.(${idsAlumnos.join(',')})&creado_en=gte.${mesIni}&limit=5000`);
+      COB_COBRADO_MES = pagos.reduce((a, p) => a + (Number(p.monto) || 0), 0);
+      renderCobranzas();
+    }catch(e){ COB_COBRADO_MES = null; }
   }catch(e){ cont.innerHTML = 'Error: ' + e.message; }
+}
+function setCobFiltro(k){ COB_FILTRO = k; renderCobranzas(); }
+function renderCobranzas(){
+  const cont = document.getElementById('listaCobranzas');
+  if (!cont) return;
+  const F = COBRANZAS_FILAS;
+  const q = xNorm(document.getElementById('cobBuscar')?.value || '');
+  const cuenta = k => F.filter(f => xCobEstado(f.plan) === k).length;
+  const suma = k => F.filter(f => xCobEstado(f.plan) === k).reduce((a, f) => a + (Number(f.plan?.precio_transferencia) || 0), 0);
+  const kp = document.getElementById('cobKpis');
+  if (kp) kp.innerHTML = `<div class="x-kpi"><div class="k">Cobrado este mes</div><div class="v t-ok">${COB_COBRADO_MES == null ? '—' : xe(formatearMonto(COB_COBRADO_MES))}</div></div>
+    <div class="x-kpi"><div class="k">Por vencer · ${cuenta('por_vencer')}</div><div class="v t-warn">${xe(formatearMonto(suma('por_vencer')))}</div></div>
+    <div class="x-kpi"><div class="k">Vencido · ${cuenta('vencido')}</div><div class="v t-bad">${xe(formatearMonto(suma('vencido')))}</div></div>
+    <div class="x-kpi"><div class="k">Al día</div><div class="v">${cuenta('al_dia')} <span class="x-sub" style="font-weight:600;">alumnos</span></div></div>`;
+  const ch = document.getElementById('cobChips');
+  const defs = [['todos', 'Todos', F.length], ['vencido', 'Vencidos', cuenta('vencido')], ['por_vencer', 'Por vencer', cuenta('por_vencer')], ['sin_pagos', 'Nunca pagó', cuenta('sin_pagos')], ['al_dia', 'Al día', cuenta('al_dia')], ['sin_plan', 'Sin plan', cuenta('sin_plan')]];
+  if (ch) ch.innerHTML = defs.map(d => `<button class="x-chip ${COB_FILTRO === d[0] ? 'on' : ''}" onclick="setCobFiltro('${d[0]}')">${d[1]} · ${d[2]}</button>`).join('');
+  const L = F.filter(f => (COB_FILTRO === 'todos' || xCobEstado(f.plan) === COB_FILTRO) && (!q || xNorm(f.alumno.nombre).includes(q)));
+  if (!L.length){ cont.className = ''; cont.innerHTML = '<div class="x-vacio">No hay alumnos con ese filtro.</div>'; return; }
+  const abrir = f => f.plan && f.plan.plan_id ? `abrirCobroAlumno('${f.alumno.id}')` : `abrirFichaAlumno('${f.alumno.id}','dat')`;
+  const filas = L.map(f => {
+    const est = xCobEstado(f.plan), e = COB_ESTADOS[est], p = f.plan;
+    return `<div class="x-frow" onclick="${abrir(f)}"><div>${xQuien(f.alumno.nombre, p && p.plan_id ? p.plan_nombre : 'Sin plan asignado', true, f.alumno.foto_url)}</div>
+      <div class="money">${p && p.plan_id ? xe(formatearMonto(p.precio_transferencia)) : '—'}</div><div class="x-sub" style="font-size:13px;">${xe(xCobTexto(p))}</div>
+      <div><span class="pill ${e[1]}">${e[0]}</span></div><div>${p && p.plan_id ? `<button class="${est === 'vencido' || est === 'por_vencer' || est === 'sin_pagos' ? '' : 'ghost'}" onclick="event.stopPropagation();abrirCobroAlumno('${f.alumno.id}', true)">💰 Cobrar</button>` : ''}</div></div>`;
+  }).join('');
+  const lista = L.map(f => {
+    const est = xCobEstado(f.plan), e = COB_ESTADOS[est], p = f.plan;
+    return `<div class="x-li" onclick="${abrir(f)}">${xAv(f.alumno.nombre, f.alumno.foto_url)}<div class="mid"><div class="x-nm">${xe(f.alumno.nombre)}</div><div class="x-sub">${xe(p && p.plan_id ? p.plan_nombre + ' · ' + xCobTexto(p) : 'Sin plan asignado')}</div></div><div class="end"><div style="font-weight:800;">${p && p.plan_id ? xe(formatearMonto(p.precio_transferencia)) : ''}</div><div style="margin-top:3px;"><span class="pill ${e[1]}">${e[0]}</span></div></div><span class="go">›</span></div>`;
+  }).join('');
+  cont.className = '';
+  cont.innerHTML = `<div class="x-tbl-wrap"><div class="x-frow h"><div>Alumno</div><div style="text-align:right">Cuota</div><div>Vencimiento</div><div>Estado</div><div></div></div>${filas}</div><div class="x-lst" style="border:0;border-radius:0;">${lista}</div>`;
+}
+// Detalle del cobro: ventana emergente con las mismas acciones de siempre (cobrar, QR, historial)
+async function abrirCobroAlumno(id, abrirForm){
+  FICHA_ALU = null; FICHA_PROF = null; const tok = ++FICHA_TOK;
+  const box = document.getElementById('fichaBox');
+  box.className = 'modal-box x-box x-ficha x-cobro';
+  box.innerHTML = '<div class="x-fi-body muted">Cargando…</div>';
+  xAbrirModal('modalFicha');
+  let p = COBRANZAS_CACHE[id];
+  if (!p){ try{ const [v] = await sb(`v_plan_vigente_alumno?alumno_id=eq.${id}`); if (v){ p = v; COBRANZAS_CACHE[id] = v; } }catch(e){} }
+  if (tok !== FICHA_TOK) return;
+  const al = ALUMNOS_CACHE.find(a => a.id === id) || buscarAlumnoCache(id) || (COBRANZAS_FILAS.find(f => f.alumno.id === id) || {}).alumno || { id, nombre: 'Alumno' };
+  if (!p || !p.plan_id){ cerrarFicha(); abrirFichaAlumno(id, 'dat'); return; }
+  const est = xCobEstado(p), e = COB_ESTADOS[est];
+  const pct = GIMNASIO_ACTUAL?.descuento_efectivo_pct ?? 10;
+  const met = { mercado_pago:'💳 Mercado Pago', transferencia:'🏦 Transferencia', efectivo:'💵 Efectivo' };
+  const tel = al.telefono || ALUMNOS_CACHE.find(a => a.id === id)?.telefono;
+  box.innerHTML = `<div class="x-fi-head">${xAv(al.nombre, al.foto_url)}<div class="tt"><div class="x-nm">${xe(al.nombre)}</div><div class="x-sub">${xe(p.plan_nombre || 'Plan')}</div></div><button type="button" class="x-cerrar est" aria-label="Cerrar" title="Cerrar" onclick="cerrarFicha()">✕</button></div>
+    <div class="x-fi-body" style="padding-top:6px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:14px;"><div style="font-size:28px;font-weight:800;">${xe(formatearMonto(p.precio_transferencia))}</div><span class="pill ${e[1]}" style="font-size:13px;">${e[0]}</span></div>
+      <div class="x-dl">${[['Plan', p.plan_nombre || '—'], ['Estado', xCobTexto(p)], ['Precio en efectivo (−' + pct + '%)', formatearMonto(p.precio_transferencia * (1 - pct / 100))], ['Vigencia hasta', p.vigencia_hasta ? formatearFechaCorta(p.vigencia_hasta) : '—'], ['Último pago', p.pago_id ? `${met[p.metodo_pago] || p.metodo_pago || '—'} · ${formatearMonto(p.monto)}` : 'Nunca pagó'], ['Días por semana', p.dias_por_semana ?? 'Libre']].map(r => `<div><div class="k">${xe(r[0])}</div><div class="v">${xe(r[1])}</div></div>`).join('')}</div>
+      <div class="x-btns">
+        <button onclick="toggleCobrar('${id}')">💰 Cobrar</button>
+        ${GIMNASIO_ACTUAL?.mp_conectado ? `<button class="ghost" onclick="abrirModalCobrarQR('${id}')">📲 Cobrar con QR</button>` : ''}
+        <button class="ghost" onclick="toggleHistorialPagos('${id}')">🧾 Historial</button>
+        ${tel ? `<button class="ghost" onclick="xCobRecordatorio('${id}')">💬 Recordatorio</button>` : ''}
+        <button class="ghost" onclick="cerrarFicha();abrirFichaAlumno('${id}')">Ver ficha del alumno</button>
+      </div>
+      <div id="cobrarForm${id}" style="display:none; margin-top:14px;">
+        <div class="row">
+          <div class="field"><label>Forma de pago</label><select id="cobrarMetodo${id}" onchange="previewMontoCobro('${id}')"><option value="transferencia">Transferencia</option><option value="efectivo">Efectivo (con descuento)</option></select></div>
+          <div class="field"><label>Meses a pagar</label><select id="cobrarMeses${id}" onchange="previewMontoCobro('${id}')"><option value="">1 mes</option>${PLANES_PREPAGO_CACHE.filter(x => x.activo).map(x => `<option value="${x.id}">${xe(x.nombre)}</option>`).join('')}</select></div>
+          <div class="field"><label>Monto a pagar</label><input disabled id="cobrarMonto${id}"></div>
+          <button style="align-self:end;" onclick="confirmarCobro('${id}')">Confirmar pago</button>
+        </div>
+      </div>
+      <div id="historialPagos${id}" style="display:none; margin-top:14px;"></div>
+    </div>`;
+  if (abrirForm) toggleCobrar(id);
+}
+function xCobRecordatorio(id){
+  const al = ALUMNOS_CACHE.find(a => a.id === id) || (COBRANZAS_FILAS.find(f => f.alumno.id === id) || {}).alumno;
+  const p = COBRANZAS_CACHE[id];
+  if (!al || !al.telefono){ toast('No tiene teléfono cargado.', true); return; }
+  const gim = GIMNASIO_ACTUAL?.nombre || 'el gimnasio';
+  const est = xCobEstado(p);
+  const msg = est === 'vencido' ? `Hola ${al.nombre}! Te escribo de ${gim} porque tu cuota venció el ${formatearFechaCorta(p.vigencia_hasta)}. ¿Coordinamos el pago para que sigas entrenando sin problemas?`
+    : est === 'por_vencer' ? `Hola ${al.nombre}! Te escribo de ${gim} para avisarte que tu cuota vence el ${formatearFechaCorta(p.vigencia_hasta)}. ¡Cualquier cosa avisame!`
+    : `Hola ${al.nombre}! Te escribo de ${gim} para coordinar el pago de tu cuota.`;
+  const url = whatsappUrlAlumno(al.telefono, msg);
+  if (!url){ toast('El teléfono no es válido.', true); return; }
+  window.open(url, '_blank');
+  if (est === 'vencido' || est === 'por_vencer') marcarContactoAlumno(id, est);
 }
 
 function cobCambiarTab(tab){
@@ -9070,6 +9323,7 @@ async function confirmarCobro(alumnoId){
     });
     const pago = Array.isArray(resp) ? resp[0] : resp;
     toast('Pago registrado ✓');
+    cerrarFicha();
     mostrarExitoCobro(alumnoId, pago, alumnoNombre, planNombre);
     cargarCobranzas();
     cargarListaAlumnos();
@@ -9306,6 +9560,7 @@ async function crearAlumno(){
     document.getElementById('nuevoAlumnoDireccion').value = '';
     document.getElementById('nuevoAlumnoPlan').value = '';
     toast('Alumno agregado ✓' + (planId ? ' con plan asignado (falta registrar el primer pago en Finanzas).' : '.'));
+    cerrarModalNuevoAlumno();
     await cargarPersonas();
     cargarListaAlumnos();
   }catch(e){ toast('Error agregando alumno: ' + extraerMensajeError(e), true); }
@@ -9320,9 +9575,97 @@ let ALUMNOS_LISTA_CACHE = [];
 // Para acciones que pueden venir de un alumno inactivo (ver ficha, generar acceso desde
 // la lista con filtro "Inactivos"/"Todos"), hay que buscar también en ALUMNOS_LISTA_CACHE.
 function buscarAlumnoCache(alumnoId){
-  return ALUMNOS_CACHE.find(a => a.id === alumnoId) || ALUMNOS_LISTA_CACHE.find(a => a.id === alumnoId);
+  return ALUMNOS_CACHE.find(a => a.id === alumnoId) || ALUMNOS_LISTA_CACHE.find(a => a.id === alumnoId) || (typeof XEXTRA_ALU !== 'undefined' ? XEXTRA_ALU[alumnoId] : undefined);
 }
 
+// ===================== (v93) Bloque 1 — helpers compartidos =====================
+const XSEL_ALU = 'id,nombre,tipo,tipo_alumno_id,gimnasio_id,plan_id,altura_cm,peso_kg,objetivo,telefono,email,direccion,dni,perfil_id,equipo_id,posicion,foto_url,activo,creado_en,equipos(nombre),alumno_categorias(categoria_id,categorias(nombre))';
+let FICHA_PROF = null;
+function xe(s){ return escaparHtml(s == null ? '' : String(s)); }
+function xNorm(s){ return String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, ''); }
+function xAv(nombre, foto){ return foto ? `<img class="x-av" src="${xe(foto)}" alt="">` : `<div class="x-av">${xe(iniciales(nombre || ''))}</div>`; }
+function xQuien(nombre, sub, big, foto){
+  return `<div class="x-who">${xAv(nombre, foto)}<div style="min-width:0"><div class="x-nm${big ? ' big' : ''}">${xe(nombre)}</div>${sub ? `<div class="x-sub">${xe(sub)}</div>` : ''}</div></div>`;
+}
+function xAbrirModal(id){ document.getElementById(id).classList.add('show'); }
+function xCerrarModal(id){ document.getElementById(id).classList.remove('show'); }
+function cerrarFicha(){ xCerrarModal('modalFicha'); FICHA_ALU = null; FICHA_PROF = null; FICHA_TOK++; }
+document.addEventListener('keydown', e => { if (e.key === 'Escape'){ ['modalFicha', 'modalNuevoAlumno', 'modalNuevoProfesor'].forEach(id => { const m = document.getElementById(id); if (m && m.classList.contains('show')) m.classList.remove('show'); }); FICHA_ALU = null; FICHA_PROF = null; } });
+const XEXTRA_ALU = {}; // alumnos traídos solo para la ficha (p. ej. dados de baja desde Alertas)
+
+// ---------- Rutina en curso / próxima por alumno (para la columna "Rutina" y la ficha) ----------
+let RUTINAS_ALUMNO = {}, RUTINAS_ALUMNO_OK = true;
+function xEstadoRutina(r, hoy){
+  const dias = r.rutina_dias || [];
+  if (r.modo_dias === 'rotativa'){
+    const ini = r.fecha_inicio || null, dur = r.duracion_semanas || null, fin = finCicloRotativa(ini, dur);
+    if (ini && ini > hoy) return { st:'prox', ini, detalle:`Empieza el ${fechaCortaISO(ini)}` };
+    if (fin && fin < hoy) return { st:'fin', ini: ini || '', fin, detalle:`Terminó el ${fechaCortaISO(fin)}` };
+    let det = 'Rotativa';
+    if (ini && dur){ const sem = Math.min(dur, Math.floor(diasEntreISO(ini, hoy) / 7) + 1); det = `Sem ${sem}/${dur}${fin ? ` · hasta el ${fechaCortaISO(fin)}` : ''}`; }
+    return { st:'curso', ini: ini || '', fin, detalle: det };
+  }
+  const fechas = dias.map(d => d.fecha).filter(Boolean).sort();
+  if (!fechas.length) return { st:'curso', ini:'', detalle:'' };
+  const ini = fechas[0], fin = fechas[fechas.length - 1];
+  if (ini > hoy) return { st:'prox', ini, detalle:`Empieza el ${fechaCortaISO(ini)}` };
+  if (fin < hoy) return { st:'fin', ini, fin, detalle:`Terminó el ${fechaCortaISO(fin)}` };
+  return { st:'curso', ini, fin, detalle:`Fecha fija · hasta el ${fechaCortaISO(fin)}` };
+}
+async function cargarRutinasPorAlumno(alumnos, mantener){
+  if (!mantener) RUTINAS_ALUMNO = {};
+  try{
+    const gimId = PERFIL_ACTUAL?.gimnasio_id;
+    if (!gimId){ RUTINAS_ALUMNO_OK = false; return; }
+    if (!alumnos.length){ RUTINAS_ALUMNO_OK = true; return; }
+    const ids = alumnos.map(a => a.id);
+    const SELR = 'id,nombre,modo_dias,es_ajuste,tipo_alumno_id,fecha_inicio,duracion_semanas,rutina_dias(fecha)';
+    const [asig, rutinas, conAsig] = await Promise.all([
+      sb(`rutina_asignaciones?select=alumno_id,rutina_id&alumno_id=in.(${ids.join(',')})`),
+      sb(`rutinas?select=${SELR}&gimnasio_id=eq.${gimId}&activa=eq.true&limit=1500`),
+      sb(`v_rutinas_asignadas_gimnasio?select=rutina_id&gimnasio_id=eq.${gimId}`),
+    ]);
+    const porId = {}; rutinas.forEach(r => { porId[r.id] = r; });
+    const idsConAsig = new Set(conAsig.map(x => x.rutina_id));
+    const directas = {}; asig.forEach(x => { (directas[x.alumno_id] = directas[x.alumno_id] || []).push(x.rutina_id); });
+    const biblioteca = rutinas.filter(r => !idsConAsig.has(r.id) && r.modo_dias !== 'plantilla' && !r.es_ajuste && (r.rutina_dias || []).length);
+    const hoy = fechaLocalISO();
+    alumnos.forEach(a => {
+      const cand = [];
+      (directas[a.id] || []).forEach(id => { const r = porId[id]; if (r && !r.es_ajuste) cand.push({ r, origen:'especial' }); });
+      biblioteca.forEach(r => { if (!r.tipo_alumno_id || r.tipo_alumno_id === a.tipo_alumno_id) cand.push({ r, origen:'biblioteca' }); });
+      const todas = cand.map(c => ({ id:c.r.id, nombre:c.r.nombre, modo:c.r.modo_dias, origen:c.origen, ...xEstadoRutina(c.r, hoy) }));
+      const curso = todas.filter(x => x.st === 'curso').sort((p, q) => (q.ini || '').localeCompare(p.ini || ''));
+      const prox = todas.filter(x => x.st === 'prox').sort((p, q) => (p.ini || '').localeCompare(q.ini || ''));
+      RUTINAS_ALUMNO[a.id] = { actual: curso[0] || null, sigue: prox[0] || null, todas };
+    });
+    RUTINAS_ALUMNO_OK = true;
+  }catch(e){ console.error('No se pudieron calcular las rutinas por alumno:', e); if (!mantener) RUTINAS_ALUMNO = {}; RUTINAS_ALUMNO_OK = false; }
+}
+function xSinRutina(a){ if (!RUTINAS_ALUMNO_OK) return false; const r = RUTINAS_ALUMNO[a.id]; return !r || (!r.actual && !r.sigue); }
+function xTipoNombre(a){ return (typeof TIPOS_ALUMNO_CACHE !== 'undefined' && TIPOS_ALUMNO_CACHE.find(t => t.id === a.tipo_alumno_id)?.nombre) || ''; }
+function xPlanNombre(a){ const v = VIGENTES_POR_ALUMNO[a.id]; return (v && v.plan_nombre) || (PLANES_CACHE.find(p => p.id === a.plan_id)?.nombre) || ''; }
+function xCuota(a){
+  const p = VIGENTES_POR_ALUMNO[a.id];
+  if (!p || !p.plan_id) return { t:'Sin plan', cl:'warn', est:'sin_plan' };
+  const n = p.dias_para_vencer != null ? Math.abs(Math.round(Number(p.dias_para_vencer))) : null;
+  if (p.estado_pago === 'vencido') return { t:`Venció hace ${n ?? '?'} d`, cl:'bad', est:'vencido' };
+  if (p.estado_pago === 'por_vencer') return { t:`Vence en ${n ?? '?'} d`, cl:'warn', est:'por_vencer' };
+  if (p.estado_pago === 'sin_pagos') return { t:'Nunca pagó', cl:'warn', est:'sin_pagos' };
+  return { t:`Vence ${formatearFechaCorta(p.vigencia_hasta)}`, cl:'', est:'al_dia' };
+}
+function xRutinaCelda(a){
+  if (!RUTINAS_ALUMNO_OK) return '<span class="muted">—</span>';
+  const r = RUTINAS_ALUMNO[a.id] || {};
+  const sigue = r.sigue ? `<div class="x-sub">Sigue: <span class="t-warn" style="font-weight:600;">${xe(r.sigue.nombre)}</span> · ${xe(r.sigue.detalle)}</div>` : '';
+  if (r.actual) return `<div style="font-weight:600;">${xe(r.actual.nombre)}</div><div class="x-sub">${xe(r.actual.detalle || '—')}</div>${sigue}`;
+  if (r.sigue) return `<span class="pill warn">Sin rutina en curso</span>${sigue}`;
+  return '<span class="pill warn">Sin rutina asignada</span>';
+}
+
+// ---------- Alumnos: lista (tabla en compu · lista simple en celu) ----------
+let FILTRO_ALU_EXTRA = '';
+function setFiltroAluExtra(k){ FILTRO_ALU_EXTRA = (FILTRO_ALU_EXTRA === k) ? '' : k; renderListaAlumnos(); }
 function cambiarFiltroEstadoAlumnos(filtro){
   FILTRO_ESTADO_ALUMNOS = filtro;
   document.querySelectorAll('.filtro-estado-alu').forEach(b => b.classList.remove('activo'));
@@ -9330,7 +9673,6 @@ function cambiarFiltroEstadoAlumnos(filtro){
   document.getElementById(map[filtro])?.classList.add('activo');
   cargarListaAlumnos();
 }
-
 async function cargarListaAlumnos(){
   const cont = document.getElementById('listaAlumnos');
   cont.innerHTML = 'Cargando...';
@@ -9338,12 +9680,12 @@ async function cargarListaAlumnos(){
   const filtroEstado = FILTRO_ESTADO_ALUMNOS === 'activos' ? '&activo=eq.true'
     : FILTRO_ESTADO_ALUMNOS === 'inactivos' ? '&activo=eq.false' : '';
   try{
-    ALUMNOS_LISTA_CACHE = await sb(`alumnos?select=id,nombre,tipo,tipo_alumno_id,gimnasio_id,plan_id,altura_cm,peso_kg,objetivo,telefono,email,direccion,dni,perfil_id,equipo_id,posicion,foto_url,activo,equipos(nombre),alumno_categorias(categoria_id,categorias(nombre))${filtroEstado}${filtroGym}&order=nombre.asc`);
+    ALUMNOS_LISTA_CACHE = await sb(`alumnos?select=${XSEL_ALU}${filtroEstado}${filtroGym}&order=nombre.asc`);
   }catch(e){
-    cont.innerHTML = `<div class="empty">Error cargando alumnos: ${e.message}</div>`;
+    cont.innerHTML = `<div class="empty">Error cargando alumnos: ${xe(e.message)}</div>`;
     return;
   }
-  if (!ALUMNOS_LISTA_CACHE.length){ cont.innerHTML = '<div class="empty">No hay alumnos en este filtro.</div>'; return; }
+  if (!ALUMNOS_LISTA_CACHE.length){ cont.innerHTML = '<div class="empty">No hay alumnos en este filtro.</div>'; const t = document.getElementById('aluTotal'); if (t) t.textContent = '· 0'; return; }
   try{
     const ids = ALUMNOS_LISTA_CACHE.map(a => a.id);
     const vigentes = await sb(`v_plan_vigente_alumno?alumno_id=in.(${ids.join(',')})`);
@@ -9351,111 +9693,237 @@ async function cargarListaAlumnos(){
     vigentes.forEach(v => VIGENTES_POR_ALUMNO[v.alumno_id] = v);
   }catch(e){ VIGENTES_POR_ALUMNO = {}; }
   await cargarPlanesEnSelectAlumno();
-  const ETIQUETA_ESTADO = { vencido: 'Cuota vencida', por_vencer: 'Por vencer', al_dia: 'Al día', sin_pagos: 'Nunca pagó', sin_plan: 'Sin plan' };
-  const COLOR_ESTADO = { vencido: 'color:var(--danger-text); border-color:rgba(255,93,93,.4);', por_vencer: 'color:var(--warn-text); border-color:rgba(255,210,61,.4);', al_dia: 'color:var(--accent2-text); border-color:rgba(61,220,132,.4);', sin_pagos: 'color:var(--warn-text); border-color:rgba(255,210,61,.4);' };
-  cont.innerHTML = ALUMNOS_LISTA_CACHE.map(a => {
-    const datos = [
-      a.altura_cm ? a.altura_cm+' cm' : null,
-      a.peso_kg ? a.peso_kg+' kg' : null,
-      a.objetivo || null,
-      a.telefono || null,
-      a.email || null,
-      a.direccion || null,
-    ].filter(Boolean).join(' · ');
-    const plan = VIGENTES_POR_ALUMNO[a.id];
-    const estado = plan?.estado_pago || 'sin_plan';
-    const chipPlan = plan && plan.plan_nombre
-      ? `<span class="pill" style="${COLOR_ESTADO[estado]||''}">${plan.plan_nombre} · ${ETIQUETA_ESTADO[estado]}</span>`
-      : `<span class="pill">Sin plan</span>`;
-    const chipAcceso = a.perfil_id
-      ? `<span class="pill" style="color:var(--accent2-text); border-color:rgba(61,220,132,.4);">🔑 Tiene cuenta</span> <button class="ghost" style="font-size:12px; padding:2px 8px;" onclick="abrirGestionAccesoAlumno('${a.id}')">🔁 Acceso</button>`
-      : (a.dni
-        ? `<button class="ghost" onclick="generarAccesoAlumno('${a.id}')">🔑 Generar acceso</button>`
-        : `<span class="pill" title="Cargale el DNI en Datos para poder generarle acceso">🔒 Sin DNI</span>`);
-    const nombresCategorias = (a.alumno_categorias || []).map(ac => ac.categorias?.nombre).filter(Boolean);
-    const idsCategoriasAlumno = (a.alumno_categorias || []).map(ac => ac.categoria_id);
-    const chipsCategorias = nombresCategorias.map(n => `<span class="pill">🏷️ ${n}</span>`).join(' ');
-    const chipEquipo = a.equipos?.nombre ? `<span class="pill">⚽ ${a.equipos.nombre}</span>` : '';
-    const chipPosicion = a.posicion ? `<span class="pill">🎯 ${a.posicion}</span>` : '';
-    const fotoChica = a.foto_url
-      ? `<img src="${a.foto_url}" style="width:32px; height:32px; border-radius:50%; object-fit:cover; margin-right:8px; vertical-align:middle;">`
-      : '';
-    const chipInactivo = a.activo ? '' : `<span class="pill" style="color:var(--danger-text); border-color:rgba(255,93,93,.4);">⚪ Inactivo</span>`;
-    const btnEstado = a.activo
-      ? `<button class="ghost" onclick="toggleActivoAlumno('${a.id}', false, '${(a.nombre||'').replace(/'/g,"\\'")}')" title="Marca al alumno como inactivo sin borrar sus datos ni su historial">🔴 Dar de baja</button>`
-      : `<button class="ghost" onclick="toggleActivoAlumno('${a.id}', true, '${(a.nombre||'').replace(/'/g,"\\'")}')" title="Vuelve a poner al alumno como activo">🟢 Reactivar</button>`;
-    const datosTxt = [a.dni ? 'DNI ' + a.dni : 'Sin DNI', datos || 'Sin datos de contacto/físicos cargados.'].join(' · ');
-    const avatarHtml = a.foto_url
-      ? `<img class="al-av" src="${a.foto_url}" alt="">`
-      : `<div class="al-av">${iniciales(a.nombre)}</div>`;
-    return `
-    <div class="al-row" style="${a.activo?'':'opacity:.7;'}">
-      <div class="al-head">
-        ${avatarHtml}
-        <div class="al-info"><b>${a.nombre}</b><div class="m">${datosTxt}</div></div>
-      </div>
-      <div class="al-chips">${chipPlan} ${chipInactivo} ${chipsCategorias} ${chipEquipo} ${chipPosicion}</div>
-      <div class="al-acts">
-        <select onchange="cambiarTipoAlumno('${a.id}', this.value)">
-          <option value="">-- sin tipo --</option>
-          ${TIPOS_ALUMNO_CACHE.map(t => `<option value="${t.id}" ${a.tipo_alumno_id===t.id?'selected':''}>${t.nombre}</option>`).join('')}
-        </select>
-        <select onchange="cambiarPlanAlumno('${a.id}', this.value)">
-          <option value="">-- sin plan --</option>
-          ${PLANES_CACHE.map(p => `<option value="${p.id}" ${a.plan_id===p.id?'selected':''}>${p.nombre}</option>`).join('')}
-        </select>
-      </div>
-      <div class="al-acts">
-        ${chipAcceso}
-        <button class="ghost" onclick="abrirReporteAlumno('${a.id}')">📄 Ver ficha</button>
-        <button class="ghost" onclick="toggleEditarAlumno('${a.id}')">✏️ Datos</button>
-        ${btnEstado}
-      </div>
-      <div id="editarAlumno${a.id}" style="display:none; margin-top:10px;">
-        <div class="row">
-          <div class="field"><label>DNI</label><input id="editDni${a.id}" inputmode="numeric" value="${a.dni||''}"></div>
-          <div class="field"><label>Altura (cm)</label><input inputmode="numeric" type="number" id="editAltura${a.id}" value="${a.altura_cm||''}"></div>
-          <div class="field"><label>Peso (kg)</label><input inputmode="decimal" type="number" step="0.1" id="editPeso${a.id}" value="${a.peso_kg||''}"></div>
-          <div class="field" style="flex:1; min-width:180px;"><label>Objetivo</label><input id="editObjetivo${a.id}" value="${(a.objetivo||'').replace(/"/g,'&quot;')}"></div>
-          <div class="field" style="min-width:160px;"><label>Posición (opcional)</label><input id="editPosicion${a.id}" placeholder="Ej: Mediocampo" value="${(a.posicion||'').replace(/"/g,'&quot;')}"></div>
-        </div>
-        <div class="row" style="margin-top:8px;">
-          <div class="field" style="flex:1; min-width:160px;"><label>Teléfono</label><input id="editTelefono${a.id}" value="${a.telefono||''}"></div>
-          <div class="field" style="flex:1; min-width:200px;"><label>Email</label><input type="email" id="editEmail${a.id}" value="${a.email||''}"></div>
-          <div class="field" style="flex:2; min-width:220px;"><label>Dirección</label><input id="editDireccion${a.id}" value="${(a.direccion||'').replace(/"/g,'&quot;')}"></div>
-        </div>
-        <div class="row" style="margin-top:8px; align-items:flex-end;">
-          <div class="field">
-            <label>Foto de perfil (opcional)</label>
-            <input type="file" accept="image/*" onchange="subirFotoAlumno('${a.id}', this.files[0])">
-          </div>
-          <input type="hidden" id="editFotoUrl${a.id}" value="${a.foto_url||''}">
-          <img id="editFotoPreview${a.id}" src="${a.foto_url||''}" style="width:44px; height:44px; border-radius:50%; object-fit:cover; ${a.foto_url?'':'display:none;'}">
-        </div>
-        <div class="row" style="margin-top:8px; align-items:flex-start;">
-          <div class="field" style="flex:1; min-width:220px;">
-            <label>Categorías</label>
-            <div id="editCategorias${a.id}" style="display:flex; flex-wrap:wrap; gap:10px;">
-              ${CATEGORIAS_CACHE.length ? CATEGORIAS_CACHE.map(c => `
-                <label class="row" style="gap:4px; font-weight:400;">
-                  <input type="checkbox" value="${c.id}" ${idsCategoriasAlumno.includes(c.id) ? 'checked' : ''}> ${c.nombre}
-                </label>
-              `).join('') : '<span class="muted">Cargá categorías en "🏢 Mi gimnasio" primero.</span>'}
-            </div>
-          </div>
-          <div class="field" style="min-width:180px;">
-            <label>Equipo</label>
-            <select id="editEquipo${a.id}">
-              <option value="">-- sin equipo --</option>
-              ${EQUIPOS_CACHE.map(e => `<option value="${e.id}" ${a.equipo_id===e.id?'selected':''}>${e.nombre}</option>`).join('')}
-            </select>
-          </div>
-        </div>
-        <button style="margin-top:8px;" onclick="guardarDatosAlumno('${a.id}')">Guardar datos</button>
-      </div>
-    </div>
-  `;
+  await cargarRutinasPorAlumno(ALUMNOS_LISTA_CACHE);
+  renderListaAlumnos();
+  refrescarFichaSiAbierta();
+}
+function renderListaAlumnos(){
+  const cont = document.getElementById('listaAlumnos');
+  if (!cont) return;
+  const base = ALUMNOS_LISTA_CACHE;
+  const q = xNorm(document.getElementById('aluBuscar')?.value || '');
+  const sinN = base.filter(xSinRutina).length;
+  const vencN = base.filter(a => xCuota(a).est === 'vencido').length;
+  const bVenc = document.getElementById('filtroAluVenc'), bSin = document.getElementById('filtroAluSinRut');
+  if (bVenc){ bVenc.textContent = `🔴 Cuota vencida · ${vencN}`; bVenc.classList.toggle('activo', FILTRO_ALU_EXTRA === 'vencida'); }
+  if (bSin){ bSin.textContent = `📋 Sin rutina asignada · ${sinN}`; bSin.classList.toggle('activo', FILTRO_ALU_EXTRA === 'sinrut'); bSin.style.display = RUTINAS_ALUMNO_OK ? '' : 'none'; }
+  const tot = document.getElementById('aluTotal'); if (tot) tot.textContent = `· ${base.length}`;
+  const L = base.filter(a =>
+    (!q || xNorm([a.nombre, a.dni, xTipoNombre(a), a.equipos?.nombre].join(' ')).includes(q)) &&
+    (FILTRO_ALU_EXTRA !== 'vencida' || xCuota(a).est === 'vencido') &&
+    (FILTRO_ALU_EXTRA !== 'sinrut' || xSinRutina(a)));
+  const cnt = document.getElementById('aluContador'); if (cnt) cnt.textContent = `${L.length} de ${base.length} alumnos`;
+  if (!L.length){ cont.innerHTML = '<div class="x-vacio">No hay alumnos con ese filtro.</div>'; return; }
+  const estPill = a => a.activo === false ? '<span class="pill">Inactivo</span>' : '<span class="pill ok">Activo</span>';
+  const rows = L.map(a => {
+    const cu = xCuota(a), tipo = xTipoNombre(a), plan = xPlanNombre(a);
+    return `<tr onclick="abrirFichaAlumno('${a.id}')">
+      <td>${xQuien(a.nombre, a.dni ? 'DNI ' + a.dni : 'Sin DNI', false, a.foto_url)}</td>
+      <td>${xe(tipo || '—')}${a.equipos?.nombre ? ` · ${xe(a.equipos.nombre)}` : ''}<div class="x-sub">${plan ? 'Plan ' + xe(plan) : 'Sin plan'}</div></td>
+      <td>${estPill(a)}</td>
+      <td class="t-${cu.cl}" style="font-weight:600;">${xe(cu.t)}</td>
+      <td>${xRutinaCelda(a)}</td>
+      <td class="r"><button class="ghost" onclick="event.stopPropagation();abrirFichaAlumno('${a.id}')">Ver ficha</button></td></tr>`;
   }).join('');
+  const lista = L.map(a => {
+    const cu = xCuota(a), tipo = xTipoNombre(a), plan = xPlanNombre(a);
+    return `<div class="x-li" onclick="abrirFichaAlumno('${a.id}')">${xAv(a.nombre, a.foto_url)}
+      <div class="mid"><div class="x-nm">${xe(a.nombre)}</div><div class="x-sub">${xe([tipo, plan ? 'Plan ' + plan : 'Sin plan'].filter(Boolean).join(' · '))}</div>${xSinRutina(a) ? '<div style="margin-top:5px"><span class="pill warn">Sin rutina</span></div>' : ''}</div>
+      <div class="end"><div class="x-sub t-${cu.cl}" style="font-weight:600;">${xe(cu.t)}</div>${a.activo === false ? '<div class="x-sub">Inactivo</div>' : ''}</div><span class="go">›</span></div>`;
+  }).join('');
+  cont.innerHTML = `<div class="x-tbl-wrap" style="overflow-x:auto;"><table class="x-tbl"><thead><tr><th>Alumno</th><th>Tipo · Plan</th><th>Estado</th><th>Cuota</th><th>Rutina</th><th></th></tr></thead><tbody>${rows}</tbody></table></div><div class="x-lst">${lista}</div>`;
+}
+
+// ---------- Alta: formulario corto en ventana emergente (el resto se completa desde la ficha) ----------
+function toggleFormNuevoAlumno(){ xAbrirModal('modalNuevoAlumno'); setTimeout(() => document.getElementById('nuevoAlumnoNombre')?.focus(), 60); }
+function cerrarModalNuevoAlumno(){ xCerrarModal('modalNuevoAlumno'); }
+function toggleFormNuevoProfesor(){ xAbrirModal('modalNuevoProfesor'); setTimeout(() => document.getElementById('nuevoProfesorNombre')?.focus(), 60); }
+function cerrarModalNuevoProfesor(){ xCerrarModal('modalNuevoProfesor'); }
+
+// ---------- Ficha del alumno ----------
+let FICHA_ALU = null, FICHA_TOK = 0, FICHA_PAGOS = [];
+const FICHA_TABS = [['res','Resumen'],['dat','Datos'],['rut','Rutinas'],['pag','Pagos'],['asi','Asistencia'],['eva','Evaluaciones']];
+async function abrirFichaAlumno(id, tab){
+  FICHA_PROF = null;
+  FICHA_ALU = { id, tab: tab || 'res', a: null };
+  const box = document.getElementById('fichaBox');
+  box.className = 'modal-box x-box x-ficha';
+  box.innerHTML = '<div class="x-fi-body muted">Cargando ficha…</div>';
+  xAbrirModal('modalFicha');
+  let a = buscarAlumnoCache(id) || null;
+  try{
+    const [fresco] = await sb(`alumnos?select=${XSEL_ALU}&id=eq.${id}`);
+    if (fresco){ if (a) Object.assign(a, fresco); else { a = fresco; XEXTRA_ALU[id] = a; } }
+  }catch(e){ /* se usa lo que haya en memoria */ }
+  if (!a){ toast('No se encontró el alumno.', true); cerrarFicha(); return; }
+  if (!FICHA_ALU || FICHA_ALU.id !== id) return;
+  try{ if (!VIGENTES_POR_ALUMNO[id]){ const [v] = await sb(`v_plan_vigente_alumno?alumno_id=eq.${id}`); if (v) VIGENTES_POR_ALUMNO[id] = v; } }catch(e){}
+  if (!RUTINAS_ALUMNO[id]) await cargarRutinasPorAlumno([a], true);
+  if (!FICHA_ALU || FICHA_ALU.id !== id) return;
+  FICHA_ALU.a = a;
+  pintarFichaAlumno();
+}
+function fichaTab(t){ if (!FICHA_ALU) return; FICHA_ALU.tab = t; pintarFichaAlumno(); }
+function refrescarFichaSiAbierta(){
+  if (!FICHA_ALU || !FICHA_ALU.a) return;
+  const nuevo = ALUMNOS_LISTA_CACHE.find(x => x.id === FICHA_ALU.id);
+  if (nuevo) FICHA_ALU.a = nuevo;
+  pintarFichaAlumno();
+}
+function fichaWhatsApp(){
+  const a = FICHA_ALU?.a; if (!a) return;
+  const url = whatsappUrlAlumno(a.telefono, `Hola ${a.nombre}! Te escribo de ${GIMNASIO_ACTUAL?.nombre || 'el gimnasio'}.`);
+  if (url) window.open(url, '_blank'); else toast('No tiene teléfono cargado.', true);
+}
+function fichaReporte(){ const id = FICHA_ALU?.id; if (!id) return; cerrarFicha(); abrirReporteAlumno(id); }
+function fichaAsignarRutina(){ const id = FICHA_ALU?.id; if (!id) return; cerrarFicha(); irAAsignarEspecialDesdeModal(id); }
+function fichaNuevaEvaluacion(){ const id = FICHA_ALU?.id; if (!id) return; cerrarFicha(); irACargarEvaluacionDesdeFicha(id); }
+function fichaCobrar(){ const id = FICHA_ALU?.id; if (!id) return; cerrarFicha(); abrirCobroAlumno(id, true); }
+function fichaRecibo(i){ const p = FICHA_PAGOS[i]; if (!p || !FICHA_ALU?.a) return; descargarReciboPago(p, FICHA_ALU.a.nombre, xPlanNombre(FICHA_ALU.a) || 'Plan'); }
+
+function pintarFichaAlumno(){
+  const F = FICHA_ALU; if (!F || !F.a) return;
+  const a = F.a, tipo = xTipoNombre(a), plan = xPlanNombre(a);
+  const pills = `<span class="pill ${a.activo === false ? '' : 'ok'}">${a.activo === false ? 'Inactivo' : 'Activo'}</span> ${tipo ? `<span class="pill">${xe(tipo)}</span>` : ''} <span class="pill">${plan ? 'Plan ' + xe(plan) : 'Sin plan'}</span> ${a.equipos?.nombre ? `<span class="pill">⚽ ${xe(a.equipos.nombre)}</span>` : ''}`;
+  const box = document.getElementById('fichaBox');
+  box.className = 'modal-box x-box x-ficha';
+  box.innerHTML = `<div class="x-fi-head">${xAv(a.nombre, a.foto_url)}<div class="tt"><div class="x-nm">${xe(a.nombre)}</div><div style="margin-top:4px;display:flex;gap:5px;flex-wrap:wrap;">${pills}</div></div>
+    <div class="x-fi-acts">${a.telefono ? '<button onclick="fichaWhatsApp()">💬 WhatsApp</button>' : ''}<button class="ghost" onclick="fichaReporte()">📄 Reporte</button></div><button type="button" class="x-cerrar est" aria-label="Cerrar" title="Cerrar" onclick="cerrarFicha()">✕</button></div>
+    <div class="x-fi-tabs">${FICHA_TABS.map(r => `<span class="x-chip ${F.tab === r[0] ? 'on' : ''}" onclick="fichaTab('${r[0]}')">${r[1]}</span>`).join('')}</div>
+    <div class="x-fi-body" id="fichaTabBody"></div>`;
+  const body = document.getElementById('fichaTabBody');
+  const tok = ++FICHA_TOK;
+  if (F.tab === 'res'){ body.innerHTML = xFichaRes(a); xFichaResCarga(a, tok); }
+  else if (F.tab === 'dat') body.innerHTML = xFichaDat(a);
+  else if (F.tab === 'rut'){ body.innerHTML = xFichaRut(a); cargarRutinaAsignadaAlumno(a.id, 'fichaRutAsignada'); }
+  else if (F.tab === 'pag'){ body.innerHTML = '<div class="muted">Cargando…</div>'; xFichaPagos(a, tok); }
+  else if (F.tab === 'asi'){ body.innerHTML = '<div class="muted">Cargando…</div>'; xFichaAsistencia(a, tok); }
+  else if (F.tab === 'eva'){ body.innerHTML = '<div class="muted">Cargando…</div>'; xFichaEvaluaciones(a, tok); }
+}
+function xFichaRes(a){
+  const cu = xCuota(a), r = RUTINAS_ALUMNO[a.id] || {}, plan = xPlanNombre(a);
+  const rut = RUTINAS_ALUMNO_OK === false ? '<div class="muted">No se pudo calcular.</div>'
+    : r.actual ? `<div style="font-weight:800;font-size:16px;">${xe(r.actual.nombre)}</div><div class="x-sub">${xe(r.actual.detalle || '')}</div>${r.sigue ? `<div class="x-item" style="margin:8px 0 0;"><div><span class="x-sub">Sigue:</span> <b>${xe(r.sigue.nombre)}</b><div class="x-sub">${xe(r.sigue.detalle)}</div></div></div>` : ''}<div class="x-btns"><button class="ghost" onclick="fichaTab('rut')">Ver todas sus rutinas</button></div>`
+    : `<span class="pill warn">Sin rutina ${r.sigue ? 'en curso' : 'asignada'}</span>${r.sigue ? `<div class="x-sub" style="margin-top:6px;">Sigue: <b>${xe(r.sigue.nombre)}</b> · ${xe(r.sigue.detalle)}</div>` : ''}<div class="x-btns"><button onclick="fichaAsignarRutina()">＋ Asignar rutina</button></div>`;
+  return `<div class="x-kpis">
+      <div class="x-kpi"><div class="k">Turnos este mes</div><div class="v" id="fkTurnos">…</div></div>
+      <div class="x-kpi"><div class="k">Cuota</div><div class="v t-${cu.cl}" style="font-size:15px;">${xe(cu.t)}</div></div>
+      <div class="x-kpi"><div class="k">Última vez</div><div class="v" id="fkUlt" style="font-size:15px;">…</div></div>
+      <div class="x-kpi"><div class="k">Alta</div><div class="v" style="font-size:15px;">${a.creado_en ? xe(formatearFechaCorta(a.creado_en)) : '—'}</div></div></div>
+    <div class="x-fi-two"><div class="card" style="margin:0;"><h2 style="margin-top:0;">Rutina</h2>${rut}</div>
+    <div class="card" style="margin:0;"><h2 style="margin-top:0;">Cuota y plan</h2><div style="font-weight:800;font-size:16px;">${plan ? 'Plan ' + xe(plan) : 'Sin plan'}</div><div class="x-sub t-${cu.cl}">${xe(cu.t)}</div>
+    <div class="x-btns">${(VIGENTES_POR_ALUMNO[a.id] && VIGENTES_POR_ALUMNO[a.id].plan_id) ? '<button onclick="fichaCobrar()">💰 Cobrar</button>' : '<button class="ghost" onclick="fichaTab(\'dat\')">Asignar un plan</button>'}<button class="ghost" onclick="fichaTab('pag')">Ver pagos</button></div></div></div>`;
+}
+async function xFichaResCarga(a, tok){
+  try{
+    const hoy = new Date(), mesIni = fechaLocalISO(new Date(hoy.getFullYear(), hoy.getMonth(), 1));
+    const [mes, ult] = await Promise.all([
+      sb(`turnos?select=fecha,asistio&alumno_id=eq.${a.id}&estado=neq.cancelado&fecha=gte.${mesIni}`),
+      sb(`turnos?select=fecha&alumno_id=eq.${a.id}&asistio=eq.true&order=fecha.desc&limit=1`),
+    ]);
+    if (tok !== FICHA_TOK) return;
+    const asist = mes.filter(t => t.asistio === true).length;
+    const k1 = document.getElementById('fkTurnos'), k2 = document.getElementById('fkUlt');
+    if (k1) k1.textContent = `${asist} / ${mes.length}`;
+    if (k2) k2.textContent = ult[0] ? formatearFechaCorta(ult[0].fecha) : 'Nunca';
+  }catch(e){ const k1 = document.getElementById('fkTurnos'), k2 = document.getElementById('fkUlt'); if (k1) k1.textContent = '—'; if (k2) k2.textContent = '—'; }
+}
+function xEditarAlumnoHtml(a){
+  const idsCat = (a.alumno_categorias || []).map(ac => ac.categoria_id);
+  return `<div id="editarAlumno${a.id}" style="display:none; margin-top:14px; border-top:1px solid var(--border); padding-top:14px;">
+    <div class="row">
+      <div class="field"><label>DNI</label><input id="editDni${a.id}" inputmode="numeric" value="${xe(a.dni || '')}"></div>
+      <div class="field"><label>Altura (cm)</label><input inputmode="numeric" type="number" id="editAltura${a.id}" value="${a.altura_cm || ''}"></div>
+      <div class="field"><label>Peso (kg)</label><input inputmode="decimal" type="number" step="0.1" id="editPeso${a.id}" value="${a.peso_kg || ''}"></div>
+      <div class="field" style="flex:1; min-width:180px;"><label>Objetivo</label><input id="editObjetivo${a.id}" value="${xe(a.objetivo || '')}"></div>
+      <div class="field" style="min-width:160px;"><label>Posición (opcional)</label><input id="editPosicion${a.id}" placeholder="Ej: Mediocampo" value="${xe(a.posicion || '')}"></div>
+    </div>
+    <div class="row" style="margin-top:8px;">
+      <div class="field" style="flex:1; min-width:160px;"><label>Teléfono</label><input id="editTelefono${a.id}" value="${xe(a.telefono || '')}"></div>
+      <div class="field" style="flex:1; min-width:200px;"><label>Email</label><input type="email" id="editEmail${a.id}" value="${xe(a.email || '')}"></div>
+      <div class="field" style="flex:2; min-width:220px;"><label>Dirección</label><input id="editDireccion${a.id}" value="${xe(a.direccion || '')}"></div>
+    </div>
+    <div class="row" style="margin-top:8px; align-items:flex-end;">
+      <div class="field"><label>Foto de perfil (opcional)</label><input type="file" accept="image/*" onchange="subirFotoAlumno('${a.id}', this.files[0])"></div>
+      <input type="hidden" id="editFotoUrl${a.id}" value="${xe(a.foto_url || '')}">
+      <img id="editFotoPreview${a.id}" src="${xe(a.foto_url || '')}" style="width:44px; height:44px; border-radius:50%; object-fit:cover; ${a.foto_url ? '' : 'display:none;'}">
+    </div>
+    <div class="row" style="margin-top:8px; align-items:flex-start;">
+      <div class="field" style="flex:1; min-width:220px;"><label>Categorías</label>
+        <div id="editCategorias${a.id}" style="display:flex; flex-wrap:wrap; gap:10px;">
+          ${CATEGORIAS_CACHE.length ? CATEGORIAS_CACHE.map(c => `<label class="row" style="gap:4px; font-weight:400;"><input type="checkbox" value="${c.id}" ${idsCat.includes(c.id) ? 'checked' : ''}> ${xe(c.nombre)}</label>`).join('') : '<span class="muted">Cargá categorías en "🏢 Mi gimnasio" primero.</span>'}
+        </div></div>
+      <div class="field" style="min-width:180px;"><label>Equipo</label>
+        <select id="editEquipo${a.id}"><option value="">-- sin equipo --</option>${EQUIPOS_CACHE.map(e => `<option value="${e.id}" ${a.equipo_id === e.id ? 'selected' : ''}>${xe(e.nombre)}</option>`).join('')}</select></div>
+    </div>
+    <div class="x-btns"><button onclick="guardarDatosAlumno('${a.id}')">Guardar datos</button><button class="ghost" onclick="toggleEditarAlumno('${a.id}')">Cancelar</button></div>
+  </div>`;
+}
+function xFichaDat(a){
+  const cats = (a.alumno_categorias || []).map(ac => ac.categorias?.nombre).filter(Boolean).join(', ');
+  const dl = [['Nombre', a.nombre], ['DNI', a.dni || '—'], ['Teléfono', a.telefono || '—'], ['Email', a.email || '—'], ['Dirección', a.direccion || '—'],
+    ['Altura', a.altura_cm ? a.altura_cm + ' cm' : '—'], ['Peso', a.peso_kg ? a.peso_kg + ' kg' : '—'], ['Objetivo', a.objetivo || '—'],
+    ['Equipo · posición', [a.equipos?.nombre, a.posicion].filter(Boolean).join(' · ') || '—'], ['Categorías', cats || '—']];
+  const acceso = a.perfil_id
+    ? `<span class="pill ok">🔑 Tiene cuenta</span> <button class="ghost" onclick="abrirGestionAccesoAlumno('${a.id}')">🔁 Acceso</button>`
+    : (a.dni ? `<button class="ghost" onclick="generarAccesoAlumno('${a.id}')">🔑 Generar acceso</button>` : `<span class="pill" title="Cargale el DNI para poder generarle acceso">🔒 Sin DNI</span>`);
+  const nom = (a.nombre || '').replace(/'/g, "\\'");
+  const btnEstado = a.activo === false
+    ? `<button class="ghost" onclick="toggleActivoAlumno('${a.id}', true, '${nom}')">🟢 Reactivar</button>`
+    : `<button class="ghost" style="color:var(--danger-text);" onclick="toggleActivoAlumno('${a.id}', false, '${nom}')" title="Marca al alumno como inactivo sin borrar sus datos ni su historial">🔴 Dar de baja</button>`;
+  return `<div class="x-dl">${dl.map(r => `<div><div class="k">${r[0]}</div><div class="v">${xe(r[1])}</div></div>`).join('')}</div>
+    <div class="x-btns"><button class="ghost" onclick="toggleEditarAlumno('${a.id}')">✏️ Editar datos</button></div>
+    ${xEditarAlumnoHtml(a)}
+    <div class="x-sec">Tipo y plan</div>
+    <div class="x-fi-two">
+      <div class="field"><label>Tipo de entrenamiento</label><select onchange="cambiarTipoAlumno('${a.id}', this.value)"><option value="">-- sin tipo --</option>${TIPOS_ALUMNO_CACHE.map(t => `<option value="${t.id}" ${a.tipo_alumno_id === t.id ? 'selected' : ''}>${xe(t.nombre)}</option>`).join('')}</select></div>
+      <div class="field"><label>Plan</label><select onchange="cambiarPlanAlumno('${a.id}', this.value)"><option value="">-- sin plan --</option>${PLANES_CACHE.map(p => `<option value="${p.id}" ${a.plan_id === p.id ? 'selected' : ''}>${xe(p.nombre)}</option>`).join('')}</select></div>
+    </div>
+    <div class="x-sec">Acceso a la app y estado</div>
+    <div class="x-btns" style="margin-top:0; align-items:center;">${acceso} ${btnEstado}</div>
+    <div class="x-sub" style="margin-top:10px;">Dar de baja no borra al alumno ni su historial: solo lo saca de las listas activas. Se puede reactivar cuando quieras.</div>`;
+}
+function xFichaRut(a){
+  const r = RUTINAS_ALUMNO[a.id] || { todas: [] };
+  const orden = { curso: 0, prox: 1, fin: 2 }, etq = { curso: ['En curso', 'ok'], prox: ['Próxima', 'warn'], fin: ['Terminada', ''] };
+  const lista = (r.todas || []).slice().sort((p, q) => orden[p.st] - orden[q.st] || (q.ini || '').localeCompare(p.ini || ''));
+  const items = lista.length ? lista.map(x => `<div class="x-item"><div><div style="font-weight:700;">${xe(x.nombre)}</div><div class="x-sub">${xe(x.detalle || '—')} · ${x.origen === 'especial' ? '⭐ Especial' : '🗂️ Biblioteca'}</div></div><span class="pill ${etq[x.st][1]}">${etq[x.st][0]}</span></div>`).join('')
+    : '<div class="muted" style="margin-bottom:10px;">Todavía no tiene una rutina asignada.</div>';
+  return `${items}<div class="x-btns" style="margin-top:0;"><button onclick="fichaAsignarRutina()">＋ Asignar rutina</button></div>
+    <div class="x-sec">Detalle de lo que tiene asignado</div><div id="fichaRutAsignada" class="card" style="margin:0;"></div>`;
+}
+async function xFichaPagos(a, tok){
+  const body = () => (tok === FICHA_TOK) ? document.getElementById('fichaTabBody') : null;
+  try{
+    const pagos = await sb(`pagos?alumno_id=eq.${a.id}&order=creado_en.desc&limit=12`);
+    const b = body(); if (!b) return;
+    FICHA_PAGOS = pagos;
+    const met = { mercado_pago:'💳 Mercado Pago', transferencia:'🏦 Transferencia', efectivo:'💵 Efectivo' };
+    b.innerHTML = (pagos.length ? `<div style="overflow-x:auto;"><table class="x-mini"><thead><tr><th>Fecha</th><th>Monto</th><th>Medio</th><th>Cubre hasta</th><th></th></tr></thead><tbody>${pagos.map((p, i) => `<tr><td><b>${xe(formatearFechaCorta((p.creado_en || '').slice(0, 10)))}</b></td><td>${xe(formatearMonto(p.monto))}</td><td>${xe(met[p.metodo_pago] || p.metodo_pago)}</td><td>${xe(formatearFechaCorta(p.vigencia_hasta))}</td><td><button class="ghost" title="Descargar comprobante" onclick="fichaRecibo(${i})">🧾</button></td></tr>`).join('')}</tbody></table></div>` : '<div class="muted">Todavía no hay pagos registrados.</div>')
+      + `<div class="x-btns">${(VIGENTES_POR_ALUMNO[a.id] && VIGENTES_POR_ALUMNO[a.id].plan_id) ? '<button onclick="fichaCobrar()">💰 Cobrar</button>' : ''}</div>`;
+  }catch(e){ const b = body(); if (b) b.innerHTML = '<div class="muted">Error: ' + xe(e.message) + '</div>'; }
+}
+async function xFichaAsistencia(a, tok){
+  const body = () => (tok === FICHA_TOK) ? document.getElementById('fichaTabBody') : null;
+  try{
+    const hoy = fechaLocalISO();
+    const ts = await sb(`turnos?select=fecha,hora,estado,asistio,rutina_dias(nombre_dia)&alumno_id=eq.${a.id}&estado=neq.cancelado&fecha=lte.${hoy}&order=fecha.desc,hora.desc&limit=30`);
+    const b = body(); if (!b) return;
+    const marc = ts.filter(t => t.asistio !== null && t.asistio !== undefined), pres = marc.filter(t => t.asistio === true).length;
+    const pct = marc.length ? Math.round(pres / marc.length * 100) : null;
+    b.innerHTML = `<div class="x-kpis"><div class="x-kpi"><div class="k">Asistió (últimos ${marc.length})</div><div class="v">${pres} / ${marc.length}</div></div><div class="x-kpi"><div class="k">Cumplimiento</div><div class="v ${pct == null ? '' : pct >= 70 ? 't-ok' : 't-warn'}">${pct == null ? '—' : pct + '%'}</div></div></div>`
+      + (ts.length ? `<div style="overflow-x:auto;"><table class="x-mini"><thead><tr><th>Fecha</th><th>Hora</th><th>Rutina del día</th><th>Asistió</th></tr></thead><tbody>${ts.slice(0, 15).map(t => `<tr><td><b>${xe(formatearFechaCorta(t.fecha))}</b></td><td>${xe((t.hora || '').slice(0, 5))}</td><td>${xe(t.rutina_dias?.nombre_dia || '—')}</td><td>${t.asistio === true ? '<span class="t-ok">✓</span>' : t.asistio === false ? '<span class="t-bad">✗ Faltó</span>' : '<span class="muted">sin marcar</span>'}</td></tr>`).join('')}</tbody></table></div>` : '<div class="muted">Todavía no tiene turnos.</div>');
+  }catch(e){ const b = body(); if (b) b.innerHTML = '<div class="muted">Error: ' + xe(e.message) + '</div>'; }
+}
+async function xFichaEvaluaciones(a, tok){
+  const body = () => (tok === FICHA_TOK) ? document.getElementById('fichaTabBody') : null;
+  try{
+    const evs = await fetchEvaluacionesConMetricas(a.id);
+    const b = body(); if (!b) return;
+    const lista = evs.slice(0, 4).map(e => `<div class="x-item" style="display:block;"><div style="font-weight:700;margin-bottom:6px;">${xe(formatearFechaCorta(e.fecha))} <span class="x-sub">· ${e.metricas.length} métrica${e.metricas.length === 1 ? '' : 's'}</span></div><div style="display:flex;gap:6px;flex-wrap:wrap;">${e.metricas.slice(0, 8).map(m => `<span class="pill">${xe(m.metrica)}: <b>${xe(formatoValorChart(Number(m.valor)))}${m.unidad ? ' ' + xe(m.unidad) : ''}</b></span>`).join('')}</div></div>`).join('');
+    b.innerHTML = (evs.length ? lista + (evs.length > 4 ? `<div class="x-sub" style="margin-bottom:10px;">Mostrando las últimas 4 de ${evs.length}. El historial completo y los gráficos están en el reporte.</div>` : '') : '<div class="muted" style="margin-bottom:10px;">Todavía no tiene evaluaciones cargadas.</div>')
+      + '<div class="x-btns" style="margin-top:0;"><button onclick="fichaNuevaEvaluacion()">＋ Nueva evaluación</button><button class="ghost" onclick="fichaReporte()">📄 Ver reporte completo</button></div>';
+  }catch(e){ const b = body(); if (b) b.innerHTML = '<div class="muted">Error: ' + xe(e.message) + '</div>'; }
 }
 
 // Genera la cuenta de login del alumno: usuario = su DNI (email sintético interno,
@@ -9503,13 +9971,6 @@ async function toggleActivoAlumno(alumnoId, nuevoActivo, nombre){
     cargarListaAlumnos();
     if (document.getElementById('subvistaDashboard')?.style.display !== 'none') cargarDashboardAdmin();
   }catch(e){ toast('Error cambiando el estado: ' + extraerMensajeError(e), true); }
-}
-
-function toggleFormNuevoAlumno(){
-  const f = document.getElementById('nuevoAlumnoForm'), b = document.getElementById('btnToggleNuevoAlumno');
-  const abrir = f.style.display === 'none';
-  f.style.display = abrir ? '' : 'none';
-  b.textContent = abrir ? '✕ Cerrar' : '＋ Agregar';
 }
 
 function toggleEditarAlumno(alumnoId){
@@ -9581,6 +10042,7 @@ async function cambiarTipoAlumno(alumnoId, tipoAlumnoId){
     const a = ALUMNOS_CACHE.find(x => x.id === alumnoId) || ALUMNOS_LISTA_CACHE.find(x => x.id === alumnoId);
     if (a) a.tipo_alumno_id = valor;
     toast('Tipo actualizado ✓');
+    cargarListaAlumnos();
   }catch(e){ toast('Error actualizando tipo: ' + e.message, true); }
 }
 
@@ -10428,13 +10890,61 @@ function iniciarSeguimiento(){
   sel.innerHTML = '<option value="">-- elegir --</option>' + ALUMNOS_CACHE.map(a=>`<option value="${a.id}">${a.nombre}</option>`).join('');
   armarComboBuscable('seguimientoAlumno', 'Buscar alumno por nombre...');
   document.getElementById('seguimientoContenido').innerHTML = 'Elegí un alumno arriba.';
+  xSegReset();
 }
 
 function onCambiarSeguimientoAlumno(){
   const alumnoId = document.getElementById('seguimientoAlumno').value;
+  xSegReset();
   cargarRutinaAsignadaAlumno(alumnoId, 'seguimientoAsignada');
   if (alumnoId) cargarSeguimiento('seguimientoContenido', alumnoId);
   else document.getElementById('seguimientoContenido').innerHTML = 'Elegí un alumno arriba.';
+}
+
+// ---------- (v93) Seguimiento: franja de resumen + volumen semanal + mejores cargas ----------
+function xSegReset(){
+  ['seguimientoResumen'].forEach(id => { const e = document.getElementById(id); if (e) e.innerHTML = ''; });
+  ['seguimientoVolumen', 'seguimientoPRs'].forEach(id => { const e = document.getElementById(id); if (e){ e.style.display = 'none'; e.innerHTML = ''; } });
+}
+function xSegChart(semanas){
+  const W = 520, H = 170, pl = 40, pb = 24, pt = 14, n = semanas.length, bw = Math.min(34, (W - pl - 8) / n - 8);
+  const max = Math.max(...semanas.map(s => s.kg), 1);
+  const paso = max > 20000 ? 10000 : max > 8000 ? 5000 : max > 2000 ? 1000 : 500;
+  const tope = Math.ceil(max / paso) * paso, y = v => pt + (H - pt - pb) * (1 - v / tope);
+  const gap = n > 1 ? (W - pl - 8 - bw * n) / (n - 1) : 0;
+  let s = `<svg viewBox="0 0 ${W} ${H}" style="width:100%; max-width:560px; display:block;" role="img" aria-label="Volumen semanal en kilos">`;
+  for (let t = 0; t <= tope; t += paso) s += `<line x1="${pl}" x2="${W - 4}" y1="${y(t)}" y2="${y(t)}" stroke="var(--border)" stroke-width="1"/><text class="x-bar-lbl" x="${pl - 6}" y="${y(t) + 4}" text-anchor="end">${t >= 1000 ? (t / 1000).toLocaleString('es-AR') + 't' : t}</text>`;
+  semanas.forEach((w, i) => { const bx = pl + 4 + i * (bw + gap); s += `<rect x="${bx}" y="${y(w.kg)}" width="${bw}" height="${Math.max(1, y(0) - y(w.kg))}" rx="4" fill="var(--accent)" opacity="${i === n - 1 ? 1 : .55}"><title>Semana del ${w.lbl}: ${Math.round(w.kg).toLocaleString('es-AR')} kg</title></rect><text class="x-bar-lbl" x="${bx + bw / 2}" y="${H - 8}" text-anchor="middle">${w.lbl}</text>`; });
+  return s + '</svg>';
+}
+async function xSeguimientoExtras(alumnoId, rows){
+  const hoy = new Date(), mes = hoy.getFullYear() + '-' + String(hoy.getMonth() + 1).padStart(2, '0');
+  const fin = rows.filter(r => r.estado === 'finalizada');
+  const delMes = fin.filter(r => String(r.fecha).slice(0, 7) === mes).length;
+  const rpes = fin.filter(r => r.rpe != null).map(r => Number(r.rpe));
+  const prom = rpes.length ? rpes.reduce((a, b) => a + b, 0) / rpes.length : null;
+  const ult = rows[0] ? formatearFechaCorta(String(rows[0].fecha).slice(0, 10)) : '—';
+  const res = document.getElementById('seguimientoResumen');
+  if (res) res.innerHTML = `<div><div class="k">Sesiones del mes</div><b>${delMes}</b></div><div><div class="k">RPE promedio</div><b>${prom == null ? '—' : prom.toFixed(1).replace('.', ',')}</b></div><div><div class="k">Última sesión</div><b>${xe(ult)}</b></div>`;
+  // volumen semanal (tonelaje de las últimas sesiones, agrupado por semana que empieza el lunes)
+  const porSem = {};
+  fin.forEach(r => {
+    const t = (r.ejecucion_ejercicios || []).reduce((acc, ee) => acc + (ee.series_registradas || []).reduce((a, s) => a + (Number(s.tonelaje) || 0), 0), 0);
+    const d = new Date(r.fecha); d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
+    const k = fechaLocalISO(d); porSem[k] = (porSem[k] || 0) + t;
+  });
+  const semanas = Object.keys(porSem).sort().slice(-8).map(k => ({ k, kg: porSem[k], lbl: formatearFechaCorta(k).slice(0, 5) }));
+  const vol = document.getElementById('seguimientoVolumen');
+  if (vol){
+    if (semanas.length && semanas.some(s => s.kg > 0)){ vol.style.display = ''; vol.innerHTML = `<h2 style="margin-top:0;">Volumen semanal (kg levantados)</h2>${xSegChart(semanas)}`; }
+    else { vol.style.display = 'none'; vol.innerHTML = ''; }
+  }
+  try{
+    const prs = await sb(`v_pr_alumno?alumno_id=eq.${alumnoId}&order=pr_peso.desc&limit=6`);
+    if (document.getElementById('seguimientoAlumno').value !== alumnoId) return;
+    const el = document.getElementById('seguimientoPRs');
+    if (el && prs.length){ el.style.display = ''; el.innerHTML = `<h2 style="margin-top:0;">Mejores cargas</h2>${prs.map(p => `<div style="display:flex;justify-content:space-between;gap:8px;padding:8px 0;border-bottom:1px solid var(--border);"><span><b>${xe(p.ejercicio_nombre)}</b><br><span class="x-sub">${xe(formatoValorChart(Number(p.pr_peso)))} kg${p.pr_reps ? ' × ' + p.pr_reps : ''} · ${xe(formatearFechaCorta(p.pr_fecha))}</span></span></div>`).join('')}`; }
+  }catch(e){ /* sin PRs no pasa nada */ }
 }
 
 let SEGUIMIENTO_CACHE = {}; // { [contId]: últimas sesiones ya traídas para ese panel/alumno,
@@ -10446,6 +10956,7 @@ async function cargarSeguimiento(contId, alumnoId){
   try{
     const rows = await sb(`ejecuciones?select=id,fecha,estado,rpe,rutina_dias(nombre_dia,rutinas(nombre)),ejecucion_ejercicios(id,finalizado,omitido,motivo_omision,sustituido,ejercicios(nombre,grupo_muscular),series_registradas(numero_serie,peso_realizado,repeticiones_realizadas,rir_realizado,tiempo_realizado_seg,tonelaje))&alumno_id=eq.${alumnoId}&order=fecha.desc&limit=20`);
     SEGUIMIENTO_CACHE[contId] = rows;
+    if (contId === 'seguimientoContenido') xSeguimientoExtras(alumnoId, rows);
     if (!rows.length){ cont.innerHTML = '<div class="empty">Todavía no hay entrenamientos registrados.</div>'; return; }
     cont.innerHTML = rows.map((r, i) => {
       const tonelajeSesion = (r.ejecucion_ejercicios||[]).reduce((acc, ee) =>
