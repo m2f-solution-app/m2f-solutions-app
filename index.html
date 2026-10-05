@@ -484,6 +484,47 @@
   .leyenda span{display:inline-flex; align-items:center; gap:6px;}
   .leyenda .dot{width:10px; height:10px; border-radius:3px; display:inline-block;}
 
+  /* ---- (v97) Guía: tarjeta de Primeros pasos, bienvenida y guía completa ---- */
+  .gu-card{ border-color:var(--accent); }
+  .gu-head{ display:flex; align-items:center; gap:10px; justify-content:space-between; margin-bottom:6px; }
+  .gu-tit{ font-weight:800; font-size:15px; }
+  .gu-prog{ height:6px; border-radius:99px; background:var(--panel2); overflow:hidden; margin:6px 0 10px; }
+  .gu-prog > i{ display:block; height:100%; background:var(--accent); border-radius:99px; transition:width .3s; }
+  .gu-x{ background:none; border:none; color:var(--muted); cursor:pointer; font-size:16px; padding:2px 6px; flex:none; }
+  .gu-paso{ display:flex; align-items:center; gap:10px; padding:8px 0; border-top:1px solid var(--border); }
+  .gu-paso:first-of-type{ border-top:none; }
+  .gu-chk{ width:22px; height:22px; border-radius:50%; border:2px solid var(--border); flex:none; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:800; color:#fff; cursor:pointer; background:transparent; padding:0; }
+  .gu-paso.ok .gu-chk{ background:var(--accent); border-color:var(--accent); }
+  .gu-paso.ok .gu-pt{ color:var(--muted); text-decoration:line-through; }
+  .gu-pt{ font-weight:700; font-size:14px; }
+  .gu-pd{ font-size:12px; color:var(--muted); margin-top:1px; }
+  .gu-pb{ flex:1; min-width:0; }
+  .gu-opc{ font-size:10px; font-weight:700; color:var(--muted); border:1px solid var(--border); border-radius:99px; padding:1px 6px; margin-left:6px; vertical-align:middle; }
+  .gu-acts{ display:flex; gap:6px; flex:none; }
+  .gu-btn{ flex:none !important; width:auto !important; padding:6px 10px !important; font-size:12px !important; border-radius:8px; cursor:pointer; font-weight:700; }
+  .gu-foot{ display:flex; gap:8px; margin-top:10px; flex-wrap:wrap; }
+  .gu-ok{ text-align:center; padding:6px 0; }
+  .modal-box.gu-box{ max-width:none; width:min(680px,100%); text-align:left; padding:20px; max-height:90vh; overflow-y:auto; }
+  .modal-box.gu-box.gu-chico{ width:min(440px,100%); text-align:center; }
+  .modal-box.gu-box h3{ font-size:18px; }
+  .modal-box.gu-box p{ margin:0 0 10px; }
+  .gu-bien-ico{ font-size:44px; margin-bottom:4px; }
+  .gu-bien-list{ text-align:left; margin:10px 0 14px; padding:0; list-style:none; }
+  .gu-bien-list li{ padding:7px 0; font-size:14px; border-top:1px solid var(--border); }
+  .gu-bien-list li:first-child{ border-top:none; }
+  .gu-buscar{ width:100%; margin:8px 0 12px; }
+  .gu-sec{ font-size:11px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); margin:14px 0 6px; }
+  .gu-det{ border:1px solid var(--border); border-radius:10px; margin-bottom:6px; background:var(--panel); }
+  .gu-det > summary{ cursor:pointer; padding:10px 12px; font-weight:700; font-size:14px; list-style:none; display:flex; gap:8px; align-items:center; }
+  .gu-det > summary::-webkit-details-marker{ display:none; }
+  .gu-det > summary::after{ content:'›'; margin-left:auto; color:var(--muted); transition:transform .15s; }
+  .gu-det[open] > summary::after{ transform:rotate(90deg); }
+  .gu-det .gu-cuerpo{ padding:0 12px 12px; font-size:13px; color:var(--text); }
+  .gu-det .gu-cuerpo ol{ margin:6px 0 8px 18px; padding:0; }
+  .gu-det .gu-cuerpo li{ margin:3px 0; }
+  .gu-vacio{ text-align:center; color:var(--muted); padding:18px 0; font-size:13px; }
+  .gu-mail-btn{ display:block; width:100%; margin-top:10px; }
+
   /* ---- Modal de confirmación (reserva de turno) ---- */
   .modal-overlay{
     position:fixed; inset:0; background:rgba(0,0,0,.6); display:none;
@@ -1533,7 +1574,8 @@
       <div id="authConfirmarEmail" style="display:none; text-align:center;">
         <div style="font-size:40px; margin-bottom:6px;">📧</div>
         <h3 style="margin:0 0 8px;">Confirmá tu email para poder ingresar</h3>
-        <p class="muted">Te enviamos un link de confirmación a <strong id="authConfirmarEmailDireccion"></strong>. Abrí ese correo (revisá también spam/promociones) y tocá el link — recién ahí vas a poder iniciar sesión.</p>
+        <p class="muted">Te enviamos un link de confirmación a <strong id="authConfirmarEmailDireccion"></strong>. Abrí tu correo (Gmail, Outlook, etc. — revisá también spam/promociones) y tocá el botón de confirmar del mensaje. Recién ahí vas a poder iniciar sesión.</p>
+        <a id="btnAbrirCorreo" class="gu-mail-btn" href="#" target="_blank" rel="noopener" style="display:none; padding:12px; border-radius:999px; background:var(--accent); color:#1a1000; font-weight:800; text-decoration:none; text-align:center;"></a>
         <button onclick="reenviarConfirmacionEmail()" id="btnReenviarConfirmacion" style="width:100%; margin-top:10px;">📩 Reenviar email de confirmación</button>
         <button class="ghost" onclick="volverALoginDesdeConfirmar()" style="width:100%; margin-top:8px;">Ya confirmé, ir a Ingresar</button>
         <div id="authConfirmarMsg" class="muted" style="margin-top:10px;"></div>
@@ -1602,6 +1644,31 @@
   <!-- (v96) Ventana movible de clases -->
   <div class="cl-ov" id="clOv"><div class="cl-mdl" id="clMdl"></div></div>
 
+  <!-- (v97) Guía: bienvenida (solo usuarios nuevos, una vez) y guía completa con buscador -->
+  <div class="modal-overlay" id="modalGuiaBienvenida" onclick="if(event.target===this)guiaCerrarBienvenida()">
+    <div class="modal-box gu-box gu-chico">
+      <div class="gu-bien-ico">👋</div>
+      <h3 id="guiaBienTit">¡Bienvenido/a!</h3>
+      <p id="guiaBienTxt"></p>
+      <ul class="gu-bien-list" id="guiaBienLista"></ul>
+      <p class="muted" style="font-size:12px;">Te dejamos una lista de <strong>Primeros pasos</strong> en Inicio y una guía en el menú ☰ → ❓ Guía.</p>
+      <div class="row" style="gap:8px; justify-content:center;">
+        <button class="gu-btn" style="padding:10px 16px !important; font-size:14px !important;" onclick="guiaEmpezar()">Empezar</button>
+        <button class="gu-btn ghost" style="padding:10px 16px !important; font-size:14px !important;" onclick="guiaCerrarBienvenida(); guiaAbrir()">Ver guía</button>
+      </div>
+    </div>
+  </div>
+  <div class="modal-overlay" id="modalGuia" onclick="if(event.target===this)guiaCerrar()">
+    <div class="modal-box gu-box">
+      <div class="row" style="justify-content:space-between; align-items:center;">
+        <h3 id="guiaTitulo" style="margin:0;">❓ Guía</h3>
+        <button type="button" class="x-cerrar est" aria-label="Cerrar" title="Cerrar" onclick="guiaCerrar()">✕</button>
+      </div>
+      <input class="gu-buscar" id="guiaBuscar" type="search" placeholder="🔎 Buscá: rutina, pago, turno, evaluación…" oninput="guiaFiltrar()" autocomplete="off" />
+      <div id="guiaCuerpo"></div>
+    </div>
+  </div>
+
   <div class="menu-drawer-overlay" id="menuProfOverlay" onclick="cerrarMenuProf()"></div>
   <div class="menu-drawer" id="menuProfDrawer">
     <div class="menu-drawer-header">
@@ -1631,6 +1698,7 @@
     <div class="side-item" id="menuAlertas" onclick="cambiarSubvista('alertas')" title="Alertas"><span class="side-ico">🔔</span><span class="side-label">Alertas</span></div>
     <div class="side-item" id="menuEjercicios" onclick="cambiarSubvista('ejercicios')" title="Ejercicios"><span class="side-ico">🆕</span><span class="side-label">Ejercicios</span></div>
     <div class="side-item" id="menuGimnasio" onclick="cambiarSubvista('gimnasio')" title="Mi gimnasio"><span class="side-ico">🏢</span><span class="side-label">Mi gimnasio</span></div>
+    <div class="side-item" id="menuGuia" onclick="guiaAbrir()" title="Guía"><span class="side-ico">❓</span><span class="side-label">Guía</span></div>
   </div>
 
   <!-- (v93) Ventanas emergentes: alta corta de alumno / profesor y ficha (alumno, profesor, cobro) -->
@@ -1747,6 +1815,7 @@
             <button class="ip-btn" onclick="cambiarSubvista('agenda')">Ver agenda</button>
           </div>
         </div>
+        <div id="guiaCardStaff"></div>
         <div class="ip-alcance" id="ipAlcance" style="display:none;"></div>
         <div id="ipHero"></div>
         <div class="alu-tiles" id="ipTiles"></div>
@@ -2950,12 +3019,14 @@
            solo acá en el menú hamburguesa. -->
       <div class="side-item" id="menuAluSeguimiento" onclick="cambiarSubvistaAlu('seguimiento')">📈 Seguimiento</div>
       <div class="side-item" id="menuAluLogros" onclick="cambiarSubvistaAlu('logros')">🏆 Logros</div>
+      <div class="side-item" id="menuAluGuia" onclick="guiaAbrir()">❓ Guía</div>
     </div>
 
     <div id="subvistaAluInicio">
       <div class="vista-eyebrow" id="aluSaludo"></div>
       <div class="vista-titulo">Hoy</div>
       <div class="alu-hero" id="aluInicioHero">Cargando...</div>
+      <div id="guiaCardAlu"></div>
       <div id="wellnessCard" class="card" style="display:none; border-color:var(--accent); cursor:pointer;" onclick="abrirWellness()">
         <div class="row" style="justify-content:space-between; align-items:center; gap:10px;">
           <div><div style="font-weight:800;">¿Cómo llegás hoy a entrenar?</div><div class="muted" style="font-size:13px;">Completá tu Wellness (30 seg) para que tu profe ajuste la sesión.</div></div>
@@ -3391,7 +3462,7 @@ const BUCKET = "Ejercicios";
 // un cambio, se incrementa este número — el chequeo de actualización (más abajo) lo compara
 // contra lo que hay publicado y avisa si están desactualizados, sin que nadie tenga que
 // cambiar ningún link a mano.
-const APP_VERSION = 96;
+const APP_VERSION = 97;
 // (v96) Fecha de la última actualización: se cambia junto con APP_VERSION en cada entrega. Se muestra en la
 // pantalla de inicio y en el menú de cuenta ("v94 · actualizada el 5/10/2026").
 const APP_FECHA = '2026-10-05';
@@ -4499,6 +4570,7 @@ function mostrarPantallaConfirmarEmail(email){
   document.getElementById('authMsg').textContent = '';
   document.getElementById('authConfirmarEmailDireccion').textContent = email;
   document.getElementById('authConfirmarMsg').textContent = '';
+  guiaPintarBotonCorreo(email);
   document.getElementById('authConfirmarEmail').style.display = '';
 }
 
@@ -4562,7 +4634,7 @@ function elegirTipoIngreso(tipo){
 
 async function cargarPerfilDeSesion(){
   if (!SESION_ACTUAL){ PERFIL_ACTUAL = null; return; }
-  const perfiles = await sb(`perfiles?select=id,gimnasio_id,rol,nombre,email,debe_cambiar_password&id=eq.${SESION_ACTUAL.user.id}`);
+  const perfiles = await sb(`perfiles?select=id,gimnasio_id,rol,nombre,email,debe_cambiar_password,creado_en&id=eq.${SESION_ACTUAL.user.id}`);
   PERFIL_ACTUAL = (perfiles && perfiles[0]) || null;
 }
 
@@ -4590,6 +4662,7 @@ async function entrarComoStaff(){
   cargarCatalogoEjercicios().catch(e => console.error('No se pudo cargar el catálogo de ejercicios:', e));
   if (PERFIL_ACTUAL.rol === 'admin') revisarNotificacionesStaff();
   actualizarBotonesPush();
+  setTimeout(guiaBienvenida, 800); // (v97) bienvenida única para usuarios nuevos
 }
 
 async function hacerLogin(){
@@ -4791,6 +4864,8 @@ async function entrarComoAlumnoLogueado(){
     mostrarModoAlumnoLogueado(ficha);
     revisarNotificacionesAlumno(ficha.id);
     revisarWellnessPendiente(ficha.id);
+    guiaRenderCards();
+    setTimeout(guiaBienvenida, 800); // (v97)
   }catch(e){ msg.textContent = 'Error entrando: ' + e.message; }
 }
 
@@ -5561,9 +5636,278 @@ async function quitarRecepcion(perfilId, nombre){
 
 let AGENDA_AUTO_REFRESH_TIMER = null;
 
+// ===================== (v97) GUÍA: primeros pasos, bienvenida y guía completa =====================
+// Sin tablas nuevas: "usuario nuevo" = perfil creado hace ≤45 días (perfiles.creado_en). Los tildes salen del
+// estado real del gimnasio (horarios, planes, alumnos, rutinas...) o de haber visitado la pantalla; lo que el
+// usuario oculta o tilda a mano se guarda en este dispositivo (localStorage, con try/catch).
+let GUIA_CTX = null, GUIA_CTX_T = 0;
+
+function guiaKey(){ return 'm2f_guia:' + ((PERFIL_ACTUAL && PERFIL_ACTUAL.id) || 'anon'); }
+function guiaGet(k){ try{ return (JSON.parse(localStorage.getItem(guiaKey()) || '{}'))[k]; }catch(e){ return undefined; } }
+function guiaSet(k, v){
+  try{
+    const o = JSON.parse(localStorage.getItem(guiaKey()) || '{}');
+    if (v === null) delete o[k]; else o[k] = v;
+    localStorage.setItem(guiaKey(), JSON.stringify(o));
+  }catch(e){}
+}
+function guiaRol(){
+  const r = PERFIL_ACTUAL && PERFIL_ACTUAL.rol;
+  if (r === 'alumno') return 'alumno';
+  if (r === 'profesor') return 'profesor';
+  if (r === 'admin') return (GIMNASIO_ACTUAL && GIMNASIO_ACTUAL.tipo === 'independiente') ? 'indep' : 'admin';
+  return null;
+}
+function guiaEsNuevo(){
+  const c = PERFIL_ACTUAL && PERFIL_ACTUAL.creado_en;
+  if (!c) return false;
+  return (Date.now() - new Date(c).getTime()) <= 45 * 86400000;
+}
+function guiaPushOk(){ try{ return typeof Notification !== 'undefined' && Notification.permission === 'granted'; }catch(e){ return false; } }
+function guiaInstalada(){ try{ return !!(window.matchMedia('(display-mode: standalone)').matches || navigator.standalone); }catch(e){ return false; } }
+
+// ---------- Contenido (también es la base para el asistente de ayuda con IA de la etapa 2) ----------
+function guiaPasos(rol){
+  const gim = { id:'gim', ico:'🏢', t:'Poné nombre y logo a tu gimnasio', d:'Se ve en la barra de la app, en los recibos y en la ficha del alumno.', ir:{ s:'gimnasio' }, auto:c => !!(c.g && c.g.logo_url),
+    det:['Menú ☰ → Mi gimnasio.','Escribí el nombre y subí el logo (se guarda solo).','Elegí tus colores de marca y tocá Guardar.'] };
+  const hor = { id:'hor', ico:'🕒', t:'Cargá los horarios de trabajo', d:'Son la base de los turnos que reservan los alumnos y de sus cupos.', ir:{ s:'horarios' }, auto:c => c.horarios > 0,
+    det:['Menú ☰ → Horarios → ✎ Editar horario.','Por profesor y por día, cargá uno o varios rangos (Desde–Hasta) y el cupo por turno.','Podés copiar el horario de un día a otros.'] };
+  const plan = { id:'plan', ico:'💳', t:'Creá tus planes', d:'Cada plan define precio, días por semana y duración: calculan la cuota y la vigencia.', ir:{ s:'planes' }, auto:c => c.planes > 0,
+    det:['Menú ☰ → Planes → nuevo plan.','Nombre, días por semana, precio con transferencia y duración en días.','Asignar un plan a un alumno no genera ningún pago por sí solo.'] };
+  const alu = { id:'alu', ico:'👤', t:'Agregá a tus alumnos', d:'Con nombre y DNI alcanza; el resto se completa después desde su ficha.', ir:{ s:'alumnos' }, auto:c => c.alumnos > 0,
+    det:['Menú ☰ → Alumnos → ＋ Nuevo alumno.','Cargá nombre y DNI (el DNI habilita su acceso).','Desde su ficha: asignale plan y tocá 🔑 Acceso para darle usuario y contraseña temporal.'] };
+  const rut = { id:'rut', ico:'🏋️', t:'Armá tu primera rutina', d:'Una pantalla guiada en 4 pasos: para quién, cómo se repite, datos y ejercicios.', ir:{ s:'especiales' }, auto:c => c.rutinas > 0,
+    det:['Menú ☰ → Nueva rutina.','Paso 1: para quién es (alumno, tipo de entrenamiento, equipo o plantilla).','Paso 2 y 3: fecha fija o rotativa, y nombre.','Paso 4: sumá días y ejercicios con series, reps, carga, pausa y RIR. Guardá.'] };
+  const mp = { id:'mp', ico:'💸', t:'Conectá Mercado Pago para cobrar online', d:'Tus alumnos pagan la cuota desde la app y la vigencia se actualiza sola.', ir:{ s:'gimnasio' }, opc:true, auto:c => !!(c.g && c.g.mp_conectado),
+    det:['Menú ☰ → Mi gimnasio → Cobros online.','Conectá tu cuenta de Mercado Pago y aceptá los permisos.','Sin esto igual podés registrar pagos en efectivo o transferencia.'] };
+  const prof = { id:'prof', ico:'🧑‍🏫', t:'Sumá a tus profesores', d:'Alta con nombre y DNI; la app genera una contraseña temporal.', ir:{ s:'profesores' }, opc:true, auto:c => c.profesores > 1,
+    det:['Menú ☰ → Profesores → Nuevo profesor.','Nombre y DNI. La contraseña temporal se muestra UNA sola vez: anotala o pasásela.','Entra por el login de staff con su DNI y elige su propia contraseña.'] };
+  const cla = { id:'cla', ico:'📆', t:'Cargá el calendario de clases', d:'Opcional: los alumnos ven los horarios fijos de tus clases.', ir:{ s:'clases' }, opc:true, visita:'clases',
+    det:['Menú ☰ → Clases.','Tocá un lugar vacío (o ＋ Nueva clase) y completá nombre, días, horas y profesor.','Es solo informativo: no hay reservas ni cupos.'] };
+  const push = { id:'push', ico:'🔔', t:'Activá las notificaciones', d:'Para enterarte de avisos importantes en el momento.', ir:{ f:'abrirConfiguracion' }, opc:true, auto:() => guiaPushOk(),
+    det:['Tocá ⚙️ arriba a la derecha → Notificaciones → Activar.','Aceptá el permiso del navegador.','iPhone: primero Compartir → Agregar a pantalla de inicio y abrila desde ese ícono.'] };
+  if (rol === 'admin') return [gim, prof, hor, plan, alu, rut, mp, cla, push];
+  if (rol === 'indep') return [gim, hor, plan, alu, rut, mp, push];
+  if (rol === 'profesor') return [
+    { id:'agenda', ico:'📋', t:'Mirá tu agenda de hoy', d:'Turnos, asistencia y Wellness de cada alumno.', ir:{ s:'agenda' }, visita:'agenda',
+      det:['Menú ☰ → Agenda.','Tocá un alumno para marcar Presente/Ausente, ver su Wellness o ajustar su rutina.'] },
+    { id:'rut', ico:'🏋️', t:'Armá una rutina', d:'Para un alumno, un equipo, un tipo de entrenamiento o como plantilla.', ir:{ s:'especiales' }, visita:'especiales', det:rut.det },
+    { id:'equipo', ico:'⚽', t:'Conocé a tu equipo', d:'Jugadores, cumplimiento y acceso directo a su evolución.', ir:{ s:'equipo' }, visita:'equipo',
+      det:['Menú ☰ → Equipo.','Elegí un equipo para ver a sus jugadores y su cumplimiento.'] },
+    { id:'eval', ico:'📏', t:'Cargá una evaluación física', d:'Métricas de fuerza, potencia, movilidad y composición corporal.', ir:{ s:'evaluaciones' }, visita:'evaluaciones',
+      det:['Menú ☰ → Evaluaciones.','Elegí al alumno, tocá “Nueva evaluación” y cargá fecha y métricas.','Para un equipo entero usá el chip “Por equipo”.'] },
+    { id:'seg', ico:'📈', t:'Mirá el seguimiento de entrenamientos', d:'Lo que cada alumno registró: pesos, repeticiones, RIR y récords.', ir:{ s:'seguimiento' }, visita:'seguimiento',
+      det:['Menú ☰ → Seguimiento.','Elegí un alumno para ver su resumen y ejercicio por ejercicio.'] },
+    push,
+  ];
+  // alumno
+  return [
+    { id:'app', ico:'📲', t:'Instalá la app en tu celular', d:'Se abre a pantalla completa, como cualquier app.', auto:() => guiaInstalada(),
+      det:['Android (Chrome): menú ⋮ → Instalar aplicación.','iPhone (Safari): Compartir → Agregar a pantalla de inicio.','Abrila desde ese ícono.'] },
+    { id:'push', ico:'🔔', t:'Activá los avisos', d:'Recordatorios de turnos y de tu cuota.', ir:{ f:'abrirConfiguracion' }, auto:() => guiaPushOk(),
+      det:['Tocá ⚙️ arriba a la derecha → Notificaciones → Activar.','En iPhone solo funcionan con la app instalada (iOS 16.4 o más nuevo).'] },
+    { id:'turno', ico:'📅', t:'Reservá tu primer turno', d:'Elegí día y horario según los cupos disponibles.', ir:{ a:'turnos' }, visita:'turnos',
+      det:['Tocá Turnos.','Elegí el día (los no habilitados aparecen atenuados).','Elegí el horario y confirmá: la app te engancha tu rutina del día.'] },
+    { id:'well', ico:'🟢', t:'Completá el Wellness antes de entrenar', d:'30 segundos para que tu profe ajuste la sesión.', manual:true,
+      det:['El día de tu turno aparece una tarjeta “¿Cómo llegás hoy a entrenar?” en Inicio.','Tocá Completar y respondé.'] },
+    { id:'entr', ico:'🏋️', t:'Entrená y registrá tus series', d:'Peso, repeticiones y RIR de cada serie.', ir:{ a:'rutinas' }, visita:'rutinas',
+      det:['Inicio → Entrenar (o Mis rutinas → Empezar).','Cargá peso, repeticiones y RIR; usá el cronómetro de descanso.','Al terminar, tocá Finalizar: si superaste un récord, te lo avisa.'] },
+    { id:'evo', ico:'📈', t:'Mirá tu evolución', d:'Tus récords, tu racha y cómo avanzás.', ir:{ a:'seguimiento' }, visita:'seguimiento',
+      det:['Seguimiento: resumen y gráficos por ejercicio.','Logros: racha semanal, constancia y récords.'] },
+  ];
+}
+
+function guiaFaq(rol){
+  const staff = [
+    { q:'¿Cómo creo una rutina?', r:['Menú ☰ → 🏋️ Nueva rutina.','Paso 1: elegí para quién es (un alumno, un tipo de entrenamiento, un equipo o una plantilla).','Paso 2: fecha fija o rotativa. Paso 3: nombre (y días por semana si es rotativa).','Paso 4: agregá días y ejercicios con el buscador; cargá series, reps, carga, pausa y RIR.','Tocá 💾 Guardar rutina: el alumno la ve al instante.'], ir:{ s:'especiales' } },
+    { q:'¿Cómo le asigno una rutina a un alumno?', r:['Al crearla, en el paso 1 elegí “Un alumno”: tiene prioridad sobre la de biblioteca.','Si es por tipo de entrenamiento, se engancha sola cuando el alumno reserva turno ese día.','Una rotativa la ve el alumno en “Mis rutinas” aunque no tenga turno.'], ir:{ s:'especiales' } },
+    { q:'¿Cómo cambio la rutina de un alumno solo por hoy?', r:['Menú ☰ → Agenda y tocá al alumno.','Elegí 🔄 Cambiar por otra sesión, o ✏️ Ajustar la rutina.','Escribí el motivo: el cambio vale para ese turno y el alumno lo ve al instante.'], ir:{ s:'agenda' } },
+    { adm:true, q:'¿Cómo doy de alta a un alumno y le doy acceso?', r:['Menú ☰ → Alumnos → ＋ Nuevo alumno: nombre y DNI.','Abrí su ficha y asignale un plan.','Tocá 🔑 Acceso: se crea su usuario (su DNI) y una contraseña temporal que se muestra una sola vez.','El alumno entra por la pestaña Alumno y elige su contraseña.'], ir:{ s:'alumnos' } },
+    { q:'¿Cómo cargo una evaluación física?', r:['Menú ☰ → 📏 Evaluaciones.','Elegí al alumno → Nueva evaluación → fecha y métricas.','Para evaluar a todo un equipo: chip “Por equipo”, elegí métricas, equipo y fecha, y cargá un valor por jugador.'], ir:{ s:'evaluaciones' } },
+    { q:'¿Cómo marco la asistencia?', r:['Menú ☰ → Agenda (o ✓ en Inicio).','Tocá al alumno y elegí Presente o Ausente.','La llegada marcada en Recepción también aparece ahí.'], ir:{ s:'agenda' } },
+    { q:'¿Cómo veo cómo viene entrenando un alumno?', r:['Menú ☰ → 📈 Seguimiento y elegí al alumno.','Ves sesiones, volumen, rutina asignada, récords y cada ejercicio con sus series.'], ir:{ s:'seguimiento' } },
+    { adm:true, q:'¿Cómo cargo los horarios de las clases?', r:['Menú ☰ → 📆 Clases.','Tocá un lugar vacío (o ＋ Nueva clase) y completá nombre, días, horas, profesor y nota.','Los alumnos las ven en su menú “Clases”. Es informativo: no hay cupos.'], ir:{ s:'clases' } },
+  ];
+  const admin = [
+    { q:'¿Cómo registro el pago de una cuota?', r:['Menú ☰ → 💰 Finanzas → Cobros.','Buscá al alumno y tocá 💰 Cobrar.','Elegí efectivo o transferencia (y meses de pago adelantado si querés) y confirmá.','Podés bajar o mandar por WhatsApp el recibo en PDF.'], ir:{ s:'cobranzas' } },
+    { q:'¿Cómo conecto Mercado Pago?', r:['Menú ☰ → 🏢 Mi gimnasio → Cobros online.','Conectá tu cuenta y aceptá los permisos.','Desde ahí, tus alumnos ven “Pagar con Mercado Pago” cuando la cuota está por vencer o vencida.'], ir:{ s:'gimnasio' } },
+    { q:'¿Cómo doy de alta a un profesor o a Recepción?', r:['Menú ☰ → 🧑‍🏫 Profesores → Nuevo profesor (nombre y DNI).','La contraseña temporal se muestra UNA sola vez.','Para Recepción: desplegá “Usuarios de Recepción”; esa persona solo ve la pantalla de Recepción.'], ir:{ s:'profesores' } },
+    { q:'¿Qué pasa cuando termina la prueba gratuita?', r:['Seguís viendo todos tus datos, pero no podés crear ni editar hasta activar la suscripción.','Los alumnos no se ven afectados.','Un banner en la app te muestra los días que te quedan.'], ir:null },
+    { q:'¿Cómo cambio el logo y los colores?', r:['Menú ☰ → 🏢 Mi gimnasio.','Subí el logo y elegí color primario y secundario.','Se aplican en toda la app, los recibos y la ficha en PDF.'], ir:{ s:'gimnasio' } },
+  ];
+  const alu = [
+    { q:'¿Cómo reservo un turno?', r:['Tocá Turnos en la barra de abajo.','Elegí el día (los no habilitados aparecen atenuados) y el horario.','Confirmá: la app engancha tu rutina del día. Con la cuota vencida no se puede reservar.'], ir:{ a:'turnos' } },
+    { q:'¿Cómo cancelo un turno?', r:['Turnos → tus reservas.','Tocá el turno vigente y cancelalo.'], ir:{ a:'turnos' } },
+    { q:'¿Cómo empiezo a entrenar?', r:['En Inicio tocá Entrenar el día de tu turno (o Mis rutinas → Empezar).','Cargá peso, repeticiones y RIR de cada serie.','Tocá Finalizar al terminar. Si superaste un récord, te lo mostramos.'], ir:{ a:'rutinas' } },
+    { q:'¿Cómo veo cuándo vence mi cuota y cómo pago?', r:['En Inicio aparece un banner cuando está por vencer o vencida.','Si tu gimnasio conectó Mercado Pago, ves el botón “Pagar con Mercado Pago”.','Si no, pagás en efectivo o transferencia con el gimnasio.'], ir:{ a:'inicio' } },
+    { q:'¿Dónde veo mis récords y mi evolución?', r:['Logros: racha semanal, constancia y récords personales (hasta 4 gráficos a la vez).','Seguimiento: gráficos y ejercicio por ejercicio.','Evolución: tus evaluaciones físicas, que carga tu profe.'], ir:{ a:'logros' } },
+    { q:'¿Cómo instalo la app en el celular?', r:['Android (Chrome): menú ⋮ → Instalar aplicación.','iPhone (Safari): Compartir → Agregar a pantalla de inicio.','Abrila desde ese ícono y activá las notificaciones en ⚙️.'], ir:null },
+    { q:'No puedo entrar / me olvidé la contraseña', r:['Entrá por la pestaña Alumno con tu DNI.','Si no recordás la contraseña, pedile al gimnasio que te genere una nueva (te llega una temporal y elegís la tuya).'], ir:null },
+  ];
+  if (rol === 'alumno') return alu;
+  if (rol === 'profesor') return staff.filter(f => !f.adm);
+  return staff.concat(admin);
+}
+
+// ---------- Estado real (tildes automáticos) ----------
+async function guiaCtx(force){
+  if (!force && GUIA_CTX && (Date.now() - GUIA_CTX_T) < 15000) return GUIA_CTX;
+  const rol = guiaRol(); const c = { g: GIMNASIO_ACTUAL || null };
+  c.alumnos = (typeof ALUMNOS_CACHE !== 'undefined' && ALUMNOS_CACHE.length) || 0;
+  c.profesores = (typeof PROFESORES_CACHE !== 'undefined' && PROFESORES_CACHE.length) || 0;
+  if (rol === 'admin' || rol === 'indep'){
+    const q = async p => { try{ const r = await sb(p); return (r && r.length) || 0; }catch(e){ return 0; } };
+    const [h, p, r] = await Promise.all([q('horarios_trabajo?select=id&limit=1'), q('planes?select=id&limit=1'), q('rutinas?select=id&limit=1')]);
+    c.horarios = h; c.planes = p; c.rutinas = r;
+  }
+  GUIA_CTX = c; GUIA_CTX_T = Date.now();
+  return c;
+}
+function guiaHecho(p, c){
+  return !!((p.auto && p.auto(c)) || guiaGet('m_' + p.id) || (p.visita && guiaGet('v_' + p.visita)));
+}
+async function guiaEstado(){
+  const rol = guiaRol(); if (!rol) return null;
+  const c = await guiaCtx();
+  const pasos = guiaPasos(rol).map(p => Object.assign({}, p, { hecho: guiaHecho(p, c) }));
+  const req = pasos.filter(p => !p.opc);
+  return { rol, pasos, hechos: req.filter(p => p.hecho).length, total: req.length };
+}
+
+// ---------- Navegación y marcas ----------
+function guiaIr(tipo, v){
+  guiaCerrar(); guiaCerrarBienvenida();
+  try{ cerrarMenuProf(); }catch(e){} try{ cerrarMenuAlu(); }catch(e){}
+  if (tipo === 's') cambiarSubvista(v);
+  else if (tipo === 'a') cambiarSubvistaAlu(v);
+  else if (tipo === 'f' && typeof window[v] === 'function') window[v]();
+}
+function guiaIrPaso(rol, id){
+  const p = guiaPasos(rol).find(x => x.id === id); if (!p || !p.ir) return;
+  const k = p.ir.s ? 's' : p.ir.a ? 'a' : 'f';
+  guiaIr(k, p.ir.s || p.ir.a || p.ir.f);
+}
+function guiaVisita(kind, v){
+  try{
+    const rol = guiaRol(); if (!rol || (kind === 'alu') !== (rol === 'alumno')) return;
+    if (guiaPasos(rol).some(p => p.visita === v) && !guiaGet('v_' + v)){ guiaSet('v_' + v, 1); setTimeout(guiaRenderCards, 0); }
+  }catch(e){}
+}
+function guiaTilde(rol, id){
+  const k = 'm_' + id; guiaSet(k, guiaGet(k) ? null : 1);
+  guiaRenderCards(); if (document.getElementById('modalGuia').classList.contains('show')) guiaAbrir();
+}
+function guiaOcultar(){ guiaSet('oculta', 1); guiaRenderCards(); }
+
+// ---------- Tarjeta "Primeros pasos" ----------
+async function guiaRenderCards(){
+  const rol = guiaRol();
+  const idCont = rol === 'alumno' ? 'guiaCardAlu' : 'guiaCardStaff';
+  ['guiaCardStaff', 'guiaCardAlu'].forEach(id => { const e = document.getElementById(id); if (e && id !== idCont) e.innerHTML = ''; });
+  const cont = document.getElementById(idCont); if (!cont) return;
+  if (!rol || !guiaEsNuevo() || guiaGet('oculta')){ cont.innerHTML = ''; return; }
+  let st; try{ st = await guiaEstado(); }catch(e){ return; }
+  if (!st) { cont.innerHTML = ''; return; }
+  if (st.hechos >= st.total){
+    cont.innerHTML = `<div class="card gu-card"><div class="gu-ok"><div style="font-size:28px;">🎉</div><div class="gu-tit">¡Listo! Ya tenés lo básico configurado</div><div class="muted" style="font-size:13px; margin:4px 0 10px;">Cuando quieras repasar algo, la guía está en el menú ☰ → ❓ Guía.</div><button class="gu-btn" onclick="guiaOcultar()">Cerrar</button></div></div>`;
+    return;
+  }
+  const pct = Math.round(st.hechos / st.total * 100);
+  cont.innerHTML = `<div class="card gu-card">
+    <div class="gu-head"><div class="gu-tit">🚀 Primeros pasos <span class="muted" style="font-weight:600; font-size:13px;">· ${st.hechos} de ${st.total}</span></div><button class="gu-x" title="Ocultar" aria-label="Ocultar" onclick="guiaOcultar()">✕</button></div>
+    <div class="gu-prog"><i style="width:${pct}%"></i></div>
+    ${st.pasos.map(p => `<div class="gu-paso ${p.hecho ? 'ok' : ''}">
+      <button class="gu-chk" title="${p.hecho ? 'Marcar como pendiente' : 'Marcar como hecho'}" onclick="guiaTilde('${st.rol}','${p.id}')">${p.hecho ? '✓' : ''}</button>
+      <div class="gu-pb"><div class="gu-pt">${p.ico} ${p.t}${p.opc ? '<span class="gu-opc">opcional</span>' : ''}</div><div class="gu-pd">${p.d}</div></div>
+      <div class="gu-acts">${p.ir && !p.hecho ? `<button class="gu-btn" onclick="guiaIrPaso('${st.rol}','${p.id}')">Ir ›</button>` : ''}<button class="gu-btn ghost" title="Cómo se hace" onclick="guiaAbrir('${p.id}')">?</button></div>
+    </div>`).join('')}
+    <div class="gu-foot"><button class="gu-btn ghost" onclick="guiaAbrir()">❓ Ver guía completa</button></div>
+  </div>`;
+}
+
+// ---------- Guía completa (con buscador) ----------
+const GUIA_TITULOS = { admin:'Guía para dueños de gimnasio', indep:'Guía para profesores independientes', profesor:'Guía para profesores', alumno:'Guía del alumno' };
+async function guiaAbrir(idPaso){
+  const rol = guiaRol(); if (!rol) return;
+  try{ cerrarMenuProf(); }catch(e){} try{ cerrarMenuAlu(); }catch(e){}
+  const st = await guiaEstado();
+  const faq = guiaFaq(rol);
+  const ol = a => `<ol>${a.map(x => `<li>${x}</li>`).join('')}</ol>`;
+  const pasosHtml = st.pasos.map(p => `<details class="gu-det" id="guiaP_${p.id}" data-q="${xe((p.t + ' ' + p.d + ' ' + p.det.join(' ')).toLowerCase())}" ${idPaso === p.id ? 'open' : ''}>
+    <summary><span>${p.hecho ? '✅' : '⬜'}</span><span>${p.ico} ${p.t}</span>${p.opc ? '<span class="gu-opc">opcional</span>' : ''}</summary>
+    <div class="gu-cuerpo"><p class="muted" style="margin-bottom:4px;">${p.d}</p>${ol(p.det)}
+      <div class="row" style="gap:6px;">${p.ir ? `<button class="gu-btn" onclick="guiaIrPaso('${rol}','${p.id}')">Ir ›</button>` : ''}<button class="gu-btn ghost" onclick="guiaTilde('${rol}','${p.id}')">${p.hecho ? 'Marcar como pendiente' : 'Marcar como hecho'}</button></div>
+    </div></details>`).join('');
+  const faqHtml = faq.map((f, i) => `<details class="gu-det" data-q="${xe((f.q + ' ' + f.r.join(' ')).toLowerCase())}">
+    <summary>${f.q}</summary>
+    <div class="gu-cuerpo">${ol(f.r)}${f.ir ? `<button class="gu-btn" onclick="guiaIr('${f.ir.s ? 's' : 'a'}','${f.ir.s || f.ir.a}')">Ir a la pantalla ›</button>` : ''}</div></details>`).join('');
+  document.getElementById('guiaTitulo').textContent = '❓ ' + GUIA_TITULOS[rol];
+  document.getElementById('guiaCuerpo').innerHTML = `
+    <div class="gu-sec">Primeros pasos · ${st.hechos} de ${st.total}</div>${pasosHtml}
+    <div class="gu-sec">Preguntas frecuentes</div>${faqHtml}
+    <div class="gu-vacio" id="guiaVacio" style="display:none;">No encontramos nada con esa búsqueda. Probá con otra palabra (ej: “rutina”, “pago”, “turno”).</div>`;
+  const b = document.getElementById('guiaBuscar'); if (b && !idPaso) b.value = '';
+  xAbrirModal('modalGuia');
+  if (idPaso){ const el = document.getElementById('guiaP_' + idPaso); if (el) setTimeout(() => el.scrollIntoView({ block:'nearest', behavior:'smooth' }), 80); }
+}
+function guiaFiltrar(){
+  const q = (document.getElementById('guiaBuscar').value || '').trim().toLowerCase();
+  const ps = q.split(/\s+/).filter(Boolean);
+  let vis = 0;
+  document.querySelectorAll('#guiaCuerpo .gu-det').forEach(d => {
+    const ok = !ps.length || ps.every(w => d.dataset.q.includes(w));
+    d.style.display = ok ? '' : 'none';
+    if (ps.length && ok) d.open = true;
+    if (ok) vis++;
+  });
+  document.querySelectorAll('#guiaCuerpo .gu-sec').forEach(s => { s.style.display = ps.length ? 'none' : ''; });
+  document.getElementById('guiaVacio').style.display = vis ? 'none' : '';
+}
+function guiaCerrar(){ xCerrarModal('modalGuia'); }
+
+// ---------- Bienvenida (una sola vez, solo usuarios nuevos) ----------
+function guiaBienvenida(){
+  try{
+    const rol = guiaRol(); if (!rol || !guiaEsNuevo() || guiaGet('bienvenida')) return;
+    guiaSet('bienvenida', 1);
+    const trial = (rol === 'admin' || rol === 'indep') && GIMNASIO_ACTUAL && GIMNASIO_ACTUAL_ESTADO === 'trial' && GIMNASIO_ACTUAL.prueba_vence_en
+      ? Math.max(0, Math.ceil((new Date(GIMNASIO_ACTUAL.prueba_vence_en).getTime() - Date.now()) / 86400000)) : null;
+    const L = {
+      admin:   ['¡Tu gimnasio ya está creado!', trial !== null ? `Tenés <strong>${trial} días de prueba gratuita</strong> para armarlo y probar todo.` : 'Estos son los pasos para dejarlo andando.', ['🏢 Nombre y logo de tu gimnasio','🕒 Horarios y 💳 planes','👤 Tus alumnos y 🏋️ la primera rutina']],
+      indep:   ['¡Tu espacio ya está creado!', trial !== null ? `Tenés <strong>${trial} días de prueba gratuita</strong> para armarlo y probar todo.` : 'Estos son los pasos para dejarlo andando.', ['🕒 Tus horarios y 💳 planes','👤 Tus alumnos','🏋️ Tu primera rutina']],
+      profesor:['¡Ya tenés acceso como profesor!', 'Desde acá manejás tu día a día con tus alumnos.', ['📋 Agenda: turnos, asistencia y Wellness','🏋️ Rutinas para alumnos y equipos','📏 Evaluaciones y 📈 seguimiento']],
+      alumno:  ['¡Bienvenido/a a tu app de entrenamiento!', 'Tu gimnasio te dio acceso. Todo lo tuyo está en un solo lugar.', ['📅 Reservá tus turnos','🏋️ Entrená y registrá tus series','📈 Mirá tu evolución y tus récords']],
+    }[rol];
+    document.getElementById('guiaBienTit').textContent = L[0];
+    document.getElementById('guiaBienTxt').innerHTML = L[1];
+    document.getElementById('guiaBienLista').innerHTML = L[2].map(x => `<li>${x}</li>`).join('');
+    xAbrirModal('modalGuiaBienvenida');
+  }catch(e){}
+}
+function guiaCerrarBienvenida(){ xCerrarModal('modalGuiaBienvenida'); }
+function guiaEmpezar(){ guiaCerrarBienvenida(); try{ window.scrollTo({ top:0, behavior:'smooth' }); }catch(e){} }
+
+// ---------- Confirmación de email: botón para abrir el correo ----------
+function guiaUrlCorreo(email){
+  const d = String(email || '').split('@')[1]; if (!d) return null;
+  const x = d.toLowerCase();
+  if (/^(gmail|googlemail)\.com$/.test(x)) return ['Gmail', 'https://mail.google.com/'];
+  if (/^(outlook|hotmail|live|msn)\./.test(x)) return ['Outlook', 'https://outlook.live.com/mail/'];
+  if (/^yahoo\./.test(x)) return ['Yahoo Mail', 'https://mail.yahoo.com/'];
+  if (/^(icloud|me)\.com$/.test(x)) return ['iCloud Mail', 'https://www.icloud.com/mail'];
+  return null;
+}
+function guiaPintarBotonCorreo(email){
+  const a = document.getElementById('btnAbrirCorreo'); if (!a) return;
+  const m = guiaUrlCorreo(email);
+  if (!m){ a.style.display = 'none'; return; }
+  a.href = m[1]; a.textContent = '📬 Abrir ' + m[0]; a.style.display = '';
+}
+
 function cambiarSubvista(v){
   medOk();
   try{ clCerrar(); }catch(e){}
+  guiaVisita('staff', v==='armador' ? 'especiales' : v);
   if (v==='armador') v='especiales'; // (v94) el Armador y las Rutinas especiales son ahora una sola pantalla: "Nueva rutina"
   // Progreso en vivo (24/9): mientras el profe tiene la Agenda abierta, la refresca
   // sola cada 25s para que el avance de los alumnos se vaya viendo sin tener que
@@ -5636,7 +5980,7 @@ function cambiarSubvista(v){
   document.getElementById('bnavProfArmador').classList.toggle('active', v==='especiales');
   document.getElementById('bnavProfAgenda').classList.toggle('active', v==='agenda');
   document.getElementById('bnavProfAlumnos').classList.toggle('active', v==='alumnos');
-  if (v==='inicio') cargarInicioProfesor();
+  if (v==='inicio'){ cargarInicioProfesor(); guiaRenderCards(); }
   if (v==='recepcion') iniciarRecepcion();
   if (v==='dashboard') cargarDashboardAdmin();
   if (v==='rutinas') cargarGrillaRutinas();
@@ -6499,6 +6843,8 @@ async function cargarInicioAlu(alumnoId){
 }
 
 function cambiarSubvistaAlu(v){
+  guiaVisita('alu', v);
+  if (v==='inicio') guiaRenderCards();
   document.getElementById('subvistaAluInicio').style.display = v==='inicio' ? '' : 'none';
   document.getElementById('subvistaAluTurnos').style.display = v==='turnos' ? '' : 'none';
   document.getElementById('subvistaAluRutinas').style.display = v==='rutinas' ? '' : 'none';
@@ -9810,7 +10156,7 @@ function xQuien(nombre, sub, big, foto){
 function xAbrirModal(id){ document.getElementById(id).classList.add('show'); }
 function xCerrarModal(id){ document.getElementById(id).classList.remove('show'); }
 function cerrarFicha(){ xCerrarModal('modalFicha'); FICHA_ALU = null; FICHA_PROF = null; FICHA_TOK++; }
-document.addEventListener('keydown', e => { if (e.key === 'Escape'){ ['modalFicha', 'modalNuevoAlumno', 'modalNuevoProfesor'].forEach(id => { const m = document.getElementById(id); if (m && m.classList.contains('show')) m.classList.remove('show'); }); FICHA_ALU = null; FICHA_PROF = null; } });
+document.addEventListener('keydown', e => { if (e.key === 'Escape'){ ['modalFicha', 'modalNuevoAlumno', 'modalNuevoProfesor', 'modalGuia', 'modalGuiaBienvenida'].forEach(id => { const m = document.getElementById(id); if (m && m.classList.contains('show')) m.classList.remove('show'); }); FICHA_ALU = null; FICHA_PROF = null; } });
 const XEXTRA_ALU = {}; // alumnos traídos solo para la ficha (p. ej. dados de baja desde Alertas)
 
 // ---------- Rutina en curso / próxima por alumno (para la columna "Rutina" y la ficha) ----------
