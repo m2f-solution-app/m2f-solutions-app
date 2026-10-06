@@ -1227,6 +1227,54 @@
   button.cl-as.no{ background:rgba(255,93,93,.2); color:var(--danger-text); border-color:rgba(255,93,93,.6); }
   button.cl-sm{ flex:none; padding:6px 11px; font-size:12.5px; border-radius:10px; }
   .cl-res{ display:flex; gap:6px; flex-wrap:wrap; }
+  /* (v106) Recepción: cartel de asistencia tomada al ingresar el DNI */
+  .rc-msg.rc-ing{ font-size:17px; padding:14px; }
+  .rc-ing-l{ font-size:19px; font-weight:800; margin-top:4px; line-height:1.3; }
+  /* (v105) Turnos por horario: pestañas del alumno, filas de horario y configuración de la sala */
+  .alu-tabs{ display:grid; grid-template-columns:1fr 1fr; gap:4px; background:var(--panel2); border:1px solid var(--border); border-radius:14px; padding:4px; margin-bottom:12px; }
+  .alu-tabs span{ text-align:center; padding:10px 6px; border-radius:10px; font-weight:700; color:var(--muted); cursor:pointer; user-select:none; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .alu-tabs span.on{ background:var(--accent); color:#1a0e00; }
+  .sl-aviso{ border:1px solid var(--border); border-radius:12px; padding:9px 12px; font-size:13px; margin:10px 0; background:var(--panel2); max-width:780px; }
+  .sl-aviso.ok{ border-color:rgba(61,220,132,.4); background:rgba(61,220,132,.1); }
+  .sl-row{ display:grid; grid-template-columns:52px minmax(0,1fr) auto; gap:10px; align-items:center; background:var(--panel2); border:1px solid var(--border); border-radius:12px; padding:10px 12px; margin-top:8px; max-width:780px; }
+  .sl-row.mio{ border-color:var(--accent2); box-shadow:inset 0 0 0 1px var(--accent2); }
+  .sl-row.off{ opacity:.55; }
+  .sl-h{ font-weight:800; font-size:15px; }
+  .sl-h small{ display:block; font-weight:600; font-size:11px; color:var(--muted); }
+  .sl-n{ font-weight:800; font-size:15px; margin-bottom:5px; overflow-wrap:anywhere; }
+  .sl-bar{ height:7px; border-radius:999px; background:var(--panel); border:1px solid var(--border); overflow:hidden; margin-bottom:5px; }
+  .sl-bar i{ display:block; height:100%; background:var(--accent); border-radius:999px; }
+  .sl-bar.full i{ background:var(--danger, #ff5d5d); }
+  .sl-c{ font-size:13px; }
+  .sl-p{ font-size:11.5px; color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .sl-a{ display:flex; flex-direction:column; gap:5px; align-items:flex-end; }
+  button.sl-b{ padding:8px 12px; font-size:13px; white-space:nowrap; border-radius:10px; }
+  .sala-modo{ display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .sala-op{ border:1px solid var(--border); border-radius:12px; padding:10px 12px; cursor:pointer; background:var(--panel2); }
+  .sala-op.on{ border-color:var(--accent); box-shadow:inset 0 0 0 1px var(--accent); }
+  .sala-op b{ display:block; margin-bottom:2px; }
+  .sala-op span{ font-size:12.5px; color:var(--muted); }
+  .sala-dia{ display:grid; grid-template-columns:92px minmax(0,1fr); gap:10px; padding:10px 0; border-top:1px solid var(--border); align-items:start; }
+  .sala-dn{ font-weight:700; padding-top:8px; }
+  .sala-fr{ display:flex; flex-wrap:wrap; gap:6px 8px; align-items:center; margin-bottom:6px; font-size:12.5px; }
+  .sala-g{ display:inline-flex; align-items:center; gap:6px 8px; white-space:nowrap; }
+  .sala-fr input[type="time"]{ width:112px; }
+  .sala-fr input[type="number"]{ width:76px; text-align:center; }
+  button.sala-x{ padding:6px 10px; border-radius:10px; }
+  button.sala-mini{ padding:6px 10px; font-size:12.5px; border-radius:10px; }
+  @media (max-width:760px){
+    .sala-modo{ grid-template-columns:1fr; }
+    .sl-lug{ display:none; }
+    .sala-dia{ grid-template-columns:minmax(0,1fr); gap:2px; } .sala-dn{ padding-top:0; }
+    .sala-fr input[type="time"]{ width:104px; } .sala-fr input[type="number"]{ width:64px; }
+  }
+  /* (v104) varias clases a la misma hora: bloque compacto */
+  .cl-tb.cx{ padding:3px 5px; }
+  .cl-tb.cx .t, .cl-tb.cx .n, .cl-tb.cx .p{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .cl-tb.cx .n{ overflow-wrap:normal; }
+  .cl-tb.cx .cpl{ flex-wrap:nowrap; overflow:hidden; }
+  .cl-tb.cx .cl-cp{ padding:1px 5px; }
+  .cl-movil .cl-tb.cx{ padding:4px 7px; } .cl-movil .cl-tb.cx .cl-cp{ font-size:11px; padding:1px 7px; }
   .cl-row21{ grid-template-columns:minmax(0,1fr) 110px; }
   .cl-row21 > .field{ min-width:0; } .cl-row21 > .field input, .cl-row21 > .field select{ width:100%; min-width:0; box-sizing:border-box; }
   .cl-cfg{ display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:10px 14px; }
@@ -1983,7 +2031,7 @@
             <div class="rc-disp" id="rcDisp">&nbsp;</div>
             <div class="rc-pad" id="rcPad"></div>
             <input id="rcQ" placeholder="…o buscá por nombre / apellido" autocomplete="off" oninput="rcBuscarNombreDebounce()" />
-            <div class="rc-hint">Con el teclado de la pantalla o un teclado numérico USB: escribí el DNI y Enter.</div>
+            <div class="rc-hint" id="rcHintIng">Con el teclado de la pantalla o un teclado numérico USB: escribí el DNI y Enter.</div>
           </div>
           <div class="card" id="rcRes"></div>
           <div class="card rc-full">
@@ -2646,8 +2694,11 @@
             <button class="ghost active" id="horTabBtnEditar" onclick="horCambiarTab('editar')">✎ Editar horario</button>
             <button class="ghost" id="horTabBtnCuadro" onclick="horCambiarTab('cuadro')">🗓️ Ver cuadro de todos</button>
             <button class="ghost" id="horTabBtnFacturar" onclick="horCambiarTab('facturar')">💵 Facturar horas</button>
+            <button class="ghost" id="horTabBtnSala" onclick="horCambiarTab('sala')" style="display:none;">🏋️ Sala y cupos</button>
           </div>
         </div>
+        <!-- (v105) Turnos por horario: modo del gimnasio y franjas de la sala -->
+        <div id="horTabSala" style="display:none;"><div id="salaCfg"></div></div>
 
         <div id="horTabEditar">
           <div class="card">
@@ -2658,6 +2709,7 @@
           </div>
           <div class="card">
             <h2 style="margin-top:0">Horario semanal</h2>
+            <div class="cl-banner" id="horNotaSala" style="display:none;">En este gimnasio los turnos son <b>por horario</b>: el cupo lo pone la sala (pestaña “Sala y cupos”). Este horario indica cuándo está el profesor en la sala y sirve para la estadística y para liquidar sus horas; el “Cupo x turno” de acá no se usa.</div>
             <div id="listaHorarios">Elegí un profesor arriba.</div>
           </div>
         </div>
@@ -2701,7 +2753,7 @@
           </div>
           <div class="card">
             <h2 style="margin-top:0">Calcular horas trabajadas</h2>
-            <div class="muted" style="font-size:12px; margin-bottom:8px;">Se calcula a partir del horario semanal asignado (pestaña "Editar horario") + las excepciones de cobertura/ausencia cargadas en el rango. No hace falta fichar entrada y salida.</div>
+            <div class="muted" style="font-size:12px; margin-bottom:8px;">Se calcula a partir del horario semanal asignado (pestaña "Editar horario") + las clases que dicta (las del cuadro de Clases donde figura como profesor) + las excepciones de cobertura/ausencia cargadas en el rango. Las horas de clase que caen dentro de su horario no se cuentan dos veces. No hace falta fichar entrada y salida.</div>
             <div class="row">
               <div class="field"><label>Desde</label><input type="date" id="factDesde"></div>
               <div class="field"><label>Hasta</label><input type="date" id="factHasta"></div>
@@ -3219,10 +3271,14 @@
     </div>
 
     <div id="subvistaAluTurnos" style="display:none;">
-      <div class="vista-titulo">Turnos</div>
+      <div class="vista-titulo" id="aluTurnosTitulo">Turnos</div>
+      <!-- (v105) pestañas: turnos de la sala / clases con cupo (solo si el gimnasio tiene clases con reservas) -->
+      <div class="alu-tabs" id="aluTurnosTabs" style="display:none;"></div>
+      <div id="aluTabClases" style="display:none;"><div id="aluTurnosClases"></div></div>
+      <div id="aluTabSala">
       <div class="card">
         <div class="sec-t">Reservar turno</div>
-        <div class="row">
+        <div class="row" id="aluFiltroProfesorWrap">
           <div class="field" style="flex:1; min-width:200px;">
             <label>Profesor</label>
             <select id="aluFiltroProfesor" onchange="renderTurnosDisponibles()">
@@ -3233,16 +3289,19 @@
         <label style="margin-top:14px; display:block;">Elegí el día</label>
         <div class="dias-scroll" id="aluDiasScroll"></div>
         <div id="aluHorasWrap" style="margin-top:12px;">Elegí tu nombre arriba.</div>
-        <div class="leyenda">
+        <div class="leyenda" id="aluLeyendaTurnos">
           <span><span class="dot" style="background:rgba(61,220,132,.6);"></span> Disponible</span>
           <span><span class="dot" style="background:rgba(255,210,61,.7);"></span> Quedan pocos</span>
           <span><span class="dot" style="background:#3a3f4a;"></span> Agotado</span>
         </div>
       </div>
 
+      <div id="aluMisClasesTurnos"></div>
       <div class="card">
         <div class="sec-t">Mis turnos</div>
+        <div id="aluEsperaLista"></div>
         <div id="listaTurnosAlu" class="muted">Elegí tu nombre arriba.</div>
+      </div>
       </div>
     </div>
 
@@ -3424,10 +3483,10 @@
     <button id="btnAbrirReasignarTurno" class="ghost" style="width:100%; margin-top:8px;" onclick="toggleReasignarTurno()">🔁 Reasignar a otro profesor</button>
     <div id="reasignarTurnoWrap" style="display:none; margin-top:10px; padding-top:10px; border-top:1px solid var(--border);">
       <div class="field">
-        <label>Nuevo profesor</label>
+        <label id="reasignarTurnoLabel">Nuevo profesor</label>
         <select id="reasignarTurnoSelect"></select>
       </div>
-      <button style="width:100%;" onclick="confirmarReasignarTurno()">Confirmar reasignación</button>
+      <button style="width:100%;" id="reasignarTurnoBtn" onclick="confirmarReasignarTurno()">Confirmar reasignación</button>
     </div>
   </div>
 </div>
@@ -4499,7 +4558,7 @@ function atlIniciarAlu(){
   atlCargarVista('aluAtletismoContenido', id || '');
 }
 
-const APP_VERSION = 103;
+const APP_VERSION = 106;
 // (v96) Fecha de la última actualización: se cambia junto con APP_VERSION en cada entrega. Se muestra en la
 // pantalla de inicio y en el menú de cuenta ("v94 · actualizada el 5/10/2026").
 const APP_FECHA = '2026-10-06';
@@ -6064,7 +6123,9 @@ async function cargarInicioProfesor(){
     const desde14 = ipSumarDias(hoy, -13);
     const [tHoy, horarios, tRango, tSinRutina] = await Promise.all([
       sb(`turnos?select=id,hora,profesor_id,alumno_id,asistio,rutina_dia_id,rutina_ajustada_en,rutina_dias(nombre_dia),alumnos(nombre)&fecha=eq.${hoy}&estado=neq.cancelado${pf}&order=hora`),
-      sb(`horarios_trabajo?select=profesor_id,hora_inicio,hora_fin,cupo_por_turno&dia_semana=eq.${dow}&activo=eq.true${profId ? '&profesor_id=eq.' + profId : ''}`),
+      (salaHorario()   // (v105) por horario: el cupo de cada hora es el de la sala
+        ? sb(`sala_horarios?select=hora_inicio,hora_fin,cupo&gimnasio_id=eq.${salaGym()}&dia_semana=eq.${dow}&activo=eq.true`).then(r => r.map(x => ({ hora_inicio: x.hora_inicio, hora_fin: x.hora_fin, cupo_por_turno: x.cupo })))
+        : sb(`horarios_trabajo?select=profesor_id,hora_inicio,hora_fin,cupo_por_turno&dia_semana=eq.${dow}&activo=eq.true${profId ? '&profesor_id=eq.' + profId : ''}`)),
       sb(`turnos?select=fecha,hora,asistio&fecha=gte.${desde14}&fecha=lte.${domingo}&estado=neq.cancelado${pf}&limit=3000`),
       sb(`turnos?select=alumno_id,fecha,alumnos(nombre)&rutina_dia_id=is.null&fecha=gte.${hoy}&fecha=lte.${ipSumarDias(hoy, 7)}&estado=neq.cancelado${pf}&limit=300`),
     ]);
@@ -6430,7 +6491,7 @@ function rcVacio(msg){
 function rcPintar(){ rcEl('rcDisp').innerHTML = RC.buf ? escaparHtml(RC.buf) : '&nbsp;'; }
 function rcTecla(k){
   if (k === '⌫') RC.buf = RC.buf.slice(0, -1);
-  else if (k === 'Buscar'){ if (RC.buf.length < 2){ toast('Ingresá al menos 2 dígitos del DNI.', true); return; } rcBuscar(RC.buf); return; }
+  else if (k === 'Buscar'){ if (RC.buf.length < 2){ toast('Ingresá al menos 2 dígitos del DNI.', true); return; } const t = RC.buf; RC.buf = ''; rcPintar(); rcBuscar(t, true); return; }
   else if (RC.buf.length < 10) RC.buf += k;
   rcPintar();
 }
@@ -6450,34 +6511,49 @@ function rcBuscarNombreDebounce(){
   if (t.length < 2) return;
   RC.tmr = setTimeout(() => rcBuscar(t), 350);
 }
-async function rcBuscar(texto){
+async function rcBuscar(texto, ingreso){
   const mio = ++RC.busq;
   rcEl('rcRes').innerHTML = '<div class="rc-vacio">Buscando…</div>';
   try{
     const rows = await sb('rpc/recepcion_buscar_socios', { method:'POST', body: JSON.stringify({ p_texto: texto }) });
-    if (mio !== RC.busq) return;
-    if (!rows.length){ RC.ficha = null; rcEl('rcRes').innerHTML = '<div class="rc-vacio"><div class="big">❓</div><p>No encontramos ese socio. Revisá el DNI o probá por nombre.</p></div>'; return; }
-    if (rows.length === 1) return rcAbrir(rows[0].alumno_id);
+    // (v106) solo con el DNI completo y exacto se toma la asistencia; por nombre o con el DNI a medias se abre la ficha y nada más
+    const exacto = !!ingreso && rows.length === 1 && String(rows[0].dni || '') === String(texto).trim();
+    // si mientras tanto entró otro DNI, la asistencia de este se toma igual (queda a la vista la ficha del último)
+    if (mio !== RC.busq){ if (exacto) rcIngreso(rows[0].alumno_id).then(() => rcCargarLlegadas()); return; }
+    if (!rows.length){ RC.ficha = null; rcEl('rcRes').innerHTML = '<div class="rc-vacio"><div class="big">❓</div><p>No encontramos ' + (/^\d+$/.test(String(texto).trim()) ? 'el DNI <b>' + escaparHtml(String(texto).trim()) + '</b>' : 'ese socio') + '. Revisá el DNI o probá por nombre.</p></div>'; return; }
+    if (rows.length === 1) return rcAbrir(rows[0].alumno_id, ingreso ? exacto : undefined);
     RC.ficha = null;
     rcEl('rcRes').innerHTML = `<h2 style="margin-top:0">Coincidencias</h2>` + rows.map(r => `
       <div class="rc-row"><span>${escaparHtml(r.nombre)} <span class="muted">· DNI ${escaparHtml(r.dni || '-')}</span></span>
       <button class="secondary rc-mini" onclick="rcAbrir('${r.alumno_id}')">Elegir</button></div>`).join('');
   }catch(e){ rcEl('rcRes').innerHTML = `<div class="rc-vacio">Error: ${escaparHtml(extraerMensajeError(e))}</div>`; }
 }
-async function rcAbrir(alumnoId){
-  RC.buf = ''; rcPintar(); rcEl('rcQ').value = '';
+async function rcAbrir(alumnoId, ingreso){
+  const mio = RC.abre = (RC.abre || 0) + 1;   // (v106) si entra otro socio mientras carga, queda a la vista el último
+  if (ingreso === undefined){ RC.buf = ''; rcPintar(); }   // viniendo del DNI el visor ya se limpió al dar Enter
+  rcEl('rcQ').value = '';
   RC.dia = 0; RC.slot = null; RC.confirmar = null; RC.ultimo = null; RC.verMas = false; RC.disp = null; RC.dispKey = '';
+  const ing = ingreso ? await rcIngreso(alumnoId) : null;   // (v106)
+  if (mio !== RC.abre){ if (ing) rcCargarLlegadas(); return; }
+  RC.ing = ing;
   await rcRefrescar(undefined, alumnoId);
 }
 async function rcRefrescar(msg, alumnoId){
   const id = alumnoId || RC.ficha?.alumno_id;
+  const mio = RC.abre;
   try{
-    RC.ficha = await sb('rpc/recepcion_ficha_socio', { method:'POST', body: JSON.stringify({ p_alumno_id: id }) });
+    if (msg !== undefined) RC.ing = null;   // (v106) después de una acción manual, el cartel del ingreso ya no vale
+    const [ficha, clases] = await Promise.all([
+      sb('rpc/recepcion_ficha_socio', { method:'POST', body: JSON.stringify({ p_alumno_id: id }) }),
+      rcClasesHoy(id),   // (v106) clases de hoy
+    ]);
+    if (mio !== RC.abre) return;   // mientras cargaba se abrió otro socio
+    RC.ficha = ficha; RC.clases = clases;
     rcRender(msg);
     rcCargarLlegadas();
   }catch(e){ toast(extraerMensajeError(e), true); }
 }
-function rcVolver(){ RC.ficha = null; RC.slot = null; RC.confirmar = null; RC.ultimo = null; rcVacio(); }
+function rcVolver(){ RC.ficha = null; RC.slot = null; RC.confirmar = null; RC.ultimo = null; RC.ing = null; RC.clases = []; rcVacio(); }
 
 function rcPill(f){
   const e = f.estado_pago;
@@ -6497,6 +6573,7 @@ function rcRender(msg){
   const btnMini = 'secondary rc-mini';
   let h = `<button class="secondary rc-mini" style="margin-bottom:12px;" onclick="rcVolver()">← Volver a buscar</button>
     <div class="rc-who"><div class="rc-av">${escaparHtml(ini)}</div><div><h3>${escaparHtml(f.nombre)}</h3><small>DNI ${escaparHtml(f.dni || '-')}${f.plan_nombre ? ' · ' + escaparHtml(f.plan_nombre) : ''}</small></div></div>${rcPill(f)}`;
+  h += rcIngresoHtml();   // (v106) qué se marcó al ingresar el DNI
 
   // Turnos reservados (se pueden deshacer/cancelar aunque la cuota esté vencida, para corregir errores)
   h += `<h2 style="margin:16px 0 4px;">Turnos reservados</h2>`;
@@ -6515,14 +6592,18 @@ function rcRender(msg){
     h += `</span></div>`;
   });
 
+  h += rcClasesHtml(f, bloqueado);   // (v106)
+  const ingOk = RC.ing && (RC.ing.estado === 'marcado' || RC.ing.estado === 'ya_marcado');
+  const claseHoy = (RC.clases || []).some(c => c.inscripcion_id && c.estado === 'anotado');
   const tHoy = f.turnos.find(t => t.fecha === f.hoy);
   const presHoy = tHoy && tHoy.asistio === true;
   if (bloqueado){
     h += `<div class="rc-msg bad">La cuota está vencida: no se puede marcar la llegada ni sacar turnos nuevos (sí se pueden deshacer y cancelar los que ya hay). ${esAdmin ? `<button class="secondary rc-mini" style="margin-top:8px; display:block;" onclick="cambiarSubvista('cobranzas')">💰 Ir a cobrar</button>` : 'Que pase por administración para regularizarla.'}</div>`;
   } else {
     if (tHoy && !presHoy) h += `<button class="rc-big" onclick="rcMarcar('${tHoy.id}', true)">✓ Marcar llegada · turno ${escaparHtml(tHoy.hora)}</button>`;
-    if (tHoy && presHoy) h += `<div class="rc-msg ok" style="font-size:16px;">✅ <b>Llegada registrada</b> · turno ${escaparHtml(tHoy.hora)}</div>`;
-    if (!tHoy) h += `<div class="rc-msg warn">Hoy no tiene turno reservado. Sacale uno acá abajo y queda marcada la llegada.</div>`;
+    if (tHoy && presHoy && !ingOk) h += `<div class="rc-msg ok" style="font-size:16px;">✅ <b>Llegada registrada</b> · turno ${escaparHtml(tHoy.hora)}</div>`;
+    if (!tHoy) h += claseHoy ? `<div class="rc-hint">Hoy no tiene turno reservado (sí clase). Si también lo necesita, sacale uno acá abajo.</div>`
+      : `<div class="rc-msg warn">Hoy no tiene turno reservado. Sacale uno acá abajo y queda marcada la llegada.</div>`;
     if (tHoy && !RC.verMas){
       h += `<button class="secondary rc-wide" onclick="RC.verMas=true; rcRender()">＋ Sacarle otro turno (otro día u horario)</button>`;
     } else {
@@ -6545,8 +6626,8 @@ function rcReservaHtml(f, tHoy){
   const previo = f.turnos.find(t => t.fecha === fecha);
   h += '<div class="rc-slots">' + rows.map(r => {
     const libres = r.cupo_disponible, hora = rcHora(r.hora);
-    const propio = previo && previo.profesor_id === r.profesor_id && previo.hora === hora;
-    const sel = RC.slot && RC.slot.pid === r.profesor_id && RC.slot.hora === r.hora;
+    const propio = previo && (r.profesor_id == null || previo.profesor_id === r.profesor_id) && previo.hora === hora;   // (v105) por horario no hay profesor en el turno ofrecido
+    const sel = RC.slot && String(RC.slot.pid) === String(r.profesor_id) && RC.slot.hora === r.hora;
     const cls = ((libres <= 0 && !propio) ? 'agotado ' : '') + ((libres > 0 && libres <= 2) ? 'poco ' : '') + (sel ? 'sel' : '');
     const click = (libres > 0 && !propio) ? `onclick="rcElegirSlot('${r.profesor_id}','${r.hora}')"` : '';
     const sub = propio ? 'ya reservado' : libres <= 0 ? 'sin cupo' : `${libres} lugar${libres === 1 ? '' : 'es'}`;
@@ -6603,7 +6684,7 @@ async function rcReservar(marcar){
   const previo = f.turnos.find(t => t.fecha === fecha);
   try{
     const r = await sb('rpc/recepcion_reservar_turno', { method:'POST', body: JSON.stringify({
-      p_alumno_id: f.alumno_id, p_profesor_id: s.pid, p_fecha: fecha, p_hora: s.hora,
+      p_alumno_id: f.alumno_id, p_profesor_id: (s.pid && s.pid !== 'null') ? s.pid : null, p_fecha: fecha, p_hora: s.hora,
       p_marcar_llegada: !!marcar, p_reemplazar: !!previo }) });
     RC.ultimo = { tipo:'reserva', nuevo: r.turno_id, previo: r.reemplazo_turno_id || null };
     // Enganche de rutina (mismo que la reserva del alumno). Un usuario de Recepción no lee rutinas,
@@ -6626,9 +6707,11 @@ async function rcDeshacerUltimo(){
 async function rcCargarLlegadas(){
   const cont = rcEl('rcLog'); if (!cont) return;
   try{
-    const rows = await sb('rpc/recepcion_llegadas_hoy', { method:'POST', body: '{}' });
-    rcEl('rcCnt').textContent = rows.length;
-    cont.innerHTML = rows.length ? rows.map(l => `<div class="rc-row"><span>${escaparHtml(l.nombre)} <span class="muted">· turno ${escaparHtml(l.hora)}</span></span><span class="muted">${l.marcada_en ? new Date(l.marcada_en).toLocaleTimeString('es-AR', { hour:'2-digit', minute:'2-digit' }) : ''} <a href="#" style="color:var(--accent-text); margin-left:6px;" onclick="rcMarcarDesdeLista('${l.turno_id}'); return false;">deshacer</a></span></div>`).join('')
+    // (v106) turnos + clases, lo último arriba; el número cuenta personas
+    const [turnos, clases] = await Promise.all([sb('rpc/recepcion_llegadas_hoy', { method:'POST', body: '{}' }), rcLlegadasClases()]);
+    const rows = turnos.concat(clases).sort((a, b) => String(b.marcada_en || '').localeCompare(String(a.marcada_en || '')));
+    rcEl('rcCnt').textContent = new Set(rows.map(l => l.alumno_id)).size;
+    cont.innerHTML = rows.length ? rows.map(l => `<div class="rc-row"><span>${escaparHtml(l.nombre)} <span class="muted">· ${l.inscripcion_id ? escaparHtml(l.clase_nombre || 'Clase') : 'turno'} ${escaparHtml(l.hora)}</span></span><span class="muted">${l.marcada_en ? new Date(l.marcada_en).toLocaleTimeString('es-AR', { hour:'2-digit', minute:'2-digit' }) : ''} <a href="#" style="color:var(--accent-text); margin-left:6px;" onclick="${l.inscripcion_id ? `rcClaseDesdeLista('${l.inscripcion_id}')` : `rcMarcarDesdeLista('${l.turno_id}')`}; return false;">deshacer</a></span></div>`).join('')
       : '<div class="muted">Todavía no se marcó nadie hoy.</div>';
   }catch(e){ cont.innerHTML = `<div class="muted">No se pudo cargar: ${escaparHtml(extraerMensajeError(e))}</div>`; }
 }
@@ -6636,6 +6719,128 @@ async function rcMarcarDesdeLista(turnoId){
   try{
     await sb('rpc/recepcion_marcar_llegada', { method:'POST', body: JSON.stringify({ p_turno_id: turnoId, p_valor: null }) });
     toast('Llegada deshecha ✓');
+    if (RC.ficha) await rcRefrescar(); else rcCargarLlegadas();
+  }catch(e){ toast(extraerMensajeError(e), true); }
+}
+
+// ---------- (v106) RECEPCIÓN: DNI + Enter toma la asistencia (turno y clase de ese momento) ----------
+// RCX.ok: null = todavía no se sabe si está el SQL (recepcion-asistencia.sql) · false = no está: Recepción queda como en v105.
+const RCX = { ok: null };
+function rcFaltaSql(e){ return /PGRST202|Could not find the function|42883/.test(String((e && e.message) || e)); }
+function rcTurnoNombre(){ return (typeof salaHorario === 'function' && salaHorario() && SALA.nombre) ? SALA.nombre : 'Turno'; }
+function rcItemTxt(x){ return (x.tipo === 'turno' ? rcTurnoNombre() : (x.nombre || 'Clase')) + ' ' + x.hora; }
+function rcHintIng(){
+  const el = rcEl('rcHintIng'); if (!el) return;
+  el.textContent = 'Con el teclado de la pantalla o un teclado numérico USB: escribí el DNI y Enter.' + (RCX.ok ? ' Si tiene turno o clase a esa hora, la asistencia queda tomada sola.' : '');
+}
+// Ingreso por DNI: el servidor marca lo que corresponde a ese momento y devuelve qué hizo
+async function rcIngreso(alumnoId){
+  if (RCX.ok === false) return null;
+  try{
+    const r = await sb('rpc/recepcion_ingreso', { method:'POST', body: JSON.stringify({ p_alumno_id: alumnoId }) });
+    RCX.ok = true; return r;
+  }catch(e){
+    if (rcFaltaSql(e)){ RCX.ok = false; rcHintIng(); return null; }
+    toast(extraerMensajeError(e), true); return null;
+  }
+}
+async function rcClasesHoy(alumnoId){
+  if (RCX.ok === false) return [];
+  try{
+    const r = await sb('rpc/recepcion_clases_hoy', { method:'POST', body: JSON.stringify({ p_alumno_id: alumnoId }) });
+    RCX.ok = true; return Array.isArray(r) ? r : [];
+  }catch(e){ if (rcFaltaSql(e)){ RCX.ok = false; rcHintIng(); } return []; }
+}
+async function rcLlegadasClases(){
+  if (RCX.ok === false) return [];
+  try{
+    const r = await sb('rpc/recepcion_llegadas_clases_hoy', { method:'POST', body: '{}' });
+    RCX.ok = true; rcHintIng(); return Array.isArray(r) ? r : [];
+  }catch(e){ if (rcFaltaSql(e)){ RCX.ok = false; rcHintIng(); } return []; }
+}
+// Cartel de arriba de la ficha con lo que pasó al ingresar el DNI
+function rcIngresoHtml(){
+  const g = RC.ing; if (!g) return '';
+  const lista = a => (a || []).map(rcItemTxt).map(escaparHtml).join(' · ');
+  if (g.estado === 'marcado'){
+    return `<div class="rc-msg ok rc-ing">✅ <b>Asistencia registrada</b><div class="rc-ing-l">${lista(g.marcados)}</div>${(g.ya || []).length ? `<div class="muted" style="font-size:12.5px; margin-top:2px;">Ya estaba marcado: ${lista(g.ya)}</div>` : ''}<button class="secondary rc-mini" style="margin-top:10px;" onclick="rcDeshacerIngreso()">↩ Deshacer</button></div>`;
+  }
+  if (g.estado === 'ya_marcado'){
+    const ya = (g.ya || []).length ? g.ya : (g.pendientes || []).filter(x => x.asistio === true);
+    return `<div class="rc-msg ok">✅ Ya tenía la asistencia registrada${ya.length ? ': <b>' + lista(ya) + '</b>' : ''}.</div>`;
+  }
+  if (g.estado === 'fuera_de_horario'){
+    const p = (g.pendientes || []).filter(x => x.asistio !== true);
+    const terminaron = p.length && p.every(x => x.terminada);
+    return `<div class="rc-msg warn">⏰ Hoy tiene <b>${lista(p)}</b>, pero ${terminaron ? 'ya terminó' : 'todavía no es la hora'}: no se marcó sola. Si corresponde, marcala acá abajo.</div>`;
+  }
+  return '';
+}
+// Clases de hoy en la ficha: presente, deshacer, anotar al que vino sin reservar y quitar
+function rcClasesHtml(f, bloqueado){
+  const cs = RC.clases || []; if (!cs.length) return '';
+  const btnMini = 'secondary rc-mini';
+  let h = `<h2 style="margin:16px 0 4px;">Clases de hoy</h2>`;
+  cs.forEach(c => {
+    const ins = c.inscripcion_id, pres = c.asistio === true, lleno = c.cupo != null && c.anotados >= c.cupo;
+    h += `<div class="rc-row"><span><b>${escaparHtml(c.hora)}</b> ${escaparHtml(c.nombre)} <span class="muted">· ${c.profesor_nombre ? escaparHtml(String(c.profesor_nombre).split(' ')[0]) + ' · ' : ''}${c.anotados}/${c.cupo}</span>${pres ? ' <span class="rc-pill rc-p-ok" style="margin:0 0 0 6px;">Llegó</span>' : ''}${c.estado === 'espera' ? ' <span class="rc-pill rc-p-warn" style="margin:0 0 0 6px;">En espera</span>' : ''}</span><span class="rc-act">`;
+    if (ins && c.estado === 'anotado'){
+      if (RC.confirmar === 'c:' + ins){
+        h += `<span style="color:var(--warn-text);">¿Quitarlo de la clase?</span>
+          <button class="rc-mini" style="background:var(--danger); color:#fff;" onclick="rcClaseQuitar('${ins}')">Sí</button>
+          <button class="${btnMini}" onclick="RC.confirmar=null; rcRender()">No</button>`;
+      } else {
+        if (pres) h += `<button class="${btnMini}" onclick="rcClaseMarcar('${ins}', null)">↩ Deshacer</button>`;
+        else if (!bloqueado) h += `<button class="rc-mini" onclick="rcClaseMarcar('${ins}', true)">✓ Presente</button>`;
+        h += `<button class="${btnMini}" onclick="RC.confirmar='c:${ins}'; rcRender()">Quitar</button>`;
+      }
+    } else if (!ins){
+      if (c.terminada) h += `<span class="muted">Ya terminó</span>`;
+      else if (lleno) h += `<span class="muted">Completa</span>`;
+      else if (!bloqueado) h += `<button class="${btnMini}" onclick="rcClaseAnotar('${c.clase_id}')">Anotar y dar presente</button>`;
+    }
+    h += `</span></div>`;
+  });
+  return h;
+}
+async function rcClaseAccion(rpc, body, msgOk){
+  if (RC.ocupado || !RC.ficha) return; RC.ocupado = true;
+  try{
+    const r = await sb('rpc/' + rpc, { method:'POST', body: JSON.stringify(body) });
+    RC.ocupado = false; RC.confirmar = null; RC.ultimo = null;
+    await rcRefrescar(typeof msgOk === 'function' ? msgOk(r) : msgOk);
+  }catch(e){ RC.ocupado = false; RC.confirmar = null; toast(extraerMensajeError(e), true); rcRefrescar(); }
+}
+function rcClaseMarcar(insId, valor){
+  return rcClaseAccion('recepcion_clase_marcar', { p_inscripcion_id: insId, p_valor: valor },
+    valor === true ? `✅ Presente de ${RC.ficha.nombre} en la clase registrado.` : '↩ Presente deshecho: sigue anotado en la clase.');
+}
+function rcClaseAnotar(claseId){
+  const c = (RC.clases || []).find(x => x.clase_id === claseId);
+  return rcClaseAccion('recepcion_clase_anotar', { p_clase_id: claseId, p_alumno_id: RC.ficha.alumno_id },
+    `✅ ${RC.ficha.nombre} quedó anotado y presente en ${c ? c.nombre + ' ' + c.hora : 'la clase'}.`);
+}
+function rcClaseQuitar(insId){
+  return rcClaseAccion('recepcion_clase_quitar', { p_inscripcion_id: insId },
+    r => '🗑️ Se quitó de la clase.' + (r && r.promovidos ? ' Entró quien estaba en lista de espera.' : ' El lugar quedó libre.'));
+}
+// Deshace lo que marcó el ingreso por DNI (por si se puso el documento de otra persona)
+async function rcDeshacerIngreso(){
+  const g = RC.ing; if (!g || !(g.marcados || []).length || RC.ocupado) return;
+  RC.ocupado = true;
+  try{
+    for (const x of g.marcados){
+      if (x.tipo === 'turno') await sb('rpc/recepcion_marcar_llegada', { method:'POST', body: JSON.stringify({ p_turno_id: x.id, p_valor: null }) });
+      else await sb('rpc/recepcion_clase_marcar', { method:'POST', body: JSON.stringify({ p_inscripcion_id: x.id, p_valor: null }) });
+    }
+    RC.ocupado = false;
+    await rcRefrescar('↩ Asistencia deshecha: las reservas siguen en pie.');
+  }catch(e){ RC.ocupado = false; RC.ing = null; toast(extraerMensajeError(e), true); rcRefrescar(); }
+}
+async function rcClaseDesdeLista(insId){
+  try{
+    await sb('rpc/recepcion_clase_marcar', { method:'POST', body: JSON.stringify({ p_inscripcion_id: insId, p_valor: null }) });
+    toast('Presente deshecho ✓');
     if (RC.ficha) await rcRefrescar(); else rcCargarLlegadas();
   }catch(e){ toast(extraerMensajeError(e), true); }
 }
@@ -6777,6 +6982,7 @@ function guiaFaqBase(rol){
     { q:'¿Cómo cargo una evaluación física?', r:['Menú ☰ → 📏 Evaluaciones.','Elegí al alumno → Nueva evaluación → fecha y métricas.','Para evaluar a todo un equipo: chip “Por equipo”, elegí métricas, equipo y fecha, y cargá un valor por jugador.'], ir:{ s:'evaluaciones' } },
     { q:'¿Cómo marco la asistencia?', r:['Menú ☰ → Agenda (o ✓ en Inicio).','Tocá al alumno y elegí Presente o Ausente.','La llegada marcada en Recepción también aparece ahí.'], ir:{ s:'agenda' } },
     { q:'¿Cómo veo cómo viene entrenando un alumno?', r:['Menú ☰ → 📈 Seguimiento y elegí al alumno.','Ves sesiones, volumen, rutina asignada, récords y cada ejercicio con sus series.'], ir:{ s:'seguimiento' } },
+    { adm:true, q:'¿Cómo hago para que el cupo sea del horario y no del profesor?', r:['Menú ☰ → 🕒 Horarios → pestaña “Sala y cupos”.','Cargá las franjas de la sala con su cupo por hora (por ejemplo, mañana 20 y tarde 30).','Elegí “Por horario”. El alumno pasa a elegir día y hora; el profesor queda vinculado solo, a modo informativo.','Con el horario completo hay lista de espera. Podés volver a “Por profesor” cuando quieras.'], ir:{ s:'horarios' } },
     { adm:true, q:'¿Cómo cargo las clases y su cupo?', r:['Menú ☰ → 📆 Clases.','Tocá un lugar vacío (o ＋ Nueva clase) y completá nombre, días, horas, profesor y cupo.','Los alumnos se anotan desde su menú “Clases”. Con el cupo lleno pasan a lista de espera.','Las reglas (cancelación, clases por día, cuota) están en Mi gimnasio → Clases y reservas.'], ir:{ s:'clases' } },
     { q:'¿Cómo veo quién se anotó a una clase?', r:['Menú ☰ → 📆 Clases y tocá la clase.','Ves los anotados y la lista de espera de esa fecha; con ‹ › cambiás de fecha.','Marcá ✓ presente o ✗ ausente. También podés anotar o quitar a un alumno a mano.'], ir:{ s:'clases' } },
   ];
@@ -6784,12 +6990,13 @@ function guiaFaqBase(rol){
     { q:'¿Dónde veo los cumpleaños de mis alumnos?', r:['Menú ☰ → 🔔 Alertas → 🎂 Cumpleaños del mes: los de hoy primero, con botón para saludar por WhatsApp.','Los de hoy también aparecen en tu Inicio.','A las 7:00 el staff recibe un aviso y el alumno, un saludo del gimnasio.','Para que funcione, cargá la fecha de nacimiento al dar de alta al alumno o desde su ficha (✏️ Datos).'], ir:{ s:'alertas' } },
     { q:'¿Cómo registro el pago de una cuota?', r:['Menú ☰ → 💰 Finanzas → Cobros.','Buscá al alumno y tocá 💰 Cobrar.','Elegí efectivo o transferencia (y meses de pago adelantado si querés) y confirmá.','Podés bajar o mandar por WhatsApp el recibo en PDF.'], ir:{ s:'cobranzas' } },
     { q:'¿Cómo conecto Mercado Pago?', r:['Menú ☰ → 🏢 Mi gimnasio → Cobros online.','Conectá tu cuenta y aceptá los permisos.','Desde ahí, tus alumnos ven “Pagar con Mercado Pago” cuando la cuota está por vencer o vencida.'], ir:{ s:'gimnasio' } },
+    { adm:true, q:'¿Cómo tomo la asistencia en Recepción?', r:['Menú ☰ → 🛎️ Recepción.','Escribí el DNI completo y Enter: si tiene turno o clase a esa hora, la asistencia queda tomada sola (con “↩ Deshacer” por si fue un error).','Si vino sin reservar, desde la misma ficha le sacás un turno o lo anotás a una clase de hoy, y queda presente.','Con la cuota vencida no se toma la asistencia hasta que regularice.'], ir:{ s:'recepcion' } },
     { q:'¿Cómo doy de alta a un profesor o a Recepción?', r:['Menú ☰ → 🧑‍🏫 Profesores → Nuevo profesor (nombre y DNI).','La contraseña temporal se muestra UNA sola vez.','Para Recepción: desplegá “Usuarios de Recepción”; esa persona solo ve la pantalla de Recepción.'], ir:{ s:'profesores' } },
     { q:'¿Qué pasa cuando termina la prueba gratuita?', r:['Seguís viendo todos tus datos, pero no podés crear ni editar hasta activar la suscripción.','Los alumnos no se ven afectados.','Un banner en la app te muestra los días que te quedan.'], ir:null },
     { q:'¿Cómo cambio el logo y los colores?', r:['Menú ☰ → 🏢 Mi gimnasio.','Subí el logo y elegí color primario y secundario.','Se aplican en toda la app, los recibos y la ficha en PDF.'], ir:{ s:'gimnasio' } },
   ];
   const alu = [
-    { q:'¿Cómo reservo un turno?', r:['Tocá Turnos en la barra de abajo.','Elegí el día (los no habilitados aparecen atenuados) y el horario.','Confirmá: la app engancha tu rutina del día. Con la cuota vencida no se puede reservar.'], ir:{ a:'turnos' } },
+    { q:'¿Cómo reservo un turno?', r:['Tocá Turnos en la barra de abajo.','Elegí el día (los no habilitados aparecen atenuados) y el horario. Si está completo, puede haber lista de espera.','Confirmá: la app engancha tu rutina del día. Con la cuota vencida no se puede reservar.'], ir:{ a:'turnos' } },
     { q:'¿Cómo cancelo un turno?', r:['Turnos → tus reservas.','Tocá el turno vigente y cancelalo.'], ir:{ a:'turnos' } },
     { q:'¿Cómo me anoto a una clase?', r:['Menú ☰ → 📆 Clases.','Tocá la clase del día que quieras y después Anotarme.','Si está completa podés sumarte a la lista de espera: te avisamos cuando se libera un lugar.','Para cancelar, tocá la clase otra vez (o “Mis clases”) y Cancelar mi lugar.'], ir:{ a:'clases' } },
     { q:'¿Cómo empiezo a entrenar?', r:['En Inicio tocá Entrenar el día de tu turno (o Mis rutinas → Empezar).','Cargá peso, repeticiones y RIR de cada serie.','Tocá Finalizar al terminar. Si superaste un récord, te lo mostramos.'], ir:{ a:'rutinas' } },
@@ -7938,6 +8145,7 @@ function cambiarSubvistaAlu(v){
   // (onCambiarAluAlumno). Ahora cada vez que se entra a una de estas 3 secciones se refresca
   // con los datos más recientes (sin esperar a que el alumno vuelva a elegir su nombre).
   if (v === 'clases') clCargar('aluClasesContenido', true, true);
+  if (v === 'turnos') aluTurnosEntrar();   // (v105) pestañas Sala / Clases
   if (v === 'atletismo') atlIniciarAlu();
   const alumnoId = document.getElementById('aluAlumno')?.value;
   if (alumnoId){
@@ -8174,6 +8382,7 @@ async function cargarGimnasioActual(){
   cargarPlanesPrepago();
   telCargar().catch(() => {});   // (v102) WhatsApp de contacto del gimnasio
   clCfgCargar().catch(() => {});   // (v103) reglas de reservas de clases (Mi gimnasio)
+  salaCargar().catch(() => {});   // (v105) turnos por profesor o por horario
   modulosCargar().catch(() => {});   // (v99) qué secciones tiene este gimnasio
   atlRefrescar().catch(() => {});   // (v98) módulo Atletismo: muestra u oculta su menú
 }
@@ -9155,6 +9364,9 @@ function horCambiarTab(tab){
   document.getElementById('horTabBtnEditar').classList.toggle('active', tab==='editar');
   document.getElementById('horTabBtnCuadro').classList.toggle('active', tab==='cuadro');
   document.getElementById('horTabBtnFacturar').classList.toggle('active', tab==='facturar');
+  const tSala = document.getElementById('horTabSala'); if (tSala) tSala.style.display = tab==='sala' ? '' : 'none';   // (v105)
+  const bSala = document.getElementById('horTabBtnSala'); if (bSala) bSala.classList.toggle('active', tab==='sala');
+  if (tab==='sala') salaCfgCargar();
   if (tab==='cuadro') cargarCuadroHorarios();
   if (tab==='facturar'){
     if (!document.getElementById('factDesde').value){
@@ -9187,13 +9399,15 @@ async function calcularFacturadorHoras(){
   if (!desde || !hasta || desde > hasta){ toast('Elegí un rango de fechas válido.', true); return; }
   cont.innerHTML = 'Calculando...';
   try{
-    const [horarios, excepciones, liquidacionesPrevias] = await Promise.all([
+    const [horarios, excepciones, liquidacionesPrevias, clasesProf] = await Promise.all([
       sb(`horarios_trabajo?select=dia_semana,hora_inicio,hora_fin&profesor_id=eq.${profesorId}&activo=eq.true`),
       sb(`horarios_excepciones?select=fecha,tipo,hora_inicio,hora_fin&profesor_id=eq.${profesorId}&activo=eq.true&fecha=gte.${desde}&fecha=lte.${hasta}`),
       // (24/9) Pedido de Martin: no dejar liquidar de nuevo un rango que ya se pagó.
       // Traemos las liquidaciones previas de este profesor cuyo período se cruza con
       // el rango pedido (condición de solapamiento estándar entre dos rangos de fecha).
       sb(`liquidaciones_profesor?select=periodo_desde,periodo_hasta&profesor_id=eq.${profesorId}&periodo_desde=lte.${hasta}&periodo_hasta=gte.${desde}`),
+      // (v105) clases que dicta este profesor: sus horas también se liquidan
+      sb(`clases?select=nombre,dias,hora_inicio,hora_fin&profesor_id=eq.${profesorId}`).catch(() => []),
     ]);
     const excepcionesPorFecha = {};
     excepciones.forEach(e => { (excepcionesPorFecha[e.fecha] = excepcionesPorFecha[e.fecha] || []).push(e); });
@@ -9205,7 +9419,7 @@ async function calcularFacturadorHoras(){
         diasYaPagados.add(dateAIso(d));
       }
     });
-    let totalHoras = 0;
+    let totalHoras = 0, totalClases = 0;
     const detalle = [];
     const d0 = new Date(desde + 'T00:00:00');
     const d1 = new Date(hasta + 'T00:00:00');
@@ -9216,12 +9430,29 @@ async function calcularFacturadorHoras(){
       horarios.filter(h => h.dia_semana === diaSemana).forEach(h => {
         horasDia += horaADecimal(h.hora_fin) - horaADecimal(h.hora_inicio);
       });
-      (excepcionesPorFecha[iso] || []).forEach(e => {
-        const horasExc = horaADecimal(e.hora_fin) - horaADecimal(e.hora_inicio);
-        if (e.tipo === 'ausencia') horasDia = Math.max(0, horasDia - horasExc);
+      const excDia = excepcionesPorFecha[iso] || [];
+      // (v105) una ausencia de "todo el día" se guarda sin horas: antes no descontaba nada y ese día se pagaba igual
+      const ausenteTodoElDia = excDia.some(e => e.tipo === 'ausencia' && !e.hora_inicio);
+      // (v105) la ausencia descuenta solo lo que pisa de su horario de sala o de una cobertura (si cae sobre una clase, se descuenta de la clase)
+      const tapaSala = horarios.filter(h => h.dia_semana === diaSemana).map(h => [horaADecimal(h.hora_inicio), horaADecimal(h.hora_fin)])
+        .concat(excDia.filter(e => e.tipo === 'cobertura' && e.hora_inicio && e.hora_fin).map(e => [horaADecimal(e.hora_inicio), horaADecimal(e.hora_fin)]));
+      excDia.forEach(e => {
+        if (!e.hora_inicio || !e.hora_fin) return;
+        const ini = horaADecimal(e.hora_inicio), fin = horaADecimal(e.hora_fin), horasExc = fin - ini;
+        if (e.tipo === 'ausencia') horasDia = Math.max(0, horasDia - (horasExc - liqHorasFuera(ini, fin, tapaSala)));
         else if (e.tipo === 'cobertura') horasDia += horasExc;
       });
-      if (horasDia > 0){ detalle.push({ fecha: iso, horas: horasDia }); totalHoras += horasDia; }
+      if (ausenteTodoElDia) horasDia = 0;
+      // (v105) horas de las clases que dicta, sin contar dos veces las que caen dentro de su horario de sala,
+      // de una cobertura (ya sumada) o de una ausencia (no la dio)
+      let horasClase = 0;
+      if (!ausenteTodoElDia){
+        const tapa = horarios.filter(h => h.dia_semana === diaSemana).map(h => [horaADecimal(h.hora_inicio), horaADecimal(h.hora_fin)])
+          .concat(excDia.filter(e => e.hora_inicio && e.hora_fin).map(e => [horaADecimal(e.hora_inicio), horaADecimal(e.hora_fin)]));
+        liqClasesDelDia(clasesProf, diaSemana).forEach(c => { horasClase += liqHorasFuera(c[0], c[1], tapa); });
+      }
+      horasDia += horasClase; totalClases += horasClase;
+      if (horasDia > 0){ detalle.push({ fecha: iso, horas: horasDia, clases: horasClase }); totalHoras += horasDia; }
     }
     const p = PROFESORES_CACHE.find(pr => pr.id === profesorId);
     const tarifa = Number(p?.tarifa_hora) || 0;
@@ -9239,7 +9470,7 @@ async function calcularFacturadorHoras(){
         ${detalle.length ? detalle.map(x => `<tr><td style="padding:3px 0; border-bottom:1px solid var(--border); ${diasYaPagados.has(x.fecha)?'color:var(--note-text);':''}">${formatearFechaCorta(x.fecha)}${diasYaPagados.has(x.fecha)?' · ya pagado':''}</td><td style="text-align:right; border-bottom:1px solid var(--border);">${x.horas.toFixed(1)}h</td></tr>`).join('') : '<tr><td class="muted">Sin horas asignadas en el rango.</td></tr>'}
       </table>
       <div class="row" style="justify-content:space-between; margin-top:10px; font-weight:700; flex-wrap:wrap; gap:8px;">
-        <div>Total: ${totalHoras.toFixed(1)} horas</div>
+        <div>Total: ${totalHoras.toFixed(1)} horas${totalClases > 0 ? ` <span class="muted" style="font-weight:400;">(${(totalHoras - totalClases).toFixed(1)} de sala + ${totalClases.toFixed(1)} de clases)</span>` : ''}</div>
         ${tarifa ? `<div>${formatearMonto(monto)}</div>` : `<div class="muted" style="font-weight:400;">Cargá la tarifa/hora del profesor en "Profesores" para calcular el monto.</div>`}
       </div>
       ${(!haySolapamiento && tarifa && totalHoras > 0) ? `<div class="row" style="margin-top:10px; align-items:end; gap:10px; flex-wrap:wrap;"><div class="field" style="min-width:170px; margin:0;"><label>Pagado desde</label><select id="factCaja"><option value="">-- elegí la caja --</option><option value="efectivo">💵 Efectivo</option><option value="banco">🏦 Banco</option></select></div><button onclick="confirmarLiquidacion()">Confirmar y registrar pago</button></div>` : ''}
@@ -9971,9 +10202,10 @@ async function renderAgenda(){
   const dow = new Date(fecha+'T00:00:00').getDay();
   const ebAg = document.getElementById('agendaEyebrow');
   if (ebAg){ const t = fechaLegible(fecha); ebAg.textContent = t.charAt(0).toUpperCase() + t.slice(1); }
-  const profesores = profesorFiltroId ? PROFESORES_CACHE.filter(p => p.id === profesorFiltroId) : PROFESORES_CACHE;
+  let profesores = profesorFiltroId ? PROFESORES_CACHE.filter(p => p.id === profesorFiltroId) : PROFESORES_CACHE;
+  const SH = salaHorario();   // (v105) turnos por horario: una sola grilla, la de la sala
 
-  if (!profesores.length){
+  if (!profesores.length && !SH){
     wrap.innerHTML = '<div class="empty">Todavía no hay profesores cargados.</div>';
     document.getElementById('agendaKpis').innerHTML = '';
     return;
@@ -9982,10 +10214,29 @@ async function renderAgenda(){
   wrap.innerHTML = 'Cargando...';
   try{
     const idsProf = profesores.map(p => p.id);
-    const [horarios, turnosDelDia] = await Promise.all([
+    let horarios, turnosDelDia; const esperaSala = {};
+    if (SH){
+      const gid = salaGym();
+      const [fr, tu, esp] = await Promise.all([
+        sb(`sala_horarios?select=hora_inicio,hora_fin,cupo&gimnasio_id=eq.${gid}&dia_semana=eq.${dow}&activo=eq.true&order=hora_inicio.asc`),
+        sb(`turnos?select=id,hora,profesor_id,alumno_id,asistio,rutina_dia_id,rutina_ajustada_en,rutina_ajuste_motivo,rutina_dias(nombre_dia),alumnos(nombre)&fecha=eq.${fecha}&gimnasio_id=eq.${gid}&estado=neq.cancelado${profesorFiltroId ? '&profesor_id=eq.' + profesorFiltroId : ''}`),
+        sb(`turnos_espera?select=hora&gimnasio_id=eq.${gid}&fecha=eq.${fecha}&estado=eq.espera`).catch(() => []),
+      ]);
+      turnosDelDia = tu;
+      horarios = fr.map(h => ({ profesor_id: '__sala', hora_inicio: h.hora_inicio, hora_fin: h.hora_fin, cupo_por_turno: h.cupo }));
+      // turnos reservados fuera del horario de la sala (por ejemplo, de antes de cambiar de modo): igual se muestran
+      const cubre = hs => horarios.some(h => h.hora_inicio.slice(0,2) <= hs.slice(0,2) && hs.slice(0,2) < h.hora_fin.slice(0,2));
+      const sueltos = {}; tu.forEach(t => { if (t.hora && !cubre(t.hora)) sueltos[t.hora] = (sueltos[t.hora] || 0) + 1; });
+      Object.keys(sueltos).forEach(hs => horarios.push({ profesor_id: '__sala', hora_inicio: hs, hora_fin: String(parseInt(hs, 10) + 1).padStart(2,'0') + ':00:00', cupo_por_turno: sueltos[hs] }));
+      horarios.sort((a, b) => a.hora_inicio.localeCompare(b.hora_inicio));
+      (esp || []).forEach(e => { esperaSala[e.hora] = (esperaSala[e.hora] || 0) + 1; });
+      profesores = [{ id: '__sala', nombre: '' }];
+    } else {
+    [horarios, turnosDelDia] = await Promise.all([
       sb(`horarios_trabajo?profesor_id=in.(${idsProf.join(',')})&dia_semana=eq.${dow}&activo=eq.true`),
       sb(`turnos?select=id,hora,profesor_id,alumno_id,asistio,rutina_dia_id,rutina_ajustada_en,rutina_ajuste_motivo,rutina_dias(nombre_dia),alumnos(nombre)&fecha=eq.${fecha}&profesor_id=in.(${idsProf.join(',')})&estado=neq.cancelado`),
     ]);
+    }
 
     // Progreso en vivo (24/9, pedido de Martin): a medida que el alumno va finalizando
     // ejercicios de SU rutina, que el profesor vea desde la Agenda cuáles ya hizo y
@@ -9999,13 +10250,14 @@ async function renderAgenda(){
     const reservasPorSlot = {}; // `${profesor_id}|${hora}` -> [{id, alumnoId, nombre, asistio, rutinaDiaId, nombreDia, progreso}]
     turnosDelDia.forEach(t => {
       if (!t.hora) return;
-      const clave = `${t.profesor_id}|${t.hora}`;
+      const clave = `${SH ? '__sala' : t.profesor_id}|${t.hora}`;
       (reservasPorSlot[clave] = reservasPorSlot[clave] || []).push({
         id: t.id, alumnoId: t.alumno_id, nombre: t.alumnos ? t.alumnos.nombre : 'Alumno', asistio: t.asistio,
         rutinaDiaId: t.rutina_dia_id, nombreDia: t.rutina_dias?.nombre_dia || null,
         progreso: progresoPorTurno[t.id] || null,
         wellness: WELLNESS_DIA[t.alumno_id] || null,
         ajustada: !!t.rutina_ajustada_en,
+        profId: t.profesor_id,
       });
     });
 
@@ -10061,11 +10313,12 @@ async function renderAgenda(){
                 progresoHtml = `<div class="chip-progreso en-curso">🏋️ ${r.progreso.hechos}/${r.progreso.total} ejercicios</div>`;
               }
             }
-            return `<div class="alumno-chip asistencia-${estado} ${esAuto?'asistencia-auto':''}" onclick="abrirModalAsistencia('${r.id}', ${asistioArg}, '${fecha}', '${horaStr}', '${r.alumnoId}', '${nombreEscapado}', ${rutinaDiaArg}, '${nombreDiaEscapado}', '${prof.id}')">
+            return `<div class="alumno-chip asistencia-${estado} ${esAuto?'asistencia-auto':''}" onclick="abrirModalAsistencia('${r.id}', ${asistioArg}, '${fecha}', '${horaStr}', '${r.alumnoId}', '${nombreEscapado}', ${rutinaDiaArg}, '${nombreDiaEscapado}', '${SH ? (r.profId || '') : prof.id}')">
               <span class="avatar">${iniciales(r.nombre)}</span>
               <div class="chip-info">
                 <div class="chip-nombre">${r.nombre}${icono}</div>
                 ${progresoHtml}
+                ${SH ? `<div class="chip-progreso" style="color:var(--muted);">👤 ${escaparHtml((PROFESORES_CACHE.find(p => p.id === r.profId) || {}).nombre || 'Sin profesor')}</div>` : ''}
                 ${wellnessChipHtml(r.wellness, fecha)}
                 ${r.ajustada ? '<div class="chip-progreso" style="color:var(--warn-text);">🔄 Sesión ajustada</div>' : ''}
               </div>
@@ -10077,7 +10330,7 @@ async function renderAgenda(){
               <div class="franja-hora">${horaLabel}</div>
               <div class="franja-cuerpo">
                 <div class="franja-barra-wrap"><div class="franja-barra ${pct>=100?'llena':''}" style="width:${pct}%;"></div></div>
-                <div class="franja-cupo-txt">${nombres.length} de ${h.cupo_por_turno} cupos ocupados</div>
+                <div class="franja-cupo-txt">${nombres.length} de ${h.cupo_por_turno} cupos ocupados${SH && esperaSala[horaStr] ? ' · ⏳ ' + esperaSala[horaStr] + ' en espera' : ''}</div>
                 ${nombres.length ? `<div class="alumnos-chips">${chips}</div>` : '<div class="franja-vacia">Sin reservas en este horario</div>'}
               </div>
             </div>`;
@@ -10099,7 +10352,7 @@ async function renderAgenda(){
     `;
 
     if (!bloquesHtml.length){
-      wrap.innerHTML = '<div class="empty">Sin horario de trabajo cargado para ese día.</div>';
+      wrap.innerHTML = SH ? '<div class="empty">La sala no tiene horarios cargados para ese día. Se cargan en Horarios → Sala y cupos.</div>' : '<div class="empty">Sin horario de trabajo cargado para ese día.</div>';
       return;
     }
     const aviso = agendaSoloLibres
@@ -10164,6 +10417,9 @@ function toggleReasignarTurno(){
   const mostrar = wrap.style.display === 'none';
   if (mostrar){
     const sel = document.getElementById('reasignarTurnoSelect');
+    if (salaHorario()){   // (v105) por horario: se elige el profesor vinculado (o ninguno), sin tope de cupo
+      sel.innerHTML = '<option value="">Sin profesor</option>' + PROFESORES_CACHE.map(p => `<option value="${p.id}" ${p.id === ASISTENCIA_MODAL_CTX.profesorId ? 'selected' : ''}>${p.nombre}</option>`).join('');
+    } else
     sel.innerHTML = PROFESORES_CACHE.filter(p => p.id !== ASISTENCIA_MODAL_CTX.profesorId)
       .map(p => `<option value="${p.id}">${p.nombre}</option>`).join('');
   }
@@ -10173,6 +10429,13 @@ function toggleReasignarTurno(){
 async function confirmarReasignarTurno(){
   if (!ASISTENCIA_MODAL_CTX) return;
   const nuevoProfesorId = document.getElementById('reasignarTurnoSelect').value;
+  if (salaHorario()){   // (v105)
+    try{
+      await sb('rpc/turno_vincular_profesor', { method:'POST', body: JSON.stringify({ p_turno_id: ASISTENCIA_MODAL_CTX.turnoId, p_profesor_id: nuevoProfesorId || null }) });
+      toast('Profesor vinculado actualizado ✓'); cerrarModalAsistencia(); renderAgenda();
+    }catch(e){ toast('No se pudo cambiar: ' + extraerMensajeError(e), true); }
+    return;
+  }
   if (!nuevoProfesorId){ toast('Elegí a qué profesor reasignar.', true); return; }
   try{
     await sb('rpc/reasignar_turno', { method:'POST', body: JSON.stringify({
@@ -12693,18 +12956,23 @@ function clBloque(o, s, d){
   // (v103) clases con cupo: muestran la ocupación y se pueden tocar (alumno: anotarse · staff: ver la lista)
   const res = CL.res === true && !!c.cupo, iso = res ? clFechaDe(c, d) : '', est = res ? clEstadoTxt(c, iso) : null;
   const falta = CL.res === true && !c.cupo && !ro;   // clase cargada antes de v103: al admin se le pide el cupo
+  // (v104) varias clases a la misma hora: cada una queda angosta, así que se muestra en formato compacto
+  const cx = CL.res === true && (esMovilB3() ? o.n >= 3 : o.n >= 2);
   const tip = `${c.ini}–${c.fin} · ${c.nombre}${c.prof ? ' · ' + c.prof : ' · Profesor a confirmar'}${c.nota ? ' · ' + c.nota : ''}${res ? ' · ' + est.t : ''}${falta ? ' · Falta cargar el cupo' : ''}`;
-  const chip = res ? `<span class="cl-cp ${est.k}">${est.t}</span>` : (falta ? '<span class="cl-cp full">⚠ Sin cupo</span>' : '');
+  const chip = res ? `<span class="cl-cp ${est.k}">${cx ? clEstadoCorto(c, iso) : est.t}</span>` : (falta ? `<span class="cl-cp full">${cx ? '⚠ Cupo' : '⚠ Sin cupo'}</span>` : '');
   let body;
   if (h < 34) body = `<div class="n"><span class="t">${c.ini}</span> ${ejEsc(c.nombre)} ${chip}</div>`;
-  else {
+  else if (cx){
+    body = `<div class="t">${c.ini}</div><div class="n">${ejEsc(c.nombre)}</div>${chip ? `<div class="cpl">${chip}</div>` : ''}`;
+    if (h >= 84) body += `<div class="p ${c.prof ? '' : 'tbc'}">👤 ${ejEsc(c.prof || 'A confirmar')}</div>`;
+  } else {
     body = `<div class="t">${c.ini} – ${c.fin}</div><div class="n">${ejEsc(c.nombre)}</div>`;
     if (chip) body += `<div class="cpl">${chip}${res && iso !== clIso(clFechaBase(d)) ? `<span class="cl-prox">${clFechaTxt(iso)}</span>` : ''}</div>`;
     if (h >= (chip ? 70 : 50)) body += `<div class="p ${c.prof ? '' : 'tbc'}">👤 ${ejEsc(c.prof || 'A confirmar')}</div>`;
     if (h >= (chip ? 104 : 84) && c.nota) body += `<div class="p">📝 ${ejEsc(c.nota)}</div>`;
   }
   const click = res ? `onclick="event.stopPropagation();${CL.rolAlumno ? 'clAluAbrir' : 'clListaAbrir'}('${c.id}','${iso}')"` : (ro ? '' : `onclick="clEditar('${c.id}')"`);
-  return `<div class="cl-tb ${!res && ro ? 'ro' : ''} ${res ? 'res ' + est.k : ''}" title="${ejEsc(tip)}" style="--c:${clColor(c)};top:${top}px;height:${h}px;left:calc(${o.l * w}% + 2px);width:calc(${w}% - 4px)" ${click}>${body}</div>`;
+  return `<div class="cl-tb ${!res && ro ? 'ro' : ''} ${res ? 'res ' + est.k : ''} ${cx ? 'cx' : ''}" title="${ejEsc(tip)}" style="--c:${clColor(c)};top:${top}px;height:${h}px;left:calc(${o.l * w}% + 2px);width:calc(${w}% - 4px)" ${click}>${body}</div>`;
 }
 function clAhora(s, e, d){
   if (d !== clHoy()) return '';
@@ -12731,6 +12999,13 @@ function clCalendarioHtml(){
 }
 function clRenderEn(){
   const cont = document.getElementById(CL.contId); if (!cont) return;
+  if (CL.contId === 'aluTurnosClases'){   // (v105) pestaña Clases del alumno: lista por día
+    const hay = CL.ok !== false && CL.res === true && CL.rows.some(c => c.cupo);
+    cont.innerHTML = hay ? clListaAluHtml() : '';
+    const mm = document.getElementById('aluMisClasesTurnos'); if (mm) mm.innerHTML = hay ? clMisHtml() : '';
+    aluTabsPintar();
+    return;
+  }
   const movil = esMovilB3(), cupos = clConCupo(), admin = PERFIL_ACTUAL?.rol === 'admin';
   const aviso = CL.ok === false
     ? `<div class="cl-banner">⚠️ Falta activar el calendario de clases en la base de datos. Corré <b>bloque3-clases-records.sql</b> en Supabase (SQL Editor) y recargá la app.</div>` : '';
@@ -12946,6 +13221,15 @@ function clEstadoTxt(c, iso){
   return { t: '👥 ' + o.a + '/' + c.cupo, k: '' };
 }
 
+// (v104) estado en pocas letras, para cuando varias clases comparten la misma hora y cada bloque queda angosto
+function clEstadoCorto(c, iso){
+  const o = clOc(c.id, iso), movil = esMovilB3();
+  if (CL.rolAlumno && o.mi === 'anotado') return movil ? '✓ Anotado' : '✓';
+  if (CL.rolAlumno && o.mi === 'espera') return '⏳' + (o.pos ? ' ' + o.pos + '°' : '');
+  if (o.a >= c.cupo) return 'Lleno';
+  return (movil ? '👥 ' : '') + o.a + '/' + c.cupo;
+}
+
 // ----- Alumno -----
 function clMisHtml(){
   if (!clConCupo()) return '';
@@ -13095,6 +13379,311 @@ async function clAsistencia(insId, valor){
     clListaPintar();
   }catch(e){ toast(extraerMensajeError(e), true); }
 }
+// =====================================================================
+// (v105) TURNOS POR HORARIO (cupo de la sala) + LISTA DE ESPERA + PESTAÑAS DEL ALUMNO
+// SQL: turnos-por-horario.sql. Sin ese SQL (SALA.ok === false) todo sigue por profesor, como siempre.
+// Cada gimnasio elige el modo en Horarios → Sala. En "por horario" el alumno elige día y hora; el cupo
+// es de la sala y el profesor queda vinculado solo (informativo y para la estadística).
+// Las reglas las valida el servidor: acá solo se muestran.
+// =====================================================================
+const SALA = { ok: null, modo: 'profesor', nombre: 'Musculación', franjas: [], cargando: null };
+let ALU_TAB = 'sala';   // pestaña de la pantalla Turnos del alumno: 'sala' | 'clases'
+let ALU_MODO_PINTADO = null;   // con qué modo se pintó por última vez la grilla de turnos del alumno
+function salaHorario(){ return SALA.ok === true && SALA.modo === 'horario'; }
+function salaGym(){ return (PERFIL_ACTUAL && PERFIL_ACTUAL.gimnasio_id) || null; }
+async function salaCargar(){
+  const gid = salaGym(); if (!gid) return false;
+  if (SALA.cargando) return SALA.cargando;
+  SALA.cargando = (async () => {
+    try{
+      const r = await sb(`gimnasios?select=turnos_modo,sala_nombre&id=eq.${gid}`), g = r && r[0];
+      SALA.ok = true; SALA.modo = (g && g.turnos_modo) === 'horario' ? 'horario' : 'profesor'; SALA.nombre = (g && g.sala_nombre) || 'Musculación';
+    }catch(e){ if (/42703|does not exist/i.test(String((e && e.message) || ''))) SALA.ok = false; }
+    SALA.cargando = null;
+    salaAplicar();
+    return SALA.ok === true;
+  })();
+  return SALA.cargando;
+}
+// Lo que cambia en pantalla según el modo (se llama al cargar y cada vez que el admin lo cambia)
+function salaAplicar(){
+  const admin = PERFIL_ACTUAL && PERFIL_ACTUAL.rol === 'admin', hr = salaHorario();
+  const b = document.getElementById('horTabBtnSala'); if (b) b.style.display = (SALA.ok === true && admin) ? '' : 'none';
+  const n = document.getElementById('horNotaSala'); if (n) n.style.display = hr ? '' : 'none';
+  const w = document.getElementById('aluFiltroProfesorWrap'); if (w) w.style.display = hr ? 'none' : '';
+  const l = document.getElementById('aluLeyendaTurnos'); if (l) l.style.display = hr ? 'none' : '';
+  const r = document.getElementById('btnAbrirReasignarTurno'); if (r) r.textContent = hr ? '👤 Cambiar el profesor vinculado' : '🔁 Reasignar a otro profesor';
+  const lb = document.getElementById('reasignarTurnoLabel'); if (lb) lb.textContent = hr ? 'Profesor vinculado (informativo)' : 'Nuevo profesor';
+  const bc = document.getElementById('reasignarTurnoBtn'); if (bc) bc.textContent = hr ? 'Guardar' : 'Confirmar reasignación';
+  aluTabsPintar();
+}
+function salaHM(t){ return String(t || '').slice(0, 5); }
+function salaFechaTxt(iso){ const t = fechaLegible(iso); return t.charAt(0).toUpperCase() + t.slice(1); }
+
+// ---------- Alumno: pestañas Sala / Clases ----------
+function aluTabsPintar(){
+  const tabs = document.getElementById('aluTurnosTabs'); if (!tabs) return;
+  const hayClases = CL.contId === 'aluTurnosClases' && CL.res === true && modOn('clases') && CL.rows.some(c => c.cupo);
+  if (!hayClases) ALU_TAB = 'sala';
+  tabs.style.display = hayClases ? '' : 'none';
+  const nom = SALA.ok === true ? (SALA.nombre || 'Musculación') : 'Turnos';
+  tabs.innerHTML = `<span class="${ALU_TAB === 'sala' ? 'on' : ''}" onclick="aluTabElegir('sala')">🏋️ ${escaparHtml(nom)}</span><span class="${ALU_TAB === 'clases' ? 'on' : ''}" onclick="aluTabElegir('clases')">📆 Clases</span>`;
+  const a = document.getElementById('aluTabSala'), c = document.getElementById('aluTabClases');
+  if (a) a.style.display = ALU_TAB === 'sala' ? '' : 'none';
+  if (c) c.style.display = ALU_TAB === 'clases' ? '' : 'none';
+  const t = document.getElementById('aluTurnosTitulo'); if (t) t.textContent = hayClases ? 'Reservas' : 'Turnos';
+}
+function aluTabElegir(t){ ALU_TAB = t; aluTabsPintar(); }
+// Al entrar a Turnos: modo del gimnasio y, si el gimnasio tiene clases con cupo, se cargan para la pestaña
+async function aluTurnosEntrar(){
+  await salaCargar();   // siempre fresco: el administrador pudo cambiar el modo
+  aluTabsPintar();
+  if (salaHorario() !== ALU_MODO_PINTADO) renderTurnosDisponibles();
+  if (!modOn('clases')) return;
+  try{ await clCargar('aluTurnosClases', true, true, true); }catch(e){}
+  aluTabsPintar();
+}
+
+// ---------- Alumno: turnos de la sala (modo por horario) ----------
+async function salaRenderHorasAlu(){
+  const alumnoId = document.getElementById('aluAlumno').value, wrap = document.getElementById('aluHorasWrap');
+  if (!alumnoId){ wrap.innerHTML = 'Elegí tu nombre arriba.'; return; }
+  const fecha = fechaISOAlu(DIA_TURNO_ALU);
+  wrap.innerHTML = 'Buscando horarios...';
+  let rows;
+  try{ rows = await sb('rpc/sala_disponibilidad', { method: 'POST', body: JSON.stringify({ p_fecha: fecha, p_alumno_id: alumnoId }) }); }
+  catch(e){ wrap.innerHTML = 'Error: ' + escaparHtml(extraerMensajeError(e)); return; }
+  if (fecha !== fechaISOAlu(DIA_TURNO_ALU)) return;   // cambió de día mientras cargaba
+  const ahora = new Date(), esHoy = fecha === fechaLocalISO(ahora), minAhora = ahora.getHours() * 60 + ahora.getMinutes();
+  const lista = (rows || []).filter(r => { const [h, m] = String(r.hora).split(':').map(Number); return !esHoy || (h * 60 + (m || 0) + 60) > minAhora; });
+  if (!lista.length){ wrap.innerHTML = `<div class="empty">${(rows || []).length ? 'Por hoy ya no quedan horarios.' : 'No hay horarios cargados para ese día.'}</div>`; return; }
+  const mio = lista.find(r => r.mi_turno_id);
+  let h = mio ? `<div class="sl-aviso ok">✓ Ya tenés turno este día a las <b>${salaHM(mio.hora)}</b>. Es un turno por día.</div>` : '';
+  h += lista.map(r => {
+    const hora = salaHM(r.hora), fin = String((parseInt(hora, 10) + 1) % 24).padStart(2, '0') + hora.slice(2);
+    const lleno = r.reservados >= r.cupo, soy = !!r.mi_turno_id, espero = !!r.mi_espera_id, quedan = Math.max(0, r.cupo - r.reservados);
+    let acc;
+    if (soy) acc = `<span class="pill ok">✓ Tu turno</span><button type="button" class="ghost sl-b" onclick="cancelarTurno('${r.mi_turno_id}','${alumnoId}')">Cancelar</button>`;
+    else if (espero) acc = `<span class="pill warn">⏳ En espera${r.mi_posicion ? ' · ' + r.mi_posicion + '°' : ''}</span><button type="button" class="ghost sl-b" onclick="salaEsperaSalir('${r.mi_espera_id}')">Salir</button>`;
+    else if (lleno) acc = `<span class="pill bad">Completo</span>${mio ? '' : `<button type="button" class="secondary sl-b" onclick="salaEsperaAnotar('${fecha}','${r.hora}')">Lista de espera</button>`}`;
+    else acc = `<button type="button" class="sl-b" ${mio ? 'disabled' : ''} onclick="salaPedirTurno('${fecha}','${r.hora}',${quedan},${r.cupo})">Reservar</button>`;
+    return `<div class="sl-row ${soy ? 'mio' : ''} ${mio && !soy ? 'off' : ''}">
+      <div class="sl-h">${hora}<small>a ${fin}</small></div>
+      <div class="sl-m"><div class="sl-bar ${lleno ? 'full' : ''}"><i style="width:${Math.min(100, r.reservados / r.cupo * 100)}%"></i></div>
+        <div class="sl-c">${lleno ? `<b>Completo</b><span class="sl-lug"> · ${r.reservados} de ${r.cupo}</span>` : `Quedan <b>${quedan}</b> de ${r.cupo}<span class="sl-lug"> lugares</span>`}</div>
+        <div class="sl-p">${r.en_espera ? `⏳ ${r.en_espera} en espera · ` : ''}${r.profesores ? '👤 <span class="sl-lug">En sala: </span>' + escaparHtml(r.profesores) : 'Sin profesor en sala'}</div></div>
+      <div class="sl-a">${acc}</div></div>`;
+  }).join('');
+  wrap.innerHTML = h;
+}
+function salaPedirTurno(fecha, hora, quedan, cupo){
+  PENDIENTE_TURNO_ALU = { profesorId: null, hora, profesorNombre: '', fecha };
+  document.getElementById('modalTurnoTexto').textContent = `¿Confirmás la reserva del ${salaHM(hora)} hs (${fechaLegible(fecha)})?`;
+  document.getElementById('modalTurnoHora').textContent = salaHM(hora) + ' hs';
+  document.getElementById('modalTurnoDetalle').textContent = `${SALA.nombre || 'Turno'} · ${fechaLegible(fecha)} · quedan ${quedan} de ${cupo} lugares`;
+  document.getElementById('modalConfirmarTurno').classList.add('show');
+}
+async function salaEsperaAnotar(fecha, hora){
+  const alumnoId = document.getElementById('aluAlumno').value; if (!alumnoId) return;
+  try{
+    const r = await sb('rpc/sala_espera_anotar', { method: 'POST', body: JSON.stringify({ p_fecha: fecha, p_hora: hora, p_alumno_id: alumnoId }) });
+    toast(`Quedaste ${r && r.posicion ? r.posicion + '° ' : ''}en la lista de espera. Si se libera un lugar, el turno es tuyo y te avisamos.`);
+  }catch(e){ toast(extraerMensajeError(e), true); }
+  renderTurnosDisponibles(); salaEsperaAlu(alumnoId);
+}
+async function salaEsperaSalir(esperaId){
+  const alumnoId = document.getElementById('aluAlumno').value;
+  try{
+    await sb('rpc/sala_espera_salir', { method: 'POST', body: JSON.stringify({ p_espera_id: esperaId }) });
+    toast('Saliste de la lista de espera.');
+  }catch(e){ toast(extraerMensajeError(e), true); }
+  renderTurnosDisponibles(); if (alumnoId) salaEsperaAlu(alumnoId);
+}
+// Un turno que entró desde la lista de espera lo crea el servidor, sin rutina: al abrir Turnos se la
+// enganchamos igual que al reservar (un intento por turno y por sesión; solo en modo por horario).
+const SALA_RUT_INTENTADOS = new Set();
+async function salaEngancharRutinas(alumnoId, rows){
+  if (!salaHorario() || !alumnoId) return;
+  const hoy = fechaLocalISO();
+  const faltan = (rows || []).filter(t => t.estado !== 'cancelado' && !t.rutina_dia_id && t.fecha >= hoy && !SALA_RUT_INTENTADOS.has(t.id));
+  if (!faltan.length) return;
+  let alguno = false;
+  for (const t of faltan){
+    SALA_RUT_INTENTADOS.add(t.id);
+    try{ if (await intentarAsignarRutina(t.id, alumnoId, t.fecha)) alguno = true; }catch(e){}
+  }
+  if (alguno) cargarTurnos(alumnoId);
+}
+// "Mis turnos": arriba de todo, los horarios donde el alumno está en lista de espera
+async function salaEsperaAlu(alumnoId){
+  const cont = document.getElementById('aluEsperaLista'); if (!cont) return;
+  if (!salaHorario() || !alumnoId){ cont.innerHTML = ''; return; }
+  try{
+    const rows = await sb(`turnos_espera?select=id,fecha,hora&alumno_id=eq.${alumnoId}&estado=eq.espera&fecha=gte.${fechaLocalISO()}&order=fecha.asc,hora.asc`);
+    cont.innerHTML = (rows || []).map(e => tcardHtml({ fecha: e.fecha, titulo: salaHM(e.hora) + ' hs · lista de espera', sub: 'Si se libera un lugar, el turno es tuyo y te avisamos.',
+      estadoCls: 'pend', estadoTxt: 'En espera', acciones: `<button class="ghost" onclick="salaEsperaSalir('${e.id}')">Salir</button>` })).join('');
+  }catch(e){ cont.innerHTML = ''; }
+}
+
+// ---------- Alumno: pestaña Clases (lista por día; mismas reglas y la misma hoja que el cuadro de Clases) ----------
+function clListaIso(o){ const d = new Date(); d.setHours(12, 0, 0, 0); d.setDate(d.getDate() + o); return clIso(d); }
+function clListaAluHtml(){
+  const o = CL.diaLista || 0, iso = clListaIso(o), dt = new Date(iso + 'T12:00:00'), k = (dt.getDay() + 6) % 7, ahora = new Date();
+  const pills = [0, 1, 2, 3, 4, 5, 6].map(i => { const d = new Date(clListaIso(i) + 'T12:00:00'), kk = (d.getDay() + 6) % 7;
+    return `<span class="${i === o ? 'on' : ''} ${i === 0 ? 'hoy' : ''}" onclick="CL.diaLista=${i};clRenderEn()">${CL_DIAS[kk]}<small>${i === 0 ? 'hoy' : String(d.getDate()).padStart(2, '0') + '/' + String(d.getMonth() + 1).padStart(2, '0')}</small></span>`; }).join('');
+  const cs = CL.rows.filter(c => c.cupo && c.dias.includes(k) && clInicio(c, iso) > ahora).sort((a, b) => clTm(a.ini) - clTm(b.ini) || a.nombre.localeCompare(b.nombre));
+  const filas = cs.map(c => {
+    const oc = clOc(c.id, iso), lleno = oc.a >= c.cupo, quedan = Math.max(0, c.cupo - oc.a);
+    let acc;
+    if (oc.mi === 'anotado') acc = `<span class="pill ok">✓ Anotado</span><button type="button" class="ghost sl-b" onclick="clAluAbrir('${c.id}','${iso}')">Cancelar</button>`;
+    else if (oc.mi === 'espera') acc = `<span class="pill warn">⏳ En espera${oc.pos ? ' · ' + oc.pos + '°' : ''}</span><button type="button" class="ghost sl-b" onclick="clAluAbrir('${c.id}','${iso}')">Salir</button>`;
+    else acc = `<button type="button" class="${lleno ? 'secondary ' : ''}sl-b" onclick="clListaAluAnotar('${c.id}','${iso}')">${lleno ? 'Lista de espera' : 'Anotarme'}</button>`;
+    return `<div class="sl-row ${oc.mi === 'anotado' ? 'mio' : ''}">
+      <div class="sl-h">${c.ini}<small>a ${c.fin}</small></div>
+      <div class="sl-m" onclick="clAluAbrir('${c.id}','${iso}')" style="cursor:pointer;"><div class="sl-n">${ejEsc(c.nombre)}</div><div class="sl-bar ${lleno ? 'full' : ''}"><i style="width:${Math.min(100, oc.a / c.cupo * 100)}%"></i></div>
+        <div class="sl-c">${lleno ? `<b>Completa</b><span class="sl-lug"> · ${oc.a} de ${c.cupo}</span>` : `Quedan <b>${quedan}</b> de ${c.cupo}<span class="sl-lug"> lugares</span>`}</div>
+        <div class="sl-p">👤 ${ejEsc(c.prof || 'Profesor a confirmar')}${c.nota ? ' · 📝 ' + ejEsc(c.nota) : ''}</div></div>
+      <div class="sl-a">${acc}</div></div>`;
+  }).join('');
+  return `<div class="card"><div class="sec-t">Anotarte a una clase</div>
+      <div class="cl-dpills" style="margin-top:10px;">${pills}</div>
+      ${cs.length ? filas : '<div class="empty">No hay clases para anotarse ese día.</div>'}
+      <div class="muted" style="font-size:12px; margin-top:8px;">Si la clase está completa podés sumarte a la lista de espera: si alguien cancela, entrás y te avisamos. Podés cancelar ${clLimiteTxt(clCfg().cancelMin)}.</div>
+    </div>${clMisHtml()}`;
+}
+function clListaAluAnotar(id, iso){ CL.sel = { id: String(id), iso }; clAluAnotar(); }
+
+// ---------- Staff: Horarios → Sala (modo de turnos y franjas con su cupo) ----------
+const SALA_ORDEN_DIAS = [1, 2, 3, 4, 5, 6, 0];   // se muestra de lunes a domingo (0 = domingo, como horarios_trabajo)
+async function salaCfgCargar(){
+  const cont = document.getElementById('salaCfg'); if (!cont) return;
+  if (SALA.ok !== true){ cont.innerHTML = '<div class="card muted">Falta correr <b>turnos-por-horario.sql</b> en Supabase para usar esta sección.</div>'; return; }
+  cont.innerHTML = '<div class="card muted">Cargando...</div>';
+  try{ SALA.franjas = await sb(`sala_horarios?select=id,dia_semana,hora_inicio,hora_fin,cupo,activo&gimnasio_id=eq.${salaGym()}&order=dia_semana.asc,hora_inicio.asc`); }
+  catch(e){ cont.innerHTML = `<div class="card">Error: ${escaparHtml(extraerMensajeError(e))}</div>`; return; }
+  salaCfgPintar();
+}
+function salaCfgPintar(){
+  const cont = document.getElementById('salaCfg'); if (!cont) return;
+  const hr = SALA.modo === 'horario', hay = SALA.franjas.length > 0;
+  const dias = SALA_ORDEN_DIAS.map(d => {
+    const fr = SALA.franjas.filter(f => f.dia_semana === d);
+    return `<div class="sala-dia"><div class="sala-dn">${DIAS_SEMANA[d]}</div><div class="sala-df">
+      ${fr.length ? fr.map(f => `<div class="sala-fr"><span class="sala-g"><input type="time" step="3600" id="salaDe-${f.id}" value="${salaHM(f.hora_inicio)}" onchange="salaFrGuardar('${f.id}')"><span class="muted">a</span><input type="time" step="3600" id="salaA-${f.id}" value="${salaHM(f.hora_fin)}" onchange="salaFrGuardar('${f.id}')"></span><span class="sala-g"><span class="muted">cupo</span><input type="number" inputmode="numeric" min="1" max="1000" id="salaCupo-${f.id}" value="${f.cupo}" onchange="salaFrGuardar('${f.id}')"><button type="button" class="ghost sala-x" title="Quitar esta franja" aria-label="Quitar esta franja" onclick="salaFrQuitar('${f.id}')">✕</button></span></div>`).join('') : '<div class="muted" style="padding:6px 0;">Cerrado</div>'}
+      <div class="row" style="gap:6px; margin-top:2px;"><button type="button" class="ghost sala-mini" onclick="salaFrAgregar(${d})">+ Agregar franja</button>${fr.length ? `<button type="button" class="ghost sala-mini" onclick="salaCopiarAbrir(${d})">📋 Copiar a otros días</button>` : ''}</div></div></div>`;
+  }).join('');
+  cont.innerHTML = `
+    <div class="card"><h2 style="margin-top:0">¿Cómo se sacan los turnos?</h2>
+      <div class="muted" style="font-size:12.5px; margin-bottom:10px;">Lo elige cada gimnasio. Podés volver al modo anterior cuando quieras: los turnos ya reservados no se pierden.</div>
+      <div class="sala-modo">
+        <div class="sala-op ${hr ? 'on' : ''}" onclick="salaSetModo('horario')"><b>${hr ? '◉' : '○'} Por horario</b><span>El cupo es de la sala. El alumno elige día y hora, sin elegir profesor. Con el horario completo hay lista de espera.</span></div>
+        <div class="sala-op ${hr ? '' : 'on'}" onclick="salaSetModo('profesor')"><b>${hr ? '○' : '◉'} Por profesor</b><span>Cada profesor tiene su propio cupo (pestaña “Editar horario”). El alumno elige con qué profesor reservar.</span></div>
+      </div>
+      <div class="row" style="margin-top:14px; align-items:end;"><div class="field" style="flex:1; min-width:180px; margin:0;"><label>Nombre de la actividad (lo ve el alumno)</label><input id="salaNombre" maxlength="30" value="${escaparHtml(SALA.nombre || 'Musculación')}" placeholder="Musculación"></div><button type="button" class="secondary" onclick="salaNombreGuardar()">Guardar nombre</button></div>
+    </div>
+    <div class="card"><h2 style="margin-top:0">Horarios de la sala</h2>
+      <div class="muted" style="font-size:12.5px; margin-bottom:6px;">Cada franja tiene su <b>cupo por hora</b> (por ejemplo, mañana 20 y tarde 30). Los turnos son de una hora, en punto.${hr ? '' : ' <b>Hoy estos horarios no se usan</b>: los turnos son por profesor. Cargalos y después elegí “Por horario”.'}</div>
+      ${dias}</div>
+    <div class="card"><h2 style="margin-top:0">Profesores en sala</h2>
+      <div class="muted" style="font-size:13px;">Sale del horario de trabajo de cada profesor (pestaña “Editar horario”), que se sigue cargando igual. En el modo por horario es <b>informativo</b>: el alumno ve quién está en la sala, y cada turno queda vinculado a ese profesor para la estadística, pero el profesor <b>no limita el cupo</b>. Si hay dos profesores a la misma hora, los turnos se reparten parejo. Un profesor que a esa hora da una clase no figura en la sala. Desde la Agenda se puede cambiar a mano.</div></div>`;
+  salaAplicar();
+}
+async function salaSetModo(m){
+  if (SALA.modo === m || !PERFIL_ACTUAL || PERFIL_ACTUAL.rol !== 'admin') return;
+  if (m === 'horario' && !SALA.franjas.some(f => f.activo !== false)){ toast('Primero cargá los horarios de la sala, acá abajo.', true); return; }
+  if (!confirm(m === 'horario'
+    ? 'Los turnos pasan a ser por horario: el cupo es el de la sala y el alumno ya no elige profesor. Los turnos ya reservados se mantienen. ¿Cambiar?'
+    : 'Los turnos vuelven a ser por profesor, con el cupo de cada uno. Los turnos ya reservados se mantienen; la lista de espera deja de moverse. ¿Cambiar?')) return;
+  try{
+    await sb(`gimnasios?id=eq.${salaGym()}`, { method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: JSON.stringify({ turnos_modo: m }) });
+    SALA.modo = m; toast(m === 'horario' ? 'Listo: los turnos son por horario ✓' : 'Listo: los turnos son por profesor ✓');
+  }catch(e){ toast('No se pudo cambiar: ' + extraerMensajeError(e), true); }
+  salaCfgPintar();
+}
+async function salaNombreGuardar(){
+  const v = (document.getElementById('salaNombre').value || '').trim();
+  if (!v){ toast('Poné un nombre (por ejemplo, Musculación).', true); return; }
+  try{
+    await sb(`gimnasios?id=eq.${salaGym()}`, { method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: JSON.stringify({ sala_nombre: v.slice(0, 30) }) });
+    SALA.nombre = v.slice(0, 30); toast('Nombre guardado ✓'); salaAplicar();
+  }catch(e){ toast('No se pudo guardar: ' + extraerMensajeError(e), true); }
+}
+function salaFrValida(dia, de, a, cupo, salvoId){
+  if (!/^\d\d:00$/.test(de) || !/^\d\d:00$/.test(a)) return 'Usá horas en punto (por ejemplo 07:00 a 13:00): los turnos son de una hora.';
+  if (a <= de) return 'La hora “hasta” tiene que ser mayor que “desde”.';
+  if (!(cupo >= 1 && cupo <= 1000)) return 'El cupo tiene que ser un número entre 1 y 1000.';
+  if (SALA.franjas.some(f => f.dia_semana === dia && String(f.id) !== String(salvoId) && salaHM(f.hora_inicio) < a && salaHM(f.hora_fin) > de)) return 'Esa franja se pisa con otra del mismo día.';
+  return '';
+}
+async function salaFrGuardar(id){
+  const f = SALA.franjas.find(x => String(x.id) === String(id)); if (!f) return;
+  const de = document.getElementById('salaDe-' + id).value, a = document.getElementById('salaA-' + id).value, cupo = parseInt(document.getElementById('salaCupo-' + id).value, 10);
+  const err = salaFrValida(f.dia_semana, de, a, cupo, id);
+  if (err){ toast(err, true); salaCfgPintar(); return; }
+  try{
+    await sb(`sala_horarios?id=eq.${id}`, { method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: JSON.stringify({ hora_inicio: de, hora_fin: a, cupo }) });
+    Object.assign(f, { hora_inicio: de + ':00', hora_fin: a + ':00', cupo }); toast('Horario de la sala guardado ✓');
+  }catch(e){ toast('No se pudo guardar: ' + extraerMensajeError(e), true); salaCfgCargar(); }
+}
+async function salaFrAgregar(dia){
+  const fr = SALA.franjas.filter(f => f.dia_semana === dia), ult = fr[fr.length - 1];
+  const hi = ult ? Math.min(22, parseInt(salaHM(ult.hora_fin), 10) + 1) : 8, hf = Math.min(23, hi + (ult ? 3 : 4));
+  const de = String(hi).padStart(2, '0') + ':00', a = String(hf).padStart(2, '0') + ':00', cupo = ult ? ult.cupo : 20;
+  const err = salaFrValida(dia, de, a, cupo, null);
+  if (err){ toast('No queda lugar para otra franja ese día: ajustá las que ya están.', true); return; }
+  try{
+    await sb('sala_horarios', { method: 'POST', headers: { Prefer: 'return=minimal' }, body: JSON.stringify([{ gimnasio_id: salaGym(), dia_semana: dia, hora_inicio: de, hora_fin: a, cupo }]) });
+    await salaCfgCargar();
+  }catch(e){ toast('No se pudo agregar: ' + extraerMensajeError(e), true); }
+}
+async function salaFrQuitar(id){
+  if (SALA.modo === 'horario' && !confirm('¿Quitar esta franja? Los alumnos ya no van a poder reservar en esos horarios (los turnos ya reservados se mantienen).')) return;
+  try{
+    await sb(`sala_horarios?id=eq.${id}`, { method: 'DELETE', headers: { Prefer: 'return=minimal' } });
+    await salaCfgCargar();
+  }catch(e){ toast('No se pudo quitar: ' + extraerMensajeError(e), true); }
+}
+function salaCopiarAbrir(dia){
+  const ov = overlayGenerico('salaCopiarOv', 420);
+  ov.querySelector('.modal-box').innerHTML = `<h3 style="margin-top:0;">Copiar el horario del ${DIAS_SEMANA[dia].toLowerCase()}</h3>
+    <div class="muted" style="font-size:13px; margin-bottom:10px;">Los días que elijas quedan con las mismas franjas y cupos (se reemplaza lo que tengan).</div>
+    <div class="sala-chk">${SALA_ORDEN_DIAS.filter(d => d !== dia).map(d => `<label class="cl-chk" style="margin-top:6px;"><input type="checkbox" class="salaCopiarDia" value="${d}" ${d >= 1 && d <= 5 && dia >= 1 && dia <= 5 ? 'checked' : ''}><span>${DIAS_SEMANA[d]}</span></label>`).join('')}</div>
+    <div class="row" style="justify-content:flex-end; gap:8px; margin-top:16px;"><button type="button" class="ghost" onclick="cerrarOverlayGenerico('salaCopiarOv')">Cancelar</button><button type="button" id="salaCopiarBtn" onclick="salaCopiarConfirmar(${dia})">Copiar</button></div>`;
+  ov.classList.add('show');
+}
+async function salaCopiarConfirmar(dia){
+  const dest = [...document.querySelectorAll('.salaCopiarDia:checked')].map(e => parseInt(e.value, 10));
+  if (!dest.length){ toast('Elegí al menos un día.', true); return; }
+  const origen = SALA.franjas.filter(f => f.dia_semana === dia), btn = document.getElementById('salaCopiarBtn'); if (btn) btn.disabled = true;
+  try{
+    await sb(`sala_horarios?gimnasio_id=eq.${salaGym()}&dia_semana=in.(${dest.join(',')})`, { method: 'DELETE', headers: { Prefer: 'return=minimal' } });
+    const filas = []; dest.forEach(d => origen.forEach(f => filas.push({ gimnasio_id: salaGym(), dia_semana: d, hora_inicio: f.hora_inicio, hora_fin: f.hora_fin, cupo: f.cupo })));
+    await sb('sala_horarios', { method: 'POST', headers: { Prefer: 'return=minimal' }, body: JSON.stringify(filas) });
+    cerrarOverlayGenerico('salaCopiarOv'); toast(`Horario copiado a ${dest.length} día${dest.length === 1 ? '' : 's'} ✓`);
+  }catch(e){ toast('No se pudo copiar: ' + extraerMensajeError(e), true); }
+  await salaCfgCargar();
+}
+
+// ---------- Liquidación: horas de las clases que dicta el profesor (v105) ----------
+// Devuelve los tramos [desde, hasta] (en horas decimales) de las clases de ese profesor para un día de la semana JS (0 = domingo).
+function liqClasesDelDia(clases, diaSemanaJs){
+  const k = (diaSemanaJs + 6) % 7;   // clases.dias usa 0 = lunes
+  return (clases || []).filter(c => (c.dias || []).map(Number).includes(k)).map(c => [horaADecimal(c.hora_inicio), horaADecimal(c.hora_fin), c.nombre]);
+}
+// Horas de un tramo [a, b] que NO quedan cubiertas por la lista de tramos "tapa" (para no contar dos veces)
+function liqHorasFuera(a, b, tapa){
+  let libres = [[a, b]];
+  (tapa || []).forEach(t => {
+    const sig = [];
+    libres.forEach(l => {
+      if (t[1] <= l[0] || t[0] >= l[1]) sig.push(l);
+      else { if (t[0] > l[0]) sig.push([l[0], t[0]]); if (t[1] < l[1]) sig.push([t[1], l[1]]); }
+    });
+    libres = sig;
+  });
+  return libres.reduce((s, l) => s + Math.max(0, l[1] - l[0]), 0);
+}
+
 function clArrastrable(h, m){
   let sx, sy, bx, by, on = false;
   h.onpointerdown = e => { if (e.target.closest('button')) return; on = true; sx = e.clientX; sy = e.clientY; bx = +m.dataset.dx || 0; by = +m.dataset.dy || 0; h.setPointerCapture(e.pointerId); h.classList.add('dragging'); };
@@ -17109,6 +17698,7 @@ function fechaISOAlu(offsetDias){
 }
 
 async function renderTurnosDisponibles(){
+  if (SALA.ok === null) await salaCargar();   // (v105) modo de turnos del gimnasio
   await cargarDiasConHorarioAlu();
   renderDiasAlu();
   renderHorasAlu();
@@ -17130,6 +17720,11 @@ async function cargarDiasConHorarioAlu(){
   const alumnoId = document.getElementById('aluAlumno').value;
   const alumno = ALUMNOS_CACHE.find(a => a.id === alumnoId);
   const profesorFiltroId = document.getElementById('aluFiltroProfesor').value;
+  if (salaHorario()){   // (v105) por horario: los días habilitados son los de la sala
+    try{ const fs = await sb(`sala_horarios?select=dia_semana&gimnasio_id=eq.${salaGym()}&activo=eq.true`); DIAS_CON_HORARIO_ALU = new Set(fs.map(f => f.dia_semana)); }
+    catch(e){ DIAS_CON_HORARIO_ALU = null; }
+    return;
+  }
   if (!alumno || !alumno.gimnasio_id){ DIAS_CON_HORARIO_ALU = null; return; }
   const idsProf = profesorFiltroId
     ? [profesorFiltroId]
@@ -17170,6 +17765,8 @@ function elegirDiaAlu(i){
 }
 
 async function renderHorasAlu(){
+  ALU_MODO_PINTADO = salaHorario();
+  if (ALU_MODO_PINTADO) return salaRenderHorasAlu();   // (v105) cupo por horario
   const alumnoId = document.getElementById('aluAlumno').value;
   const wrap = document.getElementById('aluHorasWrap');
   if (!alumnoId){ wrap.innerHTML = 'Elegí tu nombre arriba.'; return; }
@@ -17233,7 +17830,7 @@ async function confirmarReservaTurno(){
     const [turno] = await sb('rpc/reservar_turno', {
       method: 'POST',
       headers: { Prefer: 'return=representation' },
-      body: JSON.stringify({ p_alumno_id: alumnoId, p_profesor_id: profesorId, p_fecha: fecha, p_hora: hora })
+      body: JSON.stringify({ p_alumno_id: alumnoId, p_profesor_id: (profesorId && profesorId !== 'null') ? profesorId : null, p_fecha: fecha, p_hora: hora })   // (v105) por horario va sin profesor
     }).then(r => Array.isArray(r) ? r : [r]);
     await intentarAsignarRutina(turno.id, alumnoId, fecha);
     toast('Turno reservado ✓');
@@ -17558,6 +18155,7 @@ async function reintentarAsignacion(turnoId, alumnoId, fecha){
 
 async function cargarTurnos(alumnoId){
   cargarInicioAlu(alumnoId);
+  salaEsperaAlu(alumnoId);   // (v105) lista de espera de la sala
   const cont = document.getElementById('listaTurnosAlu');
   cont.innerHTML = 'Cargando...';
   try{
@@ -17566,6 +18164,7 @@ async function cargarTurnos(alumnoId){
       sb(`ejecuciones?select=rutina_dia_id&alumno_id=eq.${alumnoId}&estado=eq.finalizada&rutina_dia_id=not.is.null`),
     ]);
     if (!rows.length){ cont.innerHTML = '<div class="empty">Todavía no reservaste turnos.</div>'; return; }
+    salaEngancharRutinas(alumnoId, rows);   // (v105) turnos que entraron por lista de espera
     // Pedido de Martin, 22/9: de un vistazo, cuáles entrenamientos todavía se pueden
     // arrancar (vigentes, ≤7 días desde la fecha planificada, incluye los futuros) y
     // cuáles ya no (vencidos, hace más de una semana) — a esos últimos se les saca el
