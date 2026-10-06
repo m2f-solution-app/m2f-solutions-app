@@ -1227,6 +1227,21 @@
   button.cl-as.no{ background:rgba(255,93,93,.2); color:var(--danger-text); border-color:rgba(255,93,93,.6); }
   button.cl-sm{ flex:none; padding:6px 11px; font-size:12.5px; border-radius:10px; }
   .cl-res{ display:flex; gap:6px; flex-wrap:wrap; }
+  /* (v109) Gastos en formato tabla (igual que Cobros) */
+  .x-frow.gas{ grid-template-columns:86px minmax(0,2.4fr) minmax(0,1.3fr) 150px 130px 40px; cursor:default; }
+  .x-li.gas{ cursor:default; }
+  button.gas-del{ padding:4px 8px; color:var(--danger-text); flex:none; }
+  select.gas-caja{ font-size:12px; padding:3px 6px; max-width:150px; }
+  .gas-total{ display:flex; justify-content:space-between; align-items:center; gap:10px; padding:12px 14px; border-top:1px solid var(--border); font-size:14px; }
+  .gas-total b{ font-size:17px; }
+  .gas-cats{ padding:0 14px 12px; }
+  .x-kpi.gas-click{ cursor:pointer; }
+  @media (max-width:720px){
+    #gasPeriodo, #gasCats{ flex-wrap:nowrap; overflow-x:auto; scrollbar-width:none; -webkit-overflow-scrolling:touch; }
+    #gasPeriodo::-webkit-scrollbar, #gasCats::-webkit-scrollbar{ display:none; }
+    #gasPeriodo{ flex:1 1 100%; }
+    #gasKpis{ grid-template-columns:1fr 1fr; }
+  }
   /* (v106) Recepción: cartel de asistencia tomada al ingresar el DNI */
   .rc-msg.rc-ing{ font-size:17px; padding:14px; }
   .rc-ing-l{ font-size:19px; font-weight:800; margin-top:4px; line-height:1.3; }
@@ -2815,6 +2830,7 @@
         </div>
 
         <div id="cobTabGastos" style="display:none;">
+          <div class="x-kpis" id="gasKpis"></div>
           <details class="plegable card" data-k="fin-nuevo-gasto"><summary>Nuevo gasto</summary><div class="plg-body">
             <div class="row">
               <div class="field" style="min-width:150px;">
@@ -2849,13 +2865,13 @@
               <button class="ghost" onclick="cancelarNuevaCategoriaGasto()">Cancelar</button>
             </div>
           </div></details>
-          <div class="card">
-            <div class="row" style="justify-content:space-between; align-items:center;">
-              <h2 style="margin-top:0; margin-bottom:0;">Gastos cargados</h2>
-              <div style="font-weight:700;" id="gastosTotal"></div>
+          <div class="card" style="padding:0;">
+            <div class="x-toolbar" style="padding:12px 14px; margin:0;">
+              <input type="search" id="gasBuscar" placeholder="🔎 Buscar gasto" oninput="GAS.q=this.value; gasPintar()">
+              <div class="x-chips" id="gasPeriodo"></div>
             </div>
-            <div id="gastosPorCategoria" style="margin-top:8px;"></div>
-            <div id="listaGastos" class="muted" style="margin-top:10px;">Cargando...</div>
+            <div class="x-chips gas-cats" id="gasCats"></div>
+            <div id="listaGastos"><div class="x-vacio">Cargando…</div></div>
           </div>
           <details class="plegable card" data-k="fin-grafico-gastos"><summary>📊 Gastos mensuales por categoría</summary><div class="plg-body"><div class="row" style="margin-bottom:8px;"><select id="gastoGraficoCategoria" onchange="cargarGraficoGastos()" style="min-width:170px;"></select></div>
             <div id="gastoGraficoWrap" class="muted" style="margin-top:10px;">Elegí una categoría para ver el gráfico.</div>
@@ -4560,7 +4576,7 @@ function atlIniciarAlu(){
   atlCargarVista('aluAtletismoContenido', id || '');
 }
 
-const APP_VERSION = 108;
+const APP_VERSION = 109;
 // (v96) Fecha de la última actualización: se cambia junto con APP_VERSION en cada entrega. Se muestra en la
 // pantalla de inicio y en el menú de cuenta ("v94 · actualizada el 5/10/2026").
 const APP_FECHA = '2026-10-06';
@@ -10964,19 +10980,83 @@ async function agregarGasto(){
     document.getElementById('gastoConcepto').value = '';
     document.getElementById('gastoMonto').value = '';
     document.getElementById('gastoCaja').value = '';
+    gasMostrarFecha(fecha);   // (v109) que el gasto nuevo quede a la vista
     cargarGastos();
     if (document.getElementById('gastoGraficoCategoria').value === categoriaId) cargarGraficoGastos();
   }catch(e){ toast('Error agregando el gasto: ' + extraerMensajeError(e), true); }
   finally { btn.disabled = false; }
 }
 
+// ---------- (v109) Gastos en formato tabla, igual que Cobros: tarjetas, período, categorías, buscador y total ----------
+const GAS = { filas: [], q: '', cat: '', per: 'mes', sinCaja: false, cats: [] };
+function gasMes(iso, delta){
+  const d = new Date(); d.setDate(1); d.setMonth(d.getMonth() + (delta || 0));
+  return String(iso || '').slice(0, 7) === d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+}
+function gasEnPeriodo(f){
+  if (GAS.per === 'mes') return gasMes(f.fecha, 0);
+  if (GAS.per === 'ant') return gasMes(f.fecha, -1);
+  if (GAS.per === '3m') return gasMes(f.fecha, 0) || gasMes(f.fecha, -1) || gasMes(f.fecha, -2);
+  return true;
+}
+function gasCajaHtml(r){
+  if (r.caja) return r.caja === 'efectivo' ? '💵 Efectivo' : '🏦 Banco';
+  return `<select class="gas-caja" onchange="asignarCajaEgreso('${r.tipo}','${r.id}',this.value)"><option value="">⚠️ Sin caja</option><option value="efectivo">💵 Efectivo</option><option value="banco">🏦 Banco</option></select>`;
+}
+function gasPer(p){ GAS.per = p; gasPintar(); }
+function gasCat(i){ GAS.cat = i < 0 ? '' : (GAS.cats[i] || ''); gasPintar(); }
+function gasSinCaja(v){ GAS.sinCaja = !!v; if (v){ GAS.per = 'todo'; GAS.cat = ''; } gasPintar(); }
+// Después de cargar un gasto: que quede a la vista aunque sea de otro mes o haya un filtro puesto
+function gasMostrarFecha(fecha){
+  if (!gasEnPeriodo({ fecha })) GAS.per = 'todo';
+  GAS.cat = ''; GAS.q = ''; GAS.sinCaja = false;
+  const b = document.getElementById('gasBuscar'); if (b) b.value = '';
+}
+function gasPintar(){
+  const cont = document.getElementById('listaGastos'); if (!cont) return;
+  const F = GAS.filas, suma = a => a.reduce((s, r) => s + r.monto, 0);
+  const mes = F.filter(r => gasMes(r.fecha, 0)), ant = F.filter(r => gasMes(r.fecha, -1));
+  const porCatMes = {}; mes.forEach(r => { porCatMes[r.categoria] = (porCatMes[r.categoria] || 0) + r.monto; });
+  const mayor = Object.entries(porCatMes).sort((a, b) => b[1] - a[1])[0];
+  const sinCaja = F.filter(r => !r.caja).length;
+  if (GAS.sinCaja && !sinCaja) GAS.sinCaja = false;
+  const dif = suma(ant) > 0 ? Math.round((suma(mes) - suma(ant)) / suma(ant) * 100) : null;
+  const kp = document.getElementById('gasKpis');
+  if (kp) kp.innerHTML = `
+    <div class="x-kpi"><div class="k">Gastado este mes · ${mes.length}</div><div class="v">${xe(formatearMonto(suma(mes)))}</div></div>
+    <div class="x-kpi"><div class="k">Mes pasado${dif == null ? '' : ` · ${dif > 0 ? '▲' : dif < 0 ? '▼' : '='} ${Math.abs(dif)}%`}</div><div class="v">${xe(formatearMonto(suma(ant)))}</div></div>
+    <div class="x-kpi"><div class="k">Mayor rubro del mes</div><div class="v" style="font-size:17px;">${mayor ? xe(mayor[0]) + ' <span class="x-sub" style="font-weight:600;">' + xe(formatearMonto(mayor[1])) + '</span>' : '—'}</div></div>
+    <div class="x-kpi ${sinCaja ? 'gas-click' : ''}" ${sinCaja ? 'onclick="gasSinCaja(true)" title="Ver cuáles son"' : ''}><div class="k">Sin caja asignada${sinCaja ? ' · ver ›' : ''}</div><div class="v ${sinCaja ? 't-warn' : ''}">${sinCaja} <span class="x-sub" style="font-weight:600;">${sinCaja === 1 ? 'gasto' : 'gastos'}</span></div></div>`;
+  const pers = [['mes', 'Este mes'], ['ant', 'Mes pasado'], ['3m', 'Últimos 3 meses'], ['todo', 'Todo']];
+  const pe = document.getElementById('gasPeriodo');
+  if (pe) pe.innerHTML = pers.map(p => `<button class="x-chip ${GAS.per === p[0] ? 'on' : ''}" onclick="gasPer('${p[0]}')">${p[1]}</button>`).join('');
+  const P = F.filter(r => gasEnPeriodo(r) && (!GAS.sinCaja || !r.caja));
+  const porCat = {}; P.forEach(r => { porCat[r.categoria] = (porCat[r.categoria] || 0) + r.monto; });
+  const cats = Object.entries(porCat).sort((a, b) => b[1] - a[1]);
+  GAS.cats = cats.map(c => c[0]);
+  if (GAS.cat && !(GAS.cat in porCat)) GAS.cat = '';
+  const ce = document.getElementById('gasCats');
+  if (ce) ce.innerHTML = (GAS.sinCaja ? `<button class="x-chip on" onclick="gasSinCaja(false)">⚠️ Sin caja · ${sinCaja} ✕</button>` : '') +
+    `<button class="x-chip ${GAS.cat ? '' : 'on'}" onclick="gasCat(-1)">Todas · ${xe(formatearMonto(suma(P)))}</button>` +
+    cats.map((c, i) => `<button class="x-chip ${GAS.cat === c[0] ? 'on' : ''}" onclick="gasCat(${i})">${xe(c[0])} · ${xe(formatearMonto(c[1]))}</button>`).join('');
+  const q = xNorm(GAS.q || '');
+  const L = P.filter(r => (!GAS.cat || r.categoria === GAS.cat) && (!q || xNorm(r.concepto + ' ' + r.categoria).includes(q)));
+  cont.className = '';
+  if (!L.length){ cont.innerHTML = `<div class="x-vacio">${F.length ? 'No hay gastos con ese filtro.' : 'Todavía no cargaste ningún gasto.'}</div>`; return; }
+  const borrar = r => `<button class="ghost gas-del" title="Eliminar" aria-label="Eliminar" onclick="${r.tipo === 'gasto' ? `eliminarGasto('${r.id}')` : `eliminarLiquidacion('${r.id}')`}">🗑️</button>`;
+  const filas = L.map(r => `<div class="x-frow gas"><div class="x-sub" style="font-size:13px;">${xe(formatearFechaCorta(r.fecha))}</div>
+      <div class="x-nm" style="font-size:14.5px;">${xe(r.concepto)}</div><div><span class="pill">${xe(r.categoria)}</span></div>
+      <div class="x-sub" style="font-size:13px;">${gasCajaHtml(r)}</div><div class="money">${xe(formatearMonto(r.monto))}</div><div>${borrar(r)}</div></div>`).join('');
+  const lista = L.map(r => `<div class="x-li gas"><div class="mid"><div class="x-nm">${xe(r.concepto)}</div><div class="x-sub">${xe(r.categoria)} · ${xe(formatearFechaCorta(r.fecha))} · ${gasCajaHtml(r)}</div></div>
+      <div class="end"><div style="font-weight:800;">${xe(formatearMonto(r.monto))}</div></div>${borrar(r)}</div>`).join('');
+  const total = `<div class="gas-total"><span>Total · ${L.length} ${L.length === 1 ? 'gasto' : 'gastos'}</span><b>${xe(formatearMonto(suma(L)))}</b></div>`;
+  cont.innerHTML = `<div class="x-tbl-wrap"><div class="x-frow gas h"><div>Fecha</div><div>Concepto</div><div>Categoría</div><div>Caja</div><div style="text-align:right">Monto</div><div></div></div>${filas}</div><div class="x-lst" style="border:0;border-radius:0;">${lista}</div>${total}`;
+}
 async function cargarGastos(){
   const cont = document.getElementById('listaGastos');
-  const totalEl = document.getElementById('gastosTotal');
-  const porCatEl = document.getElementById('gastosPorCategoria');
   const gimId = GIMNASIO_ACTUAL?.id;
-  if (!gimId){ cont.innerHTML = '<div class="empty">Necesitás estar logueado.</div>'; return; }
-  cont.innerHTML = 'Cargando...';
+  if (!gimId){ cont.innerHTML = '<div class="x-vacio">Necesitás estar logueado.</div>'; return; }
+  if (!GAS.filas.length) cont.innerHTML = '<div class="x-vacio">Cargando…</div>';
   try{
     // (24/9, 3ra vuelta) Pedido de Martin: ver también el pago a profesores acá,
     // para chequear TODOS los gastos del gimnasio en un solo lugar. Se unen dos
@@ -10985,38 +11065,15 @@ async function cargarGastos(){
     // para borrar una liquidación se sigue usando su propio candado (eliminarLiquidacion),
     // nunca un borrado genérico, para no saltarse esa lógica.
     const [gastos, liquidaciones] = await Promise.all([
-      sb(`gastos_gimnasio?select=id,concepto,monto,fecha,caja,gastos_categorias(nombre)&gimnasio_id=eq.${gimId}&order=fecha.desc&limit=100`),
-      sb(`liquidaciones_profesor?select=id,monto_total,fecha_pago,caja,periodo_desde,periodo_hasta,profesores(nombre)&gimnasio_id=eq.${gimId}&order=fecha_pago.desc&limit=100`),
+      sb(`gastos_gimnasio?select=id,concepto,monto,fecha,caja,gastos_categorias(nombre)&gimnasio_id=eq.${gimId}&order=fecha.desc&limit=500`),
+      sb(`liquidaciones_profesor?select=id,monto_total,fecha_pago,caja,periodo_desde,periodo_hasta,profesores(nombre)&gimnasio_id=eq.${gimId}&order=fecha_pago.desc&limit=500`),
     ]);
-    const filas = [
+    GAS.filas = [
       ...gastos.map(r => ({ id:r.id, tipo:'gasto', concepto:r.concepto, monto:Number(r.monto), fecha:r.fecha, caja:r.caja, categoria:r.gastos_categorias?.nombre || 'Sin categoría' })),
       ...liquidaciones.map(r => ({ id:r.id, tipo:'liquidacion', concepto:`Pago a ${r.profesores?.nombre || 'profesor'} (${formatearFechaCorta(r.periodo_desde)} al ${formatearFechaCorta(r.periodo_hasta)})`, monto:Number(r.monto_total), fecha:r.fecha_pago, caja:r.caja, categoria:'Pago a profesores' })),
-    ].sort((a,b) => b.fecha.localeCompare(a.fecha));
-
-    const total = filas.reduce((acc,r) => acc + r.monto, 0);
-    totalEl.textContent = formatearMonto(total);
-
-    // Agrupado por categoría (incluye "Pago a profesores" como una categoría más),
-    // para ver de un vistazo cuánto se va en cada rubro y no solo el total general.
-    const porCategoria = {};
-    filas.forEach(r => { porCategoria[r.categoria] = (porCategoria[r.categoria] || 0) + r.monto; });
-    porCatEl.innerHTML = Object.entries(porCategoria).sort((a,b) => b[1]-a[1]).map(([nombre, monto]) => `
-      <span class="pill" style="display:inline-block; margin:0 6px 6px 0;">${nombre}: <strong>${formatearMonto(monto)}</strong></span>
-    `).join('');
-
-    cont.innerHTML = filas.length ? filas.map(r => `
-      <div class="row" style="justify-content:space-between; padding:6px 0; border-bottom:1px solid var(--border);">
-        <div>
-          <div style="font-weight:600;">${r.concepto}</div>
-          <div class="muted" style="font-size:12px;">${r.categoria} · ${formatearFechaCorta(r.fecha)} · ${r.caja ? (r.caja==='efectivo' ? '💵 Efectivo' : '🏦 Banco') : `<select onchange="asignarCajaEgreso('${r.tipo}','${r.id}',this.value)" style="font-size:12px; padding:2px 4px;"><option value="">⚠️ Sin caja — asignar</option><option value="efectivo">💵 Efectivo</option><option value="banco">🏦 Banco</option></select>`}</div>
-        </div>
-        <div class="row" style="gap:8px; align-items:center;">
-          <div style="font-weight:700;">${formatearMonto(r.monto)}</div>
-          <button class="ghost" style="color:var(--danger-text); padding:4px 8px;" onclick="${r.tipo==='gasto' ? `eliminarGasto('${r.id}')` : `eliminarLiquidacion('${r.id}')`}">🗑️</button>
-        </div>
-      </div>
-    `).join('') : '<div class="empty">Todavía no cargaste ningún gasto.</div>';
-  }catch(e){ cont.innerHTML = 'Error: ' + e.message; }
+    ].sort((a,b) => String(b.fecha).localeCompare(String(a.fecha)));
+    gasPintar();
+  }catch(e){ cont.innerHTML = `<div class="x-vacio">Error: ${xe(e.message)}</div>`; }
 }
 
 async function eliminarGasto(id){

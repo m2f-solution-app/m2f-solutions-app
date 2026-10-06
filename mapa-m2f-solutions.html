@@ -75,7 +75,7 @@ footer{text-align:center;color:var(--dim);font-size:12px;margin-top:28px}
   <h2 id="h"></h2>
   <p class="intro" id="intro"></p>
   <div class="list" id="list"></div>
-  <footer>Actualizado a la versión 108 · 6/10/2026</footer>
+  <footer>Actualizado a la versión 109 · 6/10/2026</footer>
 </div>
 <script>
 const DATA = {
@@ -222,7 +222,7 @@ guias: {
           aplica:'Apenas se registra el pago la vigencia se actualiza y la restricción desaparece.' },
         { icon:'🧮', title:'Los números del Dashboard no cierran',
           sirve:'Dashboard, Cajas y Proyección se calculan sobre lo registrado. Si algo falta, revisá qué no se cargó.',
-          pasos:['Pagos sin cargar (Finanzas → Cobros).','Gastos sin caja asignada ("⚠️ Sin caja — asignar").','Saldo inicial de cajas y fecha de corte sin configurar.'],
+          pasos:['Pagos sin cargar (Finanzas → Cobros).','Gastos sin caja asignada (Finanzas → Gastos → tarjeta "Sin caja asignada").','Saldo inicial de cajas y fecha de corte sin configurar.'],
           aplica:'Mercado Pago entra por sí solo; efectivo y transferencia los carga una persona.' },
       ]
     },
@@ -512,8 +512,9 @@ admin: {
           aplica:'Solo avisa pagos de Mercado Pago (los manuales ya los ves al cargarlos). Se marca como leído al cerrarlo y, si activaste las notificaciones, también llega como push.' },
         { icon:'💸', title:'Gastos',
           donde:'Finanzas → Gastos', quien:'Administrador',
-          sirve:'Cargás cada gasto con categoría, monto, fecha y desde qué caja se pagó (obligatorio). Un gráfico resume los gastos mensuales por categoría.',
-          aplica:'Descuenta de la caja elegida y entra en la ganancia del Dashboard. Los históricos sin caja se asignan con "⚠️ Sin caja — asignar".' },
+          sirve:'Cargás cada gasto con categoría, monto, fecha y desde qué caja se pagó (obligatorio). Los gastos se ven en una tabla (fecha, concepto, categoría, caja y monto) con el total al pie. Arriba, cuatro tarjetas: gastado este mes, mes pasado con su variación, mayor rubro del mes y gastos sin caja asignada. Un gráfico resume los gastos mensuales por categoría.',
+          pasos:['"Nuevo gasto": categoría, concepto, monto, fecha y caja → Agregar.','Elegí el período: Este mes, Mes pasado, Últimos 3 meses o Todo.','Tocá una categoría para ver solo ese rubro (cada una muestra su monto), o usá el buscador.','El tacho elimina el gasto. Los pagos a profesores aparecen acá como una categoría más.'],
+          aplica:'Descuenta de la caja elegida y entra en la ganancia del Dashboard. Un gasto histórico sin caja muestra "⚠️ Sin caja" en su fila para asignarla ahí mismo; la tarjeta "Sin caja asignada" los filtra a todos.' },
         { icon:'🏦', title:'Cajas (Efectivo / Banco)',
           donde:'Finanzas → Cajas', quien:'Administrador',
           sirve:'Dos cajas: Efectivo y Banco. Ves el saldo actual, el resumen del mes (cobros, gastos, movimientos) y los ingresos por método. Podés mover plata entre cajas y definir saldo inicial y fecha de corte.',
