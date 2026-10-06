@@ -1193,6 +1193,52 @@
   .cl-movil .cl-mh .hint, .cl-mh.movil .hint{ display:none; }
   .cl-lock .cl-tl{ pointer-events:none; }
   .cl-row2{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  /* (v103) Clases con cupo: reservas, lista de espera y asistencia */
+  .cl-tb.res.mio{ outline:2px solid var(--accent2); outline-offset:-2px; }
+  .cl-tb.res.esp{ outline:2px dashed var(--warn); outline-offset:-2px; }
+  .cl-tb .cpl{ display:flex; gap:4px; flex-wrap:wrap; align-items:center; margin-top:1px; }
+  .cl-cp{ display:inline-block; font-size:10.5px; font-weight:800; line-height:1.35; padding:1px 6px; border-radius:999px; background:color-mix(in srgb,var(--text) 12%,transparent); color:var(--text); white-space:nowrap; }
+  .cl-cp.mio{ background:rgba(47,210,122,.22); color:var(--accent2-text); }
+  .cl-cp.esp{ background:rgba(255,200,74,.24); color:var(--warn-text); }
+  .cl-cp.full{ background:rgba(255,93,93,.18); color:var(--danger-text); }
+  .cl-prox{ font-size:10.5px; color:var(--muted); font-weight:700; }
+  .cl-movil .cl-cp{ font-size:11.5px; padding:2px 8px; }
+  .cl-tl .hd small{ display:block; font-weight:600; letter-spacing:0; font-size:10.5px; }
+  .cl-banner.cl-warn{ background:rgba(255,200,74,.12); border-color:rgba(255,200,74,.5); }
+  .cl-mis{ margin-bottom:12px; padding:12px 14px; }
+  .cl-mis-t, .cl-sec{ font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); }
+  .cl-mis-t{ margin-bottom:4px; } .cl-sec{ margin:14px 0 4px; }
+  .cl-mi{ display:flex; align-items:center; justify-content:space-between; gap:10px; padding:8px 0; border-top:1px solid var(--border); cursor:pointer; }
+  .cl-mis-t + .cl-mi{ border-top:0; }
+  .cl-mi .cl-cp{ font-size:12px; padding:3px 9px; }
+  .cl-det{ margin:10px 0; display:grid; gap:4px; font-size:14px; }
+  .cl-cupo{ margin:10px 0; font-size:13.5px; }
+  .cl-bar{ height:8px; border-radius:999px; background:var(--panel2); border:1px solid var(--border); overflow:hidden; margin-bottom:6px; }
+  .cl-bar i{ display:block; height:100%; background:var(--accent); border-radius:999px; }
+  .cl-est{ border:1px solid var(--border); border-radius:12px; padding:10px 12px; font-size:13.5px; background:var(--panel2); }
+  .cl-est.ok{ border-color:rgba(47,210,122,.45); background:rgba(47,210,122,.1); }
+  .cl-est.esp{ border-color:rgba(255,200,74,.5); background:rgba(255,200,74,.1); }
+  .cl-nav{ display:flex; align-items:center; justify-content:center; gap:10px; margin:12px 0 4px; text-transform:capitalize; }
+  .cl-li{ display:flex; align-items:center; gap:8px; padding:7px 0; border-top:1px solid var(--border); }
+  .cl-sec + .cl-li{ border-top:0; }
+  .cl-li .mid{ flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  button.cl-as{ flex:none; width:36px; height:36px; padding:0; border-radius:10px; background:var(--panel2); color:var(--muted); border:1px solid var(--border); font-weight:800; font-size:15px; }
+  button.cl-as.si{ background:rgba(47,210,122,.24); color:var(--accent2-text); border-color:rgba(47,210,122,.65); }
+  button.cl-as.no{ background:rgba(255,93,93,.2); color:var(--danger-text); border-color:rgba(255,93,93,.6); }
+  button.cl-sm{ flex:none; padding:6px 11px; font-size:12.5px; border-radius:10px; }
+  .cl-res{ display:flex; gap:6px; flex-wrap:wrap; }
+  /* (v104) varias clases a la misma hora: bloque compacto */
+  .cl-tb.cx{ padding:3px 5px; }
+  .cl-tb.cx .t, .cl-tb.cx .n, .cl-tb.cx .p{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .cl-tb.cx .n{ overflow-wrap:normal; }
+  .cl-tb.cx .cpl{ flex-wrap:nowrap; overflow:hidden; }
+  .cl-tb.cx .cl-cp{ padding:1px 5px; }
+  .cl-movil .cl-tb.cx{ padding:4px 7px; } .cl-movil .cl-tb.cx .cl-cp{ font-size:11px; padding:1px 7px; }
+  .cl-row21{ grid-template-columns:minmax(0,1fr) 110px; }
+  .cl-row21 > .field{ min-width:0; } .cl-row21 > .field input, .cl-row21 > .field select{ width:100%; min-width:0; box-sizing:border-box; }
+  .cl-cfg{ display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:10px 14px; }
+  label.cl-chk{ display:flex; align-items:flex-start; gap:9px; margin-top:10px; text-transform:none; letter-spacing:0; font-size:14px; font-weight:500; color:var(--text); cursor:pointer; }
+  label.cl-chk input{ flex:none; width:18px; height:18px; margin-top:1px; }
   /* (v96) Evaluación por equipo */
   .em-chips{ display:flex; gap:6px; flex-wrap:wrap; margin-top:4px; }
   .em-g{ font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); font-weight:800; margin-top:10px; }
@@ -3068,6 +3114,22 @@
           </div>
           <div id="listaEquipos" class="muted" style="margin-top:10px;">Cargando...</div>
         </div></details>
+        <!-- (v103) Reglas de reservas de clases -->
+        <details class="plegable card" data-k="gim-clases" id="gimClasesBox" style="display:none;"><summary>Clases y reservas</summary><div class="plg-body">
+          <div class="muted" style="margin-bottom:10px;">Reglas para cuando el alumno se anota a una clase desde su app. El staff puede anotar o quitar alumnos a mano sin estas restricciones (salvo el cupo).</div>
+          <div class="cl-cfg">
+            <div class="field"><label>El alumno puede cancelar</label>
+              <select id="gimClCancelar"><option value="0">Hasta que empiece la clase</option><option value="30">Hasta 30 minutos antes</option><option value="60">Hasta 1 hora antes</option><option value="120">Hasta 2 horas antes</option><option value="180">Hasta 3 horas antes</option><option value="360">Hasta 6 horas antes</option><option value="720">Hasta 12 horas antes</option><option value="1440">Hasta 24 horas antes</option></select></div>
+            <div class="field"><label>Clases por día · plan con días limitados</label>
+              <select id="gimClMax"><option value="1">1 clase por día</option><option value="2">Hasta 2 por día</option><option value="3">Hasta 3 por día</option><option value="4">Hasta 4 por día</option><option value="">Sin límite</option></select></div>
+            <div class="field"><label>Clases por día · plan libre</label>
+              <select id="gimClMaxLibre"><option value="">Sin límite</option><option value="1">1 clase por día</option><option value="2">Hasta 2 por día</option><option value="3">Hasta 3 por día</option><option value="4">Hasta 4 por día</option></select></div>
+          </div>
+          <label class="cl-chk"><input type="checkbox" id="gimClCuota"><span>Con la cuota vencida no puede anotarse</span></label>
+          <label class="cl-chk"><input type="checkbox" id="gimClPlan"><span>Las clases cuentan para los días por semana del plan (junto con los turnos)</span></label>
+          <div class="row" style="margin-top:14px;"><button type="button" id="gimClBtn" onclick="clCfgGuardar()">Guardar reglas</button></div>
+          <div class="muted" style="margin-top:8px;">Plan libre = plan sin “días por semana”. Los alumnos sin plan usan el tope de “días limitados”. Se anotan hasta que empieza la clase y con hasta 7 días de anticipación. Nunca a dos clases que se pisen de horario.</div>
+        </div></details>
       </div>
 
     </div>
@@ -3924,6 +3986,7 @@ function modGuiaOk(x){   // para filtrar pasos / preguntas de la Guía según lo
   return true;
 }
 function modAplicarMenu(){
+  try{ clCfgPintar(); }catch(e){}   // (v103) la sección "Clases y reservas" de Mi gimnasio sigue al módulo Clases
   const roles = new Set([...(typeof MENU_SOLO_ADMIN !== 'undefined' ? MENU_SOLO_ADMIN : []), ...(typeof BNAV_SOLO_ADMIN !== 'undefined' ? BNAV_SOLO_ADMIN : []), 'menuRecepcion', 'ttRecepcion']);
   Object.keys(MOD_IDS).forEach(k => {
     const on = modOn(k);
@@ -4443,10 +4506,10 @@ function atlIniciarAlu(){
   atlCargarVista('aluAtletismoContenido', id || '');
 }
 
-const APP_VERSION = 102;
+const APP_VERSION = 104;
 // (v96) Fecha de la última actualización: se cambia junto con APP_VERSION en cada entrega. Se muestra en la
 // pantalla de inicio y en el menú de cuenta ("v94 · actualizada el 5/10/2026").
-const APP_FECHA = '2026-10-05';
+const APP_FECHA = '2026-10-06';
 function appVersionTxt(){ const [y, m, d] = APP_FECHA.split('-'); return `v${APP_VERSION} · actualizada el ${+d}/${+m}/${y}`; }
 (function(){ const el = document.getElementById('lcVersion'); if (el) el.textContent = 'M2F Solutions · ' + appVersionTxt(); })();
 
@@ -6676,8 +6739,8 @@ function guiaPasosBase(rol){
     det:['Menú ☰ → Mi gimnasio → Cobros online.','Conectá tu cuenta de Mercado Pago y aceptá los permisos.','Sin esto igual podés registrar pagos en efectivo o transferencia.'] };
   const prof = { id:'prof', ico:'🧑‍🏫', t:'Sumá a tus profesores', d:'Alta con nombre y DNI; la app genera una contraseña temporal.', ir:{ s:'profesores' }, opc:true, auto:c => c.profesores > 1,
     det:['Menú ☰ → Profesores → Nuevo profesor.','Nombre y DNI. La contraseña temporal se muestra UNA sola vez: anotala o pasásela.','Entra por el login de staff con su DNI y elige su propia contraseña.'] };
-  const cla = { id:'cla', ico:'📆', t:'Cargá el calendario de clases', d:'Opcional: los alumnos ven los horarios fijos de tus clases.', ir:{ s:'clases' }, opc:true, visita:'clases',
-    det:['Menú ☰ → Clases.','Tocá un lugar vacío (o ＋ Nueva clase) y completá nombre, días, horas y profesor.','Es solo informativo: no hay reservas ni cupos.'] };
+  const cla = { id:'cla', ico:'📆', t:'Cargá el calendario de clases', d:'Opcional: clases con cupo; los alumnos se anotan desde su app.', ir:{ s:'clases' }, opc:true, visita:'clases',
+    det:['Menú ☰ → Clases.','Tocá un lugar vacío (o ＋ Nueva clase) y completá nombre, días, horas, profesor y cupo.','Los alumnos se anotan desde su app; con el cupo lleno pasan a lista de espera.'] };
   const push = { id:'push', ico:'🔔', t:'Activá las notificaciones', d:'Para enterarte de avisos importantes en el momento.', ir:{ f:'abrirConfiguracion' }, opc:true, auto:() => guiaPushOk(),
     det:['Tocá ⚙️ arriba a la derecha → Notificaciones → Activar.','Aceptá el permiso del navegador.','iPhone: primero Compartir → Agregar a pantalla de inicio y abrila desde ese ícono.'] };
   if (rol === 'admin') return [gim, prof, hor, plan, alu, rut, mp, cla, push];
@@ -6721,7 +6784,8 @@ function guiaFaqBase(rol){
     { q:'¿Cómo cargo una evaluación física?', r:['Menú ☰ → 📏 Evaluaciones.','Elegí al alumno → Nueva evaluación → fecha y métricas.','Para evaluar a todo un equipo: chip “Por equipo”, elegí métricas, equipo y fecha, y cargá un valor por jugador.'], ir:{ s:'evaluaciones' } },
     { q:'¿Cómo marco la asistencia?', r:['Menú ☰ → Agenda (o ✓ en Inicio).','Tocá al alumno y elegí Presente o Ausente.','La llegada marcada en Recepción también aparece ahí.'], ir:{ s:'agenda' } },
     { q:'¿Cómo veo cómo viene entrenando un alumno?', r:['Menú ☰ → 📈 Seguimiento y elegí al alumno.','Ves sesiones, volumen, rutina asignada, récords y cada ejercicio con sus series.'], ir:{ s:'seguimiento' } },
-    { adm:true, q:'¿Cómo cargo los horarios de las clases?', r:['Menú ☰ → 📆 Clases.','Tocá un lugar vacío (o ＋ Nueva clase) y completá nombre, días, horas, profesor y nota.','Los alumnos las ven en su menú “Clases”. Es informativo: no hay cupos.'], ir:{ s:'clases' } },
+    { adm:true, q:'¿Cómo cargo las clases y su cupo?', r:['Menú ☰ → 📆 Clases.','Tocá un lugar vacío (o ＋ Nueva clase) y completá nombre, días, horas, profesor y cupo.','Los alumnos se anotan desde su menú “Clases”. Con el cupo lleno pasan a lista de espera.','Las reglas (cancelación, clases por día, cuota) están en Mi gimnasio → Clases y reservas.'], ir:{ s:'clases' } },
+    { q:'¿Cómo veo quién se anotó a una clase?', r:['Menú ☰ → 📆 Clases y tocá la clase.','Ves los anotados y la lista de espera de esa fecha; con ‹ › cambiás de fecha.','Marcá ✓ presente o ✗ ausente. También podés anotar o quitar a un alumno a mano.'], ir:{ s:'clases' } },
   ];
   const admin = [
     { q:'¿Dónde veo los cumpleaños de mis alumnos?', r:['Menú ☰ → 🔔 Alertas → 🎂 Cumpleaños del mes: los de hoy primero, con botón para saludar por WhatsApp.','Los de hoy también aparecen en tu Inicio.','A las 7:00 el staff recibe un aviso y el alumno, un saludo del gimnasio.','Para que funcione, cargá la fecha de nacimiento al dar de alta al alumno o desde su ficha (✏️ Datos).'], ir:{ s:'alertas' } },
@@ -6734,6 +6798,7 @@ function guiaFaqBase(rol){
   const alu = [
     { q:'¿Cómo reservo un turno?', r:['Tocá Turnos en la barra de abajo.','Elegí el día (los no habilitados aparecen atenuados) y el horario.','Confirmá: la app engancha tu rutina del día. Con la cuota vencida no se puede reservar.'], ir:{ a:'turnos' } },
     { q:'¿Cómo cancelo un turno?', r:['Turnos → tus reservas.','Tocá el turno vigente y cancelalo.'], ir:{ a:'turnos' } },
+    { q:'¿Cómo me anoto a una clase?', r:['Menú ☰ → 📆 Clases.','Tocá la clase del día que quieras y después Anotarme.','Si está completa podés sumarte a la lista de espera: te avisamos cuando se libera un lugar.','Para cancelar, tocá la clase otra vez (o “Mis clases”) y Cancelar mi lugar.'], ir:{ a:'clases' } },
     { q:'¿Cómo empiezo a entrenar?', r:['En Inicio tocá Entrenar el día de tu turno (o Mis rutinas → Empezar).','Cargá peso, repeticiones y RIR de cada serie.','Tocá Finalizar al terminar. Si superaste un récord, te lo mostramos.'], ir:{ a:'rutinas' } },
     { q:'¿Cómo veo cuándo vence mi cuota y cómo pago?', r:['En Inicio aparece un banner cuando está por vencer o vencida.','Si tu gimnasio conectó Mercado Pago, ves el botón “Pagar con Mercado Pago”.','Si no, pagás en efectivo o transferencia con el gimnasio.'], ir:{ a:'inicio' } },
     { q:'¿Dónde veo mis récords y mi evolución?', r:['Logros: racha semanal, constancia y récords personales (hasta 4 gráficos a la vez).','Seguimiento: gráficos y ejercicio por ejercicio.','Evolución: tus evaluaciones físicas, que carga tu profe.'], ir:{ a:'logros' } },
@@ -8115,6 +8180,7 @@ async function cargarGimnasioActual(){
   renderBannerSuscripcion();
   cargarPlanesPrepago();
   telCargar().catch(() => {});   // (v102) WhatsApp de contacto del gimnasio
+  clCfgCargar().catch(() => {});   // (v103) reglas de reservas de clases (Mi gimnasio)
   modulosCargar().catch(() => {});   // (v99) qué secciones tiene este gimnasio
   atlRefrescar().catch(() => {});   // (v98) módulo Atletismo: muestra u oculta su menú
 }
@@ -12629,17 +12695,28 @@ function clLanes(list){
   return out;
 }
 const CL_OFF = 10, clPx = () => esMovilB3() ? 64 : 58;
-function clBloque(o, s){
+function clBloque(o, s, d){
   const c = o.c, px = clPx(), ro = CL.ro, top = CL_OFF + (clTm(c.ini) - s * 60) / 60 * px, h = Math.max(22, (clTm(c.fin) - clTm(c.ini)) / 60 * px - 2), w = 100 / o.n;
-  const tip = `${c.ini}–${c.fin} · ${c.nombre}${c.prof ? ' · ' + c.prof : ' · Profesor a confirmar'}${c.nota ? ' · ' + c.nota : ''}`;
+  // (v103) clases con cupo: muestran la ocupación y se pueden tocar (alumno: anotarse · staff: ver la lista)
+  const res = CL.res === true && !!c.cupo, iso = res ? clFechaDe(c, d) : '', est = res ? clEstadoTxt(c, iso) : null;
+  const falta = CL.res === true && !c.cupo && !ro;   // clase cargada antes de v103: al admin se le pide el cupo
+  // (v104) varias clases a la misma hora: cada una queda angosta, así que se muestra en formato compacto
+  const cx = CL.res === true && (esMovilB3() ? o.n >= 3 : o.n >= 2);
+  const tip = `${c.ini}–${c.fin} · ${c.nombre}${c.prof ? ' · ' + c.prof : ' · Profesor a confirmar'}${c.nota ? ' · ' + c.nota : ''}${res ? ' · ' + est.t : ''}${falta ? ' · Falta cargar el cupo' : ''}`;
+  const chip = res ? `<span class="cl-cp ${est.k}">${cx ? clEstadoCorto(c, iso) : est.t}</span>` : (falta ? `<span class="cl-cp full">${cx ? '⚠ Cupo' : '⚠ Sin cupo'}</span>` : '');
   let body;
-  if (h < 34) body = `<div class="n"><span class="t">${c.ini}</span> ${ejEsc(c.nombre)}</div>`;
-  else {
+  if (h < 34) body = `<div class="n"><span class="t">${c.ini}</span> ${ejEsc(c.nombre)} ${chip}</div>`;
+  else if (cx){
+    body = `<div class="t">${c.ini}</div><div class="n">${ejEsc(c.nombre)}</div>${chip ? `<div class="cpl">${chip}</div>` : ''}`;
+    if (h >= 84) body += `<div class="p ${c.prof ? '' : 'tbc'}">👤 ${ejEsc(c.prof || 'A confirmar')}</div>`;
+  } else {
     body = `<div class="t">${c.ini} – ${c.fin}</div><div class="n">${ejEsc(c.nombre)}</div>`;
-    if (h >= 50) body += `<div class="p ${c.prof ? '' : 'tbc'}">👤 ${ejEsc(c.prof || 'A confirmar')}</div>`;
-    if (h >= 84 && c.nota) body += `<div class="p">📝 ${ejEsc(c.nota)}</div>`;
+    if (chip) body += `<div class="cpl">${chip}${res && iso !== clIso(clFechaBase(d)) ? `<span class="cl-prox">${clFechaTxt(iso)}</span>` : ''}</div>`;
+    if (h >= (chip ? 70 : 50)) body += `<div class="p ${c.prof ? '' : 'tbc'}">👤 ${ejEsc(c.prof || 'A confirmar')}</div>`;
+    if (h >= (chip ? 104 : 84) && c.nota) body += `<div class="p">📝 ${ejEsc(c.nota)}</div>`;
   }
-  return `<div class="cl-tb ${ro ? 'ro' : ''}" title="${ejEsc(tip)}" style="--c:${clColor(c)};top:${top}px;height:${h}px;left:calc(${o.l * w}% + 2px);width:calc(${w}% - 4px)" ${ro ? '' : `onclick="clEditar('${c.id}')"`}>${body}</div>`;
+  const click = res ? `onclick="event.stopPropagation();${CL.rolAlumno ? 'clAluAbrir' : 'clListaAbrir'}('${c.id}','${iso}')"` : (ro ? '' : `onclick="clEditar('${c.id}')"`);
+  return `<div class="cl-tb ${!res && ro ? 'ro' : ''} ${res ? 'res ' + est.k : ''} ${cx ? 'cx' : ''}" title="${ejEsc(tip)}" style="--c:${clColor(c)};top:${top}px;height:${h}px;left:calc(${o.l * w}% + 2px);width:calc(${w}% - 4px)" ${click}>${body}</div>`;
 }
 function clAhora(s, e, d){
   if (d !== clHoy()) return '';
@@ -12649,7 +12726,7 @@ function clAhora(s, e, d){
 }
 function clColumna(d, s, e){
   const px = clPx(), H = (e - s) * px + CL_OFF * 2, ro = CL.ro;
-  return `<div class="tcol ${d === clHoy() ? 'hoy' : ''} ${ro ? '' : 'cli'}" style="height:${H}px;--px:${px}px" ${ro ? '' : `onclick="clSlot(event,${d},${s})"`}>${clLanes(clDelDia(d)).map(o => clBloque(o, s)).join('')}${clAhora(s, e, d)}</div>`;
+  return `<div class="tcol ${d === clHoy() ? 'hoy' : ''} ${ro ? '' : 'cli'}" style="height:${H}px;--px:${px}px" ${ro ? '' : `onclick="clSlot(event,${d},${s})"`}>${clLanes(clDelDia(d)).map(o => clBloque(o, s, d)).join('')}${clAhora(s, e, d)}</div>`;
 }
 function clHoras(s, e){
   const px = clPx(); let h = '';
@@ -12657,35 +12734,60 @@ function clHoras(s, e){
   return `<div class="hrs" style="height:${(e - s) * px + CL_OFF * 2}px">${h}</div>`;
 }
 function clCalendarioHtml(){
-  const [s, e] = clRango(), movil = esMovilB3();
-  if (!movil) return `<div class="cl-tl"><div class="hd0 hd"></div>${CL_DIAS.map((n, d) => `<div class="hd ${d === clHoy() ? 'hoy' : ''}">${n}${d === clHoy() ? ' · hoy' : ''}</div>`).join('')}${clHoras(s, e)}${CL_DIAS.map((n, d) => clColumna(d, s, e)).join('')}</div>${CL.rows.length ? '' : '<div class="card muted" style="margin-top:10px;">Todavía no hay clases cargadas.</div>'}`;
+  const [s, e] = clRango(), movil = esMovilB3(), fch = clConCupo();   // (v103) con reservas, cada día muestra su fecha
+  const dm = k => { const f = clFechaBase(k); return String(f.getDate()).padStart(2, '0') + '/' + String(f.getMonth() + 1).padStart(2, '0'); };
+  if (!movil) return `<div class="cl-tl"><div class="hd0 hd"></div>${CL_DIAS.map((n, d) => `<div class="hd ${d === clHoy() ? 'hoy' : ''}">${n}${d === clHoy() ? ' · hoy' : ''}${fch ? `<small>${dm(d)}</small>` : ''}</div>`).join('')}${clHoras(s, e)}${CL_DIAS.map((n, d) => clColumna(d, s, e)).join('')}</div>${CL.rows.length ? '' : '<div class="card muted" style="margin-top:10px;">Todavía no hay clases cargadas.</div>'}`;
   const d = CL.dia;
-  return `<div class="cl-dpills">${CL_DIAS.map((n, k) => `<span class="${d === k ? 'on' : ''} ${k === clHoy() ? 'hoy' : ''}" onclick="CL.dia=${k};clRenderEn()">${n}<small>${k === clHoy() ? 'hoy' : '·'}</small></span>`).join('')}</div>
-    <div class="cl-tl one"><div class="hd0 hd"></div><div class="hd ${d === clHoy() ? 'hoy' : ''}">${CL_DIAS[d]}${d === clHoy() ? ' · hoy' : ''}</div>${clHoras(s, e)}${clColumna(d, s, e)}</div>${clDelDia(d).length ? '' : '<div class="card muted" style="margin-top:10px;">No hay clases este día.</div>'}`;
+  return `<div class="cl-dpills">${CL_DIAS.map((n, k) => `<span class="${d === k ? 'on' : ''} ${k === clHoy() ? 'hoy' : ''}" onclick="CL.dia=${k};clRenderEn()">${n}<small>${k === clHoy() ? 'hoy' : (fch ? dm(k) : '·')}</small></span>`).join('')}</div>
+    <div class="cl-tl one"><div class="hd0 hd"></div><div class="hd ${d === clHoy() ? 'hoy' : ''}">${CL_DIAS[d]}${d === clHoy() ? ' · hoy' : ''}${fch ? ' · ' + dm(d) : ''}</div>${clHoras(s, e)}${clColumna(d, s, e)}</div>${clDelDia(d).length ? '' : '<div class="card muted" style="margin-top:10px;">No hay clases este día.</div>'}`;
 }
 function clRenderEn(){
   const cont = document.getElementById(CL.contId); if (!cont) return;
-  const movil = esMovilB3();
+  const movil = esMovilB3(), cupos = clConCupo(), admin = PERFIL_ACTUAL?.rol === 'admin';
   const aviso = CL.ok === false
     ? `<div class="cl-banner">⚠️ Falta activar el calendario de clases en la base de datos. Corré <b>bloque3-clases-records.sql</b> en Supabase (SQL Editor) y recargá la app.</div>` : '';
-  const info = CL.ro
-    ? `<div class="cl-banner">ℹ️ <b>Horarios informativos.</b> No hace falta reservar ni hay cupos: es para que sepas qué clases hay cada día.${CL.rolAlumno ? ' Para entrenar con rutina sacá tu turno en <b>Turnos</b>.' : ' Solo el administrador las edita.'}</div>`
-    : `<div class="cl-banner">Tocá una clase para editarla, un lugar vacío para crear una ahí, o <b>+ Nueva clase</b>. El profesor es opcional: si no lo cargás, el alumno ve "Profesor a confirmar". Lo que cambies se ve al instante en la app del alumno.</div>`;
-  cont.innerHTML = `<div class="${movil ? 'cl-movil' : ''}" id="clWrap">${aviso}${CL.ok === false ? '' : info + clCalendarioHtml()}</div>`;
+  const lim = clLimiteTxt(clCfg().cancelMin);
+  let info;
+  if (CL.res !== true){
+    // sin clases-reservas.sql todo sigue como antes: calendario informativo
+    info = CL.ro
+      ? `<div class="cl-banner">ℹ️ <b>Horarios informativos.</b> No hace falta reservar ni hay cupos: es para que sepas qué clases hay cada día.${CL.rolAlumno ? ' Para entrenar con rutina sacá tu turno en <b>Turnos</b>.' : ' Solo el administrador las edita.'}</div>`
+      : `<div class="cl-banner">Tocá una clase para editarla, un lugar vacío para crear una ahí, o <b>+ Nueva clase</b>. El profesor es opcional: si no lo cargás, el alumno ve "Profesor a confirmar". Lo que cambies se ve al instante en la app del alumno.</div>`;
+  } else if (CL.rolAlumno){
+    info = cupos
+      ? `<div class="cl-banner">👥 <b>Tocá una clase para anotarte.</b> Si está completa podés sumarte a la lista de espera y te avisamos cuando se libere un lugar. Podés cancelar ${lim}.</div>`
+      : `<div class="cl-banner">ℹ️ Estas son las clases del gimnasio. Todavía no tienen las reservas abiertas.</div>`;
+  } else if (!admin){
+    info = `<div class="cl-banner">Tocá una clase para ver los anotados, tomar asistencia o sumar a un alumno. Solo el administrador edita las clases.</div>`;
+  } else {
+    const sin = CL.rows.filter(c => !c.cupo).length;
+    info = `<div class="cl-banner">Tocá una clase para ver los anotados y tomar asistencia, un lugar vacío para crear una ahí, o <b>+ Nueva clase</b>. Los alumnos se anotan desde su app y, con el cupo lleno, pasan a lista de espera. Las reglas (cancelación, clases por día, cuota) están en <b>Mi gimnasio → Clases y reservas</b>.</div>`
+      + (sin ? `<div class="cl-banner cl-warn">⚠️ <b>${sin === 1 ? 'Hay 1 clase sin cupo' : 'Hay ' + sin + ' clases sin cupo'}.</b> Los alumnos no pueden anotarse hasta que se lo cargues: tocá la clase marcada “Sin cupo”.</div>` : '');
+  }
+  const ocErr = CL.ocErr ? `<div class="cl-banner">⚠️ No se pudo cargar la ocupación de las clases. Revisá la conexión y volvé a entrar a esta pantalla.</div>` : '';
+  cont.innerHTML = `<div class="${movil ? 'cl-movil' : ''}" id="clWrap">${aviso}${CL.ok === false ? '' : info + ocErr + (CL.rolAlumno ? clMisHtml() : '') + clCalendarioHtml()}</div>`;
 }
-async function clCargar(contId, ro, rolAlumno){
+async function clCargar(contId, ro, rolAlumno, silencioso){
   CL.contId = contId; CL.ro = ro; CL.rolAlumno = !!rolAlumno;
   const cont = document.getElementById(contId); if (!cont) return;
-  cont.innerHTML = '<div class="muted">Cargando clases...</div>';
+  if (!silencioso) cont.innerHTML = '<div class="muted">Cargando clases...</div>';
+  const sel = conCupo => `clases?select=id,nombre,dias,hora_inicio,hora_fin,profesor_id,nota${conCupo ? ',cupo' : ''},profesores(nombre)&order=hora_inicio.asc`;
   try{
-    const rows = await sb('clases?select=id,nombre,dias,hora_inicio,hora_fin,profesor_id,nota,profesores(nombre)&order=hora_inicio.asc');
-    CL.rows = (rows || []).map(r => ({ id: r.id, nombre: r.nombre, dias: (r.dias || []).map(Number), ini: clHM(r.hora_inicio), fin: clHM(r.hora_fin), profId: r.profesor_id || '', prof: (r.profesores && r.profesores.nombre) || '', nota: r.nota || '' }));
+    let rows;
+    if (CL.res === false) rows = await sb(sel(false));
+    else {
+      // (v103) la columna cupo existe solo si se corrió clases-reservas.sql; si no, todo sigue como antes
+      try{ rows = await sb(sel(true)); CL.res = true; }
+      catch(e){ if (/cupo|42703/i.test(String(e.message || ''))){ CL.res = false; rows = await sb(sel(false)); } else throw e; }
+    }
+    CL.rows = (rows || []).map(r => ({ id: r.id, nombre: r.nombre, dias: (r.dias || []).map(Number), ini: clHM(r.hora_inicio), fin: clHM(r.hora_fin), profId: r.profesor_id || '', prof: (r.profesores && r.profesores.nombre) || '', nota: r.nota || '', cupo: r.cupo || null }));
     CL.ok = true;
   }catch(e){
     CL.rows = [];
     if (/clases|42P01|PGRST205|does not exist|schema cache/i.test(String(e.message || ''))) CL.ok = false;
     else { cont.innerHTML = `<div class="empty">No se pudieron cargar las clases: ${ejEsc(e.message || e)}</div>`; return; }
   }
+  await clOcCargar();
   clRenderEn();
 }
 function clIniciarStaff(){
@@ -12702,16 +12804,20 @@ function clSlot(ev, d, s){
 }
 function clEditar(id, pre){
   if (PERFIL_ACTUAL?.rol !== 'admin') return;
-  const c = id ? CL.rows.find(x => String(x.id) === String(id)) : Object.assign({ id: null, nombre: '', dias: [], ini: '18:00', fin: '19:00', profId: '', nota: '' }, pre || {});
+  const c = id ? CL.rows.find(x => String(x.id) === String(id)) : Object.assign({ id: null, nombre: '', dias: [], ini: '18:00', fin: '19:00', profId: '', nota: '', cupo: null }, pre || {});
   if (!c) return;
   CL.EC = JSON.parse(JSON.stringify(c));
   const profs = (PROFESORES_CACHE || []).filter(p => p.activo !== false);
   const m = document.getElementById('clMdl'), movil = esMovilB3();
+  const selProf = `<select id="clProf"><option value="">Sin profesor asignado</option>${profs.map(p => `<option value="${p.id}" ${String(c.profId) === String(p.id) ? 'selected' : ''}>${ejEsc(p.nombre)}</option>`).join('')}</select>`;
   m.innerHTML = `<div class="cl-mh ${movil ? 'movil' : ''}" id="clMh"><h3>${id ? 'Editar clase' : 'Nueva clase'}</h3><span class="hint">⠿ arrastrá para mover</span><button type="button" class="ghost sm" onclick="clCerrar()" aria-label="Cerrar">✕</button></div>
     <div class="field"><label>Nombre de la clase</label><input id="clNom" value="${ejEsc(c.nombre)}" placeholder="ej: Funcional, Spinning, Yoga"></div>
     <div class="field"><label>Días en que se repite</label><div class="cl-dchips" id="clDias">${CL_DL.map((l, d) => `<span class="${CL.EC.dias.includes(d) ? 'on' : ''}" onclick="clTogDia(${d})">${l}</span>`).join('')}</div></div>
     <div class="cl-row2"><div class="field"><label>Desde</label><input type="time" id="clIni" value="${c.ini}"></div><div class="field"><label>Hasta</label><input type="time" id="clFin" value="${c.fin}"></div></div>
-    <div class="field"><label>Profesor (opcional)</label><select id="clProf"><option value="">Sin profesor asignado</option>${profs.map(p => `<option value="${p.id}" ${String(c.profId) === String(p.id) ? 'selected' : ''}>${ejEsc(p.nombre)}</option>`).join('')}</select></div>
+    ${CL.res === true
+      ? `<div class="cl-row2 cl-row21"><div class="field"><label>Profesor (opcional)</label>${selProf}</div><div class="field"><label>Cupo</label><input type="number" id="clCupo" min="1" max="500" inputmode="numeric" value="${c.cupo || ''}" placeholder="ej: 12"></div></div>
+         <div class="muted" style="font-size:12px; margin:6px 0 10px;">Cupo: cuántos alumnos entran. Se anotan desde su app y, con el cupo lleno, pasan a lista de espera.</div>`
+      : `<div class="field"><label>Profesor (opcional)</label>${selProf}</div>`}
     <div class="field"><label>Nota (opcional)</label><input id="clNota" value="${ejEsc(c.nota)}" placeholder="ej: traer colchoneta"></div>
     <div class="row" style="justify-content:flex-end; gap:8px; margin-top:14px;">${id ? `<button type="button" class="ghost" style="margin-right:auto; color:var(--danger-text);" onclick="clEliminar('${id}')">🗑️ Eliminar</button>` : ''}<button type="button" class="ghost" onclick="clCerrar()">Cancelar</button><button type="button" id="clBtnGuardar" onclick="clGuardar(${id ? `'${id}'` : 'null'})">Guardar</button></div>`;
   const ov = document.getElementById('clOv'); m.style.transform = ''; m.dataset.dx = 0; m.dataset.dy = 0;
@@ -12733,6 +12839,12 @@ async function clGuardar(id){
   if (!CL.EC.dias.length){ toast('Elegí al menos un día.', true); return; }
   if (!ini || !fin || fin <= ini){ toast('La hora de fin tiene que ser después de la de inicio.', true); return; }
   const body = { nombre, dias: CL.EC.dias.slice().sort((a, b) => a - b), hora_inicio: ini, hora_fin: fin, profesor_id: document.getElementById('clProf').value || null, nota: document.getElementById('clNota').value.trim() || null };
+  const inCupo = document.getElementById('clCupo');
+  if (CL.res === true && inCupo){   // (v103) toda clase lleva cupo
+    const cv = inCupo.value.trim();
+    if (!/^\d+$/.test(cv) || +cv < 1 || +cv > 500){ toast('Poné el cupo de la clase: cuántos alumnos entran (de 1 a 500).', true); inCupo.focus(); return; }
+    body.cupo = +cv;
+  }
   const btn = document.getElementById('clBtnGuardar'); if (btn) btn.disabled = true;
   try{
     if (id) await sb(`clases?id=eq.${id}`, { method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: JSON.stringify(body) });
@@ -12742,12 +12854,267 @@ async function clGuardar(id){
   }catch(e){ toast('Error guardando la clase: ' + e.message, true); if (btn) btn.disabled = false; }
 }
 async function clEliminar(id){
-  if (!confirm('¿Eliminar esta clase del calendario?')) return;
+  const conGente = Object.keys(CL.oc || {}).some(k => k.split('|')[0] === String(id) && (CL.oc[k].a || CL.oc[k].e));   // (v103)
+  if (!confirm(conGente ? 'Esta clase tiene alumnos anotados en los próximos días. Si la eliminás se cancelan sus reservas y se les avisa al celular. ¿Eliminarla?' : '¿Eliminar esta clase del calendario?')) return;
   try{
     await sb(`clases?id=eq.${id}`, { method: 'DELETE', headers: { Prefer: 'return=minimal' } });
     clCerrar(); toast('Clase eliminada');
     await clCargar(CL.contId, CL.ro, CL.rolAlumno);
   }catch(e){ toast('Error eliminando la clase: ' + e.message, true); }
+}
+// ---------- (v103) CLASES CON CUPO: reservas, lista de espera y asistencia ----------
+// SQL: clases-reservas.sql. Sin ese SQL (CL.res === false) el calendario sigue siendo informativo, como antes.
+// El calendario muestra, para cada día de la semana, su próxima fecha (hoy incluido): es la ventana de 7 días
+// en la que el alumno puede reservar. Las reglas (cupo, cuota, días del plan, clases por día, límite de
+// cancelación) las valida el servidor; acá solo se muestran. Cada gimnasio las ajusta en Mi gimnasio.
+const CL_CFG_DEF = { cancelMin: 120, maxDia: 1, maxDiaLibre: null, exigirCuota: true, cuentaPlan: true };
+const CL_CFG_SEL = 'clases_cancelar_min,clases_max_dia,clases_max_dia_libre,clases_exigir_cuota,clases_cuenta_plan';
+function clCfg(){ return CL.cfg || CL_CFG_DEF; }
+function clLimiteTxt(min){
+  min = +min || 0;
+  if (min <= 0) return 'hasta que empiece la clase';
+  if (min % 60 === 0) return 'hasta ' + (min / 60) + (min === 60 ? ' hora antes' : ' horas antes');
+  return 'hasta ' + min + ' minutos antes';
+}
+async function clCfgCargar(){
+  const gid = PERFIL_ACTUAL && PERFIL_ACTUAL.gimnasio_id; if (!gid) return false;
+  try{
+    const r = await sb(`gimnasios?select=${CL_CFG_SEL}&id=eq.${gid}`), g = r && r[0];
+    CL.cfg = g ? { cancelMin: g.clases_cancelar_min == null ? 120 : +g.clases_cancelar_min, maxDia: g.clases_max_dia == null ? null : +g.clases_max_dia,
+                   maxDiaLibre: g.clases_max_dia_libre == null ? null : +g.clases_max_dia_libre, exigirCuota: g.clases_exigir_cuota !== false, cuentaPlan: g.clases_cuenta_plan !== false } : { ...CL_CFG_DEF };
+    CL.cfgOk = true;
+  }catch(e){ CL.cfg = { ...CL_CFG_DEF }; CL.cfgOk = /42703|does not exist/i.test(String((e && e.message) || '')) ? false : null; }
+  clCfgPintar();
+  return CL.cfgOk === true;
+}
+function clCfgPintar(){
+  const box = document.getElementById('gimClasesBox'); if (!box) return;
+  const ver = CL.cfgOk === true && PERFIL_ACTUAL && PERFIL_ACTUAL.rol === 'admin' && modOn('clases');
+  box.style.display = ver ? '' : 'none';
+  if (!ver || box.contains(document.activeElement)) return;
+  const c = clCfg(), set = (id, v) => { const e = document.getElementById(id); if (!e) return; if (![...e.options].some(o => o.value === String(v))){ const o = document.createElement('option'); o.value = String(v); o.textContent = id === 'gimClCancelar' ? clLimiteTxt(v) : String(v); e.appendChild(o); } e.value = String(v); };
+  set('gimClCancelar', c.cancelMin);
+  set('gimClMax', c.maxDia == null ? '' : c.maxDia);
+  set('gimClMaxLibre', c.maxDiaLibre == null ? '' : c.maxDiaLibre);
+  document.getElementById('gimClCuota').checked = !!c.exigirCuota;
+  document.getElementById('gimClPlan').checked = !!c.cuentaPlan;
+}
+async function clCfgGuardar(){
+  if (!PERFIL_ACTUAL || PERFIL_ACTUAL.rol !== 'admin') return;
+  const num = id => { const v = document.getElementById(id).value; return v === '' ? null : parseInt(v, 10); };
+  const body = { clases_cancelar_min: num('gimClCancelar') || 0, clases_max_dia: num('gimClMax'), clases_max_dia_libre: num('gimClMaxLibre'),
+                 clases_exigir_cuota: document.getElementById('gimClCuota').checked, clases_cuenta_plan: document.getElementById('gimClPlan').checked };
+  const btn = document.getElementById('gimClBtn'); if (btn) btn.disabled = true;
+  try{
+    await sb(`gimnasios?id=eq.${PERFIL_ACTUAL.gimnasio_id}`, { method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: JSON.stringify(body) });
+    CL.cfg = { cancelMin: body.clases_cancelar_min, maxDia: body.clases_max_dia, maxDiaLibre: body.clases_max_dia_libre, exigirCuota: body.clases_exigir_cuota, cuentaPlan: body.clases_cuenta_plan };
+    toast('Reglas de clases guardadas ✓');
+  }catch(e){ toast('No se pudieron guardar las reglas: ' + extraerMensajeError(e), true); }
+  if (btn) btn.disabled = false;
+}
+// En la vista del alumno, el alumno elegido arriba: para el alumno es él mismo; el staff que mira "como alumno" actúa por ese alumno.
+function clAluId(){ return CL.rolAlumno ? (document.getElementById('aluAlumno')?.value || null) : null; }
+const CL_DIAS_L = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'];
+function clIso(dt){ return fechaLocalISO(dt); }
+function clFechaBase(d){
+  const h = new Date(); h.setHours(12, 0, 0, 0);
+  h.setDate(h.getDate() + ((d - clHoy() + 7) % 7));
+  return h;
+}
+function clInicio(c, iso){ const [y, m, dd] = iso.split('-').map(Number), t = clTm(c.ini); return new Date(y, m - 1, dd, Math.floor(t / 60), t % 60, 0, 0); }
+function clFechaDe(c, d){
+  const b = clFechaBase(d); let iso = clIso(b);
+  // Alumno: si la de hoy ya empezó, se le ofrece la de la semana que viene (el staff sigue viendo la de hoy para tomar asistencia)
+  if (CL.rolAlumno && d === clHoy() && clInicio(c, iso) <= new Date()){ b.setDate(b.getDate() + 7); iso = clIso(b); }
+  return iso;
+}
+function clFechaTxt(iso, largo){
+  const [y, m, dd] = iso.split('-').map(Number), k = (new Date(y, m - 1, dd, 12).getDay() + 6) % 7;
+  return (largo ? CL_DIAS_L[k] : CL_DIAS[k]) + ' ' + String(dd).padStart(2, '0') + '/' + String(m).padStart(2, '0');
+}
+function clOc(id, iso){ return (CL.oc || {})[id + '|' + iso] || { a: 0, e: 0, miId: null, mi: null, pos: null }; }
+function clConCupo(){ return CL.res === true && CL.rows.some(c => c.cupo); }   // hay al menos una clase que se reserva
+function clClase(id){ return CL.rows.find(x => String(x.id) === String(id)); }
+async function clOcCargar(){
+  CL.oc = {}; CL.ocErr = false;
+  if (CL.res !== true) return;
+  if (!(await clCfgCargar()) && CL.cfgOk === false){ CL.res = false; return; }   // el SQL se corrió a medias: se apagan las reservas
+  if (!clConCupo()) return;
+  const h = new Date(); h.setHours(12, 0, 0, 0); const f = new Date(h); f.setDate(f.getDate() + 7);
+  try{
+    const rows = await sb('rpc/clases_ocupacion', { method: 'POST', body: JSON.stringify({ p_desde: clIso(h), p_hasta: clIso(f), p_alumno_id: clAluId() }) });
+    (rows || []).forEach(r => { CL.oc[r.clase_id + '|' + r.fecha] = { a: r.anotados || 0, e: r.en_espera || 0, miId: r.mi_id || null, mi: r.mi_estado || null, pos: r.mi_posicion || null }; });
+  }catch(e){
+    if (/clases_ocupacion|PGRST202|42883|Could not find the function/i.test(String(e.message || ''))) CL.res = false;   // el SQL se corrió a medias: se apagan las reservas
+    else CL.ocErr = true;
+  }
+}
+function clRefrescar(){ return clCargar(CL.contId, CL.ro, CL.rolAlumno, true); }
+function clEstadoTxt(c, iso){
+  const o = clOc(c.id, iso);
+  if (CL.rolAlumno && o.mi === 'anotado') return { t: '✓ Anotado', k: 'mio' };
+  if (CL.rolAlumno && o.mi === 'espera') return { t: '⏳ En espera' + (o.pos ? ' · ' + o.pos + '°' : ''), k: 'esp' };
+  if (o.a >= c.cupo) return { t: 'Completa' + (!CL.rolAlumno && o.e ? ' · ⏳ ' + o.e : ''), k: 'full' };
+  return { t: '👥 ' + o.a + '/' + c.cupo, k: '' };
+}
+
+// (v104) estado en pocas letras, para cuando varias clases comparten la misma hora y cada bloque queda angosto
+function clEstadoCorto(c, iso){
+  const o = clOc(c.id, iso), movil = esMovilB3();
+  if (CL.rolAlumno && o.mi === 'anotado') return movil ? '✓ Anotado' : '✓';
+  if (CL.rolAlumno && o.mi === 'espera') return '⏳' + (o.pos ? ' ' + o.pos + '°' : '');
+  if (o.a >= c.cupo) return 'Lleno';
+  return (movil ? '👥 ' : '') + o.a + '/' + c.cupo;
+}
+
+// ----- Alumno -----
+function clMisHtml(){
+  if (!clConCupo()) return '';
+  const mias = [];
+  Object.keys(CL.oc).forEach(k => { const o = CL.oc[k]; if (!o.mi) return; const [id, iso] = k.split('|'), c = clClase(id); if (c && c.cupo) mias.push({ c, iso, o }); });
+  if (!mias.length) return '';
+  mias.sort((a, b) => clInicio(a.c, a.iso) - clInicio(b.c, b.iso));
+  return `<div class="card cl-mis"><div class="cl-mis-t">Mis clases</div>${mias.map(m => `<div class="cl-mi" onclick="clAluAbrir('${m.c.id}','${m.iso}')"><div><b>${ejEsc(m.c.nombre)}</b><div class="muted" style="font-size:12.5px;">${clFechaTxt(m.iso, true)} · ${m.c.ini} a ${m.c.fin}</div></div><span class="cl-cp ${m.o.mi === 'anotado' ? 'mio' : 'esp'}">${m.o.mi === 'anotado' ? '✓ Anotado' : '⏳ En espera' + (m.o.pos ? ' · ' + m.o.pos + '°' : '')}</span></div>`).join('')}</div>`;
+}
+function clCupoHtml(c, o){
+  const libres = Math.max(0, c.cupo - o.a);
+  return `<div class="cl-cupo"><div class="cl-bar"><i style="width:${Math.min(100, o.a / c.cupo * 100)}%"></i></div><div><b>${o.a}</b> de ${c.cupo} lugares ocupados${libres ? ' · quedan ' + libres : ' · completa'}${o.e ? ' · ' + o.e + ' en espera' : ''}</div></div>`;
+}
+function clAluAbrir(id, iso){
+  const c = clClase(id); if (!c || !c.cupo) return;
+  CL.sel = { id: String(id), iso };
+  const o = clOc(id, iso), ini = clInicio(c, iso), ahora = new Date(), empezo = ini <= ahora, min = clCfg().cancelMin, tarde = ini - ahora < min * 60000, lim = clLimiteTxt(min);
+  let estado = '', btn = '';
+  if (o.mi === 'anotado'){
+    estado = `<div class="cl-est ok">✓ Tenés tu lugar reservado.</div>`;
+    btn = empezo ? '' : tarde
+      ? `<div class="muted" style="font-size:12.5px; flex-basis:100%;">Se podía cancelar ${lim}: ya no se puede desde la app. Si no podés ir, avisale al gimnasio.</div>`
+      : `<button type="button" class="secondary" id="clResBtn" onclick="clAluCancelar('${o.miId}', false)">Cancelar mi lugar</button>`;
+  } else if (o.mi === 'espera'){
+    estado = `<div class="cl-est esp">⏳ Estás ${o.pos ? o.pos + '° ' : ''}en la lista de espera. Si alguien cancela, pasás a tener lugar y te avisamos.</div>`;
+    btn = `<button type="button" class="secondary" id="clResBtn" onclick="clAluCancelar('${o.miId}', true)">Salir de la lista de espera</button>`;
+  } else if (empezo){
+    estado = `<div class="cl-est">Esta clase ya empezó.</div>`;
+  } else if (o.a < c.cupo){
+    btn = `<button type="button" id="clResBtn" onclick="clAluAnotar()">Anotarme</button>`;
+  } else {
+    estado = `<div class="cl-est esp">La clase está completa. Podés sumarte a la lista de espera: si alguien cancela, entrás por orden de llegada y te avisamos.</div>`;
+    btn = `<button type="button" id="clResBtn" onclick="clAluAnotar()">Sumarme a la lista de espera</button>`;
+  }
+  const ov = overlayGenerico('clResOv', 420);
+  ov.querySelector('.modal-box').innerHTML = `
+    <div class="row" style="justify-content:space-between; align-items:flex-start; gap:10px; flex-wrap:nowrap;"><h3 style="margin:0;">${ejEsc(c.nombre)}</h3><button type="button" class="ghost cl-sm" onclick="cerrarOverlayGenerico('clResOv')" aria-label="Cerrar">✕</button></div>
+    <div class="cl-det"><div>📅 <b>${clFechaTxt(iso, true)}</b> · ${c.ini} a ${c.fin}</div><div>👤 ${ejEsc(c.prof || 'Profesor a confirmar')}</div>${c.nota ? `<div>📝 ${ejEsc(c.nota)}</div>` : ''}</div>
+    ${clCupoHtml(c, o)}${estado}
+    <div class="row" style="gap:8px; margin-top:14px;">${btn}<button type="button" class="ghost" style="margin-left:auto;" onclick="cerrarOverlayGenerico('clResOv')">Cerrar</button></div>
+    ${!empezo && !(o.mi === 'anotado' && tarde) ? `<div class="muted" style="font-size:12px; margin-top:10px;">${o.mi === 'espera' ? 'De la lista de espera podés salir cuando quieras.' : 'Podés cancelar ' + lim + '.'}</div>` : ''}`;
+  ov.classList.add('show');
+}
+async function clAluAnotar(){
+  const s = CL.sel; if (!s) return;
+  const b = document.getElementById('clResBtn'); if (b) b.disabled = true;
+  try{
+    const r = await sb('rpc/clase_anotar', { method: 'POST', body: JSON.stringify({ p_clase_id: s.id, p_fecha: s.iso, p_alumno_id: clAluId() }) });
+    toast(r && r.estado === 'espera' ? `Quedaste ${r.posicion ? r.posicion + '° ' : ''}en la lista de espera.` : 'Listo, ya tenés tu lugar ✓');
+    await clRefrescar();
+    if (document.getElementById('clResOv')?.classList.contains('show')) clAluAbrir(s.id, s.iso);
+  }catch(e){
+    toast(extraerMensajeError(e), true);
+    await clRefrescar();   // por si cambió la ocupación mientras tanto
+    if (document.getElementById('clResOv')?.classList.contains('show')) clAluAbrir(s.id, s.iso);
+  }
+}
+async function clAluCancelar(insId, espera){
+  if (!confirm(espera ? '¿Salir de la lista de espera de esta clase?' : '¿Cancelar tu lugar en esta clase?')) return;
+  const b = document.getElementById('clResBtn'); if (b) b.disabled = true;
+  try{
+    await sb('rpc/clase_cancelar', { method: 'POST', body: JSON.stringify({ p_inscripcion_id: insId }) });
+    cerrarOverlayGenerico('clResOv');
+    toast(espera ? 'Saliste de la lista de espera.' : 'Lugar cancelado.');
+    await clRefrescar();
+  }catch(e){ toast(extraerMensajeError(e), true); if (b) b.disabled = false; }
+}
+
+// ----- Staff: lista de anotados, asistencia y carga a mano -----
+async function clListaAbrir(id, iso){
+  const c = clClase(id); if (!c) return;
+  CL.lista = { id: String(id), iso, rows: [], err: null };
+  const ov = overlayGenerico('clListaOv', 540);
+  ov.querySelector('.modal-box').innerHTML = '<div class="muted">Cargando anotados...</div>';
+  ov.classList.add('show');
+  await clListaCargar();
+}
+async function clListaCargar(){
+  const L = CL.lista; if (!L) return;
+  const iso = L.iso;
+  try{
+    const rows = await sb(`clases_inscripciones?clase_id=eq.${L.id}&fecha=eq.${iso}&estado=neq.cancelado&select=id,estado,asistio,creado_en,alumno_id,alumnos(nombre,foto_url)&order=creado_en.asc`);
+    if (CL.lista !== L || L.iso !== iso) return;   // cambió de fecha o de clase mientras cargaba
+    L.rows = rows || []; L.err = null;
+  }catch(e){ L.rows = []; L.err = extraerMensajeError(e); }
+  clListaPintar();
+}
+function clListaMover(paso){
+  const L = CL.lista, c = L && clClase(L.id); if (!c || !c.dias.length) return;
+  const [y, m, d] = L.iso.split('-').map(Number), dt = new Date(y, m - 1, d, 12);
+  for (let i = 0; i < 7; i++){ dt.setDate(dt.getDate() + paso); if (c.dias.includes((dt.getDay() + 6) % 7)) break; }
+  L.iso = clIso(dt);
+  clListaCargar();
+}
+function clListaPintar(){
+  const L = CL.lista, c = L && clClase(L.id), ov = document.getElementById('clListaOv');
+  if (!L || !ov) return;
+  if (!c){ cerrarOverlayGenerico('clListaOv'); return; }
+  const admin = PERFIL_ACTUAL?.rol === 'admin', hoy = clIso(new Date());
+  const an = L.rows.filter(r => r.estado === 'anotado'), es = L.rows.filter(r => r.estado === 'espera');
+  const nom = r => (r.alumnos && r.alumnos.nombre) || 'Alumno';
+  const pres = an.filter(r => r.asistio === true).length, aus = an.filter(r => r.asistio === false).length;
+  const fila = (r, i, espera) => `<div class="cl-li">${xAv(nom(r), r.alumnos && r.alumnos.foto_url)}<div class="mid"><b>${espera ? (i + 1) + '° · ' : ''}${ejEsc(nom(r))}</b></div>${espera ? '' :
+    `<button type="button" class="cl-as ${r.asistio === true ? 'si' : ''}" title="Presente" aria-label="Presente" onclick="clAsistencia('${r.id}', ${r.asistio === true ? 'null' : 'true'})">✓</button><button type="button" class="cl-as ${r.asistio === false ? 'no' : ''}" title="Ausente" aria-label="Ausente" onclick="clAsistencia('${r.id}', ${r.asistio === false ? 'null' : 'false'})">✗</button>`}
+    <button type="button" class="ghost cl-sm" onclick="clListaQuitar('${r.id}')">Quitar</button></div>`;
+  const cupo = c.cupo || 0, pasada = L.iso < hoy;
+  ov.querySelector('.modal-box').innerHTML = `
+    <div class="row" style="justify-content:space-between; align-items:flex-start; gap:10px; flex-wrap:nowrap;"><div><h3 style="margin:0;">${ejEsc(c.nombre)}</h3><div class="muted" style="font-size:13px;">${c.ini} a ${c.fin}${c.prof ? ' · 👤 ' + ejEsc(c.prof) : ''}</div></div><button type="button" class="ghost cl-sm" onclick="cerrarOverlayGenerico('clListaOv')" aria-label="Cerrar">✕</button></div>
+    <div class="cl-nav"><button type="button" class="ghost cl-sm" onclick="clListaMover(-1)" aria-label="Fecha anterior">‹</button><b>${clFechaTxt(L.iso, true)}</b>${L.iso === hoy ? '<span class="pill">hoy</span>' : ''}<button type="button" class="ghost cl-sm" onclick="clListaMover(1)" aria-label="Fecha siguiente">›</button></div>
+    ${L.err ? `<div class="cl-est">No se pudo cargar la lista: ${ejEsc(L.err)}</div>` : `
+    ${cupo ? `<div class="cl-cupo"><div class="cl-bar"><i style="width:${Math.min(100, an.length / cupo * 100)}%"></i></div><div><b>${an.length}</b> de ${cupo} anotados${es.length ? ' · ' + es.length + ' en espera' : ''}${pres || aus ? ' · ✓ ' + pres + ' presentes · ✗ ' + aus + ' ausentes' : ''}</div></div>` : '<div class="cl-est">Esta clase no tiene cupo cargado: no admite reservas.</div>'}
+    ${cupo && !pasada ? `<div class="field" style="margin-bottom:6px;"><label>Anotar a un alumno</label><input id="clListaQ" placeholder="Buscar por nombre…" autocomplete="off" oninput="clListaBuscar(this.value)"></div><div id="clListaRes" class="cl-res"></div>` : ''}
+    <div class="cl-sec">Anotados · ${an.length}</div>
+    ${an.length ? an.map((r, i) => fila(r, i, false)).join('') : '<div class="muted" style="font-size:13.5px; padding:6px 0;">Todavía no se anotó nadie.</div>'}
+    ${es.length ? `<div class="cl-sec">Lista de espera · ${es.length}</div>${es.map((r, i) => fila(r, i, true)).join('')}` : ''}`}
+    <div class="row" style="gap:8px; margin-top:16px;">${admin ? `<button type="button" class="secondary" onclick="cerrarOverlayGenerico('clListaOv');clEditar('${c.id}')">✏️ Editar clase</button>` : ''}<button type="button" class="ghost" style="margin-left:auto;" onclick="cerrarOverlayGenerico('clListaOv')">Cerrar</button></div>`;
+}
+function clListaBuscar(q){
+  const L = CL.lista, box = document.getElementById('clListaRes'); if (!L || !box) return;
+  const norm = s => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, ''), t = norm(q).trim();
+  if (t.length < 2){ box.innerHTML = ''; return; }
+  const ya = new Set(L.rows.map(r => String(r.alumno_id)));
+  const m = (ALUMNOS_CACHE || []).filter(a => a.activo !== false && !ya.has(String(a.id)) && norm(a.nombre).includes(t)).slice(0, 6);
+  box.innerHTML = m.length ? m.map(a => `<span class="x-chip" onclick="clListaAnotar('${a.id}')">＋ ${ejEsc(a.nombre)}</span>`).join('') : '<span class="muted" style="font-size:12.5px;">Sin resultados (o ya está anotado).</span>';
+}
+async function clListaAnotar(alumnoId){
+  const L = CL.lista; if (!L) return;
+  try{
+    const r = await sb('rpc/clase_anotar', { method: 'POST', body: JSON.stringify({ p_clase_id: L.id, p_fecha: L.iso, p_alumno_id: alumnoId }) });
+    toast(r && r.estado === 'espera' ? 'La clase está completa: quedó en lista de espera.' : 'Alumno anotado ✓');
+    await clListaCargar(); clRefrescar();
+  }catch(e){ toast(extraerMensajeError(e), true); }
+}
+async function clListaQuitar(insId){
+  if (!confirm('¿Quitar a este alumno de la clase? Si la clase todavía no empezó, se le avisa al celular.')) return;
+  try{
+    const r = await sb('rpc/clase_cancelar', { method: 'POST', body: JSON.stringify({ p_inscripcion_id: insId }) });
+    toast(r && r.promovidos ? 'Quitado. Entró el primero de la lista de espera y se le avisó.' : 'Quitado de la clase.');
+    await clListaCargar(); clRefrescar();
+  }catch(e){ toast(extraerMensajeError(e), true); }
+}
+async function clAsistencia(insId, valor){
+  const L = CL.lista; if (!L) return;
+  try{
+    await sb('rpc/clase_asistencia', { method: 'POST', body: JSON.stringify({ p_inscripcion_id: insId, p_asistio: valor }) });
+    const r = L.rows.find(x => String(x.id) === String(insId)); if (r) r.asistio = valor;
+    clListaPintar();
+  }catch(e){ toast(extraerMensajeError(e), true); }
 }
 function clArrastrable(h, m){
   let sx, sy, bx, by, on = false;
@@ -16001,6 +16368,7 @@ async function cargarRutinasDeAlumno(selectId, contenedorId){
 // ---------- Turnos (vista alumno) ----------
 function onCambiarAluAlumno(){
   salirEjecucion(); // si estaba entrenando como otro alumno, vuelve al panel antes de cambiar
+  try{ if (document.getElementById('subvistaAluClases').style.display !== 'none') clCargar('aluClasesContenido', true, true); }catch(e){}   // (v103)
   const alumnoId = document.getElementById('aluAlumno').value;
   cargarRutinasDeAlumno('aluAlumno','listaRutinasAlu');
   if (alumnoId){
