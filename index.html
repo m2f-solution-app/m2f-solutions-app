@@ -1258,6 +1258,8 @@
   .sala-dn{ font-weight:700; padding-top:8px; }
   .sala-fr{ display:flex; flex-wrap:wrap; gap:6px 8px; align-items:center; margin-bottom:6px; font-size:12.5px; }
   .sala-g{ display:inline-flex; align-items:center; gap:6px 8px; white-space:nowrap; }
+  .sala-st{ flex-basis:100%; font-size:12px; line-height:1.35; } .sala-st:empty{ display:none; }
+  .sala-st.bad{ color:var(--danger); font-weight:600; } .sala-st.ok{ color:var(--accent2-text); }
   .sala-fr input[type="time"]{ width:112px; }
   .sala-fr input[type="number"]{ width:76px; text-align:center; }
   button.sala-x{ padding:6px 10px; border-radius:10px; }
@@ -3161,19 +3163,19 @@
         </div></details>
         <!-- (v103) Reglas de reservas de clases -->
         <details class="plegable card" data-k="gim-clases" id="gimClasesBox" style="display:none;"><summary>Clases y reservas</summary><div class="plg-body">
-          <div class="muted" style="margin-bottom:10px;">Reglas para cuando el alumno se anota a una clase desde su app. El staff puede anotar o quitar alumnos a mano sin estas restricciones (salvo el cupo).</div>
+          <div class="muted" style="margin-bottom:10px;">Reglas para cuando el alumno reserva desde su app. El staff y Recepción pueden anotar, sacar turnos o quitar alumnos a mano sin estas restricciones (salvo el cupo).</div>
           <div class="cl-cfg">
             <div class="field"><label>El alumno puede cancelar</label>
               <select id="gimClCancelar"><option value="0">Hasta que empiece la clase</option><option value="30">Hasta 30 minutos antes</option><option value="60">Hasta 1 hora antes</option><option value="120">Hasta 2 horas antes</option><option value="180">Hasta 3 horas antes</option><option value="360">Hasta 6 horas antes</option><option value="720">Hasta 12 horas antes</option><option value="1440">Hasta 24 horas antes</option></select></div>
-            <div class="field"><label>Clases por día · plan con días limitados</label>
-              <select id="gimClMax"><option value="1">1 clase por día</option><option value="2">Hasta 2 por día</option><option value="3">Hasta 3 por día</option><option value="4">Hasta 4 por día</option><option value="">Sin límite</option></select></div>
-            <div class="field"><label>Clases por día · plan libre</label>
-              <select id="gimClMaxLibre"><option value="">Sin límite</option><option value="1">1 clase por día</option><option value="2">Hasta 2 por día</option><option value="3">Hasta 3 por día</option><option value="4">Hasta 4 por día</option></select></div>
+            <div class="field"><label>Reservas por día · plan con días por semana</label>
+              <select id="gimClMax"><option value="1">1 por día (turno o clase)</option><option value="2">Hasta 2 por día</option><option value="3">Hasta 3 por día</option><option value="4">Hasta 4 por día</option><option value="">Sin límite</option></select></div>
+            <div class="field"><label>Reservas por día · plan libre</label>
+              <select id="gimClMaxLibre"><option value="">Sin límite</option><option value="1">1 por día (turno o clase)</option><option value="2">Hasta 2 por día</option><option value="3">Hasta 3 por día</option><option value="4">Hasta 4 por día</option></select></div>
           </div>
           <label class="cl-chk"><input type="checkbox" id="gimClCuota"><span>Con la cuota vencida no puede anotarse</span></label>
           <label class="cl-chk"><input type="checkbox" id="gimClPlan"><span>Las clases cuentan para los días por semana del plan (junto con los turnos)</span></label>
           <div class="row" style="margin-top:14px;"><button type="button" id="gimClBtn" onclick="clCfgGuardar()">Guardar reglas</button></div>
-          <div class="muted" style="margin-top:8px;">Plan libre = plan sin “días por semana”. Los alumnos sin plan usan el tope de “días limitados”. Se anotan hasta que empieza la clase y con hasta 7 días de anticipación. Nunca a dos clases que se pisen de horario.</div>
+          <div class="muted" style="margin-top:8px;"><b>Las reservas por día cuentan juntos el turno de sala y las clases.</b> Con “1 por día”, quien ya tiene turno ese día no puede anotarse a una clase, y quien ya está anotado a una clase no puede sacar turno; con plan libre (por defecto sin límite) puede combinar. Plan libre = plan sin “días por semana”. Los alumnos sin plan usan el tope del plan con días por semana. Se anotan hasta que empieza la clase y con hasta 7 días de anticipación. Nunca a dos clases que se pisen de horario.</div>
         </div></details>
       </div>
 
@@ -4558,7 +4560,7 @@ function atlIniciarAlu(){
   atlCargarVista('aluAtletismoContenido', id || '');
 }
 
-const APP_VERSION = 106;
+const APP_VERSION = 108;
 // (v96) Fecha de la última actualización: se cambia junto con APP_VERSION en cada entrega. Se muestra en la
 // pantalla de inicio y en el menú de cuenta ("v94 · actualizada el 5/10/2026").
 const APP_FECHA = '2026-10-06';
@@ -6998,7 +7000,7 @@ function guiaFaqBase(rol){
   const alu = [
     { q:'¿Cómo reservo un turno?', r:['Tocá Turnos en la barra de abajo.','Elegí el día (los no habilitados aparecen atenuados) y el horario. Si está completo, puede haber lista de espera.','Confirmá: la app engancha tu rutina del día. Con la cuota vencida no se puede reservar.'], ir:{ a:'turnos' } },
     { q:'¿Cómo cancelo un turno?', r:['Turnos → tus reservas.','Tocá el turno vigente y cancelalo.'], ir:{ a:'turnos' } },
-    { q:'¿Cómo me anoto a una clase?', r:['Menú ☰ → 📆 Clases.','Tocá la clase del día que quieras y después Anotarme.','Si está completa podés sumarte a la lista de espera: te avisamos cuando se libera un lugar.','Para cancelar, tocá la clase otra vez (o “Mis clases”) y Cancelar mi lugar.'], ir:{ a:'clases' } },
+    { q:'¿Cómo me anoto a una clase?', r:['Menú ☰ → 📆 Clases.','Tocá la clase del día que quieras y después Anotarme.','Si está completa podés sumarte a la lista de espera: te avisamos cuando se libera un lugar.','Para cancelar, tocá la clase otra vez (o “Mis clases”) y Cancelar mi lugar.','Según tu plan podés tener una sola reserva por día (turno o clase) o combinar las dos: lo define tu gimnasio.'], ir:{ a:'clases' } },
     { q:'¿Cómo empiezo a entrenar?', r:['En Inicio tocá Entrenar el día de tu turno (o Mis rutinas → Empezar).','Cargá peso, repeticiones y RIR de cada serie.','Tocá Finalizar al terminar. Si superaste un récord, te lo mostramos.'], ir:{ a:'rutinas' } },
     { q:'¿Cómo veo cuándo vence mi cuota y cómo pago?', r:['En Inicio aparece un banner cuando está por vencer o vencida.','Si tu gimnasio conectó Mercado Pago, ves el botón “Pagar con Mercado Pago”.','Si no, pagás en efectivo o transferencia con el gimnasio.'], ir:{ a:'inicio' } },
     { q:'¿Dónde veo mis récords y mi evolución?', r:['Logros: racha semanal, constancia y récords personales (hasta 4 gráficos a la vez).','Seguimiento: gráficos y ejercicio por ejercicio.','Evolución: tus evaluaciones físicas, que carga tu profe.'], ir:{ a:'logros' } },
@@ -13171,7 +13173,7 @@ async function clCfgGuardar(){
   try{
     await sb(`gimnasios?id=eq.${PERFIL_ACTUAL.gimnasio_id}`, { method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: JSON.stringify(body) });
     CL.cfg = { cancelMin: body.clases_cancelar_min, maxDia: body.clases_max_dia, maxDiaLibre: body.clases_max_dia_libre, exigirCuota: body.clases_exigir_cuota, cuentaPlan: body.clases_cuenta_plan };
-    toast('Reglas de clases guardadas ✓');
+    toast('Reglas de reservas guardadas ✓');
   }catch(e){ toast('No se pudieron guardar las reglas: ' + extraerMensajeError(e), true); }
   if (btn) btn.disabled = false;
 }
@@ -13569,7 +13571,7 @@ function salaCfgPintar(){
   const dias = SALA_ORDEN_DIAS.map(d => {
     const fr = SALA.franjas.filter(f => f.dia_semana === d);
     return `<div class="sala-dia"><div class="sala-dn">${DIAS_SEMANA[d]}</div><div class="sala-df">
-      ${fr.length ? fr.map(f => `<div class="sala-fr"><span class="sala-g"><input type="time" step="3600" id="salaDe-${f.id}" value="${salaHM(f.hora_inicio)}" onchange="salaFrGuardar('${f.id}')"><span class="muted">a</span><input type="time" step="3600" id="salaA-${f.id}" value="${salaHM(f.hora_fin)}" onchange="salaFrGuardar('${f.id}')"></span><span class="sala-g"><span class="muted">cupo</span><input type="number" inputmode="numeric" min="1" max="1000" id="salaCupo-${f.id}" value="${f.cupo}" onchange="salaFrGuardar('${f.id}')"><button type="button" class="ghost sala-x" title="Quitar esta franja" aria-label="Quitar esta franja" onclick="salaFrQuitar('${f.id}')">✕</button></span></div>`).join('') : '<div class="muted" style="padding:6px 0;">Cerrado</div>'}
+      ${fr.length ? fr.map(f => `<div class="sala-fr"><span class="sala-g"><input type="time" step="3600" id="salaDe-${f.id}" value="${salaHM(f.hora_inicio)}" oninput="salaFrCambio('${f.id}')" onblur="salaFrSalir('${f.id}')"><span class="muted">a</span><input type="time" step="3600" id="salaA-${f.id}" value="${salaHM(f.hora_fin)}" oninput="salaFrCambio('${f.id}')" onblur="salaFrSalir('${f.id}')"></span><span class="sala-g"><span class="muted">cupo</span><input type="number" inputmode="numeric" min="1" max="1000" id="salaCupo-${f.id}" value="${f.cupo}" oninput="salaFrCambio('${f.id}')" onblur="salaFrSalir('${f.id}')"><button type="button" class="ghost sala-x" title="Quitar esta franja" aria-label="Quitar esta franja" onclick="salaFrQuitar('${f.id}')">✕</button></span><span class="sala-st" id="salaSt-${f.id}" role="status"></span></div>`).join('') : '<div class="muted" style="padding:6px 0;">Cerrado</div>'}
       <div class="row" style="gap:6px; margin-top:2px;"><button type="button" class="ghost sala-mini" onclick="salaFrAgregar(${d})">+ Agregar franja</button>${fr.length ? `<button type="button" class="ghost sala-mini" onclick="salaCopiarAbrir(${d})">📋 Copiar a otros días</button>` : ''}</div></div></div>`;
   }).join('');
   cont.innerHTML = `
@@ -13582,7 +13584,7 @@ function salaCfgPintar(){
       <div class="row" style="margin-top:14px; align-items:end;"><div class="field" style="flex:1; min-width:180px; margin:0;"><label>Nombre de la actividad (lo ve el alumno)</label><input id="salaNombre" maxlength="30" value="${escaparHtml(SALA.nombre || 'Musculación')}" placeholder="Musculación"></div><button type="button" class="secondary" onclick="salaNombreGuardar()">Guardar nombre</button></div>
     </div>
     <div class="card"><h2 style="margin-top:0">Horarios de la sala</h2>
-      <div class="muted" style="font-size:12.5px; margin-bottom:6px;">Cada franja tiene su <b>cupo por hora</b> (por ejemplo, mañana 20 y tarde 30). Los turnos son de una hora, en punto.${hr ? '' : ' <b>Hoy estos horarios no se usan</b>: los turnos son por profesor. Cargalos y después elegí “Por horario”.'}</div>
+      <div class="muted" style="font-size:12.5px; margin-bottom:6px;">Cada franja tiene su <b>cupo por hora</b> (por ejemplo, mañana 20 y tarde 30). Los turnos son de una hora, en punto. Los cambios se guardan solos.${hr ? '' : ' <b>Hoy estos horarios no se usan</b>: los turnos son por profesor. Cargalos y después elegí “Por horario”.'}</div>
       ${dias}</div>
     <div class="card"><h2 style="margin-top:0">Profesores en sala</h2>
       <div class="muted" style="font-size:13px;">Sale del horario de trabajo de cada profesor (pestaña “Editar horario”), que se sigue cargando igual. En el modo por horario es <b>informativo</b>: el alumno ve quién está en la sala, y cada turno queda vinculado a ese profesor para la estadística, pero el profesor <b>no limita el cupo</b>. Si hay dos profesores a la misma hora, los turnos se reparten parejo. Un profesor que a esa hora da una clase no figura en la sala. Desde la Agenda se puede cambiar a mano.</div></div>`;
@@ -13612,18 +13614,44 @@ function salaFrValida(dia, de, a, cupo, salvoId){
   if (!/^\d\d:00$/.test(de) || !/^\d\d:00$/.test(a)) return 'Usá horas en punto (por ejemplo 07:00 a 13:00): los turnos son de una hora.';
   if (a <= de) return 'La hora “hasta” tiene que ser mayor que “desde”.';
   if (!(cupo >= 1 && cupo <= 1000)) return 'El cupo tiene que ser un número entre 1 y 1000.';
-  if (SALA.franjas.some(f => f.dia_semana === dia && String(f.id) !== String(salvoId) && salaHM(f.hora_inicio) < a && salaHM(f.hora_fin) > de)) return 'Esa franja se pisa con otra del mismo día.';
+  const choca = SALA.franjas.find(f => f.dia_semana === dia && String(f.id) !== String(salvoId) && salaHM(f.hora_inicio) < a && salaHM(f.hora_fin) > de);
+  if (choca) return `De ${de} a ${a} se pisa con la franja de ${salaHM(choca.hora_inicio)} a ${salaHM(choca.hora_fin)} de ese día.`;
   return '';
+}
+// (v107) Al escribir una hora el campo pasa por valores a medias ("15" es primero 01:00): por eso no se valida
+// en cada tecla. Se espera a que deje de escribir (o salga del campo), nunca se le repone la hora anterior, y el
+// resultado se avisa al lado de la franja.
+const SALA_FR_TMR = {};
+function salaFrEstado(id, txt, cls){
+  const st = document.getElementById('salaSt-' + id); if (!st) return;
+  st.textContent = txt || ''; st.className = 'sala-st' + (cls ? ' ' + cls : '');
+}
+function salaFrCambio(id){
+  clearTimeout(SALA_FR_TMR[id]); salaFrEstado(id, '');
+  SALA_FR_TMR[id] = setTimeout(() => { delete SALA_FR_TMR[id]; salaFrGuardar(id); }, 2000);
+}
+function salaFrSalir(id){   // al salir del campo se guarda en el momento
+  if (!SALA_FR_TMR[id]) return;
+  clearTimeout(SALA_FR_TMR[id]); delete SALA_FR_TMR[id]; salaFrGuardar(id);
 }
 async function salaFrGuardar(id){
   const f = SALA.franjas.find(x => String(x.id) === String(id)); if (!f) return;
-  const de = document.getElementById('salaDe-' + id).value, a = document.getElementById('salaA-' + id).value, cupo = parseInt(document.getElementById('salaCupo-' + id).value, 10);
+  const elDe = document.getElementById('salaDe-' + id), elA = document.getElementById('salaA-' + id), elC = document.getElementById('salaCupo-' + id);
+  if (!elDe || !elA || !elC) return;
+  const de = elDe.value, a = elA.value, cupo = parseInt(elC.value, 10);
+  if (de === salaHM(f.hora_inicio) && a === salaHM(f.hora_fin) && cupo === f.cupo){ salaFrEstado(id, ''); return; }   // quedó como estaba
   const err = salaFrValida(f.dia_semana, de, a, cupo, id);
-  if (err){ toast(err, true); salaCfgPintar(); return; }
+  if (err){ salaFrEstado(id, '⚠ ' + err + ' Todavía no se guardó.', 'bad'); return; }
   try{
     await sb(`sala_horarios?id=eq.${id}`, { method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: JSON.stringify({ hora_inicio: de, hora_fin: a, cupo }) });
-    Object.assign(f, { hora_inicio: de + ':00', hora_fin: a + ':00', cupo }); toast('Horario de la sala guardado ✓');
-  }catch(e){ toast('No se pudo guardar: ' + extraerMensajeError(e), true); salaCfgCargar(); }
+    Object.assign(f, { hora_inicio: de + ':00', hora_fin: a + ':00', cupo });
+    salaFrEstado(id, 'Guardado ✓', 'ok');
+    setTimeout(() => { const st = document.getElementById('salaSt-' + id); if (st && st.textContent === 'Guardado ✓') salaFrEstado(id, ''); }, 2500);
+    // otra franja de ese día que estaba esperando (por ejemplo, porque se pisaba con esta) se vuelve a revisar
+    SALA.franjas.filter(x => x.dia_semana === f.dia_semana && String(x.id) !== String(id)).forEach(x => {
+      const st = document.getElementById('salaSt-' + x.id); if (st && st.classList.contains('bad')) salaFrGuardar(x.id);
+    });
+  }catch(e){ salaFrEstado(id, '⚠ No se pudo guardar: ' + extraerMensajeError(e), 'bad'); }
 }
 async function salaFrAgregar(dia){
   const fr = SALA.franjas.filter(f => f.dia_semana === dia), ult = fr[fr.length - 1];
