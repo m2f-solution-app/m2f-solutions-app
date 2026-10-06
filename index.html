@@ -1227,13 +1227,6 @@
   button.cl-as.no{ background:rgba(255,93,93,.2); color:var(--danger-text); border-color:rgba(255,93,93,.6); }
   button.cl-sm{ flex:none; padding:6px 11px; font-size:12.5px; border-radius:10px; }
   .cl-res{ display:flex; gap:6px; flex-wrap:wrap; }
-  /* (v104) varias clases a la misma hora: bloque compacto */
-  .cl-tb.cx{ padding:3px 5px; }
-  .cl-tb.cx .t, .cl-tb.cx .n, .cl-tb.cx .p{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .cl-tb.cx .n{ overflow-wrap:normal; }
-  .cl-tb.cx .cpl{ flex-wrap:nowrap; overflow:hidden; }
-  .cl-tb.cx .cl-cp{ padding:1px 5px; }
-  .cl-movil .cl-tb.cx{ padding:4px 7px; } .cl-movil .cl-tb.cx .cl-cp{ font-size:11px; padding:1px 7px; }
   .cl-row21{ grid-template-columns:minmax(0,1fr) 110px; }
   .cl-row21 > .field{ min-width:0; } .cl-row21 > .field input, .cl-row21 > .field select{ width:100%; min-width:0; box-sizing:border-box; }
   .cl-cfg{ display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:10px 14px; }
@@ -4506,7 +4499,7 @@ function atlIniciarAlu(){
   atlCargarVista('aluAtletismoContenido', id || '');
 }
 
-const APP_VERSION = 104;
+const APP_VERSION = 103;
 // (v96) Fecha de la última actualización: se cambia junto con APP_VERSION en cada entrega. Se muestra en la
 // pantalla de inicio y en el menú de cuenta ("v94 · actualizada el 5/10/2026").
 const APP_FECHA = '2026-10-06';
@@ -12700,23 +12693,18 @@ function clBloque(o, s, d){
   // (v103) clases con cupo: muestran la ocupación y se pueden tocar (alumno: anotarse · staff: ver la lista)
   const res = CL.res === true && !!c.cupo, iso = res ? clFechaDe(c, d) : '', est = res ? clEstadoTxt(c, iso) : null;
   const falta = CL.res === true && !c.cupo && !ro;   // clase cargada antes de v103: al admin se le pide el cupo
-  // (v104) varias clases a la misma hora: cada una queda angosta, así que se muestra en formato compacto
-  const cx = CL.res === true && (esMovilB3() ? o.n >= 3 : o.n >= 2);
   const tip = `${c.ini}–${c.fin} · ${c.nombre}${c.prof ? ' · ' + c.prof : ' · Profesor a confirmar'}${c.nota ? ' · ' + c.nota : ''}${res ? ' · ' + est.t : ''}${falta ? ' · Falta cargar el cupo' : ''}`;
-  const chip = res ? `<span class="cl-cp ${est.k}">${cx ? clEstadoCorto(c, iso) : est.t}</span>` : (falta ? `<span class="cl-cp full">${cx ? '⚠ Cupo' : '⚠ Sin cupo'}</span>` : '');
+  const chip = res ? `<span class="cl-cp ${est.k}">${est.t}</span>` : (falta ? '<span class="cl-cp full">⚠ Sin cupo</span>' : '');
   let body;
   if (h < 34) body = `<div class="n"><span class="t">${c.ini}</span> ${ejEsc(c.nombre)} ${chip}</div>`;
-  else if (cx){
-    body = `<div class="t">${c.ini}</div><div class="n">${ejEsc(c.nombre)}</div>${chip ? `<div class="cpl">${chip}</div>` : ''}`;
-    if (h >= 84) body += `<div class="p ${c.prof ? '' : 'tbc'}">👤 ${ejEsc(c.prof || 'A confirmar')}</div>`;
-  } else {
+  else {
     body = `<div class="t">${c.ini} – ${c.fin}</div><div class="n">${ejEsc(c.nombre)}</div>`;
     if (chip) body += `<div class="cpl">${chip}${res && iso !== clIso(clFechaBase(d)) ? `<span class="cl-prox">${clFechaTxt(iso)}</span>` : ''}</div>`;
     if (h >= (chip ? 70 : 50)) body += `<div class="p ${c.prof ? '' : 'tbc'}">👤 ${ejEsc(c.prof || 'A confirmar')}</div>`;
     if (h >= (chip ? 104 : 84) && c.nota) body += `<div class="p">📝 ${ejEsc(c.nota)}</div>`;
   }
   const click = res ? `onclick="event.stopPropagation();${CL.rolAlumno ? 'clAluAbrir' : 'clListaAbrir'}('${c.id}','${iso}')"` : (ro ? '' : `onclick="clEditar('${c.id}')"`);
-  return `<div class="cl-tb ${!res && ro ? 'ro' : ''} ${res ? 'res ' + est.k : ''} ${cx ? 'cx' : ''}" title="${ejEsc(tip)}" style="--c:${clColor(c)};top:${top}px;height:${h}px;left:calc(${o.l * w}% + 2px);width:calc(${w}% - 4px)" ${click}>${body}</div>`;
+  return `<div class="cl-tb ${!res && ro ? 'ro' : ''} ${res ? 'res ' + est.k : ''}" title="${ejEsc(tip)}" style="--c:${clColor(c)};top:${top}px;height:${h}px;left:calc(${o.l * w}% + 2px);width:calc(${w}% - 4px)" ${click}>${body}</div>`;
 }
 function clAhora(s, e, d){
   if (d !== clHoy()) return '';
@@ -12956,15 +12944,6 @@ function clEstadoTxt(c, iso){
   if (CL.rolAlumno && o.mi === 'espera') return { t: '⏳ En espera' + (o.pos ? ' · ' + o.pos + '°' : ''), k: 'esp' };
   if (o.a >= c.cupo) return { t: 'Completa' + (!CL.rolAlumno && o.e ? ' · ⏳ ' + o.e : ''), k: 'full' };
   return { t: '👥 ' + o.a + '/' + c.cupo, k: '' };
-}
-
-// (v104) estado en pocas letras, para cuando varias clases comparten la misma hora y cada bloque queda angosto
-function clEstadoCorto(c, iso){
-  const o = clOc(c.id, iso), movil = esMovilB3();
-  if (CL.rolAlumno && o.mi === 'anotado') return movil ? '✓ Anotado' : '✓';
-  if (CL.rolAlumno && o.mi === 'espera') return '⏳' + (o.pos ? ' ' + o.pos + '°' : '');
-  if (o.a >= c.cupo) return 'Lleno';
-  return (movil ? '👥 ' : '') + o.a + '/' + c.cupo;
 }
 
 // ----- Alumno -----
