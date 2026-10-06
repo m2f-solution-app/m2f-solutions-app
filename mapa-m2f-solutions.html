@@ -75,7 +75,7 @@ footer{text-align:center;color:var(--dim);font-size:12px;margin-top:28px}
   <h2 id="h"></h2>
   <p class="intro" id="intro"></p>
   <div class="list" id="list"></div>
-  <footer>Actualizado a la versión 109 · 6/10/2026</footer>
+  <footer>Actualizado a la versión 110 · 6/10/2026</footer>
 </div>
 <script>
 const DATA = {
@@ -623,8 +623,14 @@ recepcion: {
           aplica:'Se pueden usar aunque la cuota esté vencida, para corregir errores.' },
         { icon:'🕒', title:'Llegadas de hoy',
           donde:'Parte de abajo de la pantalla', quien:'Recepción y Administrador',
-          sirve:'Lista en vivo de quién ya marcó llegada hoy (turnos y clases), con el contador de personas.',
+          sirve:'Lista en vivo de quién ya marcó llegada hoy (turnos y clases), con el contador de personas. Las que marcó el propio alumno con el QR llevan la marca "📱 por QR".',
           aplica:'Sirve para controlar la sala y cruzar con la Agenda del profesor.' },
+        { icon:'🔳', title:'QR de asistencia',
+          donde:'🛎️ Recepción → botón "🔳 QR de asistencia"', quien:'Lo activa el Administrador · lo ven e imprimen Recepción y Administrador',
+          sirve:'Un cartel con un código QR para pegar en la entrada. Cada alumno lo escanea con su celular y queda tomada su asistencia, sin pasar por el mostrador.',
+          pasos:['El administrador toca "Activar asistencia por QR".','"🖨️ Imprimir cartel": sale una hoja A4 con el nombre del gimnasio, el QR, el código de 6 caracteres y los pasos.','Pegalo en la entrada. El QR es fijo: sirve todos los días.','Si alguien le sacó una foto y lo usa desde afuera: "Generar uno nuevo" (el cartel anterior deja de funcionar) e imprimirlo otra vez.','"Dejar de usarlo" lo apaga; si después se vuelve a activar, sirve el mismo cartel.'],
+          aplica:'Marca lo mismo que el DNI + Enter: el turno o la clase que el alumno tiene en curso o que empieza dentro de la próxima hora (y la que venga pegada). Con la cuota vencida no marca. Si no tiene reserva, la app le ofrece sacar un turno. No verifica que el alumno esté físicamente en el gimnasio. Mientras no se active, los alumnos no ven nada nuevo.',
+          tip:'El DNI en Recepción sigue funcionando igual: las dos formas conviven.' },
       ]
     },
     reglas: {
@@ -665,6 +671,11 @@ alumno: {
           donde:'🏠 Inicio (es lo primero que ves)', quien:'Alumno',
           sirve:'Tu hoy en una pantalla: el turno de hoy o el próximo, la rutina que te toca y un botón para entrenar. Desde acá también ves tu estado de cuota.',
           aplica:'Si hoy tenés turno pero no respondiste el Wellness, aparece la tarjeta para hacerlo. Si no tenés turno, te ofrece la rutina rotativa o de fecha fija que corresponda.' },
+        { icon:'📷', title:'Marcar asistencia con el QR',
+          donde:'🏠 Inicio → botón "📷 Marcar asistencia" (solo si tu gimnasio usa el QR)', quien:'Alumno',
+          sirve:'Al llegar al gimnasio escaneás el cartel de la entrada y tu asistencia queda registrada.',
+          pasos:['Tocá "📷 Marcar asistencia" y apuntá la cámara al código.','O escaneá el cartel con la cámara del celular y tocá el link (si no tenés la sesión abierta en ese navegador, te pide ingresar una vez).','Si la cámara no lo lee, escribí el código de 6 caracteres que está debajo del QR.'],
+          aplica:'Se marca el turno o la clase que tenés a esa hora (desde una hora antes). Si no tenés reserva te ofrece sacar un turno, y al volver a tocar el botón no hace falta escanear de nuevo. Con la cuota vencida no se marca: hay que pasar por recepción.' },
         { icon:'🗓️', title:'Mi plan de entrenamiento',
           donde:'🏠 Inicio → tarjeta "Mi plan de entrenamiento"', quien:'Alumno',
           sirve:'Te muestra lo que tenés en curso ("Semana 2 de 4 · hasta el 25 oct") y lo que viene: rotativas que arrancan más adelante (con su fecha y duración, mes por mes) y rutinas de fecha fija ya cargadas.',

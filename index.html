@@ -1227,6 +1227,68 @@
   button.cl-as.no{ background:rgba(255,93,93,.2); color:var(--danger-text); border-color:rgba(255,93,93,.6); }
   button.cl-sm{ flex:none; padding:6px 11px; font-size:12.5px; border-radius:10px; }
   .cl-res{ display:flex; gap:6px; flex-wrap:wrap; }
+  /* (v110) Asistencia por QR: botón y modal en Recepción, botón / lector / resultado del alumno, cartel para imprimir */
+  .rc-tit{display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;}
+  .rc-tit button{font-size:14px; font-weight:700; padding:8px 14px;}
+  .rc-qr-tag{margin:0 0 0 6px; padding:2px 9px; font-size:11.5px; white-space:nowrap;}
+  .qr-caja{background:#fff; border-radius:18px; padding:12px; width:230px; max-width:100%; margin:14px auto 0; box-sizing:border-box;}
+  .qr-caja svg{display:block; width:100%; height:auto;}
+  .qr-cod{text-align:center; margin-top:10px; font-size:13.5px; color:var(--muted);}
+  .qr-cod b{font-size:20px; letter-spacing:.2em; color:var(--text); font-family:ui-monospace,Menlo,Consolas,monospace; margin-left:4px;}
+  .qr-acc{display:flex; flex-direction:column; gap:8px; margin-top:16px;}
+  .qr-nota{font-size:12px; color:var(--muted); margin-top:10px; line-height:1.4;}
+  .qr-btn-alu{width:100%; font-size:17px; padding:15px; margin:0 0 14px; border-radius:16px; display:flex; align-items:center; justify-content:center; gap:10px;}
+  .qr-btn-alu .qr-btn-ico{font-size:21px; line-height:1;}
+  .qr-hoja-ov{position:fixed; inset:0; z-index:1100; background:rgba(0,0,0,.55); display:flex; align-items:flex-end; justify-content:center;}
+  .qr-hoja{width:100%; max-width:480px; box-sizing:border-box; background:var(--panel); color:var(--text); border-radius:26px 26px 0 0; padding:26px 22px calc(24px + env(safe-area-inset-bottom)); text-align:center; border-top:1px solid var(--border);}
+  @media (min-width:700px){ .qr-hoja-ov{align-items:center;} .qr-hoja{border-radius:26px; border:1px solid var(--border); padding-bottom:26px;} }
+  .qr-ico{width:88px; height:88px; border-radius:50%; margin:0 auto 14px; display:flex; align-items:center; justify-content:center; font-size:44px; line-height:1; background:var(--panel2); border:2px solid var(--border);}
+  .qr-ico.ok{background:rgba(47,210,122,.16); border-color:var(--accent2);}
+  .qr-ico.warn{background:rgba(255,200,74,.18); border-color:var(--warn);}
+  .qr-ico.bad{background:rgba(255,93,93,.14); border-color:var(--danger);}
+  .qr-h-t{font-size:23px; font-weight:900; line-height:1.15;}
+  .qr-h-g{font-size:18px; font-weight:800; margin-top:10px;}
+  .qr-h-s{font-size:14.5px; color:var(--muted); margin-top:8px; line-height:1.45;}
+  .qr-h-b{display:flex; flex-direction:column; gap:8px; margin-top:20px;}
+  .qr-h-b button{font-size:16px; padding:13px;}
+  .qr-scan{position:fixed; inset:0; z-index:1090; background:#0b0c0f; color:#fff; display:flex; flex-direction:column;}
+  .qr-scan-top{display:flex; justify-content:space-between; align-items:center; padding:calc(12px + env(safe-area-inset-top)) 8px 8px 18px; font-weight:800; font-size:18px;}
+  button.qr-scan-x{background:transparent; border:0; color:#fff; font-size:24px; line-height:1; padding:8px 12px; box-shadow:none;}
+  .qr-scan-cam{position:relative; flex:1; min-height:0; overflow:hidden; background:#16181d;}
+  .qr-scan-cam video{position:absolute; inset:0; width:100%; height:100%; object-fit:cover;}
+  .qr-scan-marco{position:absolute; left:50%; top:46%; width:min(64vw, 260px); aspect-ratio:1; transform:translate(-50%,-50%); border-radius:26px; box-shadow:0 0 0 2000px rgba(0,0,0,.45); border:3px solid var(--accent);}
+  .qr-scan-st{position:absolute; left:16px; right:16px; bottom:18px; text-align:center; font-size:15.5px; font-weight:700; line-height:1.35; text-shadow:0 1px 4px rgba(0,0,0,.8);}
+  .qr-scan-cam.sin video, .qr-scan-cam.sin .qr-scan-marco{display:none;}
+  .qr-scan-cam.sin .qr-scan-st{top:50%; bottom:auto; transform:translateY(-50%); font-size:16px;}
+  .qr-scan-pie{padding:14px 16px calc(16px + env(safe-area-inset-bottom)); background:#15171c;}
+  .qr-scan-pie label{display:block; font-size:13px; color:#b6bbc4; margin-bottom:7px; text-transform:none; letter-spacing:0; font-weight:600;}
+  .qr-scan-pie label.mal{color:#ff8a8a; font-weight:700;}
+  .qr-scan-fila{display:flex; gap:8px;}
+  .qr-scan-fila input{flex:1; min-width:0; text-transform:uppercase; letter-spacing:.2em; font-size:18px; text-align:center; font-weight:800;}
+  .qr-scan-fila input::placeholder{letter-spacing:.08em; font-weight:600; font-size:14px;}
+  #qrPrint{display:none;}
+  @media print{
+    @page{ size:A4 portrait; margin:12mm; }
+    body.qr-imprimiendo{background:#fff !important; margin:0 !important; padding:0 !important;}
+    body.qr-imprimiendo > *:not(#qrPrint){display:none !important;}
+    body.qr-imprimiendo #qrPrint{display:block !important;}
+  }
+  .qp{font-family:-apple-system,'Segoe UI',Roboto,Arial,sans-serif; color:#15171c; background:#fff; text-align:center; width:100%; box-sizing:border-box; padding:4mm 4mm 0; -webkit-print-color-adjust:exact; print-color-adjust:exact; break-inside:avoid;}
+  .qp-gym{display:flex; align-items:center; justify-content:center; gap:10px; font-weight:800; font-size:20pt; min-height:14mm;}
+  .qp-gym img{height:14mm; max-width:40mm; object-fit:contain;}
+  .qp-t{font-size:44pt; font-weight:900; line-height:1.05; margin-top:10mm; letter-spacing:-.5pt;}
+  .qp-s{font-size:16pt; color:#555b66; margin-top:4mm;}
+  .qp-qr{width:100mm; margin:8mm auto 0; padding:5mm; border:1.6mm solid #15171c; border-radius:9mm; box-sizing:border-box;}
+  .qp-qr svg{display:block; width:100%; height:auto;}
+  .qp-cod{margin-top:5mm; font-size:13pt; color:#555b66;}
+  .qp-cod b{font-size:21pt; letter-spacing:.2em; color:#15171c; font-family:ui-monospace,Menlo,Consolas,monospace; margin-left:2mm;}
+  .qp-pasos{display:flex; gap:5mm; margin-top:9mm;}
+  .qp-paso{flex:1; background:#f3f4f6; border-radius:5mm; padding:5mm 3mm;}
+  .qp-n{width:11mm; height:11mm; border-radius:50%; background:#15171c; color:#fff; font-weight:900; font-size:15pt; display:flex; align-items:center; justify-content:center; margin:0 auto 2.5mm;}
+  .qp-pt{font-weight:800; font-size:13pt;}
+  .qp-ps{font-size:10.5pt; color:#555b66; margin-top:1mm; line-height:1.3;}
+  .qp-pie{margin-top:8mm; font-size:10.5pt; color:#70757f; line-height:1.4;}
+  .qp-m{margin-top:3mm; font-size:9pt; color:#b0b5be; font-weight:700; letter-spacing:.08em;}
   /* (v109) Gastos en formato tabla (igual que Cobros) */
   .x-frow.gas{ grid-template-columns:86px minmax(0,2.4fr) minmax(0,1.3fr) 150px 130px 40px; cursor:default; }
   .x-li.gas{ cursor:default; }
@@ -2041,7 +2103,7 @@
       <!-- ---- SUBVISTA: RECEPCIÓN (v85) — check-in y turnos por el alumno (administrador y usuario de recepción) ---- -->
       <div id="subvistaRecepcion" style="display:none;">
         <div class="vista-eyebrow">Check-in</div>
-        <div class="vista-titulo">Recepción</div>
+        <div class="vista-titulo rc-tit"><span>Recepción</span><button type="button" class="secondary" id="rcQrBtn" style="display:none;" onclick="qrAbrir()">🔳 QR de asistencia</button></div>
         <div class="rc-grid">
           <div class="card">
             <h2 style="margin-top:0">Buscar socio</h2>
@@ -3269,6 +3331,7 @@
       <div class="vista-eyebrow" id="aluSaludo"></div>
       <div class="vista-titulo">Hoy</div>
       <div class="alu-hero" id="aluInicioHero">Cargando...</div>
+      <div id="aluQrWrap"></div>
       <div id="guiaCardAlu"></div>
       <div id="wellnessCard" class="card" style="display:none; border-color:var(--accent); cursor:pointer;" onclick="abrirWellness()">
         <div class="row" style="justify-content:space-between; align-items:center; gap:10px;">
@@ -4576,7 +4639,7 @@ function atlIniciarAlu(){
   atlCargarVista('aluAtletismoContenido', id || '');
 }
 
-const APP_VERSION = 109;
+const APP_VERSION = 110;
 // (v96) Fecha de la última actualización: se cambia junto con APP_VERSION en cada entrega. Se muestra en la
 // pantalla de inicio y en el menú de cuenta ("v94 · actualizada el 5/10/2026").
 const APP_FECHA = '2026-10-06';
@@ -5990,6 +6053,7 @@ async function entrarComoAlumnoLogueado(){
     revisarWellnessPendiente(ficha.id);
     guiaRenderCards();
     setTimeout(guiaBienvenida, 800); // (v97)
+    qrDesdeLink();   // (v110) llegó por el link del cartel: marca la asistencia
   }catch(e){ msg.textContent = 'Error entrando: ' + e.message; }
 }
 
@@ -6066,6 +6130,7 @@ async function hacerLogoutAlumno(){
   await supaAuth.auth.signOut();
   SESION_ACTUAL = null;
   PERFIL_ACTUAL = null;
+  QRA.cod = null; QRA.activa = false; QRA.visto = 0; qrScanCerrar(); qrHojaCerrar();   // (v110)
   document.getElementById('alumnoSesionInfo').style.display = 'none';
   WELLNESS_CTX.alumnoId = null; wellnessCardMostrar(false);
   document.getElementById('alumnoHome').style.display = 'none';
@@ -6726,10 +6791,10 @@ async function rcCargarLlegadas(){
   const cont = rcEl('rcLog'); if (!cont) return;
   try{
     // (v106) turnos + clases, lo último arriba; el número cuenta personas
-    const [turnos, clases] = await Promise.all([sb('rpc/recepcion_llegadas_hoy', { method:'POST', body: '{}' }), rcLlegadasClases()]);
+    const [turnos, clases, porQr] = await Promise.all([sb('rpc/recepcion_llegadas_hoy', { method:'POST', body: '{}' }), rcLlegadasClases(), qrLlegadasHoy()]);   // (v110) + las que marcó el alumno con el QR
     const rows = turnos.concat(clases).sort((a, b) => String(b.marcada_en || '').localeCompare(String(a.marcada_en || '')));
     rcEl('rcCnt').textContent = new Set(rows.map(l => l.alumno_id)).size;
-    cont.innerHTML = rows.length ? rows.map(l => `<div class="rc-row"><span>${escaparHtml(l.nombre)} <span class="muted">· ${l.inscripcion_id ? escaparHtml(l.clase_nombre || 'Clase') : 'turno'} ${escaparHtml(l.hora)}</span></span><span class="muted">${l.marcada_en ? new Date(l.marcada_en).toLocaleTimeString('es-AR', { hour:'2-digit', minute:'2-digit' }) : ''} <a href="#" style="color:var(--accent-text); margin-left:6px;" onclick="${l.inscripcion_id ? `rcClaseDesdeLista('${l.inscripcion_id}')` : `rcMarcarDesdeLista('${l.turno_id}')`}; return false;">deshacer</a></span></div>`).join('')
+    cont.innerHTML = rows.length ? rows.map(l => `<div class="rc-row"><span>${escaparHtml(l.nombre)} <span class="muted">· ${l.inscripcion_id ? escaparHtml(l.clase_nombre || 'Clase') : 'turno'} ${escaparHtml(l.hora)}</span>${porQr.has(l.inscripcion_id || l.turno_id) ? ' <span class="rc-pill rc-p-ok rc-qr-tag">📱 por QR</span>' : ''}</span><span class="muted">${l.marcada_en ? new Date(l.marcada_en).toLocaleTimeString('es-AR', { hour:'2-digit', minute:'2-digit' }) : ''} <a href="#" style="color:var(--accent-text); margin-left:6px;" onclick="${l.inscripcion_id ? `rcClaseDesdeLista('${l.inscripcion_id}')` : `rcMarcarDesdeLista('${l.turno_id}')`}; return false;">deshacer</a></span></div>`).join('')
       : '<div class="muted">Todavía no se marcó nadie hoy.</div>';
   }catch(e){ cont.innerHTML = `<div class="muted">No se pudo cargar: ${escaparHtml(extraerMensajeError(e))}</div>`; }
 }
@@ -6739,6 +6804,1342 @@ async function rcMarcarDesdeLista(turnoId){
     toast('Llegada deshecha ✓');
     if (RC.ficha) await rcRefrescar(); else rcCargarLlegadas();
   }catch(e){ toast(extraerMensajeError(e), true); }
+}
+
+// ---------- (v110) ASISTENCIA POR QR ----------
+// El gimnasio imprime un cartel con un QR (Recepción → "QR de asistencia") y lo pega en la entrada. Cada alumno lo escanea
+// con su celular y se marca SU asistencia de ese momento, con la misma regla que el DNI + Enter de Recepción.
+// Necesita asistencia-qr.sql: sin ese SQL, QRX.ok / QRA.ok quedan en false y la app sigue igual que en v109.
+// Dos caminos para el alumno: (1) la cámara del celular abre el link del cartel (…/?qr=CODIGO) · (2) el botón
+// "Marcar asistencia" de su Inicio, que lee el QR con la cámara o deja escribir el código de 6 caracteres.
+/* QRCode for JavaScript - Copyright (c) 2009 Kazuhiko Arase - http://www.d-project.com/ - Licencia MIT.
+   'QR Code' es marca registrada de DENSO WAVE INCORPORATED. */
+var QRGEN = (function(){
+var M = {};
+M.QRMode = (function(){ 
+return {
+    MODE_NUMBER :       1 << 0,
+    MODE_ALPHA_NUM :    1 << 1,
+    MODE_8BIT_BYTE :    1 << 2,
+    MODE_KANJI :        1 << 3
+};
+})();
+M.QRErrorCorrectLevel = (function(){ 
+return {
+ L : 1,
+ M : 0,
+ Q : 3,
+ H : 2
+};
+})();
+M.QRMath = (function(){ 
+var QRMath = {
+ glog : function(n) {
+  if (n < 1) {
+   throw new Error("glog(" + n + ")");
+  }
+  return QRMath.LOG_TABLE[n];
+ },
+ gexp : function(n) {
+  while (n < 0) {
+   n += 255;
+  }
+  while (n >= 256) {
+   n -= 255;
+  }
+  return QRMath.EXP_TABLE[n];
+ },
+ EXP_TABLE : new Array(256),
+ LOG_TABLE : new Array(256)
+};
+for (var i = 0; i < 8; i++) {
+ QRMath.EXP_TABLE[i] = 1 << i;
+}
+for (var i = 8; i < 256; i++) {
+ QRMath.EXP_TABLE[i] = QRMath.EXP_TABLE[i - 4]
+  ^ QRMath.EXP_TABLE[i - 5]
+  ^ QRMath.EXP_TABLE[i - 6]
+  ^ QRMath.EXP_TABLE[i - 8];
+}
+for (var i = 0; i < 255; i++) {
+ QRMath.LOG_TABLE[QRMath.EXP_TABLE[i] ] = i;
+}
+return QRMath;
+})();
+M.QRPolynomial = (function(){ var QRMath=M.QRMath; 
+function QRPolynomial(num, shift) {
+ if (num.length === undefined) {
+  throw new Error(num.length + "/" + shift);
+ }
+ var offset = 0;
+ while (offset < num.length && num[offset] === 0) {
+  offset++;
+ }
+ this.num = new Array(num.length - offset + shift);
+ for (var i = 0; i < num.length - offset; i++) {
+  this.num[i] = num[i + offset];
+ }
+}
+QRPolynomial.prototype = {
+ get : function(index) {
+  return this.num[index];
+ },
+ getLength : function() {
+  return this.num.length;
+ },
+ multiply : function(e) {
+  var num = new Array(this.getLength() + e.getLength() - 1);
+  for (var i = 0; i < this.getLength(); i++) {
+   for (var j = 0; j < e.getLength(); j++) {
+    num[i + j] ^= QRMath.gexp(QRMath.glog(this.get(i) ) + QRMath.glog(e.get(j) ) );
+   }
+  }
+  return new QRPolynomial(num, 0);
+ },
+ mod : function(e) {
+  if (this.getLength() - e.getLength() < 0) {
+   return this;
+  }
+  var ratio = QRMath.glog(this.get(0) ) - QRMath.glog(e.get(0) );
+  var num = new Array(this.getLength() );
+  for (var i = 0; i < this.getLength(); i++) {
+   num[i] = this.get(i);
+  }
+  for (var x = 0; x < e.getLength(); x++) {
+   num[x] ^= QRMath.gexp(QRMath.glog(e.get(x) ) + ratio);
+  }
+  // recursive call
+  return new QRPolynomial(num, 0).mod(e);
+ }
+};
+return QRPolynomial;
+})();
+M.QRMaskPattern = (function(){ 
+return {
+ PATTERN000 : 0,
+ PATTERN001 : 1,
+ PATTERN010 : 2,
+ PATTERN011 : 3,
+ PATTERN100 : 4,
+ PATTERN101 : 5,
+ PATTERN110 : 6,
+ PATTERN111 : 7
+};
+})();
+M.QRBitBuffer = (function(){ 
+function QRBitBuffer() {
+ this.buffer = [];
+ this.length = 0;
+}
+QRBitBuffer.prototype = {
+ get : function(index) {
+  var bufIndex = Math.floor(index / 8);
+  return ( (this.buffer[bufIndex] >>> (7 - index % 8) ) & 1) == 1;
+ },
+ put : function(num, length) {
+  for (var i = 0; i < length; i++) {
+   this.putBit( ( (num >>> (length - i - 1) ) & 1) == 1);
+  }
+ },
+ getLengthInBits : function() {
+  return this.length;
+ },
+ putBit : function(bit) {
+  var bufIndex = Math.floor(this.length / 8);
+  if (this.buffer.length <= bufIndex) {
+   this.buffer.push(0);
+  }
+  if (bit) {
+   this.buffer[bufIndex] |= (0x80 >>> (this.length % 8) );
+  }
+  this.length++;
+ }
+};
+return QRBitBuffer;
+})();
+M.QR8bitByte = (function(){ var QRMode=M.QRMode; 
+function QR8bitByte(data) {
+ this.mode = QRMode.MODE_8BIT_BYTE;
+ this.data = data;
+}
+QR8bitByte.prototype = {
+ getLength : function() {
+  return this.data.length;
+ },
+ write : function(buffer) {
+  for (var i = 0; i < this.data.length; i++) {
+   // not JIS ...
+   buffer.put(this.data.charCodeAt(i), 8);
+  }
+ }
+};
+return QR8bitByte;
+})();
+M.QRRSBlock = (function(){ var QRErrorCorrectLevel=M.QRErrorCorrectLevel; 
+function QRRSBlock(totalCount, dataCount) {
+ this.totalCount = totalCount;
+ this.dataCount  = dataCount;
+}
+QRRSBlock.RS_BLOCK_TABLE = [
+ // L
+ // M
+ // Q
+ // H
+ // 1
+ [1, 26, 19],
+ [1, 26, 16],
+ [1, 26, 13],
+ [1, 26, 9],
+ // 2
+ [1, 44, 34],
+ [1, 44, 28],
+ [1, 44, 22],
+ [1, 44, 16],
+ // 3
+ [1, 70, 55],
+ [1, 70, 44],
+ [2, 35, 17],
+ [2, 35, 13],
+ // 4  
+ [1, 100, 80],
+ [2, 50, 32],
+ [2, 50, 24],
+ [4, 25, 9],
+ // 5
+ [1, 134, 108],
+ [2, 67, 43],
+ [2, 33, 15, 2, 34, 16],
+ [2, 33, 11, 2, 34, 12],
+ // 6
+ [2, 86, 68],
+ [4, 43, 27],
+ [4, 43, 19],
+ [4, 43, 15],
+ // 7  
+ [2, 98, 78],
+ [4, 49, 31],
+ [2, 32, 14, 4, 33, 15],
+ [4, 39, 13, 1, 40, 14],
+ // 8
+ [2, 121, 97],
+ [2, 60, 38, 2, 61, 39],
+ [4, 40, 18, 2, 41, 19],
+ [4, 40, 14, 2, 41, 15],
+ // 9
+ [2, 146, 116],
+ [3, 58, 36, 2, 59, 37],
+ [4, 36, 16, 4, 37, 17],
+ [4, 36, 12, 4, 37, 13],
+ // 10  
+ [2, 86, 68, 2, 87, 69],
+ [4, 69, 43, 1, 70, 44],
+ [6, 43, 19, 2, 44, 20],
+ [6, 43, 15, 2, 44, 16],
+ // 11
+ [4, 101, 81],
+ [1, 80, 50, 4, 81, 51],
+ [4, 50, 22, 4, 51, 23],
+ [3, 36, 12, 8, 37, 13],
+ // 12
+ [2, 116, 92, 2, 117, 93],
+ [6, 58, 36, 2, 59, 37],
+ [4, 46, 20, 6, 47, 21],
+ [7, 42, 14, 4, 43, 15],
+ // 13
+ [4, 133, 107],
+ [8, 59, 37, 1, 60, 38],
+ [8, 44, 20, 4, 45, 21],
+ [12, 33, 11, 4, 34, 12],
+ // 14
+ [3, 145, 115, 1, 146, 116],
+ [4, 64, 40, 5, 65, 41],
+ [11, 36, 16, 5, 37, 17],
+ [11, 36, 12, 5, 37, 13],
+ // 15
+ [5, 109, 87, 1, 110, 88],
+ [5, 65, 41, 5, 66, 42],
+ [5, 54, 24, 7, 55, 25],
+ [11, 36, 12],
+ // 16
+ [5, 122, 98, 1, 123, 99],
+ [7, 73, 45, 3, 74, 46],
+ [15, 43, 19, 2, 44, 20],
+ [3, 45, 15, 13, 46, 16],
+ // 17
+ [1, 135, 107, 5, 136, 108],
+ [10, 74, 46, 1, 75, 47],
+ [1, 50, 22, 15, 51, 23],
+ [2, 42, 14, 17, 43, 15],
+ // 18
+ [5, 150, 120, 1, 151, 121],
+ [9, 69, 43, 4, 70, 44],
+ [17, 50, 22, 1, 51, 23],
+ [2, 42, 14, 19, 43, 15],
+ // 19
+ [3, 141, 113, 4, 142, 114],
+ [3, 70, 44, 11, 71, 45],
+ [17, 47, 21, 4, 48, 22],
+ [9, 39, 13, 16, 40, 14],
+ // 20
+ [3, 135, 107, 5, 136, 108],
+ [3, 67, 41, 13, 68, 42],
+ [15, 54, 24, 5, 55, 25],
+ [15, 43, 15, 10, 44, 16],
+ // 21
+ [4, 144, 116, 4, 145, 117],
+ [17, 68, 42],
+ [17, 50, 22, 6, 51, 23],
+ [19, 46, 16, 6, 47, 17],
+ // 22
+ [2, 139, 111, 7, 140, 112],
+ [17, 74, 46],
+ [7, 54, 24, 16, 55, 25],
+ [34, 37, 13],
+ // 23
+ [4, 151, 121, 5, 152, 122],
+ [4, 75, 47, 14, 76, 48],
+ [11, 54, 24, 14, 55, 25],
+ [16, 45, 15, 14, 46, 16],
+ // 24
+ [6, 147, 117, 4, 148, 118],
+ [6, 73, 45, 14, 74, 46],
+ [11, 54, 24, 16, 55, 25],
+ [30, 46, 16, 2, 47, 17],
+ // 25
+ [8, 132, 106, 4, 133, 107],
+ [8, 75, 47, 13, 76, 48],
+ [7, 54, 24, 22, 55, 25],
+ [22, 45, 15, 13, 46, 16],
+ // 26
+ [10, 142, 114, 2, 143, 115],
+ [19, 74, 46, 4, 75, 47],
+ [28, 50, 22, 6, 51, 23],
+ [33, 46, 16, 4, 47, 17],
+ // 27
+ [8, 152, 122, 4, 153, 123],
+ [22, 73, 45, 3, 74, 46],
+ [8, 53, 23, 26, 54, 24],
+ [12, 45, 15, 28, 46, 16],
+ // 28
+ [3, 147, 117, 10, 148, 118],
+ [3, 73, 45, 23, 74, 46],
+ [4, 54, 24, 31, 55, 25],
+ [11, 45, 15, 31, 46, 16],
+ // 29
+ [7, 146, 116, 7, 147, 117],
+ [21, 73, 45, 7, 74, 46],
+ [1, 53, 23, 37, 54, 24],
+ [19, 45, 15, 26, 46, 16],
+ // 30
+ [5, 145, 115, 10, 146, 116],
+ [19, 75, 47, 10, 76, 48],
+ [15, 54, 24, 25, 55, 25],
+ [23, 45, 15, 25, 46, 16],
+ // 31
+ [13, 145, 115, 3, 146, 116],
+ [2, 74, 46, 29, 75, 47],
+ [42, 54, 24, 1, 55, 25],
+ [23, 45, 15, 28, 46, 16],
+ // 32
+ [17, 145, 115],
+ [10, 74, 46, 23, 75, 47],
+ [10, 54, 24, 35, 55, 25],
+ [19, 45, 15, 35, 46, 16],
+ // 33
+ [17, 145, 115, 1, 146, 116],
+ [14, 74, 46, 21, 75, 47],
+ [29, 54, 24, 19, 55, 25],
+ [11, 45, 15, 46, 46, 16],
+ // 34
+ [13, 145, 115, 6, 146, 116],
+ [14, 74, 46, 23, 75, 47],
+ [44, 54, 24, 7, 55, 25],
+ [59, 46, 16, 1, 47, 17],
+ // 35
+ [12, 151, 121, 7, 152, 122],
+ [12, 75, 47, 26, 76, 48],
+ [39, 54, 24, 14, 55, 25],
+ [22, 45, 15, 41, 46, 16],
+ // 36
+ [6, 151, 121, 14, 152, 122],
+ [6, 75, 47, 34, 76, 48],
+ [46, 54, 24, 10, 55, 25],
+ [2, 45, 15, 64, 46, 16],
+ // 37
+ [17, 152, 122, 4, 153, 123],
+ [29, 74, 46, 14, 75, 47],
+ [49, 54, 24, 10, 55, 25],
+ [24, 45, 15, 46, 46, 16],
+ // 38
+ [4, 152, 122, 18, 153, 123],
+ [13, 74, 46, 32, 75, 47],
+ [48, 54, 24, 14, 55, 25],
+ [42, 45, 15, 32, 46, 16],
+ // 39
+ [20, 147, 117, 4, 148, 118],
+ [40, 75, 47, 7, 76, 48],
+ [43, 54, 24, 22, 55, 25],
+ [10, 45, 15, 67, 46, 16],
+ // 40
+ [19, 148, 118, 6, 149, 119],
+ [18, 75, 47, 31, 76, 48],
+ [34, 54, 24, 34, 55, 25],
+ [20, 45, 15, 61, 46, 16]
+];
+QRRSBlock.getRSBlocks = function(typeNumber, errorCorrectLevel) {
+ var rsBlock = QRRSBlock.getRsBlockTable(typeNumber, errorCorrectLevel);
+ if (rsBlock === undefined) {
+  throw new Error("bad rs block @ typeNumber:" + typeNumber + "/errorCorrectLevel:" + errorCorrectLevel);
+ }
+ var length = rsBlock.length / 3;
+ var list = [];
+ for (var i = 0; i < length; i++) {
+  var count = rsBlock[i * 3 + 0];
+  var totalCount = rsBlock[i * 3 + 1];
+  var dataCount  = rsBlock[i * 3 + 2];
+  for (var j = 0; j < count; j++) {
+   list.push(new QRRSBlock(totalCount, dataCount) ); 
+  }
+ }
+ return list;
+};
+QRRSBlock.getRsBlockTable = function(typeNumber, errorCorrectLevel) {
+ switch(errorCorrectLevel) {
+ case QRErrorCorrectLevel.L :
+  return QRRSBlock.RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 0];
+ case QRErrorCorrectLevel.M :
+  return QRRSBlock.RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 1];
+ case QRErrorCorrectLevel.Q :
+  return QRRSBlock.RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 2];
+ case QRErrorCorrectLevel.H :
+  return QRRSBlock.RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 3];
+ default :
+  return undefined;
+ }
+};
+return QRRSBlock;
+})();
+M.QRUtil = (function(){ var QRMode=M.QRMode; var QRPolynomial=M.QRPolynomial; var QRMath=M.QRMath; var QRMaskPattern=M.QRMaskPattern; 
+var QRUtil = {
+    PATTERN_POSITION_TABLE : [
+        [],
+        [6, 18],
+        [6, 22],
+        [6, 26],
+        [6, 30],
+        [6, 34],
+        [6, 22, 38],
+        [6, 24, 42],
+        [6, 26, 46],
+        [6, 28, 50],
+        [6, 30, 54],        
+        [6, 32, 58],
+        [6, 34, 62],
+        [6, 26, 46, 66],
+        [6, 26, 48, 70],
+        [6, 26, 50, 74],
+        [6, 30, 54, 78],
+        [6, 30, 56, 82],
+        [6, 30, 58, 86],
+        [6, 34, 62, 90],
+        [6, 28, 50, 72, 94],
+        [6, 26, 50, 74, 98],
+        [6, 30, 54, 78, 102],
+        [6, 28, 54, 80, 106],
+        [6, 32, 58, 84, 110],
+        [6, 30, 58, 86, 114],
+        [6, 34, 62, 90, 118],
+        [6, 26, 50, 74, 98, 122],
+        [6, 30, 54, 78, 102, 126],
+        [6, 26, 52, 78, 104, 130],
+        [6, 30, 56, 82, 108, 134],
+        [6, 34, 60, 86, 112, 138],
+        [6, 30, 58, 86, 114, 142],
+        [6, 34, 62, 90, 118, 146],
+        [6, 30, 54, 78, 102, 126, 150],
+        [6, 24, 50, 76, 102, 128, 154],
+        [6, 28, 54, 80, 106, 132, 158],
+        [6, 32, 58, 84, 110, 136, 162],
+        [6, 26, 54, 82, 110, 138, 166],
+        [6, 30, 58, 86, 114, 142, 170]
+    ],
+    G15 : (1 << 10) | (1 << 8) | (1 << 5) | (1 << 4) | (1 << 2) | (1 << 1) | (1 << 0),
+    G18 : (1 << 12) | (1 << 11) | (1 << 10) | (1 << 9) | (1 << 8) | (1 << 5) | (1 << 2) | (1 << 0),
+    G15_MASK : (1 << 14) | (1 << 12) | (1 << 10)    | (1 << 4) | (1 << 1),
+    getBCHTypeInfo : function(data) {
+        var d = data << 10;
+        while (QRUtil.getBCHDigit(d) - QRUtil.getBCHDigit(QRUtil.G15) >= 0) {
+            d ^= (QRUtil.G15 << (QRUtil.getBCHDigit(d) - QRUtil.getBCHDigit(QRUtil.G15) ) );    
+        }
+        return ( (data << 10) | d) ^ QRUtil.G15_MASK;
+    },
+    getBCHTypeNumber : function(data) {
+        var d = data << 12;
+        while (QRUtil.getBCHDigit(d) - QRUtil.getBCHDigit(QRUtil.G18) >= 0) {
+            d ^= (QRUtil.G18 << (QRUtil.getBCHDigit(d) - QRUtil.getBCHDigit(QRUtil.G18) ) );    
+        }
+        return (data << 12) | d;
+    },
+    getBCHDigit : function(data) {
+        var digit = 0;
+        while (data !== 0) {
+            digit++;
+            data >>>= 1;
+        }
+        return digit;
+    },
+    getPatternPosition : function(typeNumber) {
+        return QRUtil.PATTERN_POSITION_TABLE[typeNumber - 1];
+    },
+    getMask : function(maskPattern, i, j) {
+        switch (maskPattern) {
+        case QRMaskPattern.PATTERN000 : return (i + j) % 2 === 0;
+        case QRMaskPattern.PATTERN001 : return i % 2 === 0;
+        case QRMaskPattern.PATTERN010 : return j % 3 === 0;
+        case QRMaskPattern.PATTERN011 : return (i + j) % 3 === 0;
+        case QRMaskPattern.PATTERN100 : return (Math.floor(i / 2) + Math.floor(j / 3) ) % 2 === 0;
+        case QRMaskPattern.PATTERN101 : return (i * j) % 2 + (i * j) % 3 === 0;
+        case QRMaskPattern.PATTERN110 : return ( (i * j) % 2 + (i * j) % 3) % 2 === 0;
+        case QRMaskPattern.PATTERN111 : return ( (i * j) % 3 + (i + j) % 2) % 2 === 0;
+        default :
+            throw new Error("bad maskPattern:" + maskPattern);
+        }
+    },
+    getErrorCorrectPolynomial : function(errorCorrectLength) {
+        var a = new QRPolynomial([1], 0);
+        for (var i = 0; i < errorCorrectLength; i++) {
+            a = a.multiply(new QRPolynomial([1, QRMath.gexp(i)], 0) );
+        }
+        return a;
+    },
+    getLengthInBits : function(mode, type) {
+        if (1 <= type && type < 10) {
+            // 1 - 9
+            switch(mode) {
+            case QRMode.MODE_NUMBER     : return 10;
+            case QRMode.MODE_ALPHA_NUM  : return 9;
+            case QRMode.MODE_8BIT_BYTE  : return 8;
+            case QRMode.MODE_KANJI      : return 8;
+            default :
+                throw new Error("mode:" + mode);
+            }
+        } else if (type < 27) {
+            // 10 - 26
+            switch(mode) {
+            case QRMode.MODE_NUMBER     : return 12;
+            case QRMode.MODE_ALPHA_NUM  : return 11;
+            case QRMode.MODE_8BIT_BYTE  : return 16;
+            case QRMode.MODE_KANJI      : return 10;
+            default :
+                throw new Error("mode:" + mode);
+            }
+        } else if (type < 41) {
+            // 27 - 40
+            switch(mode) {
+            case QRMode.MODE_NUMBER     : return 14;
+            case QRMode.MODE_ALPHA_NUM  : return 13;
+            case QRMode.MODE_8BIT_BYTE  : return 16;
+            case QRMode.MODE_KANJI      : return 12;
+            default :
+                throw new Error("mode:" + mode);
+            }
+        } else {
+            throw new Error("type:" + type);
+        }
+    },
+    getLostPoint : function(qrCode) {
+        var moduleCount = qrCode.getModuleCount();
+        var lostPoint = 0;
+        var row = 0; 
+        var col = 0;
+        // LEVEL1
+        for (row = 0; row < moduleCount; row++) {
+            for (col = 0; col < moduleCount; col++) {
+                var sameCount = 0;
+                var dark = qrCode.isDark(row, col);
+                for (var r = -1; r <= 1; r++) {
+                    if (row + r < 0 || moduleCount <= row + r) {
+                        continue;
+                    }
+                    for (var c = -1; c <= 1; c++) {
+                        if (col + c < 0 || moduleCount <= col + c) {
+                            continue;
+                        }
+                        if (r === 0 && c === 0) {
+                            continue;
+                        }
+                        if (dark === qrCode.isDark(row + r, col + c) ) {
+                            sameCount++;
+                        }
+                    }
+                }
+                if (sameCount > 5) {
+                    lostPoint += (3 + sameCount - 5);
+                }
+            }
+        }
+        // LEVEL2
+        for (row = 0; row < moduleCount - 1; row++) {
+            for (col = 0; col < moduleCount - 1; col++) {
+                var count = 0;
+                if (qrCode.isDark(row,     col    ) ) count++;
+                if (qrCode.isDark(row + 1, col    ) ) count++;
+                if (qrCode.isDark(row,     col + 1) ) count++;
+                if (qrCode.isDark(row + 1, col + 1) ) count++;
+                if (count === 0 || count === 4) {
+                    lostPoint += 3;
+                }
+            }
+        }
+        // LEVEL3
+        for (row = 0; row < moduleCount; row++) {
+            for (col = 0; col < moduleCount - 6; col++) {
+                if (qrCode.isDark(row, col) && 
+                        !qrCode.isDark(row, col + 1) && 
+                         qrCode.isDark(row, col + 2) && 
+                         qrCode.isDark(row, col + 3) && 
+                         qrCode.isDark(row, col + 4) && 
+                        !qrCode.isDark(row, col + 5) && 
+                         qrCode.isDark(row, col + 6) ) {
+                    lostPoint += 40;
+                }
+            }
+        }
+        for (col = 0; col < moduleCount; col++) {
+            for (row = 0; row < moduleCount - 6; row++) {
+                if (qrCode.isDark(row, col) &&
+                        !qrCode.isDark(row + 1, col) &&
+                         qrCode.isDark(row + 2, col) &&
+                         qrCode.isDark(row + 3, col) &&
+                         qrCode.isDark(row + 4, col) &&
+                        !qrCode.isDark(row + 5, col) &&
+                         qrCode.isDark(row + 6, col) ) {
+                    lostPoint += 40;
+                }
+            }
+        }
+        // LEVEL4
+        var darkCount = 0;
+        for (col = 0; col < moduleCount; col++) {
+            for (row = 0; row < moduleCount; row++) {
+                if (qrCode.isDark(row, col) ) {
+                    darkCount++;
+                }
+            }
+        }
+        var ratio = Math.abs(100 * darkCount / moduleCount / moduleCount - 50) / 5;
+        lostPoint += ratio * 10;
+        return lostPoint;       
+    }
+};
+return QRUtil;
+})();
+M.index = (function(){ var QR8bitByte=M.QR8bitByte; var QRUtil=M.QRUtil; var QRPolynomial=M.QRPolynomial; var QRRSBlock=M.QRRSBlock; var QRBitBuffer=M.QRBitBuffer; 
+function QRCode(typeNumber, errorCorrectLevel) {
+ this.typeNumber = typeNumber;
+ this.errorCorrectLevel = errorCorrectLevel;
+ this.modules = null;
+ this.moduleCount = 0;
+ this.dataCache = null;
+ this.dataList = [];
+}
+QRCode.prototype = {
+ addData : function(data) {
+  var newData = new QR8bitByte(data);
+  this.dataList.push(newData);
+  this.dataCache = null;
+ },
+ isDark : function(row, col) {
+  if (row < 0 || this.moduleCount <= row || col < 0 || this.moduleCount <= col) {
+   throw new Error(row + "," + col);
+  }
+  return this.modules[row][col];
+ },
+ getModuleCount : function() {
+  return this.moduleCount;
+ },
+ make : function() {
+  // Calculate automatically typeNumber if provided is < 1
+  if (this.typeNumber < 1 ){
+   var typeNumber = 1;
+   for (typeNumber = 1; typeNumber < 40; typeNumber++) {
+    var rsBlocks = QRRSBlock.getRSBlocks(typeNumber, this.errorCorrectLevel);
+    var buffer = new QRBitBuffer();
+    var totalDataCount = 0;
+    for (var i = 0; i < rsBlocks.length; i++) {
+     totalDataCount += rsBlocks[i].dataCount;
+    }
+    for (var x = 0; x < this.dataList.length; x++) {
+     var data = this.dataList[x];
+     buffer.put(data.mode, 4);
+     buffer.put(data.getLength(), QRUtil.getLengthInBits(data.mode, typeNumber) );
+     data.write(buffer);
+    }
+    if (buffer.getLengthInBits() <= totalDataCount * 8)
+     break;
+   }
+   this.typeNumber = typeNumber;
+  }
+  this.makeImpl(false, this.getBestMaskPattern() );
+ },
+ makeImpl : function(test, maskPattern) {
+  this.moduleCount = this.typeNumber * 4 + 17;
+  this.modules = new Array(this.moduleCount);
+  for (var row = 0; row < this.moduleCount; row++) {
+   this.modules[row] = new Array(this.moduleCount);
+   for (var col = 0; col < this.moduleCount; col++) {
+    this.modules[row][col] = null;//(col + row) % 3;
+   }
+  }
+  this.setupPositionProbePattern(0, 0);
+  this.setupPositionProbePattern(this.moduleCount - 7, 0);
+  this.setupPositionProbePattern(0, this.moduleCount - 7);
+  this.setupPositionAdjustPattern();
+  this.setupTimingPattern();
+  this.setupTypeInfo(test, maskPattern);
+  if (this.typeNumber >= 7) {
+   this.setupTypeNumber(test);
+  }
+  if (this.dataCache === null) {
+   this.dataCache = QRCode.createData(this.typeNumber, this.errorCorrectLevel, this.dataList);
+  }
+  this.mapData(this.dataCache, maskPattern);
+ },
+ setupPositionProbePattern : function(row, col)  {
+  for (var r = -1; r <= 7; r++) {
+   if (row + r <= -1 || this.moduleCount <= row + r) continue;
+   for (var c = -1; c <= 7; c++) {
+    if (col + c <= -1 || this.moduleCount <= col + c) continue;
+    if ( (0 <= r && r <= 6 && (c === 0 || c === 6) ) || 
+                     (0 <= c && c <= 6 && (r === 0 || r === 6) ) || 
+                     (2 <= r && r <= 4 && 2 <= c && c <= 4) ) {
+     this.modules[row + r][col + c] = true;
+    } else {
+     this.modules[row + r][col + c] = false;
+    }
+   }  
+  }  
+ },
+ getBestMaskPattern : function() {
+  var minLostPoint = 0;
+  var pattern = 0;
+  for (var i = 0; i < 8; i++) {
+   this.makeImpl(true, i);
+   var lostPoint = QRUtil.getLostPoint(this);
+   if (i === 0 || minLostPoint >  lostPoint) {
+    minLostPoint = lostPoint;
+    pattern = i;
+   }
+  }
+  return pattern;
+ },
+ createMovieClip : function(target_mc, instance_name, depth) {
+  var qr_mc = target_mc.createEmptyMovieClip(instance_name, depth);
+  var cs = 1;
+  this.make();
+  for (var row = 0; row < this.modules.length; row++) {
+   var y = row * cs;
+   for (var col = 0; col < this.modules[row].length; col++) {
+    var x = col * cs;
+    var dark = this.modules[row][col];
+    if (dark) {
+     qr_mc.beginFill(0, 100);
+     qr_mc.moveTo(x, y);
+     qr_mc.lineTo(x + cs, y);
+     qr_mc.lineTo(x + cs, y + cs);
+     qr_mc.lineTo(x, y + cs);
+     qr_mc.endFill();
+    }
+   }
+  }
+  return qr_mc;
+ },
+ setupTimingPattern : function() {
+  for (var r = 8; r < this.moduleCount - 8; r++) {
+   if (this.modules[r][6] !== null) {
+    continue;
+   }
+   this.modules[r][6] = (r % 2 === 0);
+  }
+  for (var c = 8; c < this.moduleCount - 8; c++) {
+   if (this.modules[6][c] !== null) {
+    continue;
+   }
+   this.modules[6][c] = (c % 2 === 0);
+  }
+ },
+ setupPositionAdjustPattern : function() {
+  var pos = QRUtil.getPatternPosition(this.typeNumber);
+  for (var i = 0; i < pos.length; i++) {
+   for (var j = 0; j < pos.length; j++) {
+    var row = pos[i];
+    var col = pos[j];
+    if (this.modules[row][col] !== null) {
+     continue;
+    }
+    for (var r = -2; r <= 2; r++) {
+     for (var c = -2; c <= 2; c++) {
+      if (Math.abs(r) === 2 || 
+                            Math.abs(c) === 2 ||
+                            (r === 0 && c === 0) ) {
+       this.modules[row + r][col + c] = true;
+      } else {
+       this.modules[row + r][col + c] = false;
+      }
+     }
+    }
+   }
+  }
+ },
+ setupTypeNumber : function(test) {
+  var bits = QRUtil.getBCHTypeNumber(this.typeNumber);
+        var mod;
+  for (var i = 0; i < 18; i++) {
+   mod = (!test && ( (bits >> i) & 1) === 1);
+   this.modules[Math.floor(i / 3)][i % 3 + this.moduleCount - 8 - 3] = mod;
+  }
+  for (var x = 0; x < 18; x++) {
+   mod = (!test && ( (bits >> x) & 1) === 1);
+   this.modules[x % 3 + this.moduleCount - 8 - 3][Math.floor(x / 3)] = mod;
+  }
+ },
+ setupTypeInfo : function(test, maskPattern) {
+  var data = (this.errorCorrectLevel << 3) | maskPattern;
+  var bits = QRUtil.getBCHTypeInfo(data);
+        var mod;
+  // vertical  
+  for (var v = 0; v < 15; v++) {
+   mod = (!test && ( (bits >> v) & 1) === 1);
+   if (v < 6) {
+    this.modules[v][8] = mod;
+   } else if (v < 8) {
+    this.modules[v + 1][8] = mod;
+   } else {
+    this.modules[this.moduleCount - 15 + v][8] = mod;
+   }
+  }
+  // horizontal
+  for (var h = 0; h < 15; h++) {
+   mod = (!test && ( (bits >> h) & 1) === 1);
+   if (h < 8) {
+    this.modules[8][this.moduleCount - h - 1] = mod;
+   } else if (h < 9) {
+    this.modules[8][15 - h - 1 + 1] = mod;
+   } else {
+    this.modules[8][15 - h - 1] = mod;
+   }
+  }
+  // fixed module
+  this.modules[this.moduleCount - 8][8] = (!test);
+ },
+ mapData : function(data, maskPattern) {
+  var inc = -1;
+  var row = this.moduleCount - 1;
+  var bitIndex = 7;
+  var byteIndex = 0;
+  for (var col = this.moduleCount - 1; col > 0; col -= 2) {
+   if (col === 6) col--;
+   while (true) {
+    for (var c = 0; c < 2; c++) {
+     if (this.modules[row][col - c] === null) {
+      var dark = false;
+      if (byteIndex < data.length) {
+       dark = ( ( (data[byteIndex] >>> bitIndex) & 1) === 1);
+      }
+      var mask = QRUtil.getMask(maskPattern, row, col - c);
+      if (mask) {
+       dark = !dark;
+      }
+      this.modules[row][col - c] = dark;
+      bitIndex--;
+      if (bitIndex === -1) {
+       byteIndex++;
+       bitIndex = 7;
+      }
+     }
+    }
+    row += inc;
+    if (row < 0 || this.moduleCount <= row) {
+     row -= inc;
+     inc = -inc;
+     break;
+    }
+   }
+  }
+ }
+};
+QRCode.PAD0 = 0xEC;
+QRCode.PAD1 = 0x11;
+QRCode.createData = function(typeNumber, errorCorrectLevel, dataList) {
+ var rsBlocks = QRRSBlock.getRSBlocks(typeNumber, errorCorrectLevel);
+ var buffer = new QRBitBuffer();
+ for (var i = 0; i < dataList.length; i++) {
+  var data = dataList[i];
+  buffer.put(data.mode, 4);
+  buffer.put(data.getLength(), QRUtil.getLengthInBits(data.mode, typeNumber) );
+  data.write(buffer);
+ }
+ // calc num max data.
+ var totalDataCount = 0;
+ for (var x = 0; x < rsBlocks.length; x++) {
+  totalDataCount += rsBlocks[x].dataCount;
+ }
+ if (buffer.getLengthInBits() > totalDataCount * 8) {
+  throw new Error("code length overflow. (" + 
+            buffer.getLengthInBits() + 
+            ">" +  
+            totalDataCount * 8 + 
+            ")");
+ }
+ // end code
+ if (buffer.getLengthInBits() + 4 <= totalDataCount * 8) {
+  buffer.put(0, 4);
+ }
+ // padding
+ while (buffer.getLengthInBits() % 8 !== 0) {
+  buffer.putBit(false);
+ }
+ // padding
+ while (true) {
+  if (buffer.getLengthInBits() >= totalDataCount * 8) {
+   break;
+  }
+  buffer.put(QRCode.PAD0, 8);
+  if (buffer.getLengthInBits() >= totalDataCount * 8) {
+   break;
+  }
+  buffer.put(QRCode.PAD1, 8);
+ }
+ return QRCode.createBytes(buffer, rsBlocks);
+};
+QRCode.createBytes = function(buffer, rsBlocks) {
+ var offset = 0;
+ var maxDcCount = 0;
+ var maxEcCount = 0;
+ var dcdata = new Array(rsBlocks.length);
+ var ecdata = new Array(rsBlocks.length);
+ for (var r = 0; r < rsBlocks.length; r++) {
+  var dcCount = rsBlocks[r].dataCount;
+  var ecCount = rsBlocks[r].totalCount - dcCount;
+  maxDcCount = Math.max(maxDcCount, dcCount);
+  maxEcCount = Math.max(maxEcCount, ecCount);
+  dcdata[r] = new Array(dcCount);
+  for (var i = 0; i < dcdata[r].length; i++) {
+   dcdata[r][i] = 0xff & buffer.buffer[i + offset];
+  }
+  offset += dcCount;
+  var rsPoly = QRUtil.getErrorCorrectPolynomial(ecCount);
+  var rawPoly = new QRPolynomial(dcdata[r], rsPoly.getLength() - 1);
+  var modPoly = rawPoly.mod(rsPoly);
+  ecdata[r] = new Array(rsPoly.getLength() - 1);
+  for (var x = 0; x < ecdata[r].length; x++) {
+            var modIndex = x + modPoly.getLength() - ecdata[r].length;
+   ecdata[r][x] = (modIndex >= 0)? modPoly.get(modIndex) : 0;
+  }
+ }
+ var totalCodeCount = 0;
+ for (var y = 0; y < rsBlocks.length; y++) {
+  totalCodeCount += rsBlocks[y].totalCount;
+ }
+ var data = new Array(totalCodeCount);
+ var index = 0;
+ for (var z = 0; z < maxDcCount; z++) {
+  for (var s = 0; s < rsBlocks.length; s++) {
+   if (z < dcdata[s].length) {
+    data[index++] = dcdata[s][z];
+   }
+  }
+ }
+ for (var xx = 0; xx < maxEcCount; xx++) {
+  for (var t = 0; t < rsBlocks.length; t++) {
+   if (xx < ecdata[t].length) {
+    data[index++] = ecdata[t][xx];
+   }
+  }
+ }
+ return data;
+};
+return QRCode;
+})();
+function matriz(texto, nivel){
+ var q = new M.index(-1, M.QRErrorCorrectLevel[nivel || 'M']);
+ q.addData(String(texto)); q.make();
+ var n = q.getModuleCount(), m = [];
+ for (var r = 0; r < n; r++){ var f = []; for (var c = 0; c < n; c++) f.push(q.isDark(r, c) ? 1 : 0); m.push(f); }
+ return m;
+}
+function svg(texto, opciones){
+ opciones = opciones || {};
+ var m = matriz(texto, opciones.nivel), n = m.length, q = opciones.margen == null ? 4 : opciones.margen, t = n + q * 2, d = '';
+ for (var r = 0; r < n; r++){
+  var c = 0;
+  while (c < n){
+   if (!m[r][c]){ c++; continue; }
+   var c0 = c; while (c < n && m[r][c]) c++;
+   d += 'M' + (c0 + q) + ' ' + (r + q) + 'h' + (c - c0) + 'v1h-' + (c - c0) + 'z';
+  }
+ }
+ return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ' + t + ' ' + t + '" shape-rendering="crispEdges" role="img" aria-label="Código QR">'
+  + '<rect width="' + t + '" height="' + t + '" fill="#fff"/><path d="' + d + '" fill="#000"/></svg>';
+}
+return { matriz: matriz, svg: svg };
+})();
+const QRX = { ok:null, cfg:null, conf:null, ocupado:false };   // Recepción / administrador
+const QRA = { ok:null, activa:false, visto:0, cons:null, cod:null, codTs:0, ult:null, link:null, ocupado:false, stream:null, tmr:null };   // alumno
+const QR_LINK_MIN = 15;   // minutos que vale el link del cartel mientras la persona ingresa
+const QR_COD_MIN = 10;    // minutos que se recuerda el código escaneado (va a sacar turno y vuelve: no escanea de nuevo)
+const QR_LECTOR_URL = 'https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js';   // lector para los celulares sin lector propio (iPhone)
+
+// --- Link del cartel: se guarda y se saca de la barra de direcciones (un refresh no vuelve a marcar)
+(function qrCapturarLink(){
+  try{
+    const p = new URLSearchParams(location.search), c = (p.get('qr') || '').trim();
+    if (!p.has('qr')) return;
+    p.delete('qr');
+    history.replaceState({}, '', location.pathname + (p.toString() ? '?' + p.toString() : '') + location.hash);
+    if (!/^[A-Za-z0-9]{4,12}$/.test(c)) return;
+    QRA.link = { c: c.toUpperCase(), t: Date.now() };
+    try{ sessionStorage.setItem('m2f_qr', JSON.stringify(QRA.link)); }catch(e){}
+  }catch(e){}
+})();
+function qrLinkPendiente(){
+  let l = QRA.link;
+  if (!l){ try{ l = JSON.parse(sessionStorage.getItem('m2f_qr') || 'null'); }catch(e){ l = null; } }
+  if (!l || !l.c || !(Date.now() - l.t < QR_LINK_MIN * 60000)) return null;
+  return String(l.c);
+}
+function qrLinkLimpiar(){ QRA.link = null; try{ sessionStorage.removeItem('m2f_qr'); }catch(e){} }
+// Sin sesión: avisa en el ingreso del alumno para qué tiene que entrar
+function qrLinkAvisoIngreso(){
+  if (!qrLinkPendiente()) return;
+  const m = document.getElementById('alumnoAuthMsg');
+  if (m && !m.textContent) m.textContent = 'Ingresá con tu DNI y tu contraseña para marcar tu asistencia.';
+}
+// Sesión de alumno lista: si llegó por el link del cartel, marca
+function qrDesdeLink(){
+  if (!PERFIL_ACTUAL || PERFIL_ACTUAL.rol !== 'alumno') return;
+  const c = qrLinkPendiente(); if (!c) return;
+  qrLinkLimpiar();
+  qrMarcar(c);
+}
+// Sesión de staff: el cartel no es para ellos
+function qrLinkStaff(){
+  if (!qrLinkPendiente()) return;
+  qrLinkLimpiar();
+  toast('Ese QR es para que cada alumno marque su asistencia desde su usuario.');
+}
+
+// ====== Recepción / administrador ======
+function qrUrl(cod){ return location.origin + location.pathname.replace(/[^\/]*\.html?$/i, '') + '?qr=' + encodeURIComponent(cod); }
+function qrBtnRecepcion(){ const b = rcEl('rcQrBtn'); if (b) b.style.display = QRX.ok ? '' : 'none'; }
+// Llegadas de hoy que marcó el propio alumno con el QR (ids de turno y de inscripción a clase)
+async function qrLlegadasHoy(){
+  if (QRX.ok === false) return new Set();
+  try{
+    const r = await sb('rpc/recepcion_llegadas_qr_hoy', { method:'POST', body: '{}' });
+    QRX.ok = true; qrBtnRecepcion();
+    return new Set(Array.isArray(r) ? r : []);
+  }catch(e){
+    if (rcFaltaSql(e)){ QRX.ok = false; qrBtnRecepcion(); }
+    return new Set();
+  }
+}
+function qrCaja(){ return overlayGenerico('qrOv', 460).querySelector('.modal-box'); }
+async function qrAbrir(){
+  const ov = overlayGenerico('qrOv', 460);
+  QRX.conf = null;
+  qrCaja().innerHTML = '<h3 style="margin-top:0;">QR de asistencia</h3><div class="muted">Cargando…</div>';
+  ov.classList.add('show');
+  try{
+    QRX.cfg = await sb('rpc/qr_asistencia_admin', { method:'POST', body: JSON.stringify({ p_accion: 'ver' }) });
+    qrModal();
+  }catch(e){
+    qrCaja().innerHTML = `<h3 style="margin-top:0;">QR de asistencia</h3><div class="rc-msg bad">${escaparHtml(extraerMensajeError(e))}</div><div class="qr-acc"><button type="button" class="ghost" onclick="cerrarOverlayGenerico('qrOv')">Cerrar</button></div>`;
+  }
+}
+function qrModal(){
+  const c = QRX.cfg || {}, box = qrCaja();
+  const cerrar = `<button type="button" class="ghost" onclick="cerrarOverlayGenerico('qrOv')">Cerrar</button>`;
+  const que = 'Un cartel con un código QR para pegar en la entrada: cada alumno lo escanea con su celular y queda tomada su asistencia, sin pasar por el mostrador. Se marca lo mismo que al dar el DNI: el turno o la clase de ese momento.';
+  if (!c.activo){
+    box.innerHTML = `<h3 style="margin-top:0;">QR de asistencia</h3>
+      <div class="muted" style="font-size:13.5px; line-height:1.45;">${que}</div>
+      <div class="qr-acc">${c.es_admin
+        ? `<button type="button" id="qrBtnActivar" onclick="qrAccion('activar')">Activar asistencia por QR</button>`
+        : `<div class="rc-msg">Todavía no está activado: lo activa el administrador del gimnasio.</div>`}${cerrar}</div>
+      ${c.es_admin ? `<div class="qr-nota">Al activarlo, tus alumnos ven el botón “Marcar asistencia” en su Inicio. Lo podés dejar de usar cuando quieras.</div>` : ''}`;
+    return;
+  }
+  if (QRX.conf){
+    const reg = QRX.conf === 'regenerar';
+    box.innerHTML = `<h3 style="margin-top:0;">${reg ? '¿Generar un QR nuevo?' : '¿Dejar de usar el QR?'}</h3>
+      <div class="muted" style="font-size:13.5px; line-height:1.45;">${reg
+        ? 'El cartel que ya imprimiste <b>deja de funcionar</b>: vas a tener que imprimir y pegar el nuevo. Sirve si alguien le sacó una foto y lo usa desde afuera.'
+        : 'Tus alumnos dejan de ver el botón “Marcar asistencia” y el cartel no marca más. Si después lo volvés a activar, sirve el mismo cartel.'}</div>
+      <div class="qr-acc"><button type="button" class="${reg ? '' : 'danger'}" id="qrBtnSi" onclick="qrAccion('${QRX.conf}')">${reg ? 'Sí, generar uno nuevo' : 'Sí, dejar de usarlo'}</button><button type="button" class="ghost" onclick="QRX.conf = null; qrModal()">No, volver</button></div>`;
+    return;
+  }
+  box.innerHTML = `<h3 style="margin-top:0;">QR de asistencia</h3>
+    <div class="muted" style="font-size:13.5px; line-height:1.45;">Imprimilo y pegalo en la entrada. Cada alumno lo escanea con su celular y queda tomada su asistencia, sin pasar por el mostrador.</div>
+    <div class="qr-caja" id="qrCaja">${QRGEN.svg(qrUrl(c.codigo), { nivel:'Q' })}</div>
+    <div class="qr-cod">Código: <b id="qrCodTxt">${escaparHtml(c.codigo || '')}</b></div>
+    <div class="qr-acc"><button type="button" onclick="qrImprimir()">🖨️ Imprimir cartel</button>${c.es_admin
+      ? `<button type="button" class="ghost" onclick="QRX.conf = 'regenerar'; qrModal()">Generar uno nuevo</button><button type="button" class="ghost" onclick="QRX.conf = 'desactivar'; qrModal()">Dejar de usarlo</button>` : ''}${cerrar}</div>
+    <div class="qr-nota">El código de 6 caracteres es para el alumno al que la cámara no le lee el QR: lo escribe en “Marcar asistencia”.${c.es_admin ? ' Si generás uno nuevo, el cartel anterior deja de funcionar.' : ''}</div>`;
+}
+async function qrAccion(acc){
+  if (QRX.ocupado) return;
+  QRX.ocupado = true;
+  try{
+    QRX.cfg = await sb('rpc/qr_asistencia_admin', { method:'POST', body: JSON.stringify({ p_accion: acc }) });
+    QRX.conf = null;
+    toast(acc === 'activar' ? 'Asistencia por QR activada ✓' : acc === 'regenerar' ? 'QR nuevo generado ✓ Imprimí el cartel de nuevo.' : 'Asistencia por QR desactivada.');
+    qrModal();
+  }catch(e){ toast(extraerMensajeError(e), true); }
+  finally{ QRX.ocupado = false; }
+}
+function qrCartelHtml(cod){
+  const g = GIMNASIO_ACTUAL || {};
+  const paso = (n, t, s) => `<div class="qp-paso"><div class="qp-n">${n}</div><div class="qp-pt">${t}</div><div class="qp-ps">${s}</div></div>`;
+  return `<div class="qp">
+    <div class="qp-gym">${g.logo_url ? `<img src="${escaparHtml(g.logo_url)}" alt="">` : ''}<span>${escaparHtml(g.nombre || '')}</span></div>
+    <div class="qp-t">Marcá tu<br>asistencia</div>
+    <div class="qp-s">Escaneá el código con tu celular al llegar</div>
+    <div class="qp-qr">${QRGEN.svg(qrUrl(cod), { nivel:'Q' })}</div>
+    <div class="qp-cod">Código: <b>${escaparHtml(cod)}</b></div>
+    <div class="qp-pasos">${paso(1, 'Abrí la cámara', 'o tocá “Marcar asistencia” en la app')}${paso(2, 'Apuntá al código', 'y tocá el link que aparece')}${paso(3, '¡Listo!', 'tu asistencia queda registrada')}</div>
+    <div class="qp-pie">¿No te lo lee? En la app tocá <b>“Marcar asistencia”</b> y escribí el código · También podés dar tu DNI en recepción</div>
+    <div class="qp-m">M2F SOLUTIONS</div>
+  </div>`;
+}
+function qrImprimir(){
+  const c = QRX.cfg; if (!c || !c.activo || !c.codigo) return;
+  let p = document.getElementById('qrPrint');
+  if (!p){ p = document.createElement('div'); p.id = 'qrPrint'; document.body.appendChild(p); }
+  p.innerHTML = qrCartelHtml(c.codigo);
+  document.body.classList.add('qr-imprimiendo');
+  const fin = () => { document.body.classList.remove('qr-imprimiendo'); window.removeEventListener('afterprint', fin); };
+  window.addEventListener('afterprint', fin);
+  setTimeout(fin, 120000);   // por si el navegador no avisa que terminó de imprimir
+  setTimeout(() => { try{ window.print(); }catch(e){ fin(); toast('No se pudo abrir la impresión en este dispositivo. Probá desde una PC.', true); } }, 80);
+}
+
+// ====== Alumno ======
+function qrAluNombre(){
+  const id = document.getElementById('aluAlumno') ? document.getElementById('aluAlumno').value : '';
+  return (((ALUMNOS_CACHE || []).find(a => a.id === id) || {}).nombre || '').split(' ')[0];
+}
+// Botón "Marcar asistencia" del Inicio: solo si el gimnasio activó el QR
+async function qrAluBoton(){
+  const w = document.getElementById('aluQrWrap'); if (!w) return;
+  if (!PERFIL_ACTUAL || PERFIL_ACTUAL.rol !== 'alumno' || QRA.ok === false){ w.innerHTML = ''; return; }
+  if (Date.now() - QRA.visto > 5 * 60000){
+    if (!QRA.cons) QRA.cons = (async () => {   // una sola consulta aunque se pida dos veces a la vez
+      try{
+        QRA.activa = (await sb('rpc/qr_asistencia_activa', { method:'POST', body: '{}' })) === true;
+        QRA.ok = true; QRA.visto = Date.now();
+      }catch(e){ if (rcFaltaSql(e)) QRA.ok = false; QRA.activa = false; }
+      QRA.cons = null;
+    })();
+    await QRA.cons;
+  }
+  if (!PERFIL_ACTUAL || PERFIL_ACTUAL.rol !== 'alumno'){ w.innerHTML = ''; return; }   // cerró sesión mientras consultaba
+  w.innerHTML = QRA.activa ? '<button type="button" class="qr-btn-alu" id="qrBtnAlu" onclick="qrAluAbrir()"><span class="qr-btn-ico">📷</span> Marcar asistencia</button>' : '';
+}
+function qrAluAbrir(){
+  // escaneó hace un rato (p. ej. fue a sacar turno y volvió): no hace falta escanear de nuevo
+  if (QRA.cod && Date.now() - QRA.codTs < QR_COD_MIN * 60000){ qrMarcar(QRA.cod); return; }
+  qrScanAbrir();
+}
+// --- lector
+function qrScanAbrir(){
+  qrScanCerrar();
+  const d = document.createElement('div');
+  d.id = 'qrScan'; d.className = 'qr-scan';
+  d.innerHTML = `<div class="qr-scan-top"><span>Marcar asistencia</span><button type="button" class="qr-scan-x" onclick="qrScanCerrar()" aria-label="Cerrar">✕</button></div>
+    <div class="qr-scan-cam"><video id="qrVideo" playsinline muted autoplay></video><div class="qr-scan-marco"></div><div class="qr-scan-st" id="qrScanSt">Abriendo la cámara…</div></div>
+    <div class="qr-scan-pie"><label for="qrCodIn" id="qrCodLbl">¿No lo lee? Escribí el código que está debajo del QR</label>
+      <div class="qr-scan-fila"><input id="qrCodIn" maxlength="8" autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false" placeholder="CÓDIGO" onkeydown="if (event.key === 'Enter') qrCodManual()"><button type="button" id="qrCodBtn" onclick="qrCodManual()">Marcar</button></div></div>`;
+  document.body.appendChild(d);
+  qrScanIniciar();
+}
+function qrScanEstado(t){ const e = document.getElementById('qrScanSt'); if (e) e.textContent = t; }
+function qrScanSinCamara(t){
+  qrCamaraParar();
+  qrScanEstado(t);
+  const c = document.querySelector('#qrScan .qr-scan-cam'); if (c) c.classList.add('sin');
+}
+async function qrScanIniciar(){
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+    qrScanSinCamara('Este navegador no deja usar la cámara desde acá. Escribí el código de abajo, o escaneá el cartel con la cámara del celular.'); return;
+  }
+  let stream;
+  try{ stream = await navigator.mediaDevices.getUserMedia({ video:{ facingMode:{ ideal:'environment' } }, audio:false }); }
+  catch(e){
+    qrScanSinCamara(/NotAllowed|Permission|Security/i.test(String((e && (e.name || e.message)) || ''))
+      ? 'No diste permiso para usar la cámara. Escribí el código de abajo, o habilitá la cámara y volvé a intentar.'
+      : 'No se pudo abrir la cámara. Escribí el código de abajo, o escaneá el cartel con la cámara del celular.');
+    return;
+  }
+  const v = document.getElementById('qrVideo');
+  if (!v){ try{ stream.getTracks().forEach(t => t.stop()); }catch(e){} return; }   // cerró mientras pedía el permiso
+  QRA.stream = stream; v.srcObject = stream;
+  try{ await v.play(); }catch(e){}
+  qrScanEstado('Preparando el lector…');
+  const det = await qrDetector();
+  if (QRA.stream !== stream) return;   // cerró mientras tanto
+  if (!det){
+    qrScanSinCamara('Este celular no puede leer el código desde la app. Escribí el código de abajo, o escaneá el cartel con la cámara del celular.'); return;
+  }
+  qrScanEstado('Apuntá al código QR del gimnasio');
+  const cv = document.createElement('canvas');
+  const paso = async () => {
+    if (QRA.stream !== stream) return;
+    let txt = null;
+    try{
+      if (v.readyState >= 2 && v.videoWidth){
+        if (det.nativo){
+          const r = await det.nativo.detect(v);
+          if (r && r.length) txt = r[0].rawValue;
+        } else {
+          const k = Math.min(1, 640 / Math.max(v.videoWidth, v.videoHeight));
+          cv.width = Math.round(v.videoWidth * k); cv.height = Math.round(v.videoHeight * k);
+          const cx = cv.getContext('2d', { willReadFrequently:true });
+          cx.drawImage(v, 0, 0, cv.width, cv.height);
+          const im = cx.getImageData(0, 0, cv.width, cv.height);
+          const r = det.js(im.data, cv.width, cv.height, { inversionAttempts:'dontInvert' });
+          if (r && r.data) txt = r.data;
+        }
+      }
+    }catch(e){}
+    if (QRA.stream !== stream) return;
+    if (txt){
+      const c = qrCodigoDe(txt);
+      if (c){ qrScanCerrar(); qrMarcar(c); return; }
+      qrScanEstado('Ese QR no es el de asistencia. Apuntá al cartel del gimnasio.');
+    }
+    QRA.tmr = setTimeout(paso, 220);
+  };
+  paso();
+}
+// Del texto leído al código: el link del cartel (…?qr=CODIGO) o el código solo
+function qrCodigoDe(txt){
+  const s = String(txt || '').trim();
+  const m = s.match(/[?&]qr=([A-Za-z0-9]{4,12})(?:[&#]|$)/);
+  if (m) return m[1].toUpperCase();
+  return /^[A-Za-z0-9]{6}$/.test(s) ? s.toUpperCase() : null;
+}
+// Lector: el del propio celular si lo trae (Android); si no, uno que se baja en el momento (iPhone)
+async function qrDetector(){
+  try{
+    if ('BarcodeDetector' in window){
+      const f = await window.BarcodeDetector.getSupportedFormats();
+      if (f && f.indexOf('qr_code') >= 0) return { nativo: new window.BarcodeDetector({ formats:['qr_code'] }) };
+    }
+  }catch(e){}
+  try{ await qrCargarLector(); }catch(e){}
+  const fn = window.jsQR && (typeof window.jsQR === 'function' ? window.jsQR : window.jsQR.default);
+  return typeof fn === 'function' ? { js: fn } : null;
+}
+function qrCargarLector(){
+  return new Promise((ok, mal) => {
+    if (window.jsQR) return ok();
+    const s = document.createElement('script');
+    s.src = QR_LECTOR_URL; s.async = true;
+    s.onload = () => ok(); s.onerror = () => mal(new Error('lector'));
+    document.head.appendChild(s);
+    setTimeout(() => mal(new Error('lector')), 8000);
+  });
+}
+function qrCamaraParar(){
+  clearTimeout(QRA.tmr); QRA.tmr = null;
+  const s = QRA.stream; QRA.stream = null;
+  if (s){ try{ s.getTracks().forEach(t => t.stop()); }catch(e){} }
+}
+function qrScanCerrar(){ qrCamaraParar(); const d = document.getElementById('qrScan'); if (d) d.remove(); }
+function qrCodManual(){
+  const i = document.getElementById('qrCodIn'), l = document.getElementById('qrCodLbl');
+  const c = ((i && i.value) || '').replace(/[\s-]/g, '').toUpperCase();
+  if (!/^[A-Z0-9]{6}$/.test(c)){
+    if (l){ l.textContent = 'El código tiene 6 letras y números: está debajo del QR.'; l.classList.add('mal'); }
+    if (i) i.focus();
+    return;
+  }
+  qrScanCerrar(); qrMarcar(c);
+}
+document.addEventListener('visibilitychange', () => { if (document.hidden && QRA.stream) qrScanCerrar(); });
+
+// --- marcar y mostrar el resultado
+function qrHoja(o){
+  let d = document.getElementById('qrHoja');
+  if (!d){
+    d = document.createElement('div'); d.id = 'qrHoja'; d.className = 'qr-hoja-ov';
+    d.onclick = ev => { if (ev.target === d && !QRA.ocupado) qrHojaCerrar(); };
+    document.body.appendChild(d);
+  }
+  d.dataset.estado = o.estado || '';
+  d.innerHTML = `<div class="qr-hoja" role="dialog" aria-live="polite"><div class="qr-ico ${o.cls || ''}">${o.ico}</div><div class="qr-h-t">${o.t}</div>${o.grande ? `<div class="qr-h-g">${o.grande}</div>` : ''}${o.sub ? `<div class="qr-h-s">${o.sub}</div>` : ''}${o.btns ? `<div class="qr-h-b">${o.btns}</div>` : ''}</div>`;
+}
+function qrHojaCerrar(){ const d = document.getElementById('qrHoja'); if (d) d.remove(); }
+function qrHojaIr(v){ qrHojaCerrar(); cambiarSubvistaAlu(v); }
+function qrReintentar(){ if (QRA.ult) qrMarcar(QRA.ult); }
+function qrOtraVez(){ qrHojaCerrar(); QRA.cod = null; qrScanAbrir(); }
+async function qrMarcar(cod){
+  if (QRA.ocupado) return;
+  QRA.ocupado = true; QRA.ult = cod;
+  const cerrar = '<button type="button" class="ghost" onclick="qrHojaCerrar()">Cerrar</button>';
+  qrHoja({ estado:'cargando', ico:'⏳', t:'Marcando tu asistencia…', sub:'Un segundo.' });
+  try{
+    const r = (await sb('rpc/asistencia_qr', { method:'POST', body: JSON.stringify({ p_codigo: cod }) })) || {};
+    QRA.ok = true;
+    if (r.estado === 'codigo_invalido') QRA.cod = null; else { QRA.cod = cod; QRA.codTs = Date.now(); }
+    qrResultado(r);
+  }catch(e){
+    if (rcFaltaSql(e)){
+      QRA.ok = false; QRA.activa = false; qrAluBoton();
+      qrHoja({ estado:'sin_sql', cls:'warn', ico:'🔳', t:'Tu gimnasio todavía no usa el QR', sub:'Avisá en recepción para que te tomen la asistencia.', btns: cerrar });
+    } else {
+      qrHoja({ estado:'error', cls:'bad', ico:'⚠️', t:'No se pudo marcar la asistencia', sub: escaparHtml(extraerMensajeError(e)), btns: '<button type="button" onclick="qrReintentar()">Probar de nuevo</button>' + cerrar });
+    }
+  }finally{ QRA.ocupado = false; }
+}
+function qrResultado(r){
+  const lista = a => (a || []).map(rcItemTxt).map(escaparHtml).join(' · ');
+  const cerrar = (t, cls) => `<button type="button" class="${cls == null ? 'ghost' : cls}" onclick="qrHojaCerrar()">${t}</button>`;
+  const nombre = qrAluNombre();
+  const turnos = typeof modVistaOk !== 'function' || modVistaOk('alu', 'turnos');
+  const e = r.estado;
+  if (e === 'marcado'){
+    const ah = new Date();
+    let cuando = ah.toLocaleDateString('es-AR', { weekday:'long', day:'numeric', month:'long' }) + ' · ' + ah.toLocaleTimeString('es-AR', { hour:'2-digit', minute:'2-digit', hour12:false }) + ' hs';
+    cuando = cuando.charAt(0).toUpperCase() + cuando.slice(1);
+    const conTurno = (r.marcados || []).some(x => x.tipo === 'turno');
+    qrHoja({ estado:e, cls:'ok', ico:'✅', t:'¡Asistencia registrada!', grande: lista(r.marcados),
+      sub: escaparHtml(cuando) + ((r.ya || []).length ? '<br>Ya estaba marcado: ' + lista(r.ya) : '') + '<br>Que entrenes bien' + (nombre ? ', ' + escaparHtml(nombre) : '') + ' 💪',
+      btns: (conTurno ? `<button type="button" onclick="qrHojaIr('rutinas')">Ver mi rutina de hoy</button>` : '') + cerrar('Listo', conTurno ? 'ghost' : '') });
+  } else if (e === 'ya_marcado'){
+    const ya = (r.ya || []).length ? r.ya : (r.pendientes || []).filter(x => x.asistio === true);
+    qrHoja({ estado:e, cls:'ok', ico:'✅', t:'Ya tenías la asistencia registrada', grande: lista(ya), sub:'No hace falta que escanees de nuevo.', btns: cerrar('Listo', '') });
+  } else if (e === 'fuera_de_horario'){
+    const prox = (r.pendientes || []).filter(x => !x.terminada && x.asistio !== true);
+    const term = (r.pendientes || []).filter(x => x.terminada && x.asistio !== true);
+    qrHoja({ estado:e, cls:'warn', ico:'⏰', t:'No tenés reserva a esta hora',
+      sub: prox.length
+        ? `Tu próxima reserva de hoy es <b>${lista(prox.slice(0, 1))}</b>. La asistencia se marca desde una hora antes.<br>Si viniste antes, avisá en recepción.`
+        : `Tu reserva de hoy (${lista(term)}) ya terminó.<br>` + (turnos ? 'Si venís ahora, sacá un turno y volvé a tocar “Marcar asistencia”: no hace falta escanear de nuevo.' : 'Avisá en recepción.'),
+      btns: (turnos ? `<button type="button" onclick="qrHojaIr('turnos')">${prox.length ? 'Ver mis turnos' : 'Sacar turno ahora'}</button>` : '') + cerrar('Cerrar') });
+  } else if (e === 'sin_reserva'){
+    qrHoja({ estado:e, cls:'warn', ico:'📅', t:'Hoy no tenés turno ni clase',
+      sub: turnos ? 'Sacá un turno para ahora y volvé a tocar “Marcar asistencia”: no hace falta escanear de nuevo.' : 'Avisá en recepción para que te tomen la asistencia.',
+      btns: (turnos ? `<button type="button" onclick="qrHojaIr('turnos')">Sacar turno ahora</button>` : '') + cerrar('Cerrar') });
+  } else if (e === 'vencido'){
+    qrHoja({ estado:e, cls:'bad', ico:'⛔', t:'Tu cuota está vencida', sub:'No se pudo marcar la asistencia.<br>Pasá por recepción para regularizarla.', btns: cerrar('Entendido') });
+  } else if (e === 'codigo_invalido'){
+    qrHoja({ estado:e, cls:'warn', ico:'❓', t:'Ese código no es el de tu gimnasio', sub:'Puede ser un cartel viejo o de otro gimnasio. Escaneá el que está en la entrada, o pedí el código en recepción.',
+      btns: '<button type="button" onclick="qrOtraVez()">Probar de nuevo</button>' + cerrar('Cerrar') });
+  } else {
+    qrHoja({ estado:'error', cls:'bad', ico:'⚠️', t:'No se pudo marcar la asistencia', sub:'Probá de nuevo en un momento.', btns: cerrar('Cerrar') });
+  }
 }
 
 // ---------- (v106) RECEPCIÓN: DNI + Enter toma la asistencia (turno y clase de ese momento) ----------
@@ -7008,6 +8409,7 @@ function guiaFaqBase(rol){
     { q:'¿Dónde veo los cumpleaños de mis alumnos?', r:['Menú ☰ → 🔔 Alertas → 🎂 Cumpleaños del mes: los de hoy primero, con botón para saludar por WhatsApp.','Los de hoy también aparecen en tu Inicio.','A las 7:00 el staff recibe un aviso y el alumno, un saludo del gimnasio.','Para que funcione, cargá la fecha de nacimiento al dar de alta al alumno o desde su ficha (✏️ Datos).'], ir:{ s:'alertas' } },
     { q:'¿Cómo registro el pago de una cuota?', r:['Menú ☰ → 💰 Finanzas → Cobros.','Buscá al alumno y tocá 💰 Cobrar.','Elegí efectivo o transferencia (y meses de pago adelantado si querés) y confirmá.','Podés bajar o mandar por WhatsApp el recibo en PDF.'], ir:{ s:'cobranzas' } },
     { q:'¿Cómo conecto Mercado Pago?', r:['Menú ☰ → 🏢 Mi gimnasio → Cobros online.','Conectá tu cuenta y aceptá los permisos.','Desde ahí, tus alumnos ven “Pagar con Mercado Pago” cuando la cuota está por vencer o vencida.'], ir:{ s:'gimnasio' } },
+    { adm:true, q:'¿Cómo tomo la asistencia con un QR?', r:['Menú ☰ → 🛎️ Recepción → 🔳 QR de asistencia → Activar (lo activa el administrador).','Imprimí el cartel y pegalo en la entrada.','Cada alumno lo escanea con su celular y queda tomada su asistencia: el turno o la clase de ese momento, igual que con el DNI.','En “Llegadas de hoy” figuran con la marca 📱 por QR. Con la cuota vencida no se marca.','Si alguien le sacó una foto y lo usa desde afuera, tocá “Generar uno nuevo” e imprimilo otra vez.'], ir:{ s:'recepcion' } },
     { adm:true, q:'¿Cómo tomo la asistencia en Recepción?', r:['Menú ☰ → 🛎️ Recepción.','Escribí el DNI completo y Enter: si tiene turno o clase a esa hora, la asistencia queda tomada sola (con “↩ Deshacer” por si fue un error).','Si vino sin reservar, desde la misma ficha le sacás un turno o lo anotás a una clase de hoy, y queda presente.','Con la cuota vencida no se toma la asistencia hasta que regularice.'], ir:{ s:'recepcion' } },
     { q:'¿Cómo doy de alta a un profesor o a Recepción?', r:['Menú ☰ → 🧑‍🏫 Profesores → Nuevo profesor (nombre y DNI).','La contraseña temporal se muestra UNA sola vez.','Para Recepción: desplegá “Usuarios de Recepción”; esa persona solo ve la pantalla de Recepción.'], ir:{ s:'profesores' } },
     { q:'¿Qué pasa cuando termina la prueba gratuita?', r:['Seguís viendo todos tus datos, pero no podés crear ni editar hasta activar la suscripción.','Los alumnos no se ven afectados.','Un banner en la app te muestra los días que te quedan.'], ir:null },
@@ -7017,6 +8419,7 @@ function guiaFaqBase(rol){
     { q:'¿Cómo reservo un turno?', r:['Tocá Turnos en la barra de abajo.','Elegí el día (los no habilitados aparecen atenuados) y el horario. Si está completo, puede haber lista de espera.','Confirmá: la app engancha tu rutina del día. Con la cuota vencida no se puede reservar.'], ir:{ a:'turnos' } },
     { q:'¿Cómo cancelo un turno?', r:['Turnos → tus reservas.','Tocá el turno vigente y cancelalo.'], ir:{ a:'turnos' } },
     { q:'¿Cómo me anoto a una clase?', r:['Menú ☰ → 📆 Clases.','Tocá la clase del día que quieras y después Anotarme.','Si está completa podés sumarte a la lista de espera: te avisamos cuando se libera un lugar.','Para cancelar, tocá la clase otra vez (o “Mis clases”) y Cancelar mi lugar.','Según tu plan podés tener una sola reserva por día (turno o clase) o combinar las dos: lo define tu gimnasio.'], ir:{ a:'clases' } },
+    { q:'¿Cómo marco mi asistencia con el QR?', r:['Si tu gimnasio tiene el cartel con el QR en la entrada: en Inicio tocá 📷 Marcar asistencia y apuntá al código.','También podés escanearlo con la cámara del celular y tocar el link que aparece.','Si no lo lee, escribí el código de 6 caracteres que está debajo del QR.','Se marca el turno o la clase que tenés a esa hora (desde una hora antes).'], ir:{ a:'inicio' } },
     { q:'¿Cómo empiezo a entrenar?', r:['En Inicio tocá Entrenar el día de tu turno (o Mis rutinas → Empezar).','Cargá peso, repeticiones y RIR de cada serie.','Tocá Finalizar al terminar. Si superaste un récord, te lo mostramos.'], ir:{ a:'rutinas' } },
     { q:'¿Cómo veo cuándo vence mi cuota y cómo pago?', r:['En Inicio aparece un banner cuando está por vencer o vencida.','Si tu gimnasio conectó Mercado Pago, ves el botón “Pagar con Mercado Pago”.','Si no, pagás en efectivo o transferencia con el gimnasio.'], ir:{ a:'inicio' } },
     { q:'¿Dónde veo mis récords y mi evolución?', r:['Logros: racha semanal, constancia y récords personales (hasta 4 gráficos a la vez).','Seguimiento: gráficos y ejercicio por ejercicio.','Evolución: tus evaluaciones físicas, que carga tu profe.'], ir:{ a:'logros' } },
@@ -8063,6 +9466,7 @@ async function cargarPlanAlu(alumnoId, tok){
 async function cargarInicioAlu(alumnoId){
   const hero = document.getElementById('aluInicioHero');
   if (!hero) return;
+  qrAluBoton();   // (v110) botón "Marcar asistencia" si el gimnasio usa el QR
   const tok = ++_INICIO_TOKEN;
   const nombre = ((ALUMNOS_CACHE.find(a => a.id === alumnoId) || {}).nombre || '').split(' ')[0];
   const hh = new Date().getHours();
@@ -8132,6 +9536,7 @@ function cambiarSubvistaAlu(v){
   if (!modVistaOk('alu', v)){ modAvisoBloqueada(); return; }   // (v99)
   guiaVisita('alu', v);
   if (v==='inicio') guiaRenderCards();
+  if (v==='inicio') qrAluBoton();   // (v110)
   document.getElementById('subvistaAluInicio').style.display = v==='inicio' ? '' : 'none';
   document.getElementById('subvistaAluTurnos').style.display = v==='turnos' ? '' : 'none';
   document.getElementById('subvistaAluRutinas').style.display = v==='rutinas' ? '' : 'none';
@@ -19282,13 +20687,15 @@ if ('serviceWorker' in navigator){
       cambiarVista('profesor');
       await entrarComoStaff();
       if (PERFIL_ACTUAL && PERFIL_ACTUAL.rol === 'admin') manejarRetornoOAuthMercadoPago();
+      qrLinkStaff();   // (v110)
     } else {
       ocultarSplash();
       await Promise.all([cargarPersonas(), cargarCatalogoEjercicios(), cargarGimnasioActual(), cargarCategoriasYEquipos()]);
       await cargarPlanesEnSelectAlumno();
       let tipoGuardado = null;
       try{ tipoGuardado = localStorage.getItem('m2f_tipo'); }catch(e){}
-      if (tipoGuardado === 'alumno') elegirTipoIngreso('alumno');
+      if (tipoGuardado === 'alumno' || (!tipoGuardado && qrLinkPendiente())) elegirTipoIngreso('alumno');   // (v110) escaneó el cartel sin sesión: va al ingreso de alumno
+      qrLinkAvisoIngreso();
       // si no, se queda mostrando el landing ("¿Qué sos?") tal como arranca por defecto.
       sincronizarTabsRol();
     }
