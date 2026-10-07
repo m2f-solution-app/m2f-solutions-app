@@ -75,7 +75,7 @@ footer{text-align:center;color:var(--dim);font-size:12px;margin-top:28px}
   <h2 id="h"></h2>
   <p class="intro" id="intro"></p>
   <div class="list" id="list"></div>
-  <footer>Actualizado a la versión 110 · 6/10/2026</footer>
+  <footer>Actualizado a la versión 112 · 7/10/2026</footer>
 </div>
 <script>
 const DATA = {
@@ -177,7 +177,7 @@ guias: {
           aplica:'Fecha fija y rotativa se asignan solas; plantilla y especial se eligen o asignan a propósito. Las rotativas y plantillas pueden ser "para cualquier alumno" (sin tipo).' },
         { icon:'🟢', title:'Semáforo de Wellness',
           sirve:'Antes de entrenar el alumno puntúa del 1 al 5 fatiga, sueño, dolor muscular, estrés y ánimo (5 = mejor). Total de 5 a 25: 🟢 20+ · 🟡 15 a 19 · 🔴 14 o menos, o algún ítem en 1.',
-          aplica:'El profesor lo ve en Agenda e Inicio con una sugerencia: verde puede sumar intensidad, amarillo mantener, rojo considerar bajar la carga. No cambia la rutina solo.' },
+          aplica:'El profesor lo ve en Agenda e Inicio con una sugerencia: verde puede sumar intensidad, amarillo mantener, rojo considerar bajar la carga. No cambia la rutina solo. El aviso al celular "¿Cómo llegás hoy a entrenar?" abre directo el cuestionario al tocarlo, incluso si la app estaba abierta en segundo plano; si ya lo completaste o hoy no tenés turno, te lo dice.' },
         { icon:'🎚️', title:'RIR y RPE',
           sirve:'RIR = repeticiones que te quedaron "en el tanque" al terminar la serie (0 = llegaste al fallo). RPE = qué tan pesado sentiste la sesión (10 = máximo). Hay una tabla de equivalencia (botón ? al lado de RIR).',
           aplica:'El RIR alimenta la progresión autoregulada (sube la carga solo si cumplís el RIR objetivo); el RPE final queda en el seguimiento del alumno.' },
@@ -380,6 +380,27 @@ admin: {
           sirve:'Definís cómo reservan los alumnos: hasta cuánto antes pueden cancelar una clase (por defecto 2 horas), cuántas reservas por día pueden tener, si la cuota vencida bloquea la reserva y si las clases cuentan para los días por semana del plan. Las reservas por día cuentan juntos el turno de sala y las clases: con un plan de días por semana es 1 por día (turno o clase, no los dos); con plan libre no hay límite y puede combinar.',
           pasos:['Elegí el límite de cancelación y las reservas por día para cada tipo de plan (plan con días por semana y plan libre).','Tildá o destildá "Con la cuota vencida no puede anotarse" y "Las clases cuentan para los días por semana del plan".','Tocá "Guardar reglas".'],
           aplica:'Las reglas valen para lo que el alumno hace desde su app: si ya tiene turno ese día y quiere una clase (o al revés), la app le avisa que su plan permite una sola reserva por día. El staff y Recepción pueden anotar, sacar turnos o quitar a mano sin estas restricciones (salvo el cupo). Plan libre = plan sin "días por semana"; los alumnos sin plan usan el tope del plan con días. Se anotan con hasta 7 días de anticipación y nunca a dos clases que se pisen de horario.' },
+        { icon:'🔗', title:'Link de reservas para Instagram',
+          donde:'☰ → Mi gimnasio → 🔗 Link de reservas (Instagram)', quien:'Administrador (o el entrenador independiente)',
+          sirve:'Un link propio (ej: .../?r=parque-fit) para pegar en la bio de Instagram, un flyer o un QR. Quien lo toca ve tus clases con los lugares que quedan y reserva sin que tengas que darlo de alta antes. Viene apagado: cada gimnasio o profe lo activa si quiere.',
+          pasos:['Poné el nombre del link (de 3 a 40 letras minúsculas, números o guiones) y tildá "Link de reservas activo".','Elegí si la primera clase es de prueba y si querés confirmar a mano cada reserva nueva. Podés escribir un texto de bienvenida.','Tocá "Guardar link". Después 📋 Copiar, 📤 Compartir o 🔳 QR (para un cartel o una historia).','"👁 Ver cómo se ve" abre la página tal como la ve el público.'],
+          aplica:'Solo se muestran las clases que tienen cupo. Si apagás el link, nadie puede entrar. Si cambiás el nombre, el link anterior deja de funcionar. Quien ya es alumno entra con su DNI y se le aplican las mismas reglas de la app (cuota vencida, días del plan, una reserva por día, clases que se pisan). Hay límite de intentos por dispositivo para evitar abusos. Requiere correr reservas-publicas.sql una vez.',
+          tip:'Cada profe independiente puede tener su propio link; el que no quiere, no lo activa.' },
+        { icon:'🆕', title:'Nuevos desde el link',
+          donde:'☰ → 🗓️ Clases → tarjeta "🆕 Nuevos desde el link" (arriba del calendario)', quien:'Administrador y Profesor',
+          sirve:'Las personas que se registraron o reservaron por el link público, con su DNI, hace cuánto llegaron y la clase que reservaron, para que las contactes.',
+          pasos:['Tocá 💬 WhatsApp: se abre la conversación con un mensaje armado.','Marcá "Marcar contactado" para saber a quién ya escribiste (queda en gris).','"Asignar plan" abre su ficha para cargarle el plan cuando se suma (solo el administrador).','Si pediste confirmar a mano, la reserva figura "🕒 por confirmar": ✓ Confirmar o ✗ Rechazar.'],
+          aplica:'Cuando alguien nuevo reserva, le llega un aviso al celular al administrador y al profesor de esa clase; al tocarlo, la app abre en Clases. Una reserva por confirmar ocupa lugar hasta que la aceptes o la rechaces. Las personas del link no tienen usuario ni contraseña: entran siempre con su DNI. Cuando se les asigna un plan siguen reservando con las reglas normales.' },
+        { icon:'📍', title:'Punto de encuentro de la clase',
+          donde:'Clases → editar clase → "Punto de encuentro" y "Link del mapa"', quien:'Administrador',
+          sirve:'Para clases al aire libre o fuera del local: indicás dónde se juntan y, si querés, el link de Google Maps. Se ve en la página del link, en la reserva del alumno y en "Mi semana".',
+          pasos:['Escribí el lugar (ej: "Plaza Italia, frente a la fuente").','En Google Maps abrí el lugar → Compartir → Copiar link y pegalo en "Link del mapa".'],
+          aplica:'Ambos campos son opcionales. El link tiene que empezar con http o https; si lo pegás sin eso, la app lo completa.' },
+        { icon:'⛔', title:'Suspender una clase por un día (clima)',
+          donde:'Clases → tocar la clase → "⛔ Suspender este día"', quien:'Administrador y Profesor',
+          sirve:'Para cuando llueve o hay un imprevisto: suspendés esa clase solo ese día, sin tocar las otras fechas.',
+          pasos:['Tocá la clase en la fecha que querés suspender (‹ › para cambiar de fecha).','Elegí un motivo rápido (Lluvia, Mal clima…) o escribí el tuyo.','Tocá "Suspender la clase": se cancelan las reservas de ese día y a quien tiene la app le llega el aviso.','Te muestra la lista de afectados con 💬 Avisar por WhatsApp para los que no tienen la app (o para insistir).','Si mejora el clima: "↩ Reanudar este día" (las reservas canceladas no se restauran).'],
+          aplica:'La clase queda con la marca "⛔ Suspendida" en el calendario y en el link público, y nadie puede reservarla ese día. Solo se puede suspender hoy o una fecha futura.' },
         { icon:'🟢', title:'Wellness del alumno (vista staff)',
           donde:'Agenda / Inicio → popup del alumno', quien:'Administrador y Profesor',
           sirve:'Ver cómo llega cada alumno: 5 ítems, total sobre 25, semáforo, la nota que dejó y una sugerencia de intensidad. Los ítems bajos (1-2) se resaltan.',
@@ -751,6 +772,11 @@ alumno: {
           sirve:'Las clases del gimnasio y los lugares que quedan en cada una. En Turnos las ves en lista, día por día, una abajo de la otra; en el menú, como calendario semanal. Te anotás desde cualquiera de las dos y ves "Mis clases" con lo que tenés reservado.',
           pasos:['Tocá la clase del día que quieras y después "Anotarme".','Si está completa, tocá "Sumarme a la lista de espera": si alguien cancela entrás por orden y te llega un aviso.','Para cancelar, tocá la clase (o "Mis clases") y "Cancelar mi lugar".'],
           aplica:'Podés anotarte con hasta 7 días de anticipación. El gimnasio define hasta cuánto antes se puede cancelar, cuántas clases por día y si hace falta tener la cuota al día. Si el gimnasio cambia el horario o cancela la clase, te llega un aviso.' },
+        { icon:'🔗', title:'Reservar desde el link (sin usuario)',
+          donde:'Link del gimnasio o profe (ej: el de su Instagram)', quien:'Público · cualquier persona, sin tener la app',
+          sirve:'Ves las clases con los lugares que quedan y reservás tu entrenamiento. Si es tu primera vez, la clase es de prueba.',
+          pasos:['Tocá el link y "🏋️ Reservar entrenamiento".','Poné tu DNI. Si ya estás registrado/a entrás directo; si no, completá nombre, apellido y WhatsApp.','Elegí el día y la clase, y confirmá. Si está completa, podés sumarte a la lista de espera.','"📅 Ver mi semana" (con tu DNI) muestra tus reservas y te deja cancelarlas hasta el límite que puso el gimnasio.'],
+          aplica:'Después de tu clase de prueba el gimnasio te escribe por WhatsApp para armar tu plan. Si el gimnasio confirma cada reserva, queda "por confirmar" hasta que te respondan. Si una clase se suspende por el clima, figura "⛔ Suspendida" y te avisan. Entrás solo con tu DNI: no hay contraseña.' },
         { icon:'🏆', title:'Aviso de récord al terminar',
           donde:'Al finalizar un entrenamiento', quien:'Alumno',
           sirve:'Si en la sesión levantaste más peso que nunca en un ejercicio de la rutina, aparece un cuadro "🏆 ¡Nuevo récord!" con el peso nuevo y el anterior.',

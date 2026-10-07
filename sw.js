@@ -54,8 +54,10 @@ self.addEventListener('notificationclick', (event) => {
       if (existente){
         // App ya abierta: la página no se entera sola de que tocaron el aviso (no hay
         // cambio de visibilidad), así que se lo decimos para que abra el Wellness/aviso.
-        try { existente.postMessage({ m2f: 'notificacion_tocada', url }); } catch (e) {}
-        return existente.focus();
+        // (v112) primero se trae la app al frente y recién ahí se avisa: si el mensaje llega con la
+        // página todavía oculta, el celular la tiene congelada y no abre el Wellness.
+        const avisar = (c) => { try { (c || existente).postMessage({ m2f: 'notificacion_tocada', url }); } catch (e) {} };
+        return existente.focus().then((c) => { avisar(c); return c; }).catch(() => { avisar(); });
       }
       return self.clients.openWindow(url);
     })

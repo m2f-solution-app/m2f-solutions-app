@@ -1289,6 +1289,95 @@
   .qp-ps{font-size:10.5pt; color:#555b66; margin-top:1mm; line-height:1.3;}
   .qp-pie{margin-top:8mm; font-size:10.5pt; color:#70757f; line-height:1.4;}
   .qp-m{margin-top:3mm; font-size:9pt; color:#b0b5be; font-weight:700; letter-spacing:.08em;}
+  /* (v111) Link público de reservas (?r=): página, config en Mi gimnasio, tarjeta "Nuevos desde el link", suspensión de clases */
+  #pubReservas{position:fixed; inset:0; z-index:600; background:var(--bg); color:var(--text); overflow-y:auto; -webkit-overflow-scrolling:touch;}
+  .pb-wrap{max-width:480px; margin:0 auto; padding:14px 16px calc(28px + env(safe-area-inset-bottom)); min-height:100%; box-sizing:border-box; display:flex; flex-direction:column;}
+  .pb-top{display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:6px;}
+  .pb-top .pb-th{width:38px; height:38px; padding:0; border-radius:50%; font-size:16px; background:var(--panel2); color:var(--text); border:1px solid var(--border);}
+  .pb-brand{display:flex; flex-direction:column; align-items:center; text-align:center; gap:10px; padding:18px 0 6px;}
+  .pb-logo{width:96px; height:96px; border-radius:50%; object-fit:cover; background:var(--panel2); border:3px solid var(--accent); box-sizing:border-box;}
+  .pb-logo-ini{width:96px; height:96px; border-radius:50%; background:var(--accent); color:#1a1000; display:flex; align-items:center; justify-content:center; font-size:38px; font-weight:900;}
+  .pb-nom{font-size:25px; font-weight:900; line-height:1.15; letter-spacing:-.01em;}
+  .pb-sub{font-size:14.5px; color:var(--muted); line-height:1.45; max-width:380px; white-space:pre-line;}
+  .pb-acc{display:flex; flex-direction:column; gap:10px; margin-top:18px;}
+  .pb-acc button, .pb-btn{width:100%; font-size:16.5px; font-weight:800; padding:15px 18px; border-radius:16px; display:flex; align-items:center; justify-content:center; gap:9px; text-decoration:none; box-sizing:border-box;}
+  a.pb-btn{background:var(--panel2); color:var(--text); border:1px solid var(--border);}
+  .pb-btn.wa{background:#25d366; color:#06210f; border:none;}
+  .pb-h{font-size:21px; font-weight:900; margin:16px 0 4px; line-height:1.2;}
+  .pb-p{font-size:14.5px; color:var(--muted); line-height:1.45; margin:0 0 12px;}
+  .pb-f{margin-top:12px;}
+  .pb-f label{display:block; font-size:13px; font-weight:700; color:var(--muted); margin-bottom:5px;}
+  .pb-f input{width:100%; box-sizing:border-box; font-size:18px; padding:14px 14px; border-radius:14px; background:var(--panel); color:var(--text); border:1px solid var(--border);}
+  .pb-f input[readonly]{opacity:.7;}
+  .pb-chk{display:flex; gap:10px; align-items:flex-start; margin-top:14px; font-size:13.5px; color:var(--muted); line-height:1.4;}
+  .pb-chk input{margin-top:3px; width:19px; height:19px; flex:none;}
+  .pb-err{margin-top:12px; padding:11px 13px; border-radius:12px; background:rgba(255,93,93,.12); border:1px solid rgba(255,93,93,.4); color:var(--danger-text); font-size:14px; line-height:1.4;}
+  .pb-info{margin-top:12px; padding:11px 13px; border-radius:12px; background:var(--note-bg); border:1px solid var(--note-bd); color:var(--note-text); font-size:13.5px; line-height:1.4;}
+  .pb-back{background:none; border:none; color:var(--muted); font-size:14px; font-weight:700; padding:6px 2px; border-radius:8px; align-self:flex-start; margin-top:6px;}
+  .pb-days{display:flex; gap:8px; overflow-x:auto; padding:4px 2px 10px; margin:6px -2px 0; scrollbar-width:none;}
+  .pb-days::-webkit-scrollbar{display:none;}
+  .pb-d{flex:0 0 auto; min-width:56px; padding:9px 6px; border-radius:16px; background:var(--panel); border:1px solid var(--border); color:var(--text); text-align:center; font-weight:800; font-size:13px; line-height:1.2;}
+  .pb-d b{display:block; font-size:19px; margin-top:2px;}
+  .pb-d small{display:block; font-size:10.5px; font-weight:700; color:var(--muted); margin-top:1px;}
+  .pb-d.on{background:var(--accent); color:#1a1000; border-color:var(--accent);} .pb-d.on small{color:#1a1000; opacity:.75;}
+  .pb-cl{display:block; width:100%; text-align:left; margin-top:10px; padding:14px 15px; border-radius:18px; background:var(--panel); color:var(--text); border:1px solid var(--border); font-weight:400; box-sizing:border-box;}
+  .pb-cl.off{opacity:.62;}
+  .pb-cl-h{display:flex; justify-content:space-between; align-items:flex-start; gap:10px;}
+  .pb-cl-t{font-size:17px; font-weight:800; line-height:1.2;}
+  .pb-cl-hr{font-size:14px; font-weight:800; color:var(--accent-text); white-space:nowrap;}
+  .pb-cl-m{font-size:13px; color:var(--muted); margin-top:5px; line-height:1.45;}
+  .pb-bar{height:6px; border-radius:99px; background:var(--panel2); margin-top:10px; overflow:hidden;} .pb-bar i{display:block; height:100%; background:var(--accent2); border-radius:99px;} .pb-bar i.full{background:var(--danger);}
+  .pb-chip{display:inline-block; font-size:12px; font-weight:800; padding:3px 10px; border-radius:99px; background:var(--panel2); color:var(--text); margin-top:8px;}
+  .pb-chip.ok{background:rgba(47,210,122,.2); color:var(--accent2-text);} .pb-chip.w{background:rgba(255,200,74,.24); color:var(--warn-text);} .pb-chip.x{background:rgba(255,93,93,.16); color:var(--danger-text);}
+  .pb-vacio{margin-top:14px; padding:22px 14px; text-align:center; color:var(--muted); background:var(--panel); border-radius:16px; border:1px dashed var(--border); font-size:14px;}
+  .pb-hoy-t{font-size:13px; font-weight:800; color:var(--muted); text-transform:uppercase; letter-spacing:.06em; margin:22px 0 2px;}
+  .pb-map{color:var(--accent-text); font-weight:800; text-decoration:underline; text-underline-offset:2px;}
+  .pb-ov{position:fixed; inset:0; z-index:610; background:rgba(0,0,0,.55); display:flex; align-items:flex-end; justify-content:center;}
+  .pb-sh{width:100%; max-width:480px; box-sizing:border-box; background:var(--panel); color:var(--text); border-radius:26px 26px 0 0; padding:24px 20px calc(22px + env(safe-area-inset-bottom)); border-top:1px solid var(--border); max-height:92vh; overflow-y:auto;}
+  @media (min-width:700px){ .pb-ov{align-items:center;} .pb-sh{border-radius:26px; border:1px solid var(--border);} }
+  .pb-sh h3{margin:0 0 4px; font-size:21px; font-weight:900;}
+  .pb-sh .pb-det{margin:12px 0; display:flex; flex-direction:column; gap:7px; font-size:15px; line-height:1.4;}
+  .pb-sh .pb-btns{display:flex; flex-direction:column; gap:8px; margin-top:16px;}
+  .pb-big{width:84px; height:84px; border-radius:50%; margin:18px auto 10px; display:flex; align-items:center; justify-content:center; font-size:42px; background:rgba(47,210,122,.16); border:2px solid var(--accent2);}
+  .pb-big.w{background:rgba(255,200,74,.18); border-color:var(--warn);}
+  .pb-center{text-align:center;}
+  .pb-res{margin-top:12px; padding:14px 15px; border-radius:18px; background:var(--panel); border:1px solid var(--border);}
+  .pb-res .pb-cl-t{margin-bottom:2px;}
+  .pb-res .pb-ccl{margin-top:10px; font-size:13.5px; padding:9px 14px; border-radius:12px;}
+  .pb-pie{margin-top:auto; padding-top:26px; text-align:center; font-size:12px; color:var(--muted); line-height:1.7;}
+  .pb-pie a, .pb-pie button{color:var(--muted); background:none; border:none; padding:0; font-size:12px; text-decoration:underline; cursor:pointer; font-weight:400; border-radius:0;}
+  .pb-cargando{padding:60px 0; text-align:center; color:var(--muted);}
+  /* Mi gimnasio → Link de reservas */
+  .rpx-link{display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin:10px 0;}
+  .rpx-link code{flex:1 1 220px; min-width:0; padding:10px 12px; background:var(--inset); border:1px solid var(--border); border-radius:12px; font-size:13px; word-break:break-all;}
+  .rpx-slug{display:flex; align-items:center; gap:6px; flex-wrap:wrap;}
+  .rpx-slug .pre{color:var(--muted); font-size:13px; word-break:break-all;}
+  .rpx-slug input{flex:1 1 140px; min-width:0;}
+  .rpx-ban{padding:11px 13px; border-radius:12px; background:var(--note-bg); border:1px solid var(--note-bd); color:var(--note-text); font-size:13.5px; line-height:1.45;}
+  .rpx-qr{background:#fff; border-radius:16px; padding:12px; width:220px; max-width:100%; margin:12px auto 0; box-sizing:border-box;} .rpx-qr svg{display:block; width:100%; height:auto;}
+  /* Clases: tarjeta "Nuevos desde el link" */
+  .rpx-nv{margin-bottom:12px;}
+  .rpx-nv summary{cursor:pointer; font-weight:900; font-size:16px; display:flex; align-items:center; gap:8px; list-style:none;}
+  .rpx-nv summary::-webkit-details-marker{display:none;}
+  .rpx-nv .rpx-n{background:var(--accent); color:#1a1000; border-radius:99px; font-size:12px; padding:2px 9px; font-weight:900;}
+  .rpx-fila{display:flex; gap:10px; align-items:flex-start; justify-content:space-between; flex-wrap:wrap; padding:11px 0; border-top:1px solid var(--border);}
+  .rpx-fila:first-of-type{margin-top:10px;}
+  .rpx-fila .mid{flex:1 1 200px; min-width:0;} .rpx-fila .mid b{font-size:15px;}
+  .rpx-fila .acc{display:flex; gap:6px; flex-wrap:wrap;}
+  .rpx-fila .acc button, .rpx-fila .acc a{font-size:12.5px; padding:7px 12px; border-radius:99px; text-decoration:none; font-weight:700;}
+  .rpx-fila a.wa{background:#25d366; color:#06210f;}
+  .rpx-tag{display:inline-block; font-size:11px; font-weight:800; padding:1px 8px; border-radius:99px; margin-left:6px; vertical-align:middle;}
+  .rpx-tag.pend{background:rgba(255,200,74,.24); color:var(--warn-text);} .rpx-tag.lnk{background:rgba(61,139,242,.2); color:#5da2ff;}
+  :root[data-tema="claro"] .rpx-tag.lnk{color:#1f5fb8;}
+  .rpx-ft{display:flex; gap:6px; flex-wrap:wrap; margin-top:6px;}
+  .rpx-ft button, .rpx-ft a{font-size:12px; padding:5px 11px; border-radius:99px; text-decoration:none; font-weight:700;}
+  .rpx-ft a.wa{background:#25d366; color:#06210f;}
+  .cl-cp.susp{background:rgba(255,93,93,.2); color:var(--danger-text);}
+  .rpx-susp-aviso{margin:10px 0; padding:11px 13px; border-radius:12px; background:rgba(255,93,93,.12); border:1px solid rgba(255,93,93,.4); font-size:13.5px; line-height:1.4;}
+  .rpx-chips{display:flex; gap:6px; flex-wrap:wrap; margin:6px 0 10px;}
+  .rpx-chips span{cursor:pointer; padding:5px 11px; border-radius:99px; background:var(--panel2); border:1px solid var(--border); font-size:12.5px; font-weight:700;}
+  body.pub-modo #avisoActualizacion{ display:none !important; }
+  .cl-li .mid.rpx-m{ overflow:visible; white-space:normal; }
   /* (v109) Gastos en formato tabla (igual que Cobros) */
   .x-frow.gas{ grid-template-columns:86px minmax(0,2.4fr) minmax(0,1.3fr) 150px 130px 40px; cursor:default; }
   .x-li.gas{ cursor:default; }
@@ -2764,6 +2853,7 @@
             <button type="button" id="clBtnNueva" onclick="clEditar(null)">+ Nueva clase</button>
           </div>
         </div>
+        <div id="rpxNuevos" style="display:none;"></div>
         <div id="clasesContenido"></div>
       </div>
 
@@ -3255,6 +3345,8 @@
           <div class="row" style="margin-top:14px;"><button type="button" id="gimClBtn" onclick="clCfgGuardar()">Guardar reglas</button></div>
           <div class="muted" style="margin-top:8px;"><b>Las reservas por día cuentan juntos el turno de sala y las clases.</b> Con “1 por día”, quien ya tiene turno ese día no puede anotarse a una clase, y quien ya está anotado a una clase no puede sacar turno; con plan libre (por defecto sin límite) puede combinar. Plan libre = plan sin “días por semana”. Los alumnos sin plan usan el tope del plan con días por semana. Se anotan hasta que empieza la clase y con hasta 7 días de anticipación. Nunca a dos clases que se pisen de horario.</div>
         </div></details>
+        <!-- (v111) Link público de reservas (Instagram) -->
+        <details class="plegable card" data-k="gim-link" id="gimLinkBox" style="display:none;"><summary>🔗 Link de reservas (Instagram)</summary><div class="plg-body" id="gimLinkBody"><div class="muted">Cargando…</div></div></details>
       </div>
 
     </div>
@@ -4120,6 +4212,7 @@ function modGuiaOk(x){   // para filtrar pasos / preguntas de la Guía según lo
 }
 function modAplicarMenu(){
   try{ clCfgPintar(); }catch(e){}   // (v103) la sección "Clases y reservas" de Mi gimnasio sigue al módulo Clases
+  try{ rpxCfgPintar(); }catch(e){}   // (v111) y el link de reservas
   const roles = new Set([...(typeof MENU_SOLO_ADMIN !== 'undefined' ? MENU_SOLO_ADMIN : []), ...(typeof BNAV_SOLO_ADMIN !== 'undefined' ? BNAV_SOLO_ADMIN : []), 'menuRecepcion', 'ttRecepcion']);
   Object.keys(MOD_IDS).forEach(k => {
     const on = modOn(k);
@@ -4639,10 +4732,10 @@ function atlIniciarAlu(){
   atlCargarVista('aluAtletismoContenido', id || '');
 }
 
-const APP_VERSION = 110;
+const APP_VERSION = 112;
 // (v96) Fecha de la última actualización: se cambia junto con APP_VERSION en cada entrega. Se muestra en la
 // pantalla de inicio y en el menú de cuenta ("v94 · actualizada el 5/10/2026").
-const APP_FECHA = '2026-10-06';
+const APP_FECHA = '2026-10-07';
 function appVersionTxt(){ const [y, m, d] = APP_FECHA.split('-'); return `v${APP_VERSION} · actualizada el ${+d}/${+m}/${y}`; }
 (function(){ const el = document.getElementById('lcVersion'); if (el) el.textContent = 'M2F Solutions · ' + appVersionTxt(); })();
 
@@ -8142,6 +8235,580 @@ function qrResultado(r){
   }
 }
 
+// ---------- (v111) LINK PÚBLICO DE RESERVAS: ?r=nombre ----------
+// SQL: reservas-publicas.sql. Cada gimnasio (o entrenador independiente) lo activa en Mi gimnasio → "Link de reservas" y lo pega
+// en su Instagram. La persona entra sin usuario: pone su DNI (si no está, nombre, apellido y WhatsApp), ve las clases con su cupo y
+// reserva. Todo pasa por funciones publico_* de la base (SECURITY DEFINER, con límite de intentos): la página no lee tablas.
+const PUB = { slug: null, g: null, cl: null, t0: 0, dni: '', nombre: '', prueba: false, pant: 'cargando', modo: 'reservar', dia: 0, sel: null, mi: null, res: null, busy: false, err: '', msg: '', f: { dni: '', nombre: '', apellido: '', tel: '', ok: false }, canc: null };
+(function pubCapturarLink(){
+  try{
+    const s = (new URLSearchParams(location.search).get('r') || '').trim().toLowerCase();
+    if (s.length >= 3 && s.length <= 40 && /^[a-z0-9]+(-[a-z0-9]+)*$/.test(s)) PUB.slug = s;
+  }catch(e){}
+})();
+const PUB_DIAS = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'], PUB_DIAS_L = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'];
+async function pubRpc(fn, body){
+  let r;
+  try{ r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${fn}`, { method: 'POST', headers: { apikey: ANON_KEY, Authorization: 'Bearer ' + ANON_KEY, 'Content-Type': 'application/json' }, body: JSON.stringify(body || {}) }); }
+  catch(e){ throw new Error('No hay conexión. Revisá tu internet y probá de nuevo.'); }
+  let j = null; try{ j = await r.json(); }catch(e){}
+  if (!r.ok){
+    const m = String((j && (j.message || j.error)) || '');
+    if (r.status === 404 || /PGRST202|Could not find the function|42883/i.test(m + ' ' + ((j && j.code) || ''))){ const e = new Error('Este link todavía no está disponible.'); e.noSql = true; throw e; }
+    if (!m || /^(permission|JWT|new row|duplicate|null value|invalid input|syntax)/i.test(m) || m.length > 220) throw new Error('No se pudo completar. Probá de nuevo en un momento.');
+    throw new Error(m);
+  }
+  return j;
+}
+function pubGuardado(){ try{ const v = JSON.parse(sessionStorage.getItem('m2f_pub_' + PUB.slug) || 'null'); return v && /^\d{6,9}$/.test(v.dni || '') ? v : null; }catch(e){ return null; } }
+function pubGuardar(){ try{ sessionStorage.setItem('m2f_pub_' + PUB.slug, JSON.stringify({ dni: PUB.dni, nombre: PUB.nombre })); }catch(e){} }
+function pubOlvidar(){ try{ sessionStorage.removeItem('m2f_pub_' + PUB.slug); }catch(e){} PUB.dni = ''; PUB.nombre = ''; PUB.mi = null; PUB.prueba = false; PUB.f.dni = ''; }
+function pubWa(tel, msg){
+  const t = String(tel || '').replace(/\D/g, ''); if (!t) return null;
+  return 'https://wa.me/' + (t.length === 10 ? '549' + t : t) + (msg ? '?text=' + encodeURIComponent(msg) : '');
+}
+function pubMapa(c){ return c && c.lugar_url && /^https?:\/\//i.test(c.lugar_url) ? c.lugar_url : null; }
+function pubLugarHtml(c){
+  if (!c || !(c.lugar || c.lugar_url)) return '';
+  const u = pubMapa(c), t = ejEsc(c.lugar || 'Ver ubicación');
+  return `📍 ${u ? `<a class="pb-map" href="${ejEsc(u)}" target="_blank" rel="noopener">${t} · ver mapa</a>` : t}`;
+}
+function pubFechaTxt(iso){ const [y, m, d] = iso.split('-').map(Number), k = (new Date(y, m - 1, d, 12).getDay() + 6) % 7; return PUB_DIAS_L[k] + ' ' + String(d).padStart(2, '0') + '/' + String(m).padStart(2, '0'); }
+function pubAhoraMin(){ if (!PUB.cl) return 0; const [h, m] = (PUB.cl.ahora || '00:00').split(':').map(Number); return h * 60 + m + Math.floor((Date.now() - PUB.t0) / 60000); }
+function pubHm(s){ const [h, m] = String(s || '0:0').split(':').map(Number); return h * 60 + m; }
+function pubDias(){
+  const [y, m, d] = PUB.cl.hoy.split('-').map(Number), out = [];
+  for (let i = 0; i < 7; i++){ const dt = new Date(y, m - 1, d + i, 12); out.push({ iso: fechaLocalISO(dt), k: (dt.getDay() + 6) % 7, num: dt.getDate(), i }); }
+  return out;
+}
+function pubOc(id, iso){ const o = ((PUB.cl && PUB.cl.ocupacion) || []).find(x => x.clase_id === id && x.fecha === iso); return { a: o ? o.anotados : 0, e: o ? o.espera : 0 }; }
+function pubSusp(id, iso){ const s = ((PUB.cl && PUB.cl.suspensiones) || []).find(x => x.clase_id === id && x.fecha === iso); return s ? (s.motivo || '') : null; }
+function pubMia(id, iso){ return ((PUB.mi && PUB.mi.reservas) || []).find(r => r.clase_id === id && r.fecha === iso) || null; }
+function pubClasesDia(dia){
+  const hoy = dia.i === 0, ahora = pubAhoraMin();
+  return ((PUB.cl && PUB.cl.clases) || []).filter(c => (c.dias || []).map(Number).includes(dia.k) && (!hoy || pubHm(c.inicio) > ahora));
+}
+function pubLimpiaMsg(){ PUB.err = ''; PUB.msg = ''; }
+function pubIr(p){ pubLimpiaMsg(); PUB.pant = p; PUB.sel = null; PUB.canc = null; pubRender(true); const r = document.getElementById('pubReservas'); if (r) r.scrollTop = 0; }
+
+// ----- arranque -----
+async function pubIniciar(){
+  document.body.classList.add('pub-modo');
+  ['landingSelector', 'appShell'].forEach(id => { const e = document.getElementById(id); if (e) e.style.display = 'none'; });
+  let root = document.getElementById('pubReservas');
+  if (!root){ root = document.createElement('div'); root.id = 'pubReservas'; document.body.appendChild(root); }
+  PUB.pant = 'cargando'; pubRender();
+  try{
+    const g = await pubRpc('publico_gimnasio', { p_slug: PUB.slug });
+    PUB.g = g;
+    if (g && g.disponible){ aplicarTemaGimnasio(g); document.title = (g.nombre || 'Reservas') + ' · Reservas'; }
+    if (!g || !g.disponible){ PUB.pant = 'cerrado'; pubRender(); return; }
+    const gd = pubGuardado(); if (gd){ PUB.dni = gd.dni; PUB.nombre = gd.nombre || ''; }
+    pubCargarClases().catch(() => {});
+    PUB.pant = 'inicio';
+  }catch(e){ PUB.err = e.message; PUB.pant = 'cerrado'; }
+  pubRender();
+}
+async function pubCargarClases(){
+  const cl = await pubRpc('publico_clases', { p_slug: PUB.slug });
+  PUB.cl = cl; PUB.t0 = Date.now();
+  if (PUB.pant === 'inicio' || PUB.pant === 'clases') pubRender();
+  return cl;
+}
+
+// ----- acciones -----
+function pubEmpezar(modo){
+  PUB.modo = modo; pubLimpiaMsg();
+  if (PUB.dni){ if (modo === 'semana') pubVerSemana(); else pubVerClases(); return; }
+  pubIr('dni');
+}
+function pubOtroDni(){ pubOlvidar(); pubIr('dni'); }
+async function pubContinuarDni(){
+  if (PUB.busy) return;
+  const d = String(PUB.f.dni || '').replace(/\D/g, '');
+  if (d.length < 6 || d.length > 9){ PUB.err = 'Revisá el DNI: tiene que tener entre 6 y 9 números.'; pubRender(true); return; }
+  PUB.busy = true; pubLimpiaMsg(); pubRender(true);
+  try{
+    const r = await pubRpc('publico_identificar', { p_slug: PUB.slug, p_dni: d });
+    PUB.busy = false;
+    if (r && r.otro_lugar){ PUB.err = 'Ese DNI ya está registrado en otro lugar. Escribinos por WhatsApp y lo resolvemos.'; pubRender(true); return; }
+    if (r && r.baja){ PUB.err = 'Tu cuenta está dada de baja. Escribile al gimnasio por WhatsApp.'; pubRender(true); return; }
+    if (r && r.existe){ PUB.dni = d; PUB.nombre = r.nombre || ''; pubGuardar(); if (PUB.modo === 'semana') pubVerSemana(); else pubVerClases(); return; }
+    PUB.dni = ''; PUB.f.dni = d;
+    pubIr('registro');
+    if (PUB.modo === 'semana'){ PUB.msg = 'No encontramos ese DNI. Si es tu primera vez, completá tus datos y reservá tu entrenamiento.'; pubRender(true); }
+  }catch(e){ PUB.busy = false; PUB.err = e.message; pubRender(true); }
+}
+async function pubRegistrar(){
+  if (PUB.busy) return;
+  const f = PUB.f, n = f.nombre.trim(), a = f.apellido.trim(), t = String(f.tel || '').replace(/\D/g, '');
+  if (n.length < 2){ PUB.err = 'Poné tu nombre.'; pubRender(true); return; }
+  if (a.length < 2){ PUB.err = 'Poné tu apellido.'; pubRender(true); return; }
+  if (t.length < 8 || t.length > 15){ PUB.err = 'Poné un WhatsApp válido, con código de área (ej: 11 5555 1234).'; pubRender(true); return; }
+  if (!f.ok){ PUB.err = 'Tenés que aceptar que el gimnasio te contacte por WhatsApp.'; pubRender(true); return; }
+  PUB.busy = true; pubLimpiaMsg(); pubRender(true);
+  try{
+    const r = await pubRpc('publico_registrar', { p_slug: PUB.slug, p_dni: f.dni, p_nombre: n, p_apellido: a, p_telefono: t });
+    PUB.busy = false; PUB.dni = String(f.dni).replace(/\D/g, ''); PUB.nombre = (r && r.nombre) || n; pubGuardar();
+    pubVerClases();
+  }catch(e){ PUB.busy = false; PUB.err = e.message; pubRender(true); }
+}
+async function pubVerClases(){
+  pubLimpiaMsg(); PUB.pant = 'clases'; PUB.sel = null; PUB.res = null; pubRender(true);
+  document.getElementById('pubReservas').scrollTop = 0;
+  try{
+    const [cl, mi] = await Promise.all([pubCargarClases(), pubRpc('publico_mi_semana', { p_slug: PUB.slug, p_dni: PUB.dni })]);
+    PUB.mi = mi; PUB.prueba = !!(mi && mi.prueba); if (mi && mi.nombre) PUB.nombre = mi.nombre;
+    if (PUB.dia > 6) PUB.dia = 0;
+  }catch(e){
+    if (/No encontramos tu DNI|dada de baja/i.test(e.message)){ pubOlvidar(); PUB.err = e.message; pubRender(true); setTimeout(() => pubIr('dni'), 0); return; }
+    PUB.err = e.message;
+  }
+  pubRender(true);
+}
+async function pubVerSemana(){
+  pubLimpiaMsg(); PUB.pant = 'semana'; PUB.canc = null; pubRender(true);
+  document.getElementById('pubReservas').scrollTop = 0;
+  try{ const mi = await pubRpc('publico_mi_semana', { p_slug: PUB.slug, p_dni: PUB.dni }); PUB.mi = mi; PUB.prueba = !!(mi && mi.prueba); if (mi && mi.nombre) PUB.nombre = mi.nombre; }
+  catch(e){
+    if (/No encontramos tu DNI|dada de baja/i.test(e.message)){ pubOlvidar(); pubIr('dni'); PUB.err = e.message; pubRender(true); return; }
+    PUB.err = e.message;
+  }
+  pubRender(true);
+}
+function pubElegirDia(i){ PUB.dia = i; pubRender(true); }
+function pubElegirClase(id, iso){ PUB.sel = { id, iso }; pubLimpiaMsg(); pubRender(true); }
+function pubCerrarHoja(){ PUB.sel = null; PUB.err = ''; pubRender(true); }
+async function pubConfirmar(){
+  const s = PUB.sel; if (!s || PUB.busy) return;
+  PUB.busy = true; PUB.err = ''; pubRender(true);
+  try{
+    const r = await pubRpc('publico_reservar', { p_slug: PUB.slug, p_dni: PUB.dni, p_clase_id: s.id, p_fecha: s.iso });
+    PUB.busy = false; PUB.res = Object.assign({ clase_id: s.id, fecha: s.iso }, r || {}); PUB.sel = null; PUB.pant = 'listo';
+    pubRender(true); document.getElementById('pubReservas').scrollTop = 0;
+    pubCargarClases().catch(() => {});
+  }catch(e){
+    PUB.busy = false; PUB.err = e.message; pubRender(true);
+    pubCargarClases().catch(() => {});   // por si cambió la ocupación mientras tanto
+  }
+}
+function pubPedirCancelar(id){ PUB.canc = PUB.canc === id ? null : id; pubRender(true); }
+async function pubCancelar(id){
+  if (PUB.busy) return;
+  PUB.busy = true; PUB.err = ''; pubRender(true);
+  try{
+    await pubRpc('publico_cancelar', { p_slug: PUB.slug, p_dni: PUB.dni, p_inscripcion_id: id });
+    PUB.busy = false; PUB.canc = null; PUB.msg = 'Listo, cancelamos tu reserva.';
+    PUB.mi = await pubRpc('publico_mi_semana', { p_slug: PUB.slug, p_dni: PUB.dni });
+    pubCargarClases().catch(() => {});
+  }catch(e){ PUB.busy = false; PUB.err = e.message; }
+  pubRender(true);
+}
+function pubSalirApp(){ location.href = location.pathname; }
+function pubCampo(k, v){ if (k === 'ok') PUB.f.ok = !!v; else if (k === 'dni') PUB.f.dni = String(v).replace(/\D/g, '').slice(0, 9); else PUB.f[k] = v; }
+
+// ----- dibujo -----
+function pubTop(){
+  return `<div class="pb-top"><span></span><button type="button" class="pb-th" onclick="ciclarTema()" aria-label="Cambiar tema" title="Cambiar tema">🌓</button></div>`;
+}
+function pubMarca(grande){
+  const g = PUB.g || {}, nom = g.nombre || '', ini = (nom.trim()[0] || '·').toUpperCase();
+  const logo = g.logo_url ? `<img class="pb-logo" src="${ejEsc(g.logo_url)}" alt="">` : `<div class="pb-logo-ini">${ejEsc(ini)}</div>`;
+  if (grande) return `<div class="pb-brand">${logo}<div class="pb-nom">${ejEsc(nom)}</div>${g.bienvenida ? `<div class="pb-sub">${ejEsc(g.bienvenida)}</div>` : ''}</div>`;
+  return `<div class="pb-brand" style="flex-direction:row; justify-content:flex-start; text-align:left; padding:6px 0;"><div style="transform:scale(.5); transform-origin:left center; width:48px; height:48px; flex:none;">${logo}</div><div class="pb-nom" style="font-size:18px;">${ejEsc(nom)}</div></div>`;
+}
+function pubPie(){
+  return `<div class="pb-pie">${PUB.dni ? `<button type="button" onclick="pubOtroDni()">No soy yo · usar otro DNI</button><br>` : ''}<button type="button" onclick="pubSalirApp()">¿Sos del gimnasio? Ingresá a la app</button><br>Reservas con M2F Solutions</div>`;
+}
+function pubErr(){ return (PUB.err ? `<div class="pb-err" role="alert">${ejEsc(PUB.err)}</div>` : '') + (PUB.msg ? `<div class="pb-info">${ejEsc(PUB.msg)}</div>` : ''); }
+function pubWaBtn(txt){
+  const g = PUB.g || {}, u = pubWa(g.telefono, 'Hola! Escribo desde el link de reservas de ' + (g.nombre || '') + '.');
+  return u ? `<a class="pb-btn wa" href="${ejEsc(u)}" target="_blank" rel="noopener">💬 ${ejEsc(txt || 'Escribinos por WhatsApp')}</a>` : '';
+}
+function pubCardClase(c, iso){
+  const o = pubOc(c.id, iso), susp = pubSusp(c.id, iso), mia = pubMia(c.id, iso), lleno = o.a >= c.cupo;
+  let chip = '', off = false, bar = '';
+  if (susp !== null){ chip = `<span class="pb-chip x">⛔ Suspendida${susp ? ' · ' + ejEsc(susp) : ''}</span>`; off = true; }
+  else if (mia){ chip = `<span class="pb-chip ok">${mia.estado === 'espera' ? '⏳ Estás en lista de espera' : mia.pendiente ? '🕒 Reservada · por confirmar' : '✓ Ya estás anotado/a'}</span>`; off = true; }
+  else if (lleno){ chip = `<span class="pb-chip w">Completa · podés sumarte a la lista de espera${o.e ? ' (' + o.e + ')' : ''}</span>`; }
+  else { const q = c.cupo - o.a; chip = `<span class="pb-chip ${q <= 3 ? 'w' : ''}">${q === 1 ? 'Queda 1 lugar' : 'Quedan ' + q + ' lugares'}</span>`; }
+  if (susp === null) bar = `<div class="pb-bar"><i class="${lleno ? 'full' : ''}" style="width:${Math.min(100, o.a / c.cupo * 100)}%"></i></div>`;
+  const extra = [c.profesor ? '👤 ' + ejEsc(c.profesor) : '', pubLugarHtml(c)].filter(Boolean).join(' · ');
+  const inner = `<div class="pb-cl-h"><div class="pb-cl-t">${ejEsc(c.nombre)}</div><div class="pb-cl-hr">${ejEsc(c.inicio)} a ${ejEsc(c.fin)}</div></div>${extra ? `<div class="pb-cl-m">${extra}</div>` : ''}${c.nota ? `<div class="pb-cl-m">📝 ${ejEsc(c.nota)}</div>` : ''}${bar}${chip}`;
+  return off ? `<div class="pb-cl off">${inner}</div>` : `<button type="button" class="pb-cl" onclick="pubElegirClase('${c.id}','${iso}')">${inner}</button>`;
+}
+function pubHoja(){
+  const s = PUB.sel; if (!s) return '';
+  const c = (PUB.cl.clases || []).find(x => x.id === s.id); if (!c) return '';
+  const o = pubOc(c.id, s.iso), lleno = o.a >= c.cupo, g = PUB.g || {};
+  return `<div class="pb-ov" onclick="if(event.target===this)pubCerrarHoja()"><div class="pb-sh" role="dialog" aria-modal="true">
+    <h3>${ejEsc(c.nombre)}</h3>
+    <div class="pb-det"><div>📅 <b>${ejEsc(pubFechaTxt(s.iso))}</b> · ${ejEsc(c.inicio)} a ${ejEsc(c.fin)}</div>${c.profesor ? `<div>👤 ${ejEsc(c.profesor)}</div>` : ''}${pubLugarHtml(c) ? `<div>${pubLugarHtml(c)}</div>` : ''}${c.nota ? `<div>📝 ${ejEsc(c.nota)}</div>` : ''}</div>
+    ${PUB.prueba && g.prueba ? `<div class="pb-info">🎁 <b>Es tu clase de prueba.</b>${g.aprobacion ? ' El gimnasio la confirma y te escribe por WhatsApp.' : ' Después te escribimos por WhatsApp para armar tu plan.'}</div>` : ''}
+    ${lleno ? `<div class="pb-info">La clase está completa. Si te sumás a la lista de espera, entrás automáticamente si alguien cancela.</div>` : ''}
+    ${PUB.err ? `<div class="pb-err" role="alert">${ejEsc(PUB.err)}</div>` : ''}
+    <div class="pb-btns"><button type="button" onclick="pubConfirmar()" ${PUB.busy ? 'disabled' : ''}>${PUB.busy ? 'Reservando…' : lleno ? 'Sumarme a la lista de espera' : 'Confirmar reserva'}</button><button type="button" class="ghost" onclick="pubCerrarHoja()">Volver</button></div></div></div>`;
+}
+function pubPantInicio(){
+  const g = PUB.g || {};
+  let hoyHtml = '';
+  if (PUB.cl){
+    const d0 = pubDias()[0], lista = pubClasesDia(d0).filter(c => pubSusp(c.id, d0.iso) === null).slice(0, 4);
+    if (lista.length) hoyHtml = `<div class="pb-hoy-t">Hoy</div>${lista.map(c => { const o = pubOc(c.id, d0.iso); return `<div class="pb-cl"><div class="pb-cl-h"><div class="pb-cl-t">${ejEsc(c.nombre)}</div><div class="pb-cl-hr">${ejEsc(c.inicio)}</div></div><div class="pb-cl-m">${o.a >= c.cupo ? 'Completa' : (c.cupo - o.a === 1 ? 'Queda 1 lugar' : 'Quedan ' + (c.cupo - o.a) + ' lugares')}${pubLugarHtml(c) ? ' · ' + pubLugarHtml(c) : ''}</div></div>`; }).join('')}`;
+  }
+  return `${pubTop()}${pubMarca(true)}<div class="pb-acc"><button type="button" onclick="pubEmpezar('reservar')">🏋️ Reservar entrenamiento</button><button type="button" class="secondary" onclick="pubEmpezar('semana')">📅 Ver mi semana · ingresar con mi DNI</button>${pubWaBtn('Consultas por WhatsApp')}</div>
+    ${g.prueba ? `<div class="pb-info" style="text-align:center;">🎁 Tu primer entrenamiento es de prueba.</div>` : ''}${hoyHtml}${pubPie()}`;
+}
+function pubPantDni(){
+  return `${pubTop()}${pubMarca(false)}<button type="button" class="pb-back" onclick="pubIr('inicio')">‹ Volver</button>
+    <div class="pb-h">${PUB.modo === 'semana' ? 'Ver mi semana' : 'Reservar entrenamiento'}</div><p class="pb-p">Ingresá tu DNI. Si ya estás registrado/a entrás directo; si es tu primera vez te pedimos unos datos.</p>
+    <div class="pb-f"><label for="pbDni">Tu DNI (solo números)</label><input id="pbDni" inputmode="numeric" autocomplete="off" maxlength="12" placeholder="Ej: 30123456" value="${ejEsc(PUB.f.dni)}" oninput="pubCampo('dni',this.value); this.value=PUB.f.dni;" onkeydown="if(event.key==='Enter')pubContinuarDni()"></div>
+    ${pubErr()}<div class="pb-acc" style="margin-top:16px;"><button type="button" onclick="pubContinuarDni()" ${PUB.busy ? 'disabled' : ''}>${PUB.busy ? 'Buscando…' : 'Continuar'}</button></div>${pubPie()}`;
+}
+function pubPantRegistro(){
+  const f = PUB.f, g = PUB.g || {};
+  return `${pubTop()}${pubMarca(false)}<button type="button" class="pb-back" onclick="pubIr('dni')">‹ Volver</button>
+    <div class="pb-h">Es tu primera vez</div><p class="pb-p">Completá tus datos para reservar${g.prueba ? '. Tu primer entrenamiento es de prueba' : ''}.</p>
+    <div class="pb-f"><label>DNI</label><input value="${ejEsc(f.dni)}" readonly></div>
+    <div class="pb-f"><label for="pbNom">Nombre</label><input id="pbNom" autocomplete="given-name" maxlength="40" value="${ejEsc(f.nombre)}" oninput="pubCampo('nombre',this.value)"></div>
+    <div class="pb-f"><label for="pbApe">Apellido</label><input id="pbApe" autocomplete="family-name" maxlength="40" value="${ejEsc(f.apellido)}" oninput="pubCampo('apellido',this.value)"></div>
+    <div class="pb-f"><label for="pbTel">WhatsApp (con código de área)</label><input id="pbTel" type="tel" inputmode="tel" autocomplete="tel" maxlength="20" placeholder="Ej: 11 5555 1234" value="${ejEsc(f.tel)}" oninput="pubCampo('tel',this.value)"></div>
+    <label class="pb-chk"><input type="checkbox" ${f.ok ? 'checked' : ''} onchange="pubCampo('ok',this.checked)"><span>Acepto que ${ejEsc(g.nombre || 'el gimnasio')} use mis datos para contactarme por WhatsApp sobre mi reserva.</span></label>
+    ${pubErr()}<div class="pb-acc" style="margin-top:16px;"><button type="button" onclick="pubRegistrar()" ${PUB.busy ? 'disabled' : ''}>${PUB.busy ? 'Registrando…' : 'Continuar'}</button></div>${pubPie()}`;
+}
+function pubPantClases(){
+  const saludo = `<div class="pb-h" style="margin-top:6px;">${PUB.nombre ? 'Hola, ' + ejEsc(PUB.nombre) + ' 👋' : 'Elegí tu clase'}</div>`;
+  if (!PUB.cl) return `${pubTop()}${pubMarca(false)}<button type="button" class="pb-back" onclick="pubIr('inicio')">‹ Inicio</button>${saludo}${PUB.err ? pubErr() : '<div class="pb-cargando">Cargando clases…</div>'}${pubPie()}`;
+  const dias = pubDias(), dia = dias[PUB.dia] || dias[0], lista = pubClasesDia(dia);
+  const pills = dias.map(d => `<button type="button" class="pb-d ${d.i === PUB.dia ? 'on' : ''}" onclick="pubElegirDia(${d.i})">${d.i === 0 ? 'Hoy' : PUB_DIAS[d.k]}<b>${d.num}</b><small>${d.i === 0 ? PUB_DIAS[d.k] : ''}</small></button>`).join('');
+  return `${pubTop()}${pubMarca(false)}<button type="button" class="pb-back" onclick="pubIr('inicio')">‹ Inicio</button>${saludo}
+    ${PUB.prueba && (PUB.g || {}).prueba ? `<div class="pb-info">🎁 Tu primer entrenamiento es de prueba. Elegí la clase que más te sirva.</div>` : ''}${pubErr()}
+    <div class="pb-days">${pills}</div>
+    ${lista.length ? lista.map(c => pubCardClase(c, dia.iso)).join('') : `<div class="pb-vacio">No hay clases ${dia.i === 0 ? 'para el resto de hoy' : 'este día'}.<br>Probá con otro día.</div>`}
+    <div class="pb-acc"><button type="button" class="secondary" onclick="pubVerSemana()">📅 Ver mi semana</button></div>${pubPie()}${pubHoja()}`;
+}
+function pubChipEstado(r){
+  if (r.estado === 'espera') return '<span class="pb-chip w">⏳ Lista de espera</span>';
+  if (r.pendiente) return '<span class="pb-chip w">🕒 Por confirmar</span>';
+  return '<span class="pb-chip ok">✓ Reservada</span>';
+}
+function pubPantSemana(){
+  const mi = PUB.mi, g = PUB.g || {};
+  let cuerpo;
+  if (!mi) cuerpo = PUB.err ? '' : '<div class="pb-cargando">Cargando tu semana…</div>';
+  else if (!(mi.reservas || []).length) cuerpo = `<div class="pb-vacio">Todavía no tenés clases reservadas.</div>`;
+  else cuerpo = mi.reservas.map(r => `<div class="pb-res"><div class="pb-cl-h"><div class="pb-cl-t">${ejEsc(r.nombre)}</div><div class="pb-cl-hr">${ejEsc(r.inicio)}</div></div>
+      <div class="pb-cl-m">📅 ${ejEsc(pubFechaTxt(r.fecha))} · ${ejEsc(r.inicio)} a ${ejEsc(r.fin)}${r.profesor ? '<br>👤 ' + ejEsc(r.profesor) : ''}${pubLugarHtml(r) ? '<br>' + pubLugarHtml(r) : ''}</div>${pubChipEstado(r)}
+      ${r.puede_cancelar
+        ? (PUB.canc === r.id
+          ? `<div class="pb-info" style="margin-top:10px;">¿Cancelar esta reserva?</div><div style="display:flex; gap:8px; margin-top:8px;"><button type="button" class="pb-ccl" style="flex:1;" onclick="pubCancelar('${r.id}')" ${PUB.busy ? 'disabled' : ''}>Sí, cancelar</button><button type="button" class="pb-ccl ghost" style="flex:1;" onclick="pubPedirCancelar('${r.id}')">No</button></div>`
+          : `<button type="button" class="pb-ccl secondary" onclick="pubPedirCancelar('${r.id}')">Cancelar reserva</button>`)
+        : `<div class="pb-cl-m" style="margin-top:8px;">Ya no se puede cancelar desde acá: avisale al gimnasio por WhatsApp.</div>`}</div>`).join('');
+  return `${pubTop()}${pubMarca(false)}<button type="button" class="pb-back" onclick="pubIr('inicio')">‹ Inicio</button>
+    <div class="pb-h" style="margin-top:6px;">${PUB.nombre ? 'Tu semana, ' + ejEsc(PUB.nombre) : 'Tu semana'}</div>${pubErr()}${cuerpo}
+    <div class="pb-acc"><button type="button" onclick="pubVerClases()">🏋️ Reservar otra clase</button>${pubWaBtn('Escribir al gimnasio')}</div>${pubPie()}`;
+}
+function pubPantListo(){
+  const r = PUB.res || {}, c = ((PUB.cl && PUB.cl.clases) || []).find(x => x.id === r.clase_id) || {}, g = PUB.g || {};
+  const espera = r.estado === 'espera', pend = !!r.pendiente;
+  const nm = PUB.nombre ? ', ' + PUB.nombre : '';
+  const titulo = pend ? 'Reserva enviada' + nm : espera ? 'Estás en lista de espera' + nm : '¡Reservado' + nm + '!';
+  const sub = pend ? 'El gimnasio la confirma y te escribe por WhatsApp.'
+    : espera ? `Quedaste ${r.posicion ? r.posicion + '°' : ''} en la lista. Si se libera un lugar, entrás automáticamente: mirá “Ver mi semana” o escribile al gimnasio.`
+    : r.prueba ? 'Es tu clase de prueba. Después te escribimos por WhatsApp para armar tu plan.' : 'Te esperamos. Podés ver o cancelar tu reserva desde “Ver mi semana”.';
+  return `${pubTop()}${pubMarca(false)}<div class="pb-center"><div class="pb-big ${pend || espera ? 'w' : ''}">${pend ? '🕒' : espera ? '⏳' : '✅'}</div><div class="pb-h" style="margin-top:0;">${ejEsc(titulo)}</div><p class="pb-p">${ejEsc(sub)}</p></div>
+    <div class="pb-res"><div class="pb-cl-h"><div class="pb-cl-t">${ejEsc(c.nombre || 'Clase')}</div><div class="pb-cl-hr">${ejEsc(c.inicio || '')}</div></div>
+    <div class="pb-cl-m">📅 ${ejEsc(r.fecha ? pubFechaTxt(r.fecha) : '')}${c.inicio ? ' · ' + ejEsc(c.inicio) + ' a ' + ejEsc(c.fin) : ''}${c.profesor ? '<br>👤 ' + ejEsc(c.profesor) : ''}${pubLugarHtml(c) ? '<br>' + pubLugarHtml(c) : ''}</div></div>
+    <div class="pb-acc"><button type="button" onclick="pubVerSemana()">📅 Ver mi semana</button><button type="button" class="secondary" onclick="pubVerClases()">Reservar otra clase</button>${pubWaBtn('Escribir al gimnasio')}</div>${pubPie()}`;
+}
+function pubPantCerrado(){
+  const g = PUB.g, noDisp = !g || g.motivo === 'no_existe' || PUB.err;
+  return `${pubTop()}<div class="pb-brand" style="padding-top:50px;"><div class="pb-big w" style="margin:0;">⏸️</div><div class="pb-h" style="margin:8px 0 0;">${noDisp ? 'Este link no está disponible' : 'Las reservas están cerradas por el momento'}</div>
+    <div class="pb-sub">${ejEsc(PUB.err || (noDisp ? 'Revisá que el link esté bien escrito o consultale al gimnasio.' : 'Escribinos y te ayudamos a reservar.'))}</div></div>
+    <div class="pb-acc">${g && g.telefono ? pubWaBtn('Escribinos por WhatsApp') : ''}</div>${pubPie()}`;
+}
+function pubRender(conservarFoco){
+  const root = document.getElementById('pubReservas'); if (!root) return;
+  const foco = conservarFoco && document.activeElement && document.activeElement.id, pos = foco ? document.activeElement.selectionStart : null;
+  const y = root.scrollTop;
+  const mapa = { cargando: () => `${pubTop()}<div class="pb-cargando">Cargando…</div>`, inicio: pubPantInicio, dni: pubPantDni, registro: pubPantRegistro, clases: pubPantClases, semana: pubPantSemana, listo: pubPantListo, cerrado: pubPantCerrado };
+  root.innerHTML = `<div class="pb-wrap">${(mapa[PUB.pant] || mapa.cerrado)()}</div>`;
+  root.scrollTop = y;
+  if (foco){ const e = document.getElementById(foco); if (e && e.focus){ e.focus(); try{ if (pos != null) e.setSelectionRange(pos, pos); }catch(x){} } }
+  else if (PUB.pant === 'dni'){ const e = document.getElementById('pbDni'); if (e && !esMovilB3()) e.focus(); }
+}
+
+// ---------- (v111) STAFF: link de reservas (Mi gimnasio), "Nuevos desde el link", lugar de la clase y suspensión por día ----------
+// SQL: reservas-publicas.sql. Sin ese SQL (RPX.ok / nvOk / lugarOk / suspOk === false) todo sigue como antes y no se muestra nada nuevo.
+const RPX = { ok: null, cfg: null, nvOk: null, nuevos: [], lugarOk: null, suspOk: null, susp: [], pendOk: null, ir: null };
+// Deep link de los avisos (?ir=clases): se saca de la barra y se aplica cuando la sesión está lista
+(function rpxCapturarIr(){
+  try{
+    const p = new URLSearchParams(location.search); if (!p.has('ir')) return;
+    const v = (p.get('ir') || '').trim().toLowerCase(); p.delete('ir');
+    history.replaceState({}, '', location.pathname + (p.toString() ? '?' + p.toString() : '') + location.hash);
+    if (/^[a-z]{3,20}$/.test(v)) RPX.ir = v;
+  }catch(e){}
+})();
+function rpxIrAplicar(r){
+  r = r || RPX.ir; RPX.ir = null;
+  if (!r || !PERFIL_ACTUAL) return;
+  try{
+    if (PERFIL_ACTUAL.rol === 'alumno'){
+      if (r === 'clases'){ cambiarSubvistaAlu('turnos'); ALU_TAB = 'clases'; setTimeout(() => { try{ aluTabsPintar(); }catch(e){} }, 1500); }
+      else if (r === 'wellness'){ if (typeof WELLNESS_CTX !== 'undefined' && WELLNESS_CTX.alumnoId) revisarWellnessPendiente(WELLNESS_CTX.alumnoId, true); }   // (v112) aviso de Wellness → abre el cuestionario
+    } else if (r === 'clases') cambiarSubvista('clases');
+  }catch(e){}
+}
+function rpxMsg(e){ return String((e && e.message) || e || ''); }
+
+// ----- Mi gimnasio → Link de reservas -----
+function rpxUrl(slug){ return location.origin + location.pathname.replace(/[^\/]*\.html?$/i, '') + '?r=' + encodeURIComponent(slug); }
+function rpxSlugAuto(nombre){
+  let s = String(nombre || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40).replace(/-+$/, '');
+  return s.length >= 3 ? s : '';
+}
+async function rpxCfgCargar(){
+  const gid = PERFIL_ACTUAL && PERFIL_ACTUAL.gimnasio_id; if (!gid || PERFIL_ACTUAL.rol !== 'admin') return;
+  try{
+    const r = await sb(`gimnasios?select=reservas_publicas,reservas_slug,reservas_prueba,reservas_aprobacion,reservas_bienvenida&id=eq.${gid}`);
+    RPX.cfg = (r && r[0]) || null; RPX.ok = !!RPX.cfg;
+  }catch(e){ RPX.ok = /42703|does not exist|reservas_/i.test(rpxMsg(e)) ? false : null; }
+  rpxCfgPintar();
+}
+function rpxCfgPintar(){
+  const box = document.getElementById('gimLinkBox'); if (!box) return;
+  const ver = !!(PERFIL_ACTUAL && PERFIL_ACTUAL.rol === 'admin' && modOn('clases'));
+  box.style.display = ver ? '' : 'none';
+  const body = document.getElementById('gimLinkBody'); if (!ver || !body) return;
+  if (RPX.ok === false){ body.innerHTML = '<div class="rpx-ban">⚠️ Falta activar esta función en la base de datos. Corré <b>reservas-publicas.sql</b> en Supabase (SQL Editor) y recargá la app.</div>'; return; }
+  if (RPX.ok !== true){ body.innerHTML = '<div class="muted">Cargando…</div>'; return; }
+  if (body.contains(document.activeElement) && document.activeElement.tagName !== 'BODY') return;   // no pisar lo que se está escribiendo
+  const c = RPX.cfg || {}, slug = c.reservas_slug || rpxSlugAuto(GIMNASIO_ACTUAL && GIMNASIO_ACTUAL.nombre);
+  body.innerHTML = `
+    <div class="muted" style="margin-bottom:10px;">Un link para pegar en tu Instagram: quien lo toca ve tus clases con sus lugares y reserva sin que tengas que darlo de alta antes. Si no se registró, te pide nombre, apellido y WhatsApp y te avisamos al celular. <b>Solo aparecen las clases que tienen cupo.</b></div>
+    <label class="cl-chk"><input type="checkbox" id="gimLkOn" ${c.reservas_publicas ? 'checked' : ''} onchange="rpxLkVista()"><span><b>Link de reservas activo</b> · si lo apagás, nadie puede entrar</span></label>
+    <div class="field" style="margin-top:12px;"><label>Nombre del link</label>
+      <div class="rpx-slug"><span class="pre">${ejEsc(rpxUrl('').replace(/\?r=$/, ''))}?r=</span><input id="gimLkSlug" maxlength="40" autocapitalize="none" autocomplete="off" spellcheck="false" value="${ejEsc(slug)}" oninput="rpxLkVista()" placeholder="ej: mi-gimnasio"></div>
+      <div class="muted" style="font-size:12px; margin-top:4px;">De 3 a 40 letras minúsculas, números y guiones. Si lo cambiás, el link anterior deja de funcionar.</div></div>
+    <div class="rpx-link"><code id="gimLkUrl"></code><button type="button" class="secondary" onclick="rpxCopiar()">📋 Copiar</button><button type="button" class="secondary" id="gimLkShare" onclick="rpxCompartir()" style="display:none;">📤 Compartir</button><button type="button" class="secondary" onclick="rpxQrAbrir()">🔳 QR</button><button type="button" class="secondary" onclick="rpxVer()">👁 Ver cómo se ve</button></div>
+    <label class="cl-chk"><input type="checkbox" id="gimLkPrueba" ${c.reservas_prueba !== false ? 'checked' : ''}><span>La primera clase es de prueba: quien no es alumno puede reservar <b>una</b> clase sin plan. Si lo apagás, solo reservan los que ya tienen plan.</span></label>
+    <label class="cl-chk"><input type="checkbox" id="gimLkAprob" ${c.reservas_aprobacion ? 'checked' : ''}><span>Confirmar a mano cada reserva nueva: queda “por confirmar” (ocupa lugar) hasta que la aceptes en Clases.</span></label>
+    <div class="field" style="margin-top:12px;"><label>Texto de bienvenida (opcional)</label><textarea id="gimLkBienv" rows="3" maxlength="300" placeholder="ej: Entrenamos al aire libre en Palermo. Traé agua y ropa cómoda 💪">${ejEsc(c.reservas_bienvenida || '')}</textarea></div>
+    <div class="row" style="margin-top:14px;"><button type="button" id="gimLkBtn" onclick="rpxCfgGuardar()">Guardar link</button></div>
+    <div class="muted" style="margin-top:8px; font-size:12.5px;">A quien reserva por el link se lo ve en <b>Clases → Nuevos desde el link</b>, con botón de WhatsApp. Las reglas de cancelación son las de “Clases y reservas”. Quien ya es alumno entra con su DNI y se le aplican las mismas reglas que en la app (cuota, días del plan, una por día).</div>`;
+  rpxLkVista();
+  const sh = document.getElementById('gimLkShare'); if (sh && navigator.share) sh.style.display = '';
+}
+function rpxLkSlug(){ return ((document.getElementById('gimLkSlug') || {}).value || '').trim().toLowerCase(); }
+function rpxLkVista(){
+  const u = document.getElementById('gimLkUrl'); if (!u) return;
+  const s = rpxLkSlug(), on = document.getElementById('gimLkOn').checked;
+  u.textContent = s ? rpxUrl(s) : '(poné un nombre para el link)';
+  u.style.opacity = on && s ? '1' : '.55';
+}
+function rpxSlugOk(s){ return s.length >= 3 && s.length <= 40 && /^[a-z0-9]+(-[a-z0-9]+)*$/.test(s); }
+async function rpxCfgGuardar(){
+  if (!PERFIL_ACTUAL || PERFIL_ACTUAL.rol !== 'admin') return;
+  const on = document.getElementById('gimLkOn').checked, slug = rpxLkSlug();
+  if ((on || slug) && !rpxSlugOk(slug)){ toast('El nombre del link tiene que tener de 3 a 40 letras minúsculas, números o guiones (sin espacios ni tildes).', true); return; }
+  const body = { reservas_publicas: on, reservas_slug: slug || null, reservas_prueba: document.getElementById('gimLkPrueba').checked, reservas_aprobacion: document.getElementById('gimLkAprob').checked, reservas_bienvenida: document.getElementById('gimLkBienv').value.trim().slice(0, 300) || null };
+  const btn = document.getElementById('gimLkBtn'); if (btn) btn.disabled = true;
+  try{
+    await sb(`gimnasios?id=eq.${PERFIL_ACTUAL.gimnasio_id}`, { method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: JSON.stringify(body) });
+    RPX.cfg = Object.assign(RPX.cfg || {}, body);
+    toast(on ? 'Link activado ✓ Ya podés copiarlo y pegarlo en Instagram.' : 'Guardado ✓ El link está apagado.');
+    const b = document.getElementById('gimLinkBody'); if (b && document.activeElement && b.contains(document.activeElement)) document.activeElement.blur();
+    rpxCfgPintar();
+  }catch(e){
+    const m = rpxMsg(e);
+    toast(/23505|duplicate|unique|slug_uq|reservas_slug/i.test(m) && !/gimnasios_reservas_ok/.test(m) ? 'Ese nombre de link ya lo usa otro gimnasio. Probá con otro.' : /gimnasios_reservas_ok|check/i.test(m) ? 'Revisá el nombre del link (3 a 40 letras minúsculas, números o guiones) y que el texto no pase de 300 letras.' : 'No se pudo guardar: ' + extraerMensajeError(e), true);
+  }
+  if (btn) btn.disabled = false;
+}
+async function rpxCopiar(){
+  const s = rpxLkSlug(); if (!rpxSlugOk(s)){ toast('Primero poné el nombre del link.', true); return; }
+  const u = rpxUrl(s);
+  try{ await navigator.clipboard.writeText(u); toast('Link copiado ✓'); }
+  catch(e){ const t = document.createElement('textarea'); t.value = u; document.body.appendChild(t); t.select(); try{ document.execCommand('copy'); toast('Link copiado ✓'); }catch(x){ toast(u); } t.remove(); }
+  if (!document.getElementById('gimLkOn').checked) toast('Ojo: el link está apagado. Activalo y guardá para que funcione.', true);
+}
+function rpxCompartir(){ const s = rpxLkSlug(); if (rpxSlugOk(s) && navigator.share) navigator.share({ title: (GIMNASIO_ACTUAL && GIMNASIO_ACTUAL.nombre) || 'Reservas', text: 'Reservá tu entrenamiento', url: rpxUrl(s) }).catch(() => {}); }
+function rpxVer(){
+  const s = rpxLkSlug(); if (!rpxSlugOk(s)){ toast('Primero poné el nombre del link.', true); return; }
+  if (!(RPX.cfg && RPX.cfg.reservas_publicas && RPX.cfg.reservas_slug === s)){ toast('Activá el link y guardá para poder verlo.', true); return; }
+  window.open(rpxUrl(s), '_blank', 'noopener');
+}
+function rpxQrAbrir(){
+  const s = rpxLkSlug(); if (!rpxSlugOk(s)){ toast('Primero poné el nombre del link.', true); return; }
+  const ov = overlayGenerico('rpxQrOv', 360), u = rpxUrl(s);
+  ov.querySelector('.modal-box').innerHTML = `<div class="row" style="justify-content:space-between; align-items:flex-start; flex-wrap:nowrap;"><h3 style="margin:0;">🔳 QR del link de reservas</h3><button type="button" class="ghost cl-sm" onclick="cerrarOverlayGenerico('rpxQrOv')" aria-label="Cerrar">✕</button></div>
+    <div class="rpx-qr">${QRGEN.svg(u, { nivel: 'Q' })}</div><div class="muted" style="text-align:center; font-size:12.5px; margin-top:10px; word-break:break-all;">${ejEsc(u)}</div>
+    <div class="muted" style="font-size:12.5px; margin-top:8px;">Para poner en un cartel, un flyer o una historia: quien lo escanea cae directo en tu página de reservas.</div>
+    <div class="row" style="gap:8px; margin-top:12px;"><button type="button" class="secondary" onclick="rpxCopiar()">📋 Copiar link</button><button type="button" class="ghost" style="margin-left:auto;" onclick="cerrarOverlayGenerico('rpxQrOv')">Cerrar</button></div>`;
+  ov.classList.add('show');
+}
+
+// ----- Clases → "Nuevos desde el link" -----
+function rpxHace(iso){
+  const m = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 60000));
+  if (m < 60) return 'hace ' + Math.max(1, m) + ' min';
+  if (m < 1440) return 'hace ' + Math.floor(m / 60) + ' h';
+  const d = Math.floor(m / 1440); return 'hace ' + d + (d === 1 ? ' día' : ' días');
+}
+async function rpxNuevosCargar(){
+  if (RPX.nvOk === false) return rpxNuevosPintar();
+  try{ RPX.nuevos = (await sb('rpc/link_nuevos', { method: 'POST', body: '{}' })) || []; RPX.nvOk = true; }
+  catch(e){ RPX.nuevos = []; if (/link_nuevos|PGRST202|42883|Could not find/i.test(rpxMsg(e))) RPX.nvOk = false; }
+  rpxNuevosPintar();
+}
+function rpxNuevoWa(n){
+  const gim = (GIMNASIO_ACTUAL && GIMNASIO_ACTUAL.nombre) || '', pn = String(n.nombre || '').split(' ')[0], p = n.proxima;
+  const msg = p
+    ? `Hola ${pn}! Te escribo de ${gim}. Vi que reservaste ${p.clase} el ${pubFechaTxt(p.fecha)} a las ${p.inicio}. ¿Cómo estás? Cualquier duda avisame 💪`
+    : `Hola ${pn}! Te escribo de ${gim}. Vi que te registraste en nuestro link de reservas. ¿Te cuento cómo seguimos? 💪`;
+  return pubWa(n.telefono, msg);
+}
+function rpxNuevosPintar(){
+  const box = document.getElementById('rpxNuevos'); if (!box) return;
+  const L = RPX.nvOk === true ? RPX.nuevos : [];
+  if (!L.length){ box.style.display = 'none'; box.innerHTML = ''; return; }
+  const admin = PERFIL_ACTUAL && PERFIL_ACTUAL.rol === 'admin';
+  const sin = L.filter(n => !n.contactado).length, pend = L.filter(n => n.proxima && n.proxima.pendiente).length;
+  const fila = n => {
+    const p = n.proxima, wa = rpxNuevoWa(n);
+    return `<div class="rpx-fila" ${n.contactado ? 'style="opacity:.72;"' : ''}><div class="mid"><b>${ejEsc(n.nombre)}</b>${p && p.pendiente ? '<span class="rpx-tag pend">🕒 por confirmar</span>' : ''}${n.plan ? '<span class="rpx-tag lnk">con plan</span>' : ''}
+      <div class="muted" style="font-size:12.5px;">DNI ${ejEsc(n.dni || '—')} · ${ejEsc(rpxHace(n.creado_en))}${n.hechas ? ' · ' + n.hechas + (n.hechas === 1 ? ' clase hecha' : ' clases hechas') : ''}</div>
+      <div class="muted" style="font-size:12.5px;">${p ? `📅 ${ejEsc(p.clase)} · ${ejEsc(pubFechaTxt(p.fecha))} ${ejEsc(p.inicio)}${p.estado === 'espera' ? ' · ⏳ en espera' : ''}` : 'Sin clase reservada'}</div></div>
+      <div class="acc">${wa ? `<a class="wa" href="${ejEsc(wa)}" target="_blank" rel="noopener">💬 WhatsApp</a>` : ''}
+      ${p && p.pendiente ? `<button type="button" onclick="rpxConfirmar('${p.inscripcion_id}', true)">✓ Confirmar</button><button type="button" class="ghost" onclick="rpxConfirmar('${p.inscripcion_id}', false)">✗ Rechazar</button>` : ''}
+      <button type="button" class="${n.contactado ? 'secondary' : 'ghost'}" onclick="rpxContactado('${n.id}', ${n.contactado ? 'false' : 'true'})">${n.contactado ? '✓ Contactado' : 'Marcar contactado'}</button>
+      ${admin && !n.plan ? `<button type="button" class="secondary" onclick="abrirFichaAlumno('${n.id}','dat')">Asignar plan</button>` : ''}</div></div>`;
+  };
+  box.style.display = '';
+  box.innerHTML = `<details class="card rpx-nv" ${sin || pend ? 'open' : ''}><summary>🆕 Nuevos desde el link <span class="rpx-n">${sin || L.length}</span>${pend ? `<span class="rpx-tag pend">${pend} por confirmar</span>` : ''}</summary>
+    <div class="muted" style="font-size:12.5px; margin-top:6px;">Personas que se registraron o reservaron por el link público. Escribiles, y cuando se sumen asignales un plan.</div>${L.map(fila).join('')}</details>`;
+}
+async function rpxContactado(id, v){
+  try{ await sb('rpc/link_contactado', { method: 'POST', body: JSON.stringify({ p_alumno_id: id, p_valor: v }) }); await rpxNuevosCargar(); }
+  catch(e){ toast(extraerMensajeError(e), true); }
+}
+async function rpxConfirmar(insId, aceptar){
+  if (!aceptar && !confirm('¿Rechazar esta reserva? Se cancela y la persona no recibe aviso: escribile por WhatsApp.')) return;
+  try{
+    await sb('rpc/link_confirmar', { method: 'POST', body: JSON.stringify({ p_inscripcion_id: insId, p_aceptar: aceptar }) });
+    toast(aceptar ? 'Reserva confirmada ✓ Avisale por WhatsApp.' : 'Reserva rechazada.');
+    await rpxNuevosCargar();
+    if (document.getElementById('clListaOv')?.classList.contains('show')) clListaCargar();
+    clRefrescar();
+  }catch(e){ toast(extraerMensajeError(e), true); }
+}
+
+// ----- Clases: lugar (punto de encuentro) y suspensiones, en consultas aparte para no romper nada sin el SQL -----
+async function rpxExtrasCargar(){
+  const tareas = [];
+  if (RPX.lugarOk !== false) tareas.push((async () => {
+    try{
+      const r = await sb('clases?select=id,lugar,lugar_url'), m = {}; (r || []).forEach(x => { m[x.id] = x; });
+      CL.rows.forEach(c => { const x = m[c.id]; c.lugar = (x && x.lugar) || ''; c.lugar_url = (x && x.lugar_url) || ''; });
+      RPX.lugarOk = true;
+    }catch(e){ if (/42703|lugar|does not exist/i.test(rpxMsg(e))) RPX.lugarOk = false; }
+  })());
+  if (RPX.suspOk !== false) tareas.push((async () => {
+    try{ RPX.susp = (await sb(`clases_suspensiones?select=clase_id,fecha,motivo&fecha=gte.${fechaLocalISO(new Date())}`)) || []; RPX.suspOk = true; }
+    catch(e){ RPX.susp = []; if (/clases_suspensiones|42P01|PGRST205|does not exist|schema cache/i.test(rpxMsg(e))) RPX.suspOk = false; }
+  })());
+  await Promise.all(tareas);
+}
+function rpxSusp(id, iso){ return RPX.susp.find(s => String(s.clase_id) === String(id) && s.fecha === iso) || null; }
+// editor de la clase
+function rpxEditorHtml(c){
+  if (RPX.lugarOk !== true) return '';
+  return `<div class="cl-row2"><div class="field"><label>Punto de encuentro (opcional)</label><input id="clLugar" maxlength="120" value="${ejEsc(c.lugar || '')}" placeholder="ej: Plaza Italia, frente a la fuente"></div><div class="field"><label>Link del mapa (opcional)</label><input id="clLugarUrl" maxlength="400" inputmode="url" autocapitalize="none" value="${ejEsc(c.lugar_url || '')}" placeholder="https://maps.app.goo.gl/…"></div></div>
+    <div class="muted" style="font-size:12px; margin:-4px 0 8px;">Se muestra en el link de reservas, en la reserva del alumno y en “Mi semana”. Para el mapa: abrí el lugar en Google Maps → Compartir → Copiar link.</div>`;
+}
+function rpxEditorLeer(){
+  const a = document.getElementById('clLugar'); if (!a || RPX.lugarOk !== true) return null;
+  let u = (document.getElementById('clLugarUrl').value || '').trim();
+  if (u && !/^https?:\/\//i.test(u)) u = 'https://' + u;
+  if (u && (u.length > 400 || !/^https?:\/\/[^\s]+\.[^\s]+$/i.test(u))){ toast('El link del mapa no parece válido. Copialo desde Google Maps → Compartir.', true); return false; }
+  return { lugar: a.value.trim() || null, lugar_url: u || null };
+}
+// lista de anotados (staff)
+async function rpxListaSel(id, iso){
+  const base = `clases_inscripciones?clase_id=eq.${id}&fecha=eq.${iso}&estado=neq.cancelado&select=id,estado,asistio,creado_en,alumno_id,`;
+  if (RPX.pendOk !== false){
+    try{ const r = await sb(base + 'pendiente,alumnos(nombre,foto_url,origen,telefono)&order=creado_en.asc'); RPX.pendOk = true; return r; }
+    catch(e){ if (/42703|pendiente|origen|does not exist/i.test(rpxMsg(e))) RPX.pendOk = false; else throw e; }
+  }
+  return sb(base + 'alumnos(nombre,foto_url)&order=creado_en.asc');
+}
+function rpxFilaClase(r){ const a = r.alumnos || {}; return a.origen === 'link' || r.pendiente === true ? 'rpx-m' : ''; }
+function rpxFilaTags(r){
+  const a = r.alumnos || {}, link = a.origen === 'link', pend = r.pendiente === true;
+  if (!link && !pend) return '';
+  const c = CL.lista && clClase(CL.lista.id), pn = String(a.nombre || '').split(' ')[0];
+  const wa = link && c ? pubWa(a.telefono, `Hola ${pn}! Te escribo de ${(GIMNASIO_ACTUAL && GIMNASIO_ACTUAL.nombre) || ''} por tu reserva de ${c.nombre} (${pubFechaTxt(CL.lista.iso)} ${c.ini}).`) : null;
+  return `${pend ? '<span class="rpx-tag pend">🕒 por confirmar</span>' : ''}${link ? '<span class="rpx-tag lnk">🆕 link</span>' : ''}
+    <div class="rpx-ft">${pend ? `<button type="button" onclick="rpxConfirmar('${r.id}', true)">✓ Confirmar</button><button type="button" class="ghost" onclick="rpxConfirmar('${r.id}', false)">✗ Rechazar</button>` : ''}${wa ? `<a class="wa" href="${ejEsc(wa)}" target="_blank" rel="noopener">💬 WhatsApp</a>` : ''}</div>`;
+}
+// suspensión por día
+function rpxSuspAviso(c, iso){
+  const s = rpxSusp(c.id, iso); if (!s) return '';
+  return `<div class="rpx-susp-aviso">⛔ <b>Clase suspendida este día</b>${s.motivo ? ' · ' + ejEsc(s.motivo) : ''}. No se pueden hacer reservas.</div>`;
+}
+function rpxSuspBtn(c, iso){
+  if (RPX.suspOk !== true || iso < fechaLocalISO(new Date())) return '';
+  return rpxSusp(c.id, iso)
+    ? `<button type="button" class="secondary" style="flex:1 1 100%;" onclick="rpxReanudar('${c.id}','${iso}')">↩ Reanudar este día</button>`
+    : `<button type="button" class="secondary" style="flex:1 1 100%;" onclick="rpxSuspAbrir('${c.id}','${iso}')">⛔ Suspender este día</button>`;
+}
+function rpxSuspAbrir(id, iso){
+  const c = clClase(id); if (!c) return;
+  const hay = (CL.lista && CL.lista.rows ? CL.lista.rows.length : 0);
+  const ov = overlayGenerico('rpxSuspOv', 420);
+  ov.querySelector('.modal-box').innerHTML = `<div class="row" style="justify-content:space-between; align-items:flex-start; flex-wrap:nowrap;"><h3 style="margin:0;">⛔ Suspender clase</h3><button type="button" class="ghost cl-sm" onclick="cerrarOverlayGenerico('rpxSuspOv')" aria-label="Cerrar">✕</button></div>
+    <div style="margin-top:8px;"><b>${ejEsc(c.nombre)}</b> · ${ejEsc(clFechaTxt(iso, true))} · ${ejEsc(c.ini)} a ${ejEsc(c.fin)}</div>
+    <div class="muted" style="font-size:13px; margin:8px 0;">Se cancelan las reservas de ese día${hay ? ` (hay ${hay} ${hay === 1 ? 'persona' : 'personas'} entre anotados y lista de espera)` : ''}, se avisa en la app a quien la tiene y no se puede reservar más. Después te armo la lista para avisar por WhatsApp. Las otras fechas de la clase no cambian.</div>
+    <div class="rpx-chips">${['Lluvia', 'Mal clima', 'Calor extremo', 'Imprevisto'].map(t => `<span onclick="document.getElementById('rpxMot').value='${t}'">${t}</span>`).join('')}</div>
+    <div class="field"><label>Motivo (opcional, lo ve el alumno)</label><input id="rpxMot" maxlength="140" placeholder="ej: Lluvia"></div>
+    <div class="row" style="gap:8px; margin-top:14px;"><button type="button" id="rpxSuspBtn" onclick="rpxSuspEnviar('${id}','${iso}')">Suspender la clase</button><button type="button" class="ghost" style="margin-left:auto;" onclick="cerrarOverlayGenerico('rpxSuspOv')">Volver</button></div>`;
+  ov.classList.add('show');
+}
+async function rpxSuspEnviar(id, iso){
+  const mot = (document.getElementById('rpxMot').value || '').trim(), btn = document.getElementById('rpxSuspBtn'); if (btn) btn.disabled = true;
+  try{
+    const r = await sb('rpc/clase_suspender', { method: 'POST', body: JSON.stringify({ p_clase_id: id, p_fecha: iso, p_motivo: mot || null }) });
+    rpxSuspResultado(id, iso, mot, (r && r.afectados) || []);
+    await clRefrescar(); if (CL.lista) { await clListaCargar(); }
+  }catch(e){ toast(extraerMensajeError(e), true); if (btn) btn.disabled = false; }
+}
+function rpxSuspResultado(id, iso, mot, af){
+  const c = clClase(id) || {}, gim = (GIMNASIO_ACTUAL && GIMNASIO_ACTUAL.nombre) || '';
+  const sinApp = af.filter(x => !x.con_app).length;
+  const fila = x => {
+    const msg = `Hola ${String(x.nombre || '').split(' ')[0]}! Te aviso que se suspende la clase de ${c.nombre} del ${pubFechaTxt(iso)} a las ${c.ini}${mot ? ' por ' + mot.toLowerCase() : ''}. Te esperamos en la próxima 💪 — ${gim}`;
+    const wa = pubWa(x.telefono, msg);
+    return `<div class="rpx-fila"><div class="mid"><b>${ejEsc(x.nombre)}</b>${x.espera ? ' <span class="muted">(en espera)</span>' : ''}<div class="muted" style="font-size:12.5px;">${x.con_app ? '✓ Ya le llegó el aviso a la app' : 'Sin app: avisale por WhatsApp'}</div></div><div class="acc">${wa ? `<a class="wa" href="${ejEsc(wa)}" target="_blank" rel="noopener">💬 Avisar</a>` : '<span class="muted" style="font-size:12px;">sin teléfono</span>'}</div></div>`;
+  };
+  const ov = overlayGenerico('rpxSuspOv', 440);
+  ov.querySelector('.modal-box').innerHTML = `<div class="row" style="justify-content:space-between; align-items:flex-start; flex-wrap:nowrap;"><h3 style="margin:0;">✓ Clase suspendida</h3><button type="button" class="ghost cl-sm" onclick="cerrarOverlayGenerico('rpxSuspOv')" aria-label="Cerrar">✕</button></div>
+    <div style="margin-top:8px;"><b>${ejEsc(c.nombre || '')}</b> · ${ejEsc(pubFechaTxt(iso))}${mot ? ' · ' + ejEsc(mot) : ''}</div>
+    ${af.length ? `<div class="muted" style="font-size:13px; margin:8px 0;">Se cancelaron ${af.length} ${af.length === 1 ? 'reserva' : 'reservas'}.${sinApp ? ` ${sinApp === 1 ? 'Una persona no tiene' : sinApp + ' personas no tienen'} la app: avisales por WhatsApp.` : ' A todos les llegó el aviso a la app.'}</div>${af.map(fila).join('')}` : `<div class="muted" style="font-size:13px; margin:8px 0;">No había reservas ese día.</div>`}
+    <div class="row" style="margin-top:14px;"><button type="button" class="ghost" style="margin-left:auto;" onclick="cerrarOverlayGenerico('rpxSuspOv')">Cerrar</button></div>`;
+  ov.classList.add('show');
+}
+async function rpxReanudar(id, iso){
+  if (!confirm('¿Reanudar esta clase ese día? Vuelve a abrirse para reservar. Las reservas que se cancelaron no se restauran.')) return;
+  try{ await sb('rpc/clase_reanudar', { method: 'POST', body: JSON.stringify({ p_clase_id: id, p_fecha: iso }) }); toast('Clase reanudada ✓'); await clRefrescar(); clListaPintar(); }
+  catch(e){ toast(extraerMensajeError(e), true); }
+}
+// Con la app abierta, tocar el aviso no recarga la página: el Service Worker avisa y se navega a la pantalla del aviso
+try{ if ('serviceWorker' in navigator) navigator.serviceWorker.addEventListener('message', ev => {
+  const d = ev.data; if (!d || d.m2f !== 'notificacion_tocada' || !d.url) return;
+  try{ const q = new URL(d.url, location.href).searchParams.get('ir'); if (q) rpxIrAplicar(q.trim().toLowerCase()); }catch(e){}
+}); }catch(e){}
+
 // ---------- (v106) RECEPCIÓN: DNI + Enter toma la asistencia (turno y clase de ese momento) ----------
 // RCX.ok: null = todavía no se sabe si está el SQL (recepcion-asistencia.sql) · false = no está: Recepción queda como en v105.
 const RCX = { ok: null };
@@ -8409,6 +9076,8 @@ function guiaFaqBase(rol){
     { q:'¿Dónde veo los cumpleaños de mis alumnos?', r:['Menú ☰ → 🔔 Alertas → 🎂 Cumpleaños del mes: los de hoy primero, con botón para saludar por WhatsApp.','Los de hoy también aparecen en tu Inicio.','A las 7:00 el staff recibe un aviso y el alumno, un saludo del gimnasio.','Para que funcione, cargá la fecha de nacimiento al dar de alta al alumno o desde su ficha (✏️ Datos).'], ir:{ s:'alertas' } },
     { q:'¿Cómo registro el pago de una cuota?', r:['Menú ☰ → 💰 Finanzas → Cobros.','Buscá al alumno y tocá 💰 Cobrar.','Elegí efectivo o transferencia (y meses de pago adelantado si querés) y confirmá.','Podés bajar o mandar por WhatsApp el recibo en PDF.'], ir:{ s:'cobranzas' } },
     { q:'¿Cómo conecto Mercado Pago?', r:['Menú ☰ → 🏢 Mi gimnasio → Cobros online.','Conectá tu cuenta y aceptá los permisos.','Desde ahí, tus alumnos ven “Pagar con Mercado Pago” cuando la cuota está por vencer o vencida.'], ir:{ s:'gimnasio' } },
+    { adm:true, q:'¿Cómo uso el link de reservas para Instagram?', r:['Menú ☰ → Mi gimnasio → 🔗 Link de reservas. Poné el nombre del link, activalo y guardá.','Tocá 📋 Copiar y pegalo en tu bio de Instagram (o 🔳 QR para un flyer).','Quien lo toca ve tus clases con los lugares, pone su DNI y reserva. Si es su primera vez, te deja nombre, apellido y WhatsApp.','Te llega un aviso al celular (a vos y al profesor de esa clase) y lo ves en Clases → 🆕 Nuevos desde el link, con botón de WhatsApp.','Por defecto la primera clase es de prueba; podés pedir que confirmes cada reserva a mano.'], ir:{ s:'gimnasio' } },
+    { q:'¿Cómo suspendo una clase por lluvia?', r:['Menú ☰ → Clases → tocá la clase → ⛔ Suspender este día.','Se cancelan las reservas de ese día y a quien tiene la app le llega el aviso.','Te mostramos la lista para avisar por WhatsApp a los demás. Ese día no se puede reservar.','Si mejora el clima: ↩ Reanudar este día.'], ir:{ s:'clases' } },
     { adm:true, q:'¿Cómo tomo la asistencia con un QR?', r:['Menú ☰ → 🛎️ Recepción → 🔳 QR de asistencia → Activar (lo activa el administrador).','Imprimí el cartel y pegalo en la entrada.','Cada alumno lo escanea con su celular y queda tomada su asistencia: el turno o la clase de ese momento, igual que con el DNI.','En “Llegadas de hoy” figuran con la marca 📱 por QR. Con la cuota vencida no se marca.','Si alguien le sacó una foto y lo usa desde afuera, tocá “Generar uno nuevo” e imprimilo otra vez.'], ir:{ s:'recepcion' } },
     { adm:true, q:'¿Cómo tomo la asistencia en Recepción?', r:['Menú ☰ → 🛎️ Recepción.','Escribí el DNI completo y Enter: si tiene turno o clase a esa hora, la asistencia queda tomada sola (con “↩ Deshacer” por si fue un error).','Si vino sin reservar, desde la misma ficha le sacás un turno o lo anotás a una clase de hoy, y queda presente.','Con la cuota vencida no se toma la asistencia hasta que regularice.'], ir:{ s:'recepcion' } },
     { q:'¿Cómo doy de alta a un profesor o a Recepción?', r:['Menú ☰ → 🧑‍🏫 Profesores → Nuevo profesor (nombre y DNI).','La contraseña temporal se muestra UNA sola vez.','Para Recepción: desplegá “Usuarios de Recepción”; esa persona solo ve la pantalla de Recepción.'], ir:{ s:'profesores' } },
@@ -8685,6 +9354,7 @@ function cambiarSubvista(v){
   if (v==='alertas') cargarSeguimientoAlumnos();
   if (v==='ejercicios') cargarListaEjerciciosPersonalizados();
   if (v==='equipo'){ poblarSelectEquipoVista(); cargarVistaEquipo(); }
+  if (v==='gimnasio') rpxCfgCargar().catch(() => {});   // (v111)
   if (v==='gimnasio'){
     document.getElementById('gimNombre').value = GIMNASIO_ACTUAL?.nombre || '';
     document.getElementById('gimLogoUrl').value = GIMNASIO_ACTUAL?.logo_url || '';
@@ -9805,6 +10475,7 @@ async function cargarGimnasioActual(){
   cargarPlanesPrepago();
   telCargar().catch(() => {});   // (v102) WhatsApp de contacto del gimnasio
   clCfgCargar().catch(() => {});   // (v103) reglas de reservas de clases (Mi gimnasio)
+  rpxCfgCargar().catch(() => {});   // (v111) link público de reservas (Mi gimnasio)
   salaCargar().catch(() => {});   // (v105) turnos por profesor o por horario
   modulosCargar().catch(() => {});   // (v99) qué secciones tiene este gimnasio
   atlRefrescar().catch(() => {});   // (v98) módulo Atletismo: muestra u oculta su menú
@@ -14514,13 +15185,14 @@ async function clCargar(contId, ro, rolAlumno, silencioso){
     if (/clases|42P01|PGRST205|does not exist|schema cache/i.test(String(e.message || ''))) CL.ok = false;
     else { cont.innerHTML = `<div class="empty">No se pudieron cargar las clases: ${ejEsc(e.message || e)}</div>`; return; }
   }
-  await clOcCargar();
+  await Promise.all([rpxExtrasCargar(), clOcCargar()]);   // (v111) lugar y suspensiones, junto con la ocupación
   clRenderEn();
 }
 function clIniciarStaff(){
   const admin = PERFIL_ACTUAL?.rol === 'admin';
   const nueva = document.getElementById('clBtnNueva'); if (nueva) nueva.style.display = admin ? '' : 'none';
   clCargar('clasesContenido', !admin, false);
+  rpxNuevosCargar().catch(() => {});   // (v111) "Nuevos desde el link"
 }
 function clSlot(ev, d, s){
   if (ev.target !== ev.currentTarget) return;
@@ -14546,6 +15218,7 @@ function clEditar(id, pre){
          <div class="muted" style="font-size:12px; margin:6px 0 10px;">Cupo: cuántos alumnos entran. Se anotan desde su app y, con el cupo lleno, pasan a lista de espera.</div>`
       : `<div class="field"><label>Profesor (opcional)</label>${selProf}</div>`}
     <div class="field"><label>Nota (opcional)</label><input id="clNota" value="${ejEsc(c.nota)}" placeholder="ej: traer colchoneta"></div>
+    ${rpxEditorHtml(c)}
     <div class="row" style="justify-content:flex-end; gap:8px; margin-top:14px;">${id ? `<button type="button" class="ghost" style="margin-right:auto; color:var(--danger-text);" onclick="clEliminar('${id}')">🗑️ Eliminar</button>` : ''}<button type="button" class="ghost" onclick="clCerrar()">Cancelar</button><button type="button" id="clBtnGuardar" onclick="clGuardar(${id ? `'${id}'` : 'null'})">Guardar</button></div>`;
   const ov = document.getElementById('clOv'); m.style.transform = ''; m.dataset.dx = 0; m.dataset.dy = 0;
   ov.classList.add('show'); ov.classList.toggle('desk', !movil);
@@ -14566,6 +15239,7 @@ async function clGuardar(id){
   if (!CL.EC.dias.length){ toast('Elegí al menos un día.', true); return; }
   if (!ini || !fin || fin <= ini){ toast('La hora de fin tiene que ser después de la de inicio.', true); return; }
   const body = { nombre, dias: CL.EC.dias.slice().sort((a, b) => a - b), hora_inicio: ini, hora_fin: fin, profesor_id: document.getElementById('clProf').value || null, nota: document.getElementById('clNota').value.trim() || null };
+  const lg = rpxEditorLeer(); if (lg === false) return; if (lg) Object.assign(body, lg);   // (v111) punto de encuentro
   const inCupo = document.getElementById('clCupo');
   if (CL.res === true && inCupo){   // (v103) toda clase lleva cupo
     const cv = inCupo.value.trim();
@@ -14678,6 +15352,7 @@ async function clOcCargar(){
 }
 function clRefrescar(){ return clCargar(CL.contId, CL.ro, CL.rolAlumno, true); }
 function clEstadoTxt(c, iso){
+  if (rpxSusp(c.id, iso)) return { t: '⛔ Suspendida', k: 'susp' };   // (v111)
   const o = clOc(c.id, iso);
   if (CL.rolAlumno && o.mi === 'anotado') return { t: '✓ Anotado', k: 'mio' };
   if (CL.rolAlumno && o.mi === 'espera') return { t: '⏳ En espera' + (o.pos ? ' · ' + o.pos + '°' : ''), k: 'esp' };
@@ -14687,6 +15362,7 @@ function clEstadoTxt(c, iso){
 
 // (v104) estado en pocas letras, para cuando varias clases comparten la misma hora y cada bloque queda angosto
 function clEstadoCorto(c, iso){
+  if (rpxSusp(c.id, iso)) return '⛔';   // (v111)
   const o = clOc(c.id, iso), movil = esMovilB3();
   if (CL.rolAlumno && o.mi === 'anotado') return movil ? '✓ Anotado' : '✓';
   if (CL.rolAlumno && o.mi === 'espera') return '⏳' + (o.pos ? ' ' + o.pos + '°' : '');
@@ -14712,7 +15388,10 @@ function clAluAbrir(id, iso){
   CL.sel = { id: String(id), iso };
   const o = clOc(id, iso), ini = clInicio(c, iso), ahora = new Date(), empezo = ini <= ahora, min = clCfg().cancelMin, tarde = ini - ahora < min * 60000, lim = clLimiteTxt(min);
   let estado = '', btn = '';
-  if (o.mi === 'anotado'){
+  const sp = rpxSusp(c.id, iso);   // (v111) clase suspendida ese día
+  if (sp){
+    estado = `<div class="cl-est">⛔ Esta clase está suspendida ese día${sp.motivo ? ': ' + ejEsc(sp.motivo) : ''}. No se puede reservar.</div>`;
+  } else if (o.mi === 'anotado'){
     estado = `<div class="cl-est ok">✓ Tenés tu lugar reservado.</div>`;
     btn = empezo ? '' : tarde
       ? `<div class="muted" style="font-size:12.5px; flex-basis:100%;">Se podía cancelar ${lim}: ya no se puede desde la app. Si no podés ir, avisale al gimnasio.</div>`
@@ -14731,7 +15410,7 @@ function clAluAbrir(id, iso){
   const ov = overlayGenerico('clResOv', 420);
   ov.querySelector('.modal-box').innerHTML = `
     <div class="row" style="justify-content:space-between; align-items:flex-start; gap:10px; flex-wrap:nowrap;"><h3 style="margin:0;">${ejEsc(c.nombre)}</h3><button type="button" class="ghost cl-sm" onclick="cerrarOverlayGenerico('clResOv')" aria-label="Cerrar">✕</button></div>
-    <div class="cl-det"><div>📅 <b>${clFechaTxt(iso, true)}</b> · ${c.ini} a ${c.fin}</div><div>👤 ${ejEsc(c.prof || 'Profesor a confirmar')}</div>${c.nota ? `<div>📝 ${ejEsc(c.nota)}</div>` : ''}</div>
+    <div class="cl-det"><div>📅 <b>${clFechaTxt(iso, true)}</b> · ${c.ini} a ${c.fin}</div><div>👤 ${ejEsc(c.prof || 'Profesor a confirmar')}</div>${pubLugarHtml(c) ? `<div>${pubLugarHtml(c)}</div>` : ''}${c.nota ? `<div>📝 ${ejEsc(c.nota)}</div>` : ''}</div>
     ${clCupoHtml(c, o)}${estado}
     <div class="row" style="gap:8px; margin-top:14px;">${btn}<button type="button" class="ghost" style="margin-left:auto;" onclick="cerrarOverlayGenerico('clResOv')">Cerrar</button></div>
     ${!empezo && !(o.mi === 'anotado' && tarde) ? `<div class="muted" style="font-size:12px; margin-top:10px;">${o.mi === 'espera' ? 'De la lista de espera podés salir cuando quieras.' : 'Podés cancelar ' + lim + '.'}</div>` : ''}`;
@@ -14775,7 +15454,7 @@ async function clListaCargar(){
   const L = CL.lista; if (!L) return;
   const iso = L.iso;
   try{
-    const rows = await sb(`clases_inscripciones?clase_id=eq.${L.id}&fecha=eq.${iso}&estado=neq.cancelado&select=id,estado,asistio,creado_en,alumno_id,alumnos(nombre,foto_url)&order=creado_en.asc`);
+    const rows = await rpxListaSel(L.id, iso);   // (v111) + "por confirmar" y "del link" si el SQL está
     if (CL.lista !== L || L.iso !== iso) return;   // cambió de fecha o de clase mientras cargaba
     L.rows = rows || []; L.err = null;
   }catch(e){ L.rows = []; L.err = extraerMensajeError(e); }
@@ -14796,20 +15475,21 @@ function clListaPintar(){
   const an = L.rows.filter(r => r.estado === 'anotado'), es = L.rows.filter(r => r.estado === 'espera');
   const nom = r => (r.alumnos && r.alumnos.nombre) || 'Alumno';
   const pres = an.filter(r => r.asistio === true).length, aus = an.filter(r => r.asistio === false).length;
-  const fila = (r, i, espera) => `<div class="cl-li">${xAv(nom(r), r.alumnos && r.alumnos.foto_url)}<div class="mid"><b>${espera ? (i + 1) + '° · ' : ''}${ejEsc(nom(r))}</b></div>${espera ? '' :
+  const fila = (r, i, espera) => `<div class="cl-li">${xAv(nom(r), r.alumnos && r.alumnos.foto_url)}<div class="mid ${rpxFilaClase(r)}"><b>${espera ? (i + 1) + '° · ' : ''}${ejEsc(nom(r))}</b>${rpxFilaTags(r)}</div>${espera ? '' :
     `<button type="button" class="cl-as ${r.asistio === true ? 'si' : ''}" title="Presente" aria-label="Presente" onclick="clAsistencia('${r.id}', ${r.asistio === true ? 'null' : 'true'})">✓</button><button type="button" class="cl-as ${r.asistio === false ? 'no' : ''}" title="Ausente" aria-label="Ausente" onclick="clAsistencia('${r.id}', ${r.asistio === false ? 'null' : 'false'})">✗</button>`}
     <button type="button" class="ghost cl-sm" onclick="clListaQuitar('${r.id}')">Quitar</button></div>`;
   const cupo = c.cupo || 0, pasada = L.iso < hoy;
   ov.querySelector('.modal-box').innerHTML = `
     <div class="row" style="justify-content:space-between; align-items:flex-start; gap:10px; flex-wrap:nowrap;"><div><h3 style="margin:0;">${ejEsc(c.nombre)}</h3><div class="muted" style="font-size:13px;">${c.ini} a ${c.fin}${c.prof ? ' · 👤 ' + ejEsc(c.prof) : ''}</div></div><button type="button" class="ghost cl-sm" onclick="cerrarOverlayGenerico('clListaOv')" aria-label="Cerrar">✕</button></div>
     <div class="cl-nav"><button type="button" class="ghost cl-sm" onclick="clListaMover(-1)" aria-label="Fecha anterior">‹</button><b>${clFechaTxt(L.iso, true)}</b>${L.iso === hoy ? '<span class="pill">hoy</span>' : ''}<button type="button" class="ghost cl-sm" onclick="clListaMover(1)" aria-label="Fecha siguiente">›</button></div>
+    ${rpxSuspAviso(c, L.iso)}
     ${L.err ? `<div class="cl-est">No se pudo cargar la lista: ${ejEsc(L.err)}</div>` : `
     ${cupo ? `<div class="cl-cupo"><div class="cl-bar"><i style="width:${Math.min(100, an.length / cupo * 100)}%"></i></div><div><b>${an.length}</b> de ${cupo} anotados${es.length ? ' · ' + es.length + ' en espera' : ''}${pres || aus ? ' · ✓ ' + pres + ' presentes · ✗ ' + aus + ' ausentes' : ''}</div></div>` : '<div class="cl-est">Esta clase no tiene cupo cargado: no admite reservas.</div>'}
-    ${cupo && !pasada ? `<div class="field" style="margin-bottom:6px;"><label>Anotar a un alumno</label><input id="clListaQ" placeholder="Buscar por nombre…" autocomplete="off" oninput="clListaBuscar(this.value)"></div><div id="clListaRes" class="cl-res"></div>` : ''}
+    ${cupo && !pasada && !rpxSusp(c.id, L.iso) ? `<div class="field" style="margin-bottom:6px;"><label>Anotar a un alumno</label><input id="clListaQ" placeholder="Buscar por nombre…" autocomplete="off" oninput="clListaBuscar(this.value)"></div><div id="clListaRes" class="cl-res"></div>` : ''}
     <div class="cl-sec">Anotados · ${an.length}</div>
     ${an.length ? an.map((r, i) => fila(r, i, false)).join('') : '<div class="muted" style="font-size:13.5px; padding:6px 0;">Todavía no se anotó nadie.</div>'}
     ${es.length ? `<div class="cl-sec">Lista de espera · ${es.length}</div>${es.map((r, i) => fila(r, i, true)).join('')}` : ''}`}
-    <div class="row" style="gap:8px; margin-top:16px;">${admin ? `<button type="button" class="secondary" onclick="cerrarOverlayGenerico('clListaOv');clEditar('${c.id}')">✏️ Editar clase</button>` : ''}<button type="button" class="ghost" style="margin-left:auto;" onclick="cerrarOverlayGenerico('clListaOv')">Cerrar</button></div>`;
+    <div class="row" style="gap:8px; margin-top:16px;">${rpxSuspBtn(c, L.iso)}${admin ? `<button type="button" class="secondary" onclick="cerrarOverlayGenerico('clListaOv');clEditar('${c.id}')">✏️ Editar clase</button>` : ''}<button type="button" class="ghost" style="margin-left:auto;" onclick="cerrarOverlayGenerico('clListaOv')">Cerrar</button></div>`;
 }
 function clListaBuscar(q){
   const L = CL.lista, box = document.getElementById('clListaRes'); if (!L || !box) return;
@@ -18572,7 +19252,7 @@ async function revisarWellnessPendiente(alumnoId, forzar){
     WELLNESS_CTX.alumnoId = alumnoId;
     if (!WELLNESS_LISTENER_PUESTO){
       WELLNESS_LISTENER_PUESTO = true;
-      const rechequear = (f) => { if (document.visibilityState === 'visible' && WELLNESS_CTX.alumnoId) revisarWellnessPendiente(WELLNESS_CTX.alumnoId, f === true); };
+      const rechequear = (f) => { if ((f === true || document.visibilityState === 'visible') && WELLNESS_CTX.alumnoId) revisarWellnessPendiente(WELLNESS_CTX.alumnoId, f === true); };   // (v112) tocar el push llega con la página todavía "oculta": igual hay que abrirlo
       // Volver a primer plano, recuperar foco o volver desde el caché de páginas.
       document.addEventListener('visibilitychange', () => rechequear());
       window.addEventListener('focus', () => rechequear());
@@ -18586,7 +19266,7 @@ async function revisarWellnessPendiente(alumnoId, forzar){
       // Red de seguridad: si el aviso llega con la app abierta, se detecta a los pocos minutos.
       setInterval(() => rechequear(), 3*60*1000);
     }
-    if (!forzar && document.getElementById('modalWellness')?.classList.contains('show')) return;
+    if (document.getElementById('modalWellness')?.classList.contains('show')) return;   // (v112) ya abierto
     const hoy = dateAIso(new Date());
     const [turnos, resp] = await Promise.all([
       sb(`turnos?select=id&alumno_id=eq.${alumnoId}&fecha=eq.${hoy}&estado=neq.cancelado&limit=1`),
@@ -18594,13 +19274,17 @@ async function revisarWellnessPendiente(alumnoId, forzar){
     ]);
     const pendiente = turnos.length > 0 && resp.length === 0;
     wellnessCardMostrar(pendiente); // la tarjeta queda visible en Inicio aunque diga "Ahora no"
-    if (!pendiente) return;
+    if (!pendiente){
+      if (forzar) toast(resp.length ? 'Ya completaste tu Wellness de hoy ✓' : 'Hoy no tenés turno: no hace falta completar el Wellness.');   // (v112)
+      return;
+    }
     if (!forzar && Date.now() < WELLNESS_POSPUESTO_HASTA) return;
     abrirWellness();
   }catch(e){ /* best-effort: nunca corta el ingreso */ }
 }
 
 function abrirWellness(){
+  if (document.getElementById('modalWellness')?.classList.contains('show')) return;   // (v112)
   WELLNESS_CTX.valores = {};
   let ov = document.getElementById('modalWellness');
   if (!ov){
@@ -20664,6 +21348,7 @@ if ('serviceWorker' in navigator){
 (async function iniciar(){
   const ocultarSplash = () => { const sp = document.getElementById('splashInicio'); if (sp) sp.remove(); };
   try{
+    if (PUB.slug){ ocultarSplash(); await pubIniciar(); return; }   // (v111) link público de reservas (?r=): no usa sesión
     const { data } = await supaAuth.auth.getSession();
     SESION_ACTUAL = data.session || null;
     await cargarPerfilDeSesion();
@@ -20677,6 +21362,7 @@ if ('serviceWorker' in navigator){
       document.getElementById('appShell').style.display = '';
       cambiarVista('alumno');
       await entrarComoAlumnoLogueado();
+      rpxIrAplicar();   // (v111) venía de tocar un aviso
     } else if (PERFIL_ACTUAL){
       // Ya había sesión de staff guardada en el navegador: entra directo, sin landing.
       // (29/9) Pasa por entrarComoStaff() para que también aplique la puerta de
@@ -20688,6 +21374,7 @@ if ('serviceWorker' in navigator){
       await entrarComoStaff();
       if (PERFIL_ACTUAL && PERFIL_ACTUAL.rol === 'admin') manejarRetornoOAuthMercadoPago();
       qrLinkStaff();   // (v110)
+      rpxIrAplicar();   // (v111) venía de tocar un aviso (ej. alumno nuevo desde el link → Clases)
     } else {
       ocultarSplash();
       await Promise.all([cargarPersonas(), cargarCatalogoEjercicios(), cargarGimnasioActual(), cargarCategoriasYEquipos()]);
