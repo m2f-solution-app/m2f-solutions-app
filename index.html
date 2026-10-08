@@ -1773,6 +1773,27 @@
   .x-seg-kpis .k{ font-size:12px; color:var(--muted); } .x-seg-kpis b{ font-size:18px; }
   .x-seg-g2, .x-seg-g3{ display:grid; gap:14px; align-items:start; margin-top:14px; }
   .x-seg-g2 > .card, .x-seg-g3 > .card{ margin:0; }
+  /* (v115) Rutinas asignadas: desplegable + tabla (en el celu cada fila se apila como tarjeta) */
+  .ra-wrap > summary .ra-sum{ font-size:12.5px; font-weight:600; }
+  .ra-gh{ font-weight:700; font-size:13px; margin:10px 0 2px; }
+  details.ra-sub{ margin-top:12px; }
+  details.ra-sub > summary{ cursor:pointer; font-weight:700; font-size:13px; padding:4px 0; }
+  .ra-scroll{ overflow-x:auto; }
+  .ra-tbl{ width:100%; border-collapse:collapse; font-size:13px; }
+  @media (min-width:641px){ .ra-tbl{ table-layout:fixed; } .ra-tbl th:nth-child(1){ width:30%; } .ra-tbl th:nth-child(2){ width:13%; } .ra-tbl th:nth-child(3){ width:23%; } }
+  .ra-tbl th{ text-align:left; font-size:11.5px; font-weight:600; color:var(--muted); padding:6px 8px; border-bottom:1px solid var(--border); white-space:nowrap; }
+  .ra-tbl td{ padding:9px 8px; border-bottom:1px solid var(--border); vertical-align:top; }
+  .ra-tbl tbody tr:last-child td{ border-bottom:0; }
+  .ra-dias{ display:flex; flex-wrap:wrap; gap:6px; }
+  @media (max-width:640px){
+    .ra-tbl thead{ display:none; }
+    .ra-tbl, .ra-tbl tbody, .ra-tbl tr, .ra-tbl td{ display:block; width:100%; }
+    .ra-tbl tr{ padding:9px 0; border-bottom:1px solid var(--border); }
+    .ra-tbl tbody tr:last-child{ border-bottom:0; }
+    .ra-tbl td{ border:0; padding:3px 0; }
+    .ra-tbl td[data-l]::before{ content:attr(data-l); display:block; font-size:11px; color:var(--muted); }
+    .ra-tbl td[data-l="Rutina"]::before{ display:none; }
+  }
   @media (min-width:1000px){
     .x-seg-g2{ grid-template-columns:minmax(0,1fr) minmax(0,1.5fr); }
     .x-seg-g3{ grid-template-columns:minmax(0,2fr) minmax(0,1fr); }
@@ -2758,10 +2779,8 @@
           <div class="x-seg-kpis" id="seguimientoResumen"></div>
         </div>
         <div id="seguimientoCarga" class="card" style="display:none; margin-top:14px;"></div>
-        <div class="x-seg-g2">
-          <div id="seguimientoAsignada" class="card" style="display:none;"></div>
-          <div id="seguimientoVolumen" class="card" style="display:none;"></div>
-        </div>
+        <div id="seguimientoVolumen" class="card" style="display:none; margin-top:14px;"></div>
+        <div id="seguimientoAsignada" class="card" style="display:none; margin-top:14px;"></div>
         <div class="x-seg-g3">
           <div id="seguimientoContenido" class="muted">Elegí un alumno arriba.</div>
           <div id="seguimientoPRs" class="card" style="display:none;"></div>
@@ -4733,7 +4752,7 @@ function atlIniciarAlu(){
   atlCargarVista('aluAtletismoContenido', id || '');
 }
 
-const APP_VERSION = 114;
+const APP_VERSION = 115;
 // (v96) Fecha de la última actualización: se cambia junto con APP_VERSION en cada entrega. Se muestra en la
 // pantalla de inicio y en el menú de cuenta ("v94 · actualizada el 5/10/2026").
 const APP_FECHA = '2026-10-07';
@@ -12677,45 +12696,57 @@ async function cargarRutinaAsignadaAlumno(alumnoId, contId){
     if (token !== RUT_ASIG_TOKEN[contId]) return;
 
     const tipoNombre = (typeof TIPOS_ALUMNO_CACHE !== 'undefined' && TIPOS_ALUMNO_CACHE.find(t => t.id === al.tipo_alumno_id)?.nombre) || null;
+    const items = [];
     const bloque = async (r, origen) => {
       const dias = (r.rutina_dias || []).slice().sort((a, b) => (a.orden ?? 0) - (b.orden ?? 0) || (a.fecha || '').localeCompare(b.fecha || ''));
-      let leToca = null, diasMostrar = dias, nota = '';
-      if (r.modo_dias === 'rotativa'){
+      let leToca = null, diasMostrar = dias, vig = '';
+      const rot = r.modo_dias === 'rotativa';
+      if (rot){
         leToca = await resolverDiaRutinaRotativa(r.id, alumnoId);
         const cicloRot = await obtenerCicloRotativa(r.id); const iniRot = cicloRot.inicio; const finRot = finCicloRotativa(cicloRot.inicio, cicloRot.duracion);
-        nota = leToca ? `Le toca ahora: <b>${escaparHtml(leToca.nombre_dia || 'el siguiente día')}</b>` : '';
-        if (iniRot) nota += (iniRot > hoy ? `${nota ? ' · ' : ''}📅 Arranca el <b>${escaparHtml(fechaLegible(iniRot))}</b> (todavía no la ve el alumno)` : ` · 📅 Ciclo desde ${escaparHtml(fechaLegible(iniRot))}`);
-        if (finRot) nota += ` · ⏳ ${finRot < hoy ? 'Terminó' : 'Termina'} el <b>${escaparHtml(fechaCortaISO(finRot))}</b>`;
+        const v = [];
+        if (iniRot) v.push(iniRot > hoy ? `📅 Arranca el <b>${escaparHtml(fechaCortaISO(iniRot))}</b><br><span class="muted">todavía no la ve el alumno</span>` : `Desde el ${escaparHtml(fechaCortaISO(iniRot))}`);
+        if (finRot) v.push(`${finRot < hoy ? '⌛ Terminó' : '⏳ Termina'} el <b>${escaparHtml(fechaCortaISO(finRot))}</b>`);
+        vig = v.join('<br>') || '<span class="muted">Sin fechas</span>';
       } else {
         // Fecha fija: los días que vienen (hoy en adelante) — son muchos si la rutina es larga.
         const prox = dias.filter(d => d.fecha && d.fecha >= hoy);
         diasMostrar = prox.slice(0, 4);
-        nota = prox.length ? `Próximos días: ${prox.length}` : 'Ya no le quedan días con fecha por delante.';
+        vig = prox.length ? `${prox.length} día${prox.length === 1 ? '' : 's'} por delante` : '<span class="muted">Ya no le quedan días con fecha</span>';
       }
       dias.forEach((d, i) => { RUT_ASIG_TIT[d.id] = `${r.nombre} · ${d.nombre_dia || ('Día ' + (i + 1))}`; });
-      return `
-        <div style="background:var(--panel2); border:1px solid var(--border); border-radius:12px; padding:10px 12px; margin-top:8px;">
-          <div style="font-weight:700;">${escaparHtml(r.nombre)}
-            <span class="pill">${origen}</span>
-            ${r.modo_dias === 'rotativa' ? `<span class="pill">🔁 Rotativa · ${dias.length} día${dias.length === 1 ? '' : 's'}</span>` : ''}
-          </div>
-          ${nota ? `<div class="muted" style="font-size:12.5px; margin:4px 0 6px;">${nota}</div>` : ''}
-          <div style="display:flex; flex-wrap:wrap; gap:6px;">
-            ${diasMostrar.map((d, i) => `<button type="button" class="ghost" style="padding:4px 10px; font-size:12.5px;${leToca && leToca.id === d.id ? ' border-color:var(--accent); color:var(--accent-text);' : ''}" onclick="mostrarRutinaDiaModal('${alumnoId}','${d.id}',RUT_ASIG_TIT['${d.id}'])">${leToca && leToca.id === d.id ? '👉 ' : ''}${escaparHtml(d.nombre_dia || ('Día ' + (i + 1)))}${d.fecha ? ` · ${escaparHtml(String(d.fecha).split('-').reverse().join('/'))}` : ''}</button>`).join('')}
-          </div>
-        </div>`;
+      const chips = diasMostrar.map((d, i) => `<button type="button" class="ghost" style="padding:4px 10px; font-size:12.5px;${leToca && leToca.id === d.id ? ' border-color:var(--accent); color:var(--accent-text);' : ''}" onclick="mostrarRutinaDiaModal('${alumnoId}','${d.id}',RUT_ASIG_TIT['${d.id}'])">${leToca && leToca.id === d.id ? '👉 ' : ''}${escaparHtml(d.nombre_dia || ('Día ' + (i + 1)))}${d.fecha ? ` · ${escaparHtml(String(d.fecha).split('-').reverse().join('/'))}` : ''}</button>`).join('');
+      return { r, origen, rot, leToca, vig, chips, n: dias.length };
     };
-    const partes = [];
-    for (const r of especiales) partes.push(await bloque(r, '⭐ Especial'));
-    for (const r of biblioteca) partes.push(await bloque(r, r.tipo_alumno_id ? `🏷️ ${escaparHtml(tipoNombre || 'Su tipo')}` : '🔁 Para cualquier alumno'));
+    const fila = x => `<tr>
+        <td data-l="Rutina"><div style="font-weight:700;">${escaparHtml(x.r.nombre)}</div>${x.origen ? `<div class="muted" style="font-size:11.5px;">${x.origen}</div>` : ''}${x.leToca ? `<div style="font-size:12.5px; color:var(--accent-text);">Le toca ahora: <b>${escaparHtml(x.leToca.nombre_dia || 'el siguiente día')}</b></div>` : ''}</td>
+        <td data-l="Tipo">${x.rot ? '🔁 Rotativa' : '📅 Fecha fija'}<div class="muted" style="font-size:11.5px;">${x.n} día${x.n === 1 ? '' : 's'}</div></td>
+        <td data-l="Vigencia" style="font-size:12.5px;">${x.vig}</td>
+        <td data-l="Días"><div class="ra-dias">${x.chips || '<span class="muted">—</span>'}</div></td>
+      </tr>`;
+    const tabla = xs => `<div class="ra-scroll"><table class="ra-tbl"><thead><tr><th>Rutina</th><th>Tipo</th><th>Vigencia</th><th>Días</th></tr></thead><tbody>${xs.map(fila).join('')}</tbody></table></div>`;
+    const itEsp = [], itBib = [];
+    for (const r of especiales) itEsp.push(await bloque(r, ''));
+    for (const r of biblioteca) itBib.push(await bloque(r, r.tipo_alumno_id ? `🏷️ ${escaparHtml(tipoNombre || 'Su tipo')}` : '🔁 Para cualquier alumno'));
     if (token !== RUT_ASIG_TOKEN[contId]) return;
-    const prio = (especiales.length && biblioteca.length) ? '<div class="muted" style="font-size:12px; margin-top:8px;">Si tiene una especial, esa es la que se le engancha primero; las de biblioteca se usan cuando no hay especial para ese día.</div>' : '';
-    cont.innerHTML = `
+    const total = itEsp.length + itBib.length;
+    const primeraToca = [...itEsp, ...itBib].find(x => x.leToca);
+    const prio = (itEsp.length && itBib.length) ? '<div class="muted" style="font-size:12px; margin-top:8px;">Si tiene una especial, esa es la que se le engancha primero; las de biblioteca se usan cuando no hay especial para ese día.</div>' : '';
+    const grpEsp = itEsp.length ? `<div class="ra-gh">⭐ Especiales <span class="pill">${itEsp.length}</span></div>${tabla(itEsp)}` : '';
+    const grpBib = itBib.length ? `<details class="ra-sub"${itEsp.length ? '' : ' open'}><summary>📚 De la biblioteca <span class="pill">${itBib.length}</span></summary>${tabla(itBib)}</details>` : '';
+    const abierto = contId !== 'seguimientoAsignada';   // en Seguimiento arranca cerrado: la carga es lo principal
+    cont.innerHTML = total ? `
+      <details class="plegable ra-wrap"${abierto ? ' open' : ''}>
+        <summary><span>📌 Rutinas asignadas <span class="pill">${total}</span></span>${primeraToca ? `<span class="plg-extra muted ra-sum">Le toca: ${escaparHtml(primeraToca.leToca.nombre_dia || 'siguiente día')}</span>` : ''}</summary>
+        <div class="plg-body">
+          <div class="muted" style="font-size:12px; margin-bottom:6px;">${escaparHtml(al.nombre || '')}${tipoNombre ? ' · ' + escaparHtml(tipoNombre) : ''}</div>
+          ${grpEsp}${grpBib}${prio}
+        </div>
+      </details>` : `
       <div class="row" style="justify-content:space-between; align-items:center; gap:8px;">
-        <h2 style="margin:0; font-size:16px;">📌 Rutina que tiene asignada <span class="muted" style="font-size:12px; font-weight:400;">· ${escaparHtml(al.nombre || '')}${tipoNombre ? ' · ' + escaparHtml(tipoNombre) : ''}</span></h2>
+        <h2 style="margin:0; font-size:16px;">📌 Rutinas asignadas <span class="muted" style="font-size:12px; font-weight:400;">· ${escaparHtml(al.nombre || '')}${tipoNombre ? ' · ' + escaparHtml(tipoNombre) : ''}</span></h2>
       </div>
-      ${partes.join('') || `<div class="empty" style="margin-top:8px;">No tiene ninguna rutina: ni especial, ni una de la biblioteca para su tipo de entrenamiento.<br><button type="button" style="margin-top:8px;" onclick="irAAsignarEspecialDesdeModal('${alumnoId}')">⭐ Asignarle una rutina especial</button></div>`}
-      ${prio}`;
+      <div class="empty" style="margin-top:8px;">No tiene ninguna rutina: ni especial, ni una de la biblioteca para su tipo de entrenamiento.<br><button type="button" style="margin-top:8px;" onclick="irAAsignarEspecialDesdeModal('${alumnoId}')">⭐ Asignarle una rutina especial</button></div>`;
   }catch(e){
     if (token === RUT_ASIG_TOKEN[contId]) cont.innerHTML = '<div class="muted">No se pudo cargar su rutina: ' + escaparHtml(extraerMensajeError(e)) + '</div>';
   }
@@ -17940,11 +17971,12 @@ async function abrirReporteAlumno(alumnoId){
     // alumno (ALUMNOS_LISTA_CACHE no los trae, y ALUMNOS_CACHE puede haberse
     // cargado antes de que se completaran) — se piden frescos acá para que la
     // ficha siempre muestre lo último cargado, sin depender de qué caché tocó.
-    const [datosFrescos, evaluaciones, turnos, ejecuciones] = await Promise.all([
+    const [datosFrescos, evaluaciones, turnos, ejecuciones, carga] = await Promise.all([
       sb(`alumnos?id=eq.${alumnoId}&select=fecha_nacimiento,sexo,deporte_disciplina,categoria_peso,altura_cm,peso_kg`),
       fetchEvaluacionesConMetricas(alumnoId),
       sb(`turnos?select=id,estado,asistio&alumno_id=eq.${alumnoId}&estado=neq.cancelado`),
       sb(`ejecuciones?select=id,estado&alumno_id=eq.${alumnoId}`),
+      caCargar(alumnoId).catch(() => null),   // (v115) carga aguda de las últimas 4 semanas
     ]);
     const alumno = { ...alumnoCache, ...(datosFrescos[0] || {}) };
     const porMetrica = construirHistorialMetricas(evaluaciones);
@@ -17956,7 +17988,7 @@ async function abrirReporteAlumno(alumnoId){
     const ultimaEvaluacion = evaluaciones[0] || null; // ya viene ordenada fecha.desc
     const nombresCategorias = (alumno.alumno_categorias || []).map(ac => ac.categorias?.nombre).filter(Boolean);
 
-    REPORTE_ALUMNO_ACTUAL = { alumno, porMetrica, pctAsistencia, entrenamientosCompletados, ultimaEvaluacion, cantidadEvaluaciones: evaluaciones.length, nombresCategorias };
+    REPORTE_ALUMNO_ACTUAL = { alumno, porMetrica, pctAsistencia, entrenamientosCompletados, ultimaEvaluacion, cantidadEvaluaciones: evaluaciones.length, nombresCategorias, carga };
     document.getElementById('reporteAlumnoContainer').innerHTML = renderReporteTopbar() + renderReporteHoja(REPORTE_ALUMNO_ACTUAL);
   }catch(e){
     cont.innerHTML = renderReporteTopbar() + `<div class="reporte-hoja" style="padding:24px; color:#b91c1c;">Error cargando la ficha: ${e.message}</div>`;
@@ -17992,7 +18024,7 @@ function renderReporteTopbar(){
 }
 
 function renderReporteHoja(datos){
-  const { alumno, porMetrica, pctAsistencia, entrenamientosCompletados, ultimaEvaluacion, cantidadEvaluaciones, nombresCategorias } = datos;
+  const { alumno, porMetrica, pctAsistencia, entrenamientosCompletados, ultimaEvaluacion, cantidadEvaluaciones, nombresCategorias, carga } = datos;
   const colorMarca = GIMNASIO_ACTUAL?.color_primario || '#16a34a';
   const fotoHtml = alumno.foto_url
     ? `<img src="${alumno.foto_url}" style="width:64px; height:64px; border-radius:50%; object-fit:cover; border:3px solid #ffffff; flex-shrink:0;">`
@@ -18101,6 +18133,7 @@ function renderReporteHoja(datos){
       ${datosFisicosHtml}
       ${kpisHtml}
       ${habilidadesHtml}
+      ${reporteCargaHtml(carga)}
       <div style="padding:16px 20px 20px;">
         <div style="font-weight:800; font-size:15px; margin-bottom:10px; color:#111827;">Evaluaciones y evolución</div>
         ${resumenEvaluacionesHtml}
@@ -18117,6 +18150,51 @@ function renderReporteHoja(datos){
 // Variante "hoja blanca" (sin var() de CSS) del gráfico de evolución — la usan
 // tanto la vista en pantalla de la ficha como el export a PDF (que rasteriza
 // este mismo SVG, así lo que se ve es igual a lo que se descarga).
+// ---------- (v115) Reporte del alumno: Carga aguda de las últimas 4 semanas ----------
+const CA_REP_COL = { baja:'#6b7280', optima:'#15803d', prec:'#b45309', riesgo:'#b91c1c' };
+const CA_REP_TXT = { baja:'Baja', optima:'Óptima', prec:'Precaución', riesgo:'Riesgo' };
+function caRepKey(v){ return v == null ? null : v < 0.8 ? 'baja' : v <= 1.3 ? 'optima' : v <= 1.5 ? 'prec' : 'riesgo'; }
+function reporteCargaSvg(S){
+  const W = 480, H = 206, pl = 44, pr = 10, pt = 24, pb = 52, n = S.length;
+  const max = Math.max(...S.map(s => Math.max(s.ua, s.cal ? s.cronica : 0)), 1);
+  const paso = max > 4000 ? 1000 : max > 1500 ? 500 : max > 600 ? 200 : 100, tope = Math.ceil(max / paso) * paso;
+  const y = v => pt + (H - pt - pb) * (1 - v / tope), slot = (W - pl - pr) / n, bw = Math.min(64, slot * 0.55), cx = i => pl + slot * i + slot / 2;
+  let g = '';
+  for (let t = 0; t <= tope; t += paso) g += `<line x1="${pl}" x2="${W - pr}" y1="${y(t).toFixed(1)}" y2="${y(t).toFixed(1)}" stroke="#e5e7eb" stroke-width="1"/><text x="${pl - 6}" y="${(y(t) + 3.5).toFixed(1)}" font-size="11" fill="#9ca3af" text-anchor="end">${t}</text>`;
+  const barras = S.map((s, i) => {
+    const k = caRepKey(s.acwr), col = k ? CA_REP_COL[k] : '#9ca3af', h = Math.max(1, y(0) - y(s.ua));
+    return `<rect x="${(cx(i) - bw / 2).toFixed(1)}" y="${y(s.ua).toFixed(1)}" width="${bw.toFixed(1)}" height="${h.toFixed(1)}" rx="4" fill="${col}" opacity=".85"/>`
+      + `<text x="${cx(i).toFixed(1)}" y="${(y(s.ua) - 6).toFixed(1)}" font-size="12" font-weight="700" fill="#111827" text-anchor="middle">${Math.round(s.ua)}</text>`
+      + `<text x="${cx(i).toFixed(1)}" y="${H - 32}" font-size="11" fill="#374151" text-anchor="middle">${s.lbl}${i === n - 1 ? ' (en curso)' : ''}</text>`
+      + `<text x="${cx(i).toFixed(1)}" y="${H - 16}" font-size="11.5" font-weight="700" fill="${col}" text-anchor="middle">${s.acwr == null ? 'calibrando' : 'ACWR ' + caNum(s.acwr, 2)}</text>`;
+  }).join('');
+  const pts = S.map((s, i) => s.cal ? [cx(i), y(s.cronica)] : null).filter(Boolean);
+  const cron = pts.length ? (pts.length > 1 ? `<polyline points="${pts.map(p => p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ')}" fill="none" stroke="#2563eb" stroke-width="2" stroke-dasharray="5 4"/>` : '') + pts.map(p => `<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="4" fill="#2563eb" stroke="#ffffff" stroke-width="1.5"/>`).join('') : '';
+  return `<svg width="100%" viewBox="0 0 ${W} ${H}" style="max-width:${W}px; display:block;"><rect x="0" y="0" width="${W}" height="${H}" fill="#ffffff"/>${g}${barras}${cron}</svg>`;
+}
+function reporteCargaHtml(D){
+  const tit = '<div style="font-weight:800; font-size:15px; margin-bottom:4px; color:#111827;">Carga de entrenamiento · últimas 4 semanas</div>';
+  if (!D) return '';
+  if (!D.hay) return `<div style="padding:16px 20px 4px;">${tit}<div style="color:#6b7280; font-size:13px;">Todavía no hay entrenamientos finalizados con RPE para calcular la carga.</div></div>`;
+  const S = D.sem.slice(-4), a = D.act, k = caRepKey(D.acwr), w = D.w;
+  const wtxt = w ? `${w.total}/25 · ${w.semaforo}` : '—';
+  const kpi = (v, e, col) => `<div class="reporte-kpi"><div class="valor"${col ? ` style="color:${col};"` : ''}>${v}</div><div class="etiqueta">${e}</div></div>`;
+  const filas = S.slice().reverse().map((s, i) => { const kk = caRepKey(s.acwr); return `<tr style="border-top:1px solid #e5e7eb;"><td style="padding:5px 8px;">${s.lbl}${i === 0 ? ' <span style="color:#6b7280;">(en curso)</span>' : ''}</td><td style="text-align:center;">${s.ses}</td><td style="text-align:center;">${Math.round(s.min)}</td><td style="text-align:center;">${Math.round(s.ua)}</td><td style="text-align:center;">${s.cal ? Math.round(s.cronica) : '—'}</td><td style="text-align:center; font-weight:700;">${caNum(s.acwr, 2)}</td><td style="text-align:center; color:${kk ? CA_REP_COL[kk] : '#6b7280'}; font-weight:700;">${kk ? CA_REP_TXT[kk] : 'calibrando'}</td></tr>`; }).join('');
+  return `<div style="padding:16px 20px 4px;">${tit}
+    <div style="color:#6b7280; font-size:12px; margin-bottom:10px;">Carga = minutos × esfuerzo percibido (RPE) de cada sesión. ACWR = carga de la semana ÷ promedio de las últimas 4 semanas.</div>
+    <div class="row" style="gap:10px; flex-wrap:wrap; margin-bottom:10px;">
+      ${kpi(D.acwr == null ? '—' : caNum(D.acwr, 2), 'ACWR actual' + (k ? ' · ' + CA_REP_TXT[k] : ''), k ? CA_REP_COL[k] : null)}
+      ${kpi(Math.round(a.ua) + ' UA', 'Carga de la semana')}
+      ${kpi(a.cal ? Math.round(a.cronica) + ' UA' : '—', 'Promedio 4 semanas')}
+      ${kpi(w ? w.total + "/25" : "—", "Último Wellness" + (w ? " · " + w.semaforo : ""))}
+    </div>
+    <div id="reporteCargaChart">${reporteCargaSvg(S)}</div>
+    <div style="color:#6b7280; font-size:11.5px; margin:4px 0 8px;"><span style="color:#2563eb;">- - -</span> promedio de 4 semanas · barras: <span style="color:#6b7280;">gris</span> calibrando, <span style="color:#15803d;">verde</span> óptima (0,8–1,3), <span style="color:#b45309;">naranja</span> precaución (1,3–1,5), <span style="color:#b91c1c;">rojo</span> riesgo (+1,5).</div>
+    <div style="overflow-x:auto;"><table style="width:100%; border-collapse:collapse; font-size:12.5px; color:#111827; white-space:nowrap;"><thead><tr style="color:#6b7280; text-align:left;"><th style="padding:5px 8px;">Semana</th><th style="text-align:center;">Sesiones</th><th style="text-align:center;">Minutos</th><th style="text-align:center;">Carga (UA)</th><th style="text-align:center;">Prom. 4 sem</th><th style="text-align:center;">ACWR</th><th style="text-align:center;">Zona</th></tr></thead><tbody>${filas}</tbody></table></div>
+    <div style="color:#9ca3af; font-size:11px; margin-top:6px;">Es una señal de alerta para ajustar el trabajo; no predice lesiones.${D.estTot ? ' Algunas sesiones tienen la duración estimada por las series.' : ''}</div>
+  </div>`;
+}
+
 function svgChartReporte(puntos, colorLinea){
   if (!puntos.length) return '<div style="color:#6b7280; font-size:12px;">Sin datos.</div>';
   if (puntos.length === 1){
@@ -18218,7 +18296,7 @@ function imagenAPngDataUrl(url, width, height){
 async function descargarReportePdf(){
   if (!REPORTE_ALUMNO_ACTUAL){ toast('Esperá a que termine de cargar la ficha.', true); return; }
   if (!window.jspdf){ toast('No se pudo cargar el generador de PDF (revisá tu conexión a internet y volvé a intentar).', true); return; }
-  const { alumno, porMetrica, pctAsistencia, entrenamientosCompletados, ultimaEvaluacion, nombresCategorias } = REPORTE_ALUMNO_ACTUAL;
+  const { alumno, porMetrica, pctAsistencia, entrenamientosCompletados, ultimaEvaluacion, nombresCategorias, carga } = REPORTE_ALUMNO_ACTUAL;
   toast('Generando PDF...');
   try{
     const { jsPDF } = window.jspdf;
@@ -18283,6 +18361,66 @@ async function descargarReportePdf(){
         y += 7;
       }
       y += 3;
+    }
+
+
+    // (v115) Carga aguda de las últimas 4 semanas
+    if (carga){
+      if (y > 150){ doc.addPage(); y = 16; }
+      doc.setFontSize(13); doc.setFont(undefined,'bold'); doc.setTextColor(17,24,39);
+      doc.text('Carga de entrenamiento · últimas 4 semanas', marginX, y); y += 6;
+      doc.setFont(undefined,'normal');
+      if (!carga.hay){
+        doc.setFontSize(10); doc.setTextColor(107,114,128);
+        doc.text('Todavía no hay entrenamientos finalizados con RPE para calcular la carga.', marginX, y); y += 10;
+      } else {
+        const S4 = carga.sem.slice(-4), act = carga.act, kz = caRepKey(carga.acwr);
+        doc.setFontSize(8.5); doc.setTextColor(107,114,128);
+        doc.text(doc.splitTextToSize('Carga = minutos x esfuerzo percibido (RPE) de cada sesión. ACWR = carga de la semana / promedio de las últimas 4 semanas.', pageW - marginX*2), marginX, y); y += 8;
+        doc.setFontSize(10.5); doc.setFont(undefined,'bold'); doc.setTextColor(17,24,39);
+        const resumenC = [
+          `ACWR actual: ${carga.acwr == null ? '-' : caNum(carga.acwr, 2)}${kz ? ' (' + CA_REP_TXT[kz] + ')' : ''}`,
+          `Carga de la semana: ${Math.round(act.ua)} UA`,
+          `Promedio 4 sem: ${act.cal ? Math.round(act.cronica) + ' UA' : '-'}`,
+          carga.w ? `Wellness: ${carga.w.total}/25 (${carga.w.semaforo})` : null,
+        ].filter(Boolean).join('     |     ');
+        const lnC = doc.splitTextToSize(resumenC, pageW - marginX*2);
+        doc.text(lnC, marginX, y); y += lnC.length * 5.5 + 3;
+        doc.setFont(undefined,'normal');
+        const svgC = document.querySelector('#reporteCargaChart svg');
+        if (svgC){
+          try{
+            const pngC = await svgAPngDataUrl(svgC, 480, 206);
+            const wC = pageW - marginX*2, hC = wC * (206/480);
+            doc.addImage(pngC, 'PNG', marginX, y, wC, hC); y += hC + 4;
+          }catch(e){ /* sin el gráfico igual sale la tabla */ }
+        }
+        doc.setFontSize(8); doc.setTextColor(107,114,128);
+        const lgC = doc.splitTextToSize('Barras: gris calibrando · verde óptima (0,8-1,3) · naranja precaución (1,3-1,5) · rojo riesgo (+1,5) · línea azul: promedio de 4 semanas', pageW - marginX*2);
+        doc.text(lgC, marginX, y); y += lgC.length * 3.6 + 3;
+        const cols = [marginX, marginX+38, marginX+62, marginX+86, marginX+114, marginX+142, marginX+160];
+        doc.setFontSize(9); doc.setFont(undefined,'bold'); doc.setTextColor(107,114,128);
+        ['Semana','Sesiones','Minutos','Carga (UA)','Prom. 4 sem','ACWR','Zona'].forEach((t, i) => doc.text(t, cols[i], y));
+        y += 2; doc.setDrawColor(229,231,235); doc.line(marginX, y, pageW - marginX, y); y += 5;
+        doc.setFont(undefined,'normal');
+        S4.slice().reverse().forEach((s, i) => {
+          const kk = caRepKey(s.acwr);
+          doc.setTextColor(17,24,39);
+          doc.text(s.lbl + (i === 0 ? ' (en curso)' : ''), cols[0], y);
+          doc.text(String(s.ses), cols[1], y);
+          doc.text(String(Math.round(s.min)), cols[2], y);
+          doc.text(String(Math.round(s.ua)), cols[3], y);
+          doc.text(s.cal ? String(Math.round(s.cronica)) : '-', cols[4], y);
+          doc.text(caNum(s.acwr, 2), cols[5], y);
+          if (kk){ const cc = hexARgb(CA_REP_COL[kk]); doc.setTextColor(cc.r, cc.g, cc.b); doc.setFont(undefined,'bold'); }
+          else doc.setTextColor(107,114,128);
+          doc.text(kk ? CA_REP_TXT[kk] : 'calibrando', cols[6], y);
+          doc.setFont(undefined,'normal');
+          y += 6;
+        });
+        doc.setFontSize(8); doc.setTextColor(156,163,175);
+        doc.text('Es una señal de alerta para ajustar el trabajo; no predice lesiones.', marginX, y + 2); y += 10;
+      }
     }
 
     doc.setFontSize(13); doc.setFont(undefined,'bold'); doc.setTextColor(17,24,39);
