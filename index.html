@@ -4776,7 +4776,7 @@ function atlIniciarAlu(){
   atlCargarVista('aluAtletismoContenido', id || '');
 }
 
-const APP_VERSION = 116;
+const APP_VERSION = 117;
 // (v96) Fecha de la última actualización: se cambia junto con APP_VERSION en cada entrega. Se muestra en la
 // pantalla de inicio y en el menú de cuenta ("v94 · actualizada el 5/10/2026").
 const APP_FECHA = '2026-10-07';
@@ -6342,16 +6342,31 @@ async function cargarInicioProfesor(){
     const domingo = ipSumarDias(lunes, 6);
     const desde14 = ipSumarDias(hoy, -13);
     const [tHoy, horarios, tRango, tSinRutina] = await Promise.all([
-      sb(`turnos?select=id,hora,profesor_id,alumno_id,asistio,rutina_dia_id,rutina_ajustada_en,rutina_dias(nombre_dia),alumnos(nombre)&fecha=eq.${hoy}&estado=neq.cancelado${pf}&order=hora`),
+      sb(`turnos?select=id,hora,profesor_id,alumno_id,asistio,rutina_dia_id,rutina_ajustada_en,rutina_dias(nombre_dia),alumnos(nombre,tipo_alumno_id)&fecha=eq.${hoy}&estado=neq.cancelado${pf}&order=hora`),
       (salaHorario()   // (v105) por horario: el cupo de cada hora es el de la sala
         ? sb(`sala_horarios?select=hora_inicio,hora_fin,cupo&gimnasio_id=eq.${salaGym()}&dia_semana=eq.${dow}&activo=eq.true`).then(r => r.map(x => ({ hora_inicio: x.hora_inicio, hora_fin: x.hora_fin, cupo_por_turno: x.cupo })))
         : sb(`horarios_trabajo?select=profesor_id,hora_inicio,hora_fin,cupo_por_turno&dia_semana=eq.${dow}&activo=eq.true${profId ? '&profesor_id=eq.' + profId : ''}`)),
       sb(`turnos?select=fecha,hora,asistio&fecha=gte.${desde14}&fecha=lte.${domingo}&estado=neq.cancelado${pf}&limit=3000`),
-      sb(`turnos?select=alumno_id,fecha,alumnos(nombre)&rutina_dia_id=is.null&fecha=gte.${hoy}&fecha=lte.${ipSumarDias(hoy, 7)}&estado=neq.cancelado${pf}&limit=300`),
+      sb(`turnos?select=alumno_id,fecha,alumnos(nombre,tipo_alumno_id)&rutina_dia_id=is.null&fecha=gte.${hoy}&fecha=lte.${ipSumarDias(hoy, 7)}&estado=neq.cancelado${pf}&limit=300`),
     ]);
     const [wMap, prog, rotFin, recs] = await Promise.all([ cargarWellnessDelDia(hoy, tHoy), cargarProgresoTurnos(tHoy), cargarRotativasPorTerminar(hoy), cargarRecordsRecientes(hoy) ]);
 
+    // (v117) Una rotativa nunca se engancha al turno (el alumno la ve por "Mis rutinas"), así que
+    // "sin rutina enganchada" no es "sin rutina asignada". Se mira si el alumno tiene una rotativa en curso.
+    const rotDe = {};
+    try{
+      const cand = {};
+      tHoy.forEach(t => { if (!t.rutina_dia_id && t.alumno_id) cand[t.alumno_id] = { id: t.alumno_id, tipo_alumno_id: t.alumnos?.tipo_alumno_id || null }; });
+      tSinRutina.forEach(t => { if (t.alumno_id) cand[t.alumno_id] = { id: t.alumno_id, tipo_alumno_id: t.alumnos?.tipo_alumno_id || null }; });
+      const lista = Object.values(cand);
+      if (lista.length){
+        await cargarRutinasPorAlumno(lista, true);
+        if (RUTINAS_ALUMNO_OK) lista.forEach(a => { const ra = RUTINAS_ALUMNO[a.id]; if (ra && ra.actual && ra.actual.modo === 'rotativa') rotDe[a.id] = ra.actual.nombre; });
+      }
+    }catch(e){ console.error('No se pudo revisar las rotativas del Inicio:', e); }
+
     const turnos = tHoy.map(t => ({
+      rotativa: !t.rutina_dia_id ? (rotDe[t.alumno_id] || '') : '',
       id: t.id, hora: t.hora, h: String(t.hora).slice(0, 5), alumnoId: t.alumno_id, nombre: t.alumnos?.nombre || 'Alumno',
       asistio: t.asistio, ef: asistenciaEfectiva(t.asistio, hoy, t.hora), rutinaDiaId: t.rutina_dia_id,
       nombreDia: t.rutina_dias?.nombre_dia || '', ajustada: !!t.rutina_ajustada_en, profId: t.profesor_id,
@@ -6387,7 +6402,7 @@ async function cargarInicioProfesor(){
     const semana = [];
     for (let i = 0; i < 7; i++){ const f = ipSumarDias(lunes, i); semana.push({ f, n: tRango.filter(r => r.fecha === f).length, hoy: f === hoy }); }
     const sinRutinaMap = {};
-    tSinRutina.forEach(r => { if (!sinRutinaMap[r.alumno_id]) sinRutinaMap[r.alumno_id] = { nombre: r.alumnos?.nombre || 'Alumno', fecha: r.fecha }; });
+    tSinRutina.forEach(r => { if (!rotDe[r.alumno_id] && !sinRutinaMap[r.alumno_id]) sinRutinaMap[r.alumno_id] = { nombre: r.alumnos?.nombre || 'Alumno', fecha: r.fecha }; });
 
     INICIO.d = { hoy, ahora, nowMin, esAdmin, propio, profId, turnos, slots, serie14, etq14, semana, pctAsist,
                  turnosSemana: semana.reduce((s, x) => s + x.n, 0), sinRutina: Object.values(sinRutinaMap), rotFin, records: recs };
@@ -6507,7 +6522,7 @@ function ipRenderTurnos(){
     <div class="ip-lst">
       <div class="ip-lst-h"><span>${s.h} · ${ipPlural(s.items.length, 'anotado', 'anotados')}</span><span>Asistencia ${marc}/${s.items.length}</span></div>
       ${s.items.map(t => {
-        const rut = t.rutinaDiaId ? `Rutina · ${ipEsc(t.nombreDia || 'asignada')}` : '⚠ Sin rutina asignada';
+        const rut = t.rutinaDiaId ? `Rutina · ${ipEsc(t.nombreDia || 'asignada')}` : t.rotativa ? `🔁 Rotativa · ${ipEsc(t.rotativa)}` : '⚠ Sin rutina asignada';
         let extra = '';
         if (t.prog){ extra = (t.prog.total > 0 && t.prog.hechos >= t.prog.total) ? ' · ✅ completa' : ` · 🏋️ ${t.prog.hechos}/${t.prog.total}`; }
         if (t.ajustada) extra += ' · 🔄 ajustada';
@@ -6556,7 +6571,7 @@ function ipRenderWell(){
   el.innerHTML = l.map(t => {
     const bajo = t.w ? WELLNESS_ITEMS.filter(it => t.w[it.k] != null) : [];
     const c = cls(t);
-    return `<div class="ip-w"><div class="top">${ipAv(t)}<div class="ip-nm"><b>${ipEsc(t.nombre)}</b><span>Turno ${t.h} · ${t.rutinaDiaId ? ipEsc(t.nombreDia || 'con rutina') : 'Sin rutina'}</span></div>${ipPillW(t)}</div>
+    return `<div class="ip-w"><div class="top">${ipAv(t)}<div class="ip-nm"><b>${ipEsc(t.nombre)}</b><span>Turno ${t.h} · ${t.rutinaDiaId ? ipEsc(t.nombreDia || 'con rutina') : t.rotativa ? 'Rotativa' : 'Sin rutina'}</span></div>${ipPillW(t)}</div>
       ${(c === 'rd' || c === 'y') && bajo.length ? `<div class="ip-mini">${bajo.map(it => `<span class="${t.w[it.k] <= 2 ? 'low' : ''}">${ipEsc(IP_CORTO[it.k] || it.titulo)} ${t.w[it.k]}</span>`).join('')}</div>` : ''}
       ${t.w && t.w.nota ? `<div class="ip-nota">💬 ${ipEsc(t.w.nota)}</div>` : ''}
       ${c === 'rd' || c === 'y' ? `<div class="ip-wact"><button class="ip-btn sm" onclick="ipAbrirTurno('${t.id}')">Ajustar / ver turno</button></div>` : ''}</div>`;
@@ -20413,6 +20428,8 @@ function salirEjecucion(){
     cargarEvaluacionesAlu(alumnoId);
     renderLogros('aluLogrosContenido', alumnoId);
     cargarSeguimiento('aluSeguimientoContenido', alumnoId);
+    // (v117) Mis rutinas: refrescar el "Te toca" de la rotativa. Antes quedaba la tarjeta vieja (Día 1) y al tocarla se reabría el mismo día en vez de pasar al siguiente.
+    cargarRutinasDeAlumno('aluAlumno','listaRutinasAlu');
   }
 }
 
@@ -21442,6 +21459,7 @@ async function finalizarEntrenamiento(ejecucionId, rpe){
     window._tonelajeTotal = 0;
     const alumnoId = document.getElementById('aluAlumno').value;
     if (alumnoId) cargarHistorial(alumnoId);
+    if (alumnoId) cargarRutinasDeAlumno('aluAlumno','listaRutinasAlu');   // (v117) que "Te toca" ya muestre el día siguiente
     if (alumnoId) recMostrarEnFin(alumnoId);
   }catch(e){ toast('Error finalizando: ' + e.message, true); }
 }
