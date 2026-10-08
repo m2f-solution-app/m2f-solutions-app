@@ -1785,6 +1785,30 @@
   .ra-tbl td{ padding:9px 8px; border-bottom:1px solid var(--border); vertical-align:top; }
   .ra-tbl tbody tr:last-child td{ border-bottom:0; }
   .ra-dias{ display:flex; flex-wrap:wrap; gap:6px; }
+  /* (v116) Seguimiento: sesiones agrupadas por semana (desplegables) + Mejores cargas en tabla */
+  .seg-sem{ border-top:1px solid var(--border); }
+  .seg-sem:first-child{ border-top:0; }
+  .seg-sem > summary{ list-style:none; cursor:pointer; display:flex; align-items:center; gap:10px; padding:12px 2px; font-weight:700; user-select:none; }
+  .seg-sem > summary::-webkit-details-marker{ display:none; }
+  .seg-sem > summary::marker{ content:""; }
+  .seg-sem > summary::before{ content:""; flex:none; width:7px; height:7px; border-right:2px solid var(--muted); border-bottom:2px solid var(--muted); transform:rotate(-45deg); transition:transform .2s; margin:0 4px 0 2px; }
+  .seg-sem[open] > summary::before{ transform:rotate(45deg); }
+  .seg-sem .seg-kp{ margin-left:auto; font-weight:500; font-size:12.5px; color:var(--muted); text-align:right; }
+  .seg-ses{ display:grid; grid-template-columns:minmax(0,1fr) minmax(0,2.2fr) 104px 64px; gap:4px 10px; padding:9px 6px; border-top:1px solid var(--border); cursor:pointer; font-size:13px; align-items:center; border-radius:8px; }
+  .seg-ses:hover{ background:var(--panel2); }
+  .seg-ses .seg-c3{ text-align:right; font-weight:700; white-space:nowrap; }
+  .seg-ses .seg-c4{ text-align:right; white-space:nowrap; color:var(--muted); }
+  .seg-det{ margin:0 0 8px 6px; padding-left:10px; border-left:2px solid var(--border); }
+  @media (max-width:640px){
+    .seg-ses{ grid-template-columns:minmax(0,1fr) auto auto; }
+    .seg-ses .seg-c2{ grid-column:1 / -1; order:3; color:var(--muted); }
+  }
+  .pr-tbl{ width:100%; border-collapse:collapse; font-size:13px; }
+  .pr-tbl th{ text-align:left; font-size:11.5px; font-weight:600; color:var(--muted); padding:4px 6px; border-bottom:1px solid var(--border); }
+  .pr-tbl td{ padding:8px 6px; border-bottom:1px solid var(--border); vertical-align:top; }
+  .pr-tbl tbody tr:last-child td{ border-bottom:0; }
+  .pr-tbl .pr-n{ font-weight:700; } .pr-tbl .pr-s{ font-size:11.5px; color:var(--muted); }
+  .pr-tbl td.r, .pr-tbl th.r{ text-align:right; white-space:nowrap; }
   @media (max-width:640px){
     .ra-tbl thead{ display:none; }
     .ra-tbl, .ra-tbl tbody, .ra-tbl tr, .ra-tbl td{ display:block; width:100%; }
@@ -4752,7 +4776,7 @@ function atlIniciarAlu(){
   atlCargarVista('aluAtletismoContenido', id || '');
 }
 
-const APP_VERSION = 115;
+const APP_VERSION = 116;
 // (v96) Fecha de la última actualización: se cambia junto con APP_VERSION en cada entrega. Se muestra en la
 // pantalla de inicio y en el menú de cuenta ("v94 · actualizada el 5/10/2026").
 const APP_FECHA = '2026-10-07';
@@ -14984,10 +15008,21 @@ async function xSeguimientoExtras(alumnoId, rows){
   const cc = document.getElementById('seguimientoCarga');   // (v114) carga aguda / ACWR
   if (cc){ cc.style.display = ''; cc.innerHTML = '<h2 style="margin-top:0;">Carga aguda (ACWR)</h2><div id="seguimientoCargaCuerpo"></div>'; caPintar('seguimientoCargaCuerpo', alumnoId, () => document.getElementById('seguimientoAlumno').value === alumnoId); }
   try{
-    const prs = await sb(`v_pr_alumno?alumno_id=eq.${alumnoId}&order=pr_peso.desc&limit=6`);
+    const prs = await sb(`v_pr_alumno?alumno_id=eq.${alumnoId}&order=pr_peso.desc&limit=30`);
     if (document.getElementById('seguimientoAlumno').value !== alumnoId) return;
     const el = document.getElementById('seguimientoPRs');
-    if (el && prs.length){ el.style.display = ''; el.innerHTML = `<h2 style="margin-top:0;">Mejores cargas</h2>${prs.map(p => `<div style="display:flex;justify-content:space-between;gap:8px;padding:8px 0;border-bottom:1px solid var(--border);"><span><b>${xe(p.ejercicio_nombre)}</b><br><span class="x-sub">${xe(formatoValorChart(Number(p.pr_peso)))} kg${p.pr_reps ? ' × ' + p.pr_reps : ''} · ${xe(formatearFechaCorta(p.pr_fecha))}</span></span></div>`).join('')}`; }
+    if (el && prs.length){
+      const hoyMs = Date.now();
+      const fila = p => {
+        const kg = Number(p.pr_peso), rm = p.pr_reps ? Math.round(kg * (1 + Number(p.pr_reps) / 30)) : null;
+        const nuevo = p.pr_fecha && (hoyMs - new Date(p.pr_fecha + 'T12:00:00').getTime()) <= 14 * 86400000;
+        return `<tr><td><div class="pr-n">${xe(p.ejercicio_nombre)}</div>${rm && p.pr_reps > 1 ? `<div class="pr-s">1RM estimado ≈ ${rm} kg</div>` : ''}</td><td class="r"><b>${xe(formatoValorChart(kg))} kg</b>${p.pr_reps ? `<div class="pr-s">× ${p.pr_reps} reps</div>` : ''}</td><td class="r">${xe(formatearFechaCorta(p.pr_fecha).slice(0, 5))}${nuevo ? '<div class="pr-s" style="color:var(--accent-text);">🏆 reciente</div>' : ''}</td></tr>`;
+      };
+      const tabla = xs => `<table class="pr-tbl"><thead><tr><th>Ejercicio</th><th class="r">Mejor carga</th><th class="r">Fecha</th></tr></thead><tbody>${xs.map(fila).join('')}</tbody></table>`;
+      const top = prs.slice(0, 5), resto = prs.slice(5);
+      el.style.display = '';
+      el.innerHTML = `<details class="plegable" open><summary>🏆 Mejores cargas <span class="pill">${prs.length}</span></summary><div class="plg-body">${tabla(top)}${resto.length ? `<details class="ra-sub"><summary>Ver ${resto.length} más</summary>${tabla(resto)}</details>` : ''}</div></details>`;
+    }
   }catch(e){ /* sin PRs no pasa nada */ }
 }
 
@@ -15151,26 +15186,34 @@ async function cargarSeguimiento(contId, alumnoId){
   const cont = document.getElementById(contId);
   cont.innerHTML = '<div class="muted">Cargando...</div>';
   try{
-    const rows = await sb(`ejecuciones?select=id,fecha,estado,rpe,rutina_dias(nombre_dia,rutinas(nombre)),ejecucion_ejercicios(id,finalizado,omitido,motivo_omision,sustituido,ejercicios(nombre,grupo_muscular),series_registradas(numero_serie,peso_realizado,repeticiones_realizadas,rir_realizado,tiempo_realizado_seg,tonelaje${await atlF('s')}))&alumno_id=eq.${alumnoId}&order=fecha.desc&limit=20`);
+    const rows = await sb(`ejecuciones?select=id,fecha,estado,rpe,rutina_dias(nombre_dia,rutinas(nombre)),ejecucion_ejercicios(id,finalizado,omitido,motivo_omision,sustituido,ejercicios(nombre,grupo_muscular),series_registradas(numero_serie,peso_realizado,repeticiones_realizadas,rir_realizado,tiempo_realizado_seg,tonelaje${await atlF('s')}))&alumno_id=eq.${alumnoId}&order=fecha.desc&limit=48`);
     SEGUIMIENTO_CACHE[contId] = rows;
     if (contId === 'seguimientoContenido') xSeguimientoExtras(alumnoId, rows);
     if (!rows.length){ cont.innerHTML = '<div class="empty">Todavía no hay entrenamientos registrados.</div>'; return; }
-    cont.innerHTML = rows.map((r, i) => {
-      const tonelajeSesion = (r.ejecucion_ejercicios||[]).reduce((acc, ee) =>
-        acc + (ee.series_registradas||[]).reduce((a,s) => a + (Number(s.tonelaje)||0), 0), 0);
-      return `
-        <div class="card" style="margin-bottom:10px; cursor:pointer;" onclick="toggleSeguimientoSesion('${contId}', ${i})">
-          <div class="row" style="justify-content:space-between; align-items:center;">
-            <div>
-              <div style="font-weight:600;">${r.rutina_dias?.rutinas?.nombre || '-'} · ${r.rutina_dias?.nombre_dia || '-'}</div>
-              <div class="muted">${new Date(r.fecha).toLocaleString('es-AR')}${tonelajeSesion > 0 ? ' · Tonelaje de la sesión: <strong>'+Math.round(tonelajeSesion).toLocaleString('es-AR')+' kg</strong>' : ''}${r.rpe != null ? ' · RPE: <strong>'+r.rpe+'/10</strong>' : ''}</div>
-            </div>
-            <span class="${r.estado==='finalizada' ? 'badge-ok' : 'pill'}">${r.estado}</span>
+    cont.innerHTML = `<div class="card" style="padding-top:6px; padding-bottom:6px;">${(() => {
+      const semanas = {}, orden = [];
+      rows.forEach((r, i) => { const k = caLunesISO(r.fecha); if (!semanas[k]){ semanas[k] = []; orden.push(k); } semanas[k].push({ r, i }); });
+      const hoyLun = caLunesISO(new Date());
+      return orden.map((k, si) => {
+        const its = semanas[k], fin = its.filter(x => x.r.estado === 'finalizada');
+        const ton = its.reduce((a, x) => a + (x.r.ejecucion_ejercicios || []).reduce((b, ee) => b + (ee.series_registradas || []).reduce((c, s) => c + (Number(s.tonelaje) || 0), 0), 0), 0);
+        const rp = fin.filter(x => x.r.rpe != null).map(x => Number(x.r.rpe)), rpp = rp.length ? rp.reduce((a, b) => a + b, 0) / rp.length : null;
+        const fin7 = new Date(k + 'T12:00:00'); fin7.setDate(fin7.getDate() + 6);
+        const tit = (k === hoyLun ? 'Esta semana' : 'Semana del ' + formatearFechaCorta(k).slice(0, 5) + ' al ' + formatearFechaCorta(fechaLocalISO(fin7)).slice(0, 5));
+        const kp = `${its.length} sesión${its.length === 1 ? '' : 'es'}${ton > 0 ? ' · ' + Math.round(ton).toLocaleString('es-AR') + ' kg' : ''}${rpp != null ? ' · RPE ' + rpp.toFixed(1).replace('.', ',') : ''}`;
+        const filas = its.map(({ r, i }) => {
+          const f = new Date(r.fecha), t = (r.ejecucion_ejercicios || []).reduce((b, ee) => b + (ee.series_registradas || []).reduce((c, s) => c + (Number(s.tonelaje) || 0), 0), 0);
+          return `<div class="seg-ses" onclick="toggleSeguimientoSesion('${contId}', ${i})">
+            <div class="seg-c1"><b>${xe(f.toLocaleDateString('es-AR', { weekday: 'short', day: 'numeric', month: 'numeric' }))}</b> <span class="muted">${xe(f.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', hour12: false }))}</span></div>
+            <div class="seg-c2">${xe(r.rutina_dias?.rutinas?.nombre || '-')} · ${xe(r.rutina_dias?.nombre_dia || '-')}</div>
+            <div class="seg-c3">${t > 0 ? Math.round(t).toLocaleString('es-AR') + ' kg' : '—'}</div>
+            <div class="seg-c4">${r.estado === 'finalizada' ? (r.rpe != null ? 'RPE <b style="color:var(--text);">' + r.rpe + '</b>' : '—') : '<span class="pill">' + xe(r.estado) + '</span>'}</div>
           </div>
-          <div id="seguimientoDetalle-${contId}-${i}" style="display:none; margin-top:10px;" onclick="event.stopPropagation()"></div>
-        </div>
-      `;
-    }).join('');
+          <div id="seguimientoDetalle-${contId}-${i}" class="seg-det" style="display:none;"></div>`;
+        }).join('');
+        return `<details class="seg-sem"${si === 0 ? ' open' : ''}><summary><span>${tit}</span><span class="seg-kp">${kp}</span></summary>${filas}</details>`;
+      }).join('');
+    })()}</div>`;
   }catch(e){ cont.innerHTML = `<div class="empty">Error: ${e.message}</div>`; }
 }
 
