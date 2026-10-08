@@ -75,7 +75,7 @@ footer{text-align:center;color:var(--dim);font-size:12px;margin-top:28px}
   <h2 id="h"></h2>
   <p class="intro" id="intro"></p>
   <div class="list" id="list"></div>
-  <footer>Actualizado a la versión 112 · 7/10/2026</footer>
+  <footer>Actualizado a la versión 114 · 7/10/2026</footer>
 </div>
 <script>
 const DATA = {
@@ -427,6 +427,11 @@ admin: {
           donde:'📈 Seguimiento', quien:'Administrador y Profesor',
           sirve:'Elegís un alumno y ves, arriba, un resumen (sesiones, volumen, último entrenamiento), la rutina que tiene asignada, el volumen en el tiempo y sus récords (PRs); abajo, ejercicio por ejercicio, el peso, repeticiones, RIR y tonelaje de cada sesión.',
           aplica:'Es lo que el alumno registró al entrenar: sin carga manual. Es el mismo dato que ve el alumno en su propio Seguimiento y te sirve para decidir cuándo subir cargas.' },
+        { icon:'🔥', title:'Carga aguda (ACWR)',
+          donde:'📈 Seguimiento → tarjeta "Carga aguda" · Ficha del alumno → Resumen y pestaña "Carga"', quien:'Administrador y Profesor',
+          sirve:'Compara cuánto entrenó el alumno esta semana contra su promedio de las últimas 4. Muestra la carga de la semana, el promedio, el ACWR con su zona (Baja, Óptima, Precaución, Riesgo), dos gráficos y una tabla, y lo cruza con su último Wellness.',
+          pasos:['Elegí un alumno en Seguimiento o abrí su ficha → Carga.','Mirá el ACWR: Óptima 0,8–1,3 · Precaución 1,3–1,5 · Riesgo más de 1,5.','Si aparece "Carga alta + Wellness rojo/amarillo", conviene bajar la carga de esa semana (Agenda → ajustar la sesión).'],
+          aplica:'Se calcula sola: la carga de cada sesión es minutos × RPE. El inicio es cuando el alumno toca "Empezar entrenamiento" y el fin cuando confirma el RPE; tope de 2 horas (si pasa, se usa el tiempo entre la primera y la última serie). Con menos de 4 semanas de historial muestra "calibrando". Es una señal de alerta, no predice lesiones. Para guardar la hora exacta de fin hay que correr carga-aguda.sql; sin eso estima la duración con las series.' },
         { icon:'🏆', title:'Logros (vista staff)',
           donde:'🏆 Logros', quien:'Administrador',
           sirve:'Por alumno: su racha semanal, constancia, récords personales y evolución de peso por ejercicio. Podés tildar hasta 4 ejercicios y verlos a la vez en gráficos separados, o tocar "solo este" para volver a uno.',

@@ -2757,6 +2757,7 @@
           </div>
           <div class="x-seg-kpis" id="seguimientoResumen"></div>
         </div>
+        <div id="seguimientoCarga" class="card" style="display:none; margin-top:14px;"></div>
         <div class="x-seg-g2">
           <div id="seguimientoAsignada" class="card" style="display:none;"></div>
           <div id="seguimientoVolumen" class="card" style="display:none;"></div>
@@ -4732,7 +4733,7 @@ function atlIniciarAlu(){
   atlCargarVista('aluAtletismoContenido', id || '');
 }
 
-const APP_VERSION = 112;
+const APP_VERSION = 114;
 // (v96) Fecha de la última actualización: se cambia junto con APP_VERSION en cada entrega. Se muestra en la
 // pantalla de inicio y en el menú de cuenta ("v94 · actualizada el 5/10/2026").
 const APP_FECHA = '2026-10-07';
@@ -9067,6 +9068,7 @@ function guiaFaqBase(rol){
     { adm:true, q:'¿Cómo doy de alta a un alumno y le doy acceso?', r:['Menú ☰ → Alumnos → ＋ Nuevo alumno: nombre y DNI.','Abrí su ficha y asignale un plan.','Tocá 🔑 Acceso: se crea su usuario (su DNI) y una contraseña temporal que se muestra una sola vez.','El alumno entra por la pestaña Alumno y elige su contraseña.'], ir:{ s:'alumnos' } },
     { q:'¿Cómo cargo una evaluación física?', r:['Menú ☰ → 📏 Evaluaciones.','Elegí al alumno → Nueva evaluación → fecha y métricas.','Para evaluar a todo un equipo: chip “Por equipo”, elegí métricas, equipo y fecha, y cargá un valor por jugador.'], ir:{ s:'evaluaciones' } },
     { q:'¿Cómo marco la asistencia?', r:['Menú ☰ → Agenda (o ✓ en Inicio).','Tocá al alumno y elegí Presente o Ausente.','La llegada marcada en Recepción también aparece ahí.'], ir:{ s:'agenda' } },
+    { q:'¿Qué es la carga aguda (ACWR) y dónde la veo?', r:['Mide cuánto entrenó el alumno esta semana comparado con su promedio de las últimas 4. Carga de cada sesión = minutos × RPE.','Se calcula sola: el inicio es cuando toca “Empezar entrenamiento” y el fin cuando confirma el RPE.','La ves en Seguimiento (al elegir al alumno) y en su ficha → pestaña Carga.','Óptima 0,8–1,3 · Precaución 1,3–1,5 · Riesgo +1,5. Si además su Wellness está en amarillo o rojo, conviene bajar la carga.'], ir:{ s:'seguimiento' } },
     { q:'¿Cómo veo cómo viene entrenando un alumno?', r:['Menú ☰ → 📈 Seguimiento y elegí al alumno.','Ves sesiones, volumen, rutina asignada, récords y cada ejercicio con sus series.'], ir:{ s:'seguimiento' } },
     { adm:true, q:'¿Cómo hago para que el cupo sea del horario y no del profesor?', r:['Menú ☰ → 🕒 Horarios → pestaña “Sala y cupos”.','Cargá las franjas de la sala con su cupo por hora (por ejemplo, mañana 20 y tarde 30).','Elegí “Por horario”. El alumno pasa a elegir día y hora; el profesor queda vinculado solo, a modo informativo.','Con el horario completo hay lista de espera. Podés volver a “Por profesor” cuando quieras.'], ir:{ s:'horarios' } },
     { adm:true, q:'¿Cómo cargo las clases y su cupo?', r:['Menú ☰ → 📆 Clases.','Tocá un lugar vacío (o ＋ Nueva clase) y completá nombre, días, horas, profesor y cupo.','Los alumnos se anotan desde su menú “Clases”. Con el cupo lleno pasan a lista de espera.','Las reglas (cancelación, clases por día, cuota) están en Mi gimnasio → Clases y reservas.'], ir:{ s:'clases' } },
@@ -13780,7 +13782,7 @@ function cerrarModalNuevoProfesor(){ xCerrarModal('modalNuevoProfesor'); }
 
 // ---------- Ficha del alumno ----------
 let FICHA_ALU = null, FICHA_TOK = 0, FICHA_PAGOS = [];
-const FICHA_TABS = [['res','Resumen'],['dat','Datos'],['rut','Rutinas'],['pag','Pagos'],['asi','Asistencia'],['eva','Evaluaciones']];
+const FICHA_TABS = [['res','Resumen'],['dat','Datos'],['rut','Rutinas'],['pag','Pagos'],['asi','Asistencia'],['eva','Evaluaciones'],['car','Carga']];
 async function abrirFichaAlumno(id, tab){
   FICHA_PROF = null;
   FICHA_ALU = { id, tab: tab || 'res', a: null };
@@ -13831,12 +13833,13 @@ function pintarFichaAlumno(){
     <div class="x-fi-body" id="fichaTabBody"></div>`;
   const body = document.getElementById('fichaTabBody');
   const tok = ++FICHA_TOK;
-  if (F.tab === 'res'){ body.innerHTML = xFichaRes(a); xFichaResCarga(a, tok); }
+  if (F.tab === 'res'){ body.innerHTML = xFichaRes(a); xFichaResCarga(a, tok); xFichaResCarga2(a, tok); }
   else if (F.tab === 'dat') body.innerHTML = xFichaDat(a);
   else if (F.tab === 'rut'){ body.innerHTML = xFichaRut(a); cargarRutinaAsignadaAlumno(a.id, 'fichaRutAsignada'); }
   else if (F.tab === 'pag'){ body.innerHTML = '<div class="muted">Cargando…</div>'; xFichaPagos(a, tok); }
   else if (F.tab === 'asi'){ body.innerHTML = '<div class="muted">Cargando…</div>'; xFichaAsistencia(a, tok); }
   else if (F.tab === 'eva'){ body.innerHTML = '<div class="muted">Cargando…</div>'; xFichaEvaluaciones(a, tok); }
+  else if (F.tab === 'car') xFichaCarga(a, tok);
 }
 function xFichaRes(a){
   const cu = xCuota(a), r = RUTINAS_ALUMNO[a.id] || {}, plan = xPlanNombre(a);
@@ -13850,7 +13853,8 @@ function xFichaRes(a){
       <div class="x-kpi"><div class="k">Alta</div><div class="v" style="font-size:15px;">${a.creado_en ? xe(formatearFechaCorta(a.creado_en)) : '—'}</div></div></div>
     <div class="x-fi-two"><div class="card" style="margin:0;"><h2 style="margin-top:0;">Rutina</h2>${rut}</div>
     <div class="card" style="margin:0;"><h2 style="margin-top:0;">Cuota y plan</h2><div style="font-weight:800;font-size:16px;">${plan ? 'Plan ' + xe(plan) : 'Sin plan'}</div><div class="x-sub t-${cu.cl}">${xe(cu.t)}</div>
-    <div class="x-btns">${(VIGENTES_POR_ALUMNO[a.id] && VIGENTES_POR_ALUMNO[a.id].plan_id) ? '<button onclick="fichaCobrar()">💰 Cobrar</button>' : '<button class="ghost" onclick="fichaTab(\'dat\')">Asignar un plan</button>'}<button class="ghost" onclick="fichaTab('pag')">Ver pagos</button></div></div></div>`;
+    <div class="x-btns">${(VIGENTES_POR_ALUMNO[a.id] && VIGENTES_POR_ALUMNO[a.id].plan_id) ? '<button onclick="fichaCobrar()">💰 Cobrar</button>' : '<button class="ghost" onclick="fichaTab(\'dat\')">Asignar un plan</button>'}<button class="ghost" onclick="fichaTab('pag')">Ver pagos</button></div></div></div>
+    <div class="card" id="fkCarga" style="display:none; margin:14px 0 0;"></div>`;
 }
 async function xFichaResCarga(a, tok){
   try{
@@ -14911,7 +14915,7 @@ function onCambiarSeguimientoAlumno(){
 // ---------- (v93) Seguimiento: franja de resumen + volumen semanal + mejores cargas ----------
 function xSegReset(){
   ['seguimientoResumen'].forEach(id => { const e = document.getElementById(id); if (e) e.innerHTML = ''; });
-  ['seguimientoVolumen', 'seguimientoPRs'].forEach(id => { const e = document.getElementById(id); if (e){ e.style.display = 'none'; e.innerHTML = ''; } });
+  ['seguimientoVolumen', 'seguimientoPRs', 'seguimientoCarga'].forEach(id => { const e = document.getElementById(id); if (e){ e.style.display = 'none'; e.innerHTML = ''; } });
 }
 function xSegChart(semanas){
   const W = 520, H = 170, pl = 40, pb = 24, pt = 14, n = semanas.length, bw = Math.min(34, (W - pl - 8) / n - 8);
@@ -14946,12 +14950,167 @@ async function xSeguimientoExtras(alumnoId, rows){
     if (semanas.length && semanas.some(s => s.kg > 0)){ vol.style.display = ''; vol.innerHTML = `<h2 style="margin-top:0;">Volumen semanal (kg levantados)</h2>${xSegChart(semanas)}`; }
     else { vol.style.display = 'none'; vol.innerHTML = ''; }
   }
+  const cc = document.getElementById('seguimientoCarga');   // (v114) carga aguda / ACWR
+  if (cc){ cc.style.display = ''; cc.innerHTML = '<h2 style="margin-top:0;">Carga aguda (ACWR)</h2><div id="seguimientoCargaCuerpo"></div>'; caPintar('seguimientoCargaCuerpo', alumnoId, () => document.getElementById('seguimientoAlumno').value === alumnoId); }
   try{
     const prs = await sb(`v_pr_alumno?alumno_id=eq.${alumnoId}&order=pr_peso.desc&limit=6`);
     if (document.getElementById('seguimientoAlumno').value !== alumnoId) return;
     const el = document.getElementById('seguimientoPRs');
     if (el && prs.length){ el.style.display = ''; el.innerHTML = `<h2 style="margin-top:0;">Mejores cargas</h2>${prs.map(p => `<div style="display:flex;justify-content:space-between;gap:8px;padding:8px 0;border-bottom:1px solid var(--border);"><span><b>${xe(p.ejercicio_nombre)}</b><br><span class="x-sub">${xe(formatoValorChart(Number(p.pr_peso)))} kg${p.pr_reps ? ' × ' + p.pr_reps : ''} · ${xe(formatearFechaCorta(p.pr_fecha))}</span></span></div>`).join('')}`; }
   }catch(e){ /* sin PRs no pasa nada */ }
+}
+
+// =====================================================================
+// (v114) CARGA AGUDA (ACWR) — pedido de Martin
+// Carga de una sesión (UA) = minutos de entrenamiento × RPE.
+//   Inicio = ejecuciones.fecha (cuando toca "Empezar entrenamiento").
+//   Fin    = ejecuciones.finalizada_en (la pone el servidor al confirmar el RPE; SQL: carga-aguda.sql).
+//   Tope de 2 h: si inicio→fin pasa de 2 h (se fue y volvió, o dejó la app abierta) se usa el tiempo entre la
+//   primera y la última serie cargada, con 2 h como máximo. Sesiones viejas (sin finalizada_en) usan ese mismo cálculo.
+// Carga aguda = suma de la semana (lunes a domingo). Carga crónica = promedio de esa semana y las 3 anteriores.
+// ACWR = aguda / crónica. Zonas: <0,8 Baja · 0,8–1,3 Óptima · 1,3–1,5 Precaución · >1,5 Riesgo.
+// Es una señal de alerta (no predice lesiones). Con menos de 4 semanas de historial se muestra "calibrando".
+// Sin el SQL la app anda igual (duración estimada por las series). Se cruza con el último Wellness.
+// =====================================================================
+const CA_TOPE_MIN = 120, CA_SEMANAS = 8;
+const CA_ZONAS = {
+  baja:   { t:'Baja',       ic:'▽', c:'var(--muted)',       d:'Carga por debajo de lo habitual. Sostenida, puede perder adaptación.' },
+  optima: { t:'Óptima',     ic:'✓', c:'var(--accent2-text)', d:'Carga en la zona de trabajo habitual.' },
+  prec:   { t:'Precaución', ic:'⚠', c:'var(--warn-text)',    d:'Subió rápido respecto de lo que viene haciendo.' },
+  riesgo: { t:'Riesgo',     ic:'⛔', c:'var(--danger-text)',  d:'Pico de carga: conviene revisar la semana.' },
+};
+function caZona(v){ return v == null ? null : CA_ZONAS[v < 0.8 ? 'baja' : v <= 1.3 ? 'optima' : v <= 1.5 ? 'prec' : 'riesgo']; }
+const caNum = (v, d) => v == null ? '—' : Number(v).toFixed(d == null ? 0 : d).replace('.', ',');
+function caLunesISO(d){ const x = new Date(d); x.setHours(12, 0, 0, 0); x.setDate(x.getDate() - ((x.getDay() + 6) % 7)); return fechaLocalISO(x); }
+function caMinutos(ini, fin, series){
+  const t0 = new Date(ini).getTime();
+  const dFin = fin ? (new Date(fin).getTime() - t0) / 60000 : null;
+  if (dFin != null && dFin >= 1 && dFin <= CA_TOPE_MIN) return { min: dFin, est: false };
+  const span = series.length >= 2 ? (series[series.length - 1] - series[0]) / 60000 : null;
+  if (dFin != null && dFin > CA_TOPE_MIN) return { min: Math.min(CA_TOPE_MIN, span != null && span >= 1 ? span : CA_TOPE_MIN), est: true };
+  if (span != null && span >= 1) return { min: Math.min(CA_TOPE_MIN, span), est: true };
+  return null;
+}
+async function caCargar(alumnoId){
+  const hoy = new Date(), lunesHoy = new Date(caLunesISO(hoy) + 'T12:00:00');
+  const semanas = CA_SEMANAS + 3, ini0 = new Date(lunesHoy); ini0.setDate(ini0.getDate() - 7 * (semanas - 1));
+  const desde = fechaLocalISO(ini0), base = `alumno_id=eq.${alumnoId}&estado=eq.finalizada&rpe=not.is.null&fecha=gte.${desde}&order=fecha.asc&limit=400`;
+  let rows;
+  try{ rows = await sb(`ejecuciones?select=id,fecha,rpe,ejecucion_ejercicios(series_registradas(creado_en))&${base}`); }
+  catch(e){ rows = await sb(`ejecuciones?select=id,fecha,rpe&${base}`); }
+  const fins = {};
+  try{ (await sb(`ejecuciones?select=id,finalizada_en&finalizada_en=not.is.null&${base}`)).forEach(r => { fins[r.id] = r.finalizada_en; }); }catch(e){ /* sin el SQL: se estima con las series */ }
+  let w = null;
+  try{ const q = await sb(`wellness_respuestas?select=fecha,total,semaforo&alumno_id=eq.${alumnoId}&order=fecha.desc&limit=1`); w = q[0] || null; }catch(e){ /* sin wellness */ }
+  const sem = [];
+  for (let i = 0; i < semanas; i++){ const d = new Date(ini0); d.setDate(d.getDate() + 7 * i); sem.push({ k: fechaLocalISO(d), ua: 0, ses: 0, est: 0, min: 0 }); }
+  const idx = Object.fromEntries(sem.map((s, i) => [s.k, i]));
+  let sinDur = 0;
+  rows.forEach(r => {
+    const i = idx[caLunesISO(r.fecha)]; if (i == null) return;
+    const ts = [];
+    (r.ejecucion_ejercicios || []).forEach(ee => (ee.series_registradas || []).forEach(s => { if (s.creado_en) ts.push(new Date(s.creado_en).getTime()); }));
+    ts.sort((a, b) => a - b);
+    const m = caMinutos(r.fecha, fins[r.id], ts);
+    if (!m){ sinDur++; return; }
+    const s = sem[i]; s.ua += m.min * Number(r.rpe); s.ses++; s.min += m.min; if (m.est) s.est++;
+  });
+  const primera = sem.findIndex(s => s.ses > 0), ult = semanas - 1;
+  sem.forEach((s, i) => {
+    s.lbl = formatearFechaCorta(s.k).slice(0, 5);
+    if (i >= 3){
+      s.cronica = (sem[i].ua + sem[i - 1].ua + sem[i - 2].ua + sem[i - 3].ua) / 4;
+      s.cal = primera >= 0 && primera <= i - 3;
+      s.acwr = s.cal && s.cronica > 0 ? s.ua / s.cronica : null;
+    }
+  });
+  const vis = sem.slice(3), act = sem[ult];
+  return {
+    sem: vis, act, acwr: act.acwr, zona: caZona(act.acwr), hay: primera >= 0,
+    calibrando: primera >= 0 && !act.cal, faltan: primera >= 0 ? Math.max(0, 3 - (ult - primera)) : 3,
+    sesTot: vis.reduce((a, s) => a + s.ses, 0), estTot: vis.reduce((a, s) => a + s.est, 0), sinDur, w,
+  };
+}
+function caCruce(D){
+  const z = D.zona, w = D.w; if (!z || !w) return '';
+  const dias = Math.round((new Date() - new Date(w.fecha + 'T12:00:00')) / 86400000);
+  if (dias > 4) return '';
+  const alta = D.acwr > 1.3, wMal = w.semaforo === 'rojo' || w.semaforo === 'amarillo';
+  if (alta && wMal) return `<div class="rc-msg warn" style="margin:10px 0;">${CA_ZONAS[D.acwr > 1.5 ? 'riesgo' : 'prec'].ic} <b>Carga alta + Wellness ${w.semaforo === 'rojo' ? 'rojo' : 'amarillo'}</b> (${w.total}/25, ${dias <= 0 ? 'hoy' : 'hace ' + dias + ' d'}). Es la combinación a mirar: conviene bajar la carga de esta semana.</div>`;
+  if (alta) return `<div class="rc-msg" style="margin:10px 0;">ℹ️ Carga alta, pero el Wellness está en verde (${w.total}/25). Para vigilar, no para alarmarse.</div>`;
+  if (z === CA_ZONAS.baja && w.semaforo === 'rojo') return `<div class="rc-msg" style="margin:10px 0;">ℹ️ Carga baja y Wellness rojo: puede que no esté recuperándose por algo de afuera del entrenamiento.</div>`;
+  return '';
+}
+function caGrafCarga(D){
+  const S = D.sem, n = S.length, W = 520, H = 170, pl = 44, pb = 24, pt = 14, bw = Math.min(34, (W - pl - 8) / n - 8);
+  const max = Math.max(...S.map(s => Math.max(s.ua, s.cal ? s.cronica : 0)), 1);
+  const paso = max > 4000 ? 1000 : max > 1500 ? 500 : max > 600 ? 200 : 100, tope = Math.ceil(max / paso) * paso, y = v => pt + (H - pt - pb) * (1 - v / tope);
+  const gap = n > 1 ? (W - pl - 8 - bw * n) / (n - 1) : 0, cx = i => pl + 4 + i * (bw + gap) + bw / 2;
+  let s = `<svg viewBox="0 0 ${W} ${H}" style="width:100%; max-width:560px; display:block;" role="img" aria-label="Carga semanal en unidades arbitrarias">`;
+  for (let t = 0; t <= tope; t += paso) s += `<line x1="${pl}" x2="${W - 4}" y1="${y(t)}" y2="${y(t)}" stroke="var(--border)" stroke-width="1"/><text class="x-bar-lbl" x="${pl - 6}" y="${y(t) + 4}" text-anchor="end">${t}</text>`;
+  S.forEach((w, i) => { s += `<rect x="${cx(i) - bw / 2}" y="${y(w.ua)}" width="${bw}" height="${Math.max(1, y(0) - y(w.ua))}" rx="4" fill="var(--accent)" opacity="${i === n - 1 ? 1 : .55}"><title>Semana del ${w.lbl}: ${Math.round(w.ua)} UA · ${w.ses} sesión(es)</title></rect><text class="x-bar-lbl" x="${cx(i)}" y="${H - 8}" text-anchor="middle">${i === n - 1 ? 'hoy' : w.lbl}</text>`; });
+  const pts = S.map((w, i) => w.cal ? [cx(i), y(w.cronica), w, i] : null).filter(Boolean);
+  if (pts.length){
+    s += `<polyline points="${pts.map(p => p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ')}" fill="none" stroke="#5aa9ff" stroke-width="2" stroke-dasharray="5 4"/>`;
+    pts.forEach(p => { s += `<circle cx="${p[0]}" cy="${p[1]}" r="4" fill="#5aa9ff" stroke="var(--panel)" stroke-width="2"><title>Promedio de 4 semanas al ${p[2].lbl}: ${Math.round(p[2].cronica)} UA</title></circle>`; });
+  }
+  return s + '</svg>';
+}
+function caGrafAcwr(D){
+  const S = D.sem, n = S.length, W = 520, H = 170, pl = 44, pb = 24, pt = 14;
+  const max = Math.max(2, ...S.map(s => s.acwr || 0)), tope = Math.ceil(max * 4) / 4, y = v => pt + (H - pt - pb) * (1 - v / tope);
+  const gap = n > 1 ? (W - pl - 16) / (n - 1) : 0, cx = i => pl + 8 + i * gap;
+  let s = `<svg viewBox="0 0 ${W} ${H}" style="width:100%; max-width:560px; display:block;" role="img" aria-label="ACWR por semana con zonas">`;
+  s += `<rect x="${pl}" width="${W - pl - 4}" y="${y(0.8)}" height="${y(0) - y(0.8)}" fill="var(--muted)" opacity=".12"/><text class="x-bar-lbl" x="${pl - 6}" y="${y(0) + 4}" text-anchor="end">0</text>`;
+  s += `<rect x="${pl}" width="${W - pl - 4}" y="${y(1.3)}" height="${y(0.8) - y(1.3)}" fill="var(--accent2)" opacity=".16"/><rect x="${pl}" width="${W - pl - 4}" y="${y(1.5)}" height="${y(1.3) - y(1.5)}" fill="var(--warn)" opacity=".2"/><rect x="${pl}" width="${W - pl - 4}" y="${y(tope)}" height="${y(1.5) - y(tope)}" fill="var(--danger)" opacity=".13"/>`;
+  [0.8, 1.3, 1.5].forEach(t => { s += `<line x1="${pl}" x2="${W - 4}" y1="${y(t)}" y2="${y(t)}" stroke="var(--border)" stroke-width="1" stroke-dasharray="3 3"/><text class="x-bar-lbl" x="${pl - 6}" y="${y(t) + 4}" text-anchor="end">${caNum(t, 1)}</text>`; });
+  S.forEach((w, i) => { s += `<text class="x-bar-lbl" x="${cx(i)}" y="${H - 8}" text-anchor="middle">${i === n - 1 ? 'hoy' : w.lbl}</text>`; });
+  let seg = [];
+  const cierra = () => { if (seg.length > 1) s += `<polyline points="${seg.map(p => p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ')}" fill="none" stroke="var(--text)" stroke-width="2"/>`; seg = []; };
+  S.forEach((w, i) => { if (w.acwr == null) cierra(); else seg.push([cx(i), y(w.acwr)]); });
+  cierra();
+  S.forEach((w, i) => { if (w.acwr == null) return; const z = caZona(w.acwr); s += `<circle cx="${cx(i)}" cy="${y(w.acwr)}" r="5" fill="var(--text)" stroke="var(--panel)" stroke-width="2"><title>Semana del ${w.lbl}: ACWR ${caNum(w.acwr, 2)} · ${z.t}</title></circle>`; });
+  const u = S[n - 1]; if (u.acwr != null) s += `<text x="${cx(n - 1)}" y="${y(u.acwr) - 10}" text-anchor="end" font-size="12" font-weight="800" fill="var(--text)">${caNum(u.acwr, 2)}</text>`;
+  return s + '</svg>';
+}
+function caLeyenda(items){ return `<div class="x-sub" style="display:flex; gap:14px; flex-wrap:wrap; margin:6px 0 2px;">${items.map(i => `<span style="display:inline-flex; align-items:center; gap:5px;"><span style="width:12px; height:${i.l ? 0 : 12}px; ${i.l ? 'border-top:2px dashed ' + i.c + ';' : 'background:' + i.c + ';border-radius:3px;'} display:inline-block;"></span>${i.t}</span>`).join('')}</div>`; }
+function caHtml(D){
+  if (!D.hay) return `<div class="empty">Todavía no hay entrenamientos finalizados con RPE en las últimas ${CA_SEMANAS + 3} semanas. La carga se calcula sola cuando el alumno finaliza sus entrenamientos.</div>`;
+  const z = D.zona, w = D.w, a = D.act;
+  const wTxt = w ? `<span style="color:${WELLNESS_COLOR[w.semaforo] || 'inherit'};">${WELLNESS_ICONO[w.semaforo] || ''} ${w.total}/25</span>` : '—';
+  const zPill = z ? `<span style="color:${z.c}; font-weight:800;">${z.ic} ${z.t}</span>` : '<span class="x-sub">calibrando</span>';
+  const tabla = `<details style="margin-top:10px;"><summary class="x-sub" style="cursor:pointer;">Ver como tabla</summary><div style="overflow-x:auto;"><table style="width:100%; border-collapse:collapse; font-size:13px; margin-top:6px;"><thead><tr style="text-align:left; color:var(--muted);"><th style="padding:5px 8px;">Semana</th><th>Sesiones</th><th>Minutos</th><th>Carga (UA)</th><th>Prom. 4 sem</th><th>ACWR</th></tr></thead><tbody>${D.sem.slice().reverse().map(s => { const zz = caZona(s.acwr); return `<tr style="border-top:1px solid var(--border);"><td style="padding:5px 8px;">${xe(s.lbl)}</td><td>${s.ses}</td><td>${Math.round(s.min)}</td><td>${Math.round(s.ua)}</td><td>${s.cal ? Math.round(s.cronica) : '—'}</td><td style="${zz ? 'color:' + zz.c + ';font-weight:700;' : ''}">${s.acwr != null ? zz.ic + ' ' + caNum(s.acwr, 2) : '—'}</td></tr>`; }).join('')}</tbody></table></div></details>`;
+  return `<div class="x-kpis">
+      <div class="x-kpi"><div class="k">Carga de la semana</div><div class="v">${Math.round(a.ua)} <span class="x-sub">UA</span></div></div>
+      <div class="x-kpi"><div class="k">Promedio 4 semanas</div><div class="v">${a.cal ? Math.round(a.cronica) : '—'} <span class="x-sub">UA</span></div></div>
+      <div class="x-kpi"><div class="k">ACWR</div><div class="v">${caNum(D.acwr, 2)}</div><div class="x-sub">${zPill}</div></div>
+      <div class="x-kpi"><div class="k">Último Wellness</div><div class="v" style="font-size:15px;">${wTxt}</div></div></div>
+    ${D.calibrando ? `<div class="rc-msg" style="margin:0 0 10px;">⏳ <b>Calibrando.</b> Faltan ${D.faltan} semana(s) de historial para que el ACWR sea confiable; mientras tanto se ve la carga semanal.</div>` : ''}
+    ${caCruce(D)}
+    <div style="font-weight:700; margin:12px 0 2px;">Carga por semana</div>${caLeyenda([{ c:'var(--accent)', t:'Carga semanal (UA)' }, { c:'#5aa9ff', t:'Promedio de 4 semanas', l:1 }])}${caGrafCarga(D)}
+    <div style="font-weight:700; margin:14px 0 2px;">ACWR por semana</div>${caLeyenda([{ c:'rgba(154,163,178,.4)', t:'Baja –0,8' }, { c:'rgba(61,220,132,.45)', t:'Óptima 0,8–1,3' }, { c:'rgba(255,210,61,.55)', t:'Precaución 1,3–1,5' }, { c:'rgba(255,93,93,.45)', t:'Riesgo +1,5' }])}${caGrafAcwr(D)}
+    ${tabla}
+    <div class="x-sub" style="margin-top:10px;">UA = minutos × RPE. La semana en curso se va completando hasta el domingo.${D.estTot ? ` ${D.estTot} de ${D.sesTot} sesiones tienen la duración estimada por las series (tope 2 h).` : ''}${D.sinDur ? ` ${D.sinDur} sesión(es) sin datos de duración no cuentan.` : ''} Es una señal de alerta, no predice lesiones.</div>`;
+}
+async function caPintar(contId, alumnoId, vigente){
+  const el = document.getElementById(contId); if (!el) return;
+  el.innerHTML = '<div class="muted">Calculando carga…</div>';
+  try{
+    const D = await caCargar(alumnoId);
+    if (!vigente()) return;
+    el.innerHTML = caHtml(D);
+  }catch(e){ if (vigente()) el.innerHTML = `<div class="empty">No se pudo calcular la carga: ${xe(e.message)}</div>`; }
+}
+// Ficha → pestaña "Carga" y mini-tarjeta en "Resumen"
+function xFichaCarga(a, tok){ caPintar('fichaTabBody', a.id, () => tok === FICHA_TOK); }
+async function xFichaResCarga2(a, tok){
+  try{
+    const D = await caCargar(a.id), el = document.getElementById('fkCarga');
+    if (tok !== FICHA_TOK || !el || !D.hay) return;
+    const z = D.zona;
+    el.style.display = '';
+    el.innerHTML = `<h2 style="margin-top:0;">Carga aguda</h2><div style="display:flex; gap:14px; flex-wrap:wrap; align-items:baseline;"><span style="font-weight:800; font-size:16px;">ACWR ${caNum(D.acwr, 2)}</span>${z ? `<span style="color:${z.c}; font-weight:800;">${z.ic} ${z.t}</span>` : '<span class="x-sub">calibrando (faltan ' + D.faltan + ' sem.)</span>'}<span class="x-sub">Semana: ${Math.round(D.act.ua)} UA</span></div>${caCruce(D)}<div class="x-btns"><button class="ghost" onclick="fichaTab('car')">Ver detalle</button></div>`;
+  }catch(e){ /* sin datos no se muestra */ }
 }
 
 let SEGUIMIENTO_CACHE = {}; // { [contId]: últimas sesiones ya traídas para ese panel/alumno,
@@ -19283,6 +19442,17 @@ async function revisarWellnessPendiente(alumnoId, forzar){
   }catch(e){ /* best-effort: nunca corta el ingreso */ }
 }
 
+// (v113) Atajo de arranque: al tocar el aviso con la app cerrada, el cuestionario se abre apenas se sabe quién es el alumno
+// (antes esperaba a que terminaran de cargar personas, gimnasio, catálogo, planes y los controles de seguridad).
+// Si algo falla o la cuenta pide verificación en 2 pasos, no hace nada y sigue el camino normal de siempre.
+async function wellnessAtajo(){
+  try{
+    const f = await sb(`alumnos?perfil_id=eq.${PERFIL_ACTUAL.id}&select=id,activo&limit=1`);
+    if (!f || !f[0] || !f[0].activo) return;
+    RPX.ir = null;
+    revisarWellnessPendiente(f[0].id, true);
+  }catch(e){ /* best-effort */ }
+}
 function abrirWellness(){
   if (document.getElementById('modalWellness')?.classList.contains('show')) return;   // (v112)
   WELLNESS_CTX.valores = {};
@@ -21355,6 +21525,7 @@ if ('serviceWorker' in navigator){
 
     if (PERFIL_ACTUAL && PERFIL_ACTUAL.rol === 'alumno'){
       // Ya había sesión de alumno guardada en el navegador: entra directo a su perfil.
+      if (RPX.ir === 'wellness' && !PERFIL_ACTUAL.debe_cambiar_password) wellnessAtajo();   // (v113) vino de tocar el aviso de Wellness: se abre ya, sin esperar a que cargue todo
       await Promise.all([cargarPersonas(), cargarGimnasioActual(), cargarCategoriasYEquipos()]);
       cargarCatalogoEjercicios().catch(e => console.error(e)); // (v61) en segundo plano
       await cargarPlanesEnSelectAlumno();
