@@ -2224,6 +2224,10 @@
             <div class="ip-pn-h"><div><b>Requiere tu atención</b><div class="ip-sub">Lo que conviene resolver hoy</div></div><span class="ip-pill" id="ipAlCount"></span></div>
             <div class="ip-pn-b" id="ipAl"></div>
           </section>
+          <section class="card ip-pn" id="ipPnRiesgo" style="display:none;">
+            <div class="ip-pn-h"><div><b>Alumnos en riesgo</b><div class="ip-sub">Escribiles antes de que se vayan</div></div><span class="ip-pill" id="ipRiesgoCount"></span></div>
+            <div class="ip-pn-b" id="ipRiesgo"></div>
+          </section>
           <section class="card ip-pn" id="ipPnDash">
             <div class="ip-pn-h"><div><b>Tus números</b><div class="ip-sub">Últimos 14 días</div></div></div>
             <div class="ip-pn-b"><div class="ip-kpis" id="ipKpis"></div><div class="ip-charts">
@@ -4121,6 +4125,7 @@ async function negCargar(silencioso){
     NEG = res; MODULOS_GIMNASIOS = mods || []; MOD_CAT = (cat && cat.length) ? cat : null;
     GIMNASIOS_ADMIN_CACHE = (res.gimnasios || []).map(g => Object.assign({}, g));   // lo usan 💳 Activar y 🧩 Accesos
     negPintar();
+    acuNegCargar();   // (v120) estado de los acuerdos de datos (si el SQL no está, no muestra nada)
   }catch(e){
     const falta = /negocio_resumen|function|404|PGRST202/i.test(String(e && e.message));
     cont.innerHTML = `<div class="card" style="margin:16px;">${falta ? 'Falta correr <b>negocio.sql</b> en Supabase (SQL Editor).' : 'No se pudo cargar: ' + escaparHtml(e.message || '')}</div>`;
@@ -4200,7 +4205,9 @@ function negPintar(){
       <div class="card"><h3 class="ng-t">Próximos vencimientos</h3>${proxHtml}</div>
     </div>
     <div class="at-chips" style="margin:14px 0 8px;">${F.map(f => `<button class="at-chip${NEG_FILTRO === f[0] ? ' on' : ''}" onclick="negFiltrar('${f[0]}')">${f[1]} · ${f[2]}</button>`).join('')}</div>
-    <div class="ng-grid">${lista.map(g => negTarjeta(g, c, g.id === propio)).join('') || '<div class="muted">Ninguno con este filtro.</div>'}</div>`;
+    <div class="ng-grid">${lista.map(g => negTarjeta(g, c, g.id === propio)).join('') || '<div class="muted">Ninguno con este filtro.</div>'}</div>
+    <div id="negAcuerdos"></div>`;
+  acuNegPintar();
 }
 
 // ---------- (v99) ACCESOS POR MÓDULO: qué secciones ve cada gimnasio (lo maneja solo Martin) ----------
@@ -4777,7 +4784,7 @@ function atlIniciarAlu(){
   atlCargarVista('aluAtletismoContenido', id || '');
 }
 
-const APP_VERSION = 118;
+const APP_VERSION = 121;
 // (v96) Fecha de la última actualización: se cambia junto con APP_VERSION en cada entrega. Se muestra en la
 // pantalla de inicio y en el menú de cuenta ("v94 · actualizada el 5/10/2026").
 const APP_FECHA = '2026-10-10';
@@ -5983,6 +5990,7 @@ async function entrarComoStaff(){
   if (PERFIL_ACTUAL.rol === 'admin') revisarNotificacionesStaff();
   actualizarBotonesPush();
   setTimeout(guiaBienvenida, 800); // (v97) bienvenida única para usuarios nuevos
+  if (PERFIL_ACTUAL.rol === 'admin') setTimeout(() => acuRevisar(0), 2200);   // (v120) acuerdo de datos (solo si está activado)
 }
 
 async function hacerLogin(){
@@ -6350,7 +6358,7 @@ async function cargarInicioProfesor(){
       sb(`turnos?select=fecha,hora,asistio&fecha=gte.${desde14}&fecha=lte.${domingo}&estado=neq.cancelado${pf}&limit=3000`),
       sb(`turnos?select=alumno_id,fecha,alumnos(nombre,tipo_alumno_id)&rutina_dia_id=is.null&fecha=gte.${hoy}&fecha=lte.${ipSumarDias(hoy, 7)}&estado=neq.cancelado${pf}&limit=300`),
     ]);
-    const [wMap, prog, rotFin, recs] = await Promise.all([ cargarWellnessDelDia(hoy, tHoy), cargarProgresoTurnos(tHoy), cargarRotativasPorTerminar(hoy), cargarRecordsRecientes(hoy) ]);
+    const [wMap, prog, rotFin, recs, bajas] = await Promise.all([ cargarWellnessDelDia(hoy, tHoy), cargarProgresoTurnos(tHoy), cargarRotativasPorTerminar(hoy), cargarRecordsRecientes(hoy), cargarBajasPeso() ]);
     WELLNESS_DIA = wMap;   // (v117) el popup del turno lee WELLNESS_DIA: sin esto, abierto desde Inicio decía "todavía no completó el Wellness" aunque lo hubiera completado
 
     // (v117) Una rotativa nunca se engancha al turno (el alumno la ve por "Mis rutinas"), así que
@@ -6410,14 +6418,493 @@ async function cargarInicioProfesor(){
     tSinRutina.forEach(r => { if (!rotDe[r.alumno_id] && !sinRutinaMap[r.alumno_id]) sinRutinaMap[r.alumno_id] = { nombre: r.alumnos?.nombre || 'Alumno', fecha: r.fecha }; });
 
     INICIO.d = { hoy, ahora, nowMin, esAdmin, propio, profId, turnos, slots, serie14, etq14, semana, pctAsist,
-                 turnosSemana: semana.reduce((s, x) => s + x.n, 0), sinRutina: Object.values(sinRutinaMap), rotFin, records: recs };
+                 turnosSemana: semana.reduce((s, x) => s + x.n, 0), sinRutina: Object.values(sinRutinaMap), rotFin, records: recs, bajas };
     ipRenderTodo();
+    riesgoCargar();   // (v119) alumnos en riesgo (solo administrador; no frena el Inicio)
   }catch(e){
     console.error('Inicio del profesor:', e);
     const el = document.getElementById('ipTurnos');
     if (el) el.innerHTML = `<div class="ip-vacio">No se pudo cargar el inicio: ${ipEsc(e.message || e)}</div>`;
   }
 }
+
+// ---------- (v119) Alumnos en riesgo: una lista única que cruza asistencia, cuota y Wellness ----------
+// Puntaje transparente (se ve el motivo de cada punto). Solo lee datos que ya existen; no toca la base.
+//   Sin venir: 21+ días = 4 · 14+ = 3 · 7+ = 2 (los 7 solo si venía 2 o más veces por semana) · nunca vino (alta de 10+ días) = 3
+//   Frecuencia cayendo: venía 4+ veces en las 4 semanas anteriores y ahora la mitad o menos = 2
+//   Wellness amarillo/rojo 2+ veces en 14 días = 1
+//   Cuota vencida = 2 · vence en 3 días o menos = 1
+//   Sin turnos reservados hacia adelante (si ya tiene 2+ puntos) = 1
+// Nivel: 6+ alto · 4-5 medio · 3 atención. "Asistió" = turno o clase con presente.
+const RIESGO = { lista: null, t: 0, cargando: false, todos: false, aviso: '' };
+const RIESGO_OCULTO_DIAS = 7;
+function riesgoOcultosLeer(){ try{ return JSON.parse(localStorage.getItem('m2f_riesgo_ocultos') || '{}') || {}; }catch(e){ return {}; } }
+function riesgoOcultar(alumnoId){
+  try{ const o = riesgoOcultosLeer(); o[alumnoId] = Date.now(); localStorage.setItem('m2f_riesgo_ocultos', JSON.stringify(o)); }catch(e){}
+  if (RIESGO.lista) RIESGO.lista = RIESGO.lista.filter(x => x.id !== alumnoId);
+  riesgoRender();
+}
+async function riesgoTodo(path){   // PostgREST corta en 1000 filas: se pagina para no subestimar la asistencia
+  const out = [];
+  for (let off = 0; off < 30000; off += 1000){
+    const r = await sb(`${path}&order=id.asc&limit=1000&offset=${off}`);
+    out.push(...r);
+    if (r.length < 1000) break;
+  }
+  return out;
+}
+function riesgoWa(tel, msg){
+  const d = String(tel || '').replace(/\D/g, ''); if (d.length < 8) return '';
+  return 'https://wa.me/' + (d.length === 10 ? '549' + d : d) + '?text=' + encodeURIComponent(msg);
+}
+async function riesgoCalcular(){
+  const gym = PERFIL_ACTUAL && PERFIL_ACTUAL.gimnasio_id; if (!gym) return { lista: [], aviso: '' };
+  const hoy = fechaLocalISO(), d56 = ipSumarDias(hoy, -56), d28 = ipSumarDias(hoy, -27), d14 = ipSumarDias(hoy, -14), d35 = ipSumarDias(hoy, -35), d8 = ipSumarDias(hoy, -8);
+  const [als, tur, cla, wel, vig, fut] = await Promise.all([
+    riesgoTodo(`alumnos?select=id,nombre,telefono,creado_en&gimnasio_id=eq.${gym}&activo=eq.true`),
+    riesgoTodo(`turnos?select=id,alumno_id,fecha&gimnasio_id=eq.${gym}&asistio=eq.true&fecha=gte.${d56}&fecha=lte.${hoy}`),
+    riesgoTodo(`clases_inscripciones?select=id,alumno_id,fecha&gimnasio_id=eq.${gym}&asistio=eq.true&fecha=gte.${d56}&fecha=lte.${hoy}`).catch(() => []),
+    riesgoTodo(`wellness_respuestas?select=id,alumno_id&gimnasio_id=eq.${gym}&fecha=gte.${d14}&semaforo=in.(rojo,amarillo)`).catch(() => []),
+    sb(`v_plan_vigente_alumno?select=alumno_id,plan_id,estado_pago,dias_para_vencer,vigencia_hasta&limit=5000`).catch(() => []),
+    riesgoTodo(`turnos?select=id,alumno_id&gimnasio_id=eq.${gym}&estado=neq.cancelado&fecha=gt.${hoy}`).catch(() => []),
+  ]);
+  const asist = {};   // alumno → fechas con presente (turnos + clases, sin repetir el día)
+  [...tur, ...cla].forEach(r => { (asist[r.alumno_id] = asist[r.alumno_id] || new Set()).add(r.fecha); });
+  const conAsist28 = als.filter(a => asist[a.id] && [...asist[a.id]].some(f => f >= d28)).length;
+  if (als.length >= 5 && conAsist28 < als.length * 0.2)
+    return { lista: [], aviso: 'Casi no hay asistencia marcada en las últimas 4 semanas. Para que esta lista sirva hay que registrarla (Agenda, Recepción o QR); si no, todos parecerían ausentes.' };
+  const wN = {}; wel.forEach(r => { wN[r.alumno_id] = (wN[r.alumno_id] || 0) + 1; });
+  const vg = {}; vig.forEach(v => { vg[v.alumno_id] = v; });
+  const futSet = new Set(fut.map(r => r.alumno_id)), usaTurnos = fut.length > 0;
+  const umbral = Math.max(3, Number(GIMNASIO_ACTUAL && GIMNASIO_ACTUAL.umbral_dias_inactivo) || 7);
+  const out = [];
+  als.forEach(a => {
+    const altaDias = a.creado_en ? diasEntreISO(a.creado_en.slice(0, 10), hoy) : 999;
+    if (altaDias <= 10) return;   // los recién llegados los cubre "Onboarding" en Seguimiento
+    const fs = asist[a.id] ? [...asist[a.id]].sort() : [];
+    const ult = fs.length ? fs[fs.length - 1] : null;
+    const rec = fs.filter(f => f >= d28).length, prev = fs.filter(f => f >= d56 && f < d28).length;
+    const cad = fs.filter(f => f >= d35 && f <= d8).length / 4;   // veces por semana que venía antes de esta última semana
+    const mot = []; let pts = 0;
+    const add = (w, kind, txt) => { pts += w; mot.push({ w, kind, txt }); };
+    if (!ult){ if (altaDias > 56) add(4, 'sin', 'Más de 8 semanas sin venir'); else add(3, 'nunca', 'Nunca vino'); }
+    else {
+      const dias = diasEntreISO(ult, hoy);
+      if (dias >= 21) add(4, 'sin', `${dias} días sin venir`);
+      else if (dias >= 14) add(3, 'sin', `${dias} días sin venir`);
+      else if (dias >= umbral && cad >= 2) add(2, 'sin', `${dias} días sin venir (venía ${String(Math.round(cad * 10) / 10).replace('.', ',')} veces por semana)`);
+    }
+    if (prev >= 4 && rec <= prev * 0.5) add(2, 'baja', `Venía ${String(Math.round(prev / 4 * 10) / 10).replace('.', ',')} por semana y ahora ${String(Math.round(rec / 4 * 10) / 10).replace('.', ',')}`);
+    if ((wN[a.id] || 0) >= 2) add(1, 'well', `Wellness bajo ${wN[a.id]} veces en 14 días`);
+    const v = vg[a.id];
+    if (v && v.plan_id){
+      const n = v.dias_para_vencer != null ? Math.abs(Math.round(Number(v.dias_para_vencer))) : null;
+      if (v.estado_pago === 'vencido') add(2, 'cuota', `Cuota vencida${n != null ? ' hace ' + n + ' d' : ''}`);
+      else if (v.estado_pago === 'por_vencer' && n != null && n <= 3) add(1, 'cuota', `La cuota vence en ${n} d`);
+    }
+    if (usaTurnos && pts >= 2 && !futSet.has(a.id)) add(1, 'turno', 'Sin turnos reservados');
+    if (pts >= 3) out.push({ id: a.id, nombre: a.nombre || 'Alumno', telefono: a.telefono, pts, mot, nivel: pts >= 6 ? 'alto' : pts >= 4 ? 'medio' : 'atencion' });
+  });
+  out.sort((p, q) => q.pts - p.pts || p.nombre.localeCompare(q.nombre));
+  return { lista: out, aviso: '' };
+}
+function riesgoMensaje(x){
+  const n = String(x.nombre || '').trim().split(' ')[0] || '', gim = (GIMNASIO_ACTUAL && GIMNASIO_ACTUAL.nombre) || 'el gimnasio';
+  const m = [...x.mot].filter(k => k.kind !== 'turno').sort((a, b) => b.w - a.w)[0] || { kind: 'sin' };
+  if (m.kind === 'cuota') return `Hola ${n}! Te escribo de ${gim} por tu cuota. ¿Coordinamos para que sigas entrenando sin problemas?`;
+  if (m.kind === 'baja') return `Hola ${n}! Noté que últimamente venís menos que antes. ¿Cómo andás? Si querés ajustamos horarios o la rutina para que te quede más cómodo 💪`;
+  if (m.kind === 'well') return `Hola ${n}! ¿Cómo venís? Vi que últimamente llegás cansado/a a entrenar. Si querés ajustamos la carga para que te sientas mejor.`;
+  if (m.kind === 'nunca') return `Hola ${n}! Te escribo de ${gim}. Todavía no pudimos vernos entrenar: ¿te ayudo a elegir un horario para empezar?`;
+  return `Hola ${n}! Hace unos días que no te vemos en ${gim} 💪 ¿Todo bien? Si querés, te ayudo a retomar con una rutina más liviana.`;
+}
+async function riesgoCargar(forzar){
+  const box = document.getElementById('ipPnRiesgo'); if (!box) return;
+  if (!PERFIL_ACTUAL || PERFIL_ACTUAL.rol !== 'admin'){ box.style.display = 'none'; return; }
+  if (RIESGO.cargando) return;
+  if (!forzar && RIESGO.lista && Date.now() - RIESGO.t < 10 * 60000){ riesgoRender(); return; }
+  RIESGO.cargando = true;
+  try{
+    const r = await riesgoCalcular();
+    RIESGO.lista = r.lista; RIESGO.aviso = r.aviso; RIESGO.t = Date.now();
+  }catch(e){ console.error('Alumnos en riesgo:', e); RIESGO.lista = null; box.style.display = 'none'; }
+  RIESGO.cargando = false;
+  riesgoRender();
+}
+function riesgoRender(){
+  const box = document.getElementById('ipPnRiesgo'), cont = document.getElementById('ipRiesgo'), cnt = document.getElementById('ipRiesgoCount');
+  if (!box || !cont) return;
+  if (!PERFIL_ACTUAL || PERFIL_ACTUAL.rol !== 'admin' || !RIESGO.lista){ box.style.display = 'none'; return; }
+  box.style.display = '';
+  const oc = riesgoOcultosLeer(), lim = Date.now() - RIESGO_OCULTO_DIAS * 86400000;
+  const lista = RIESGO.lista.filter(x => !(oc[x.id] && oc[x.id] > lim));
+  if (cnt){ cnt.textContent = lista.length ? String(lista.length) : '0'; cnt.className = 'ip-pill ' + (lista.some(x => x.nivel === 'alto') ? 'bad' : lista.length ? 'warn' : 'ok'); }
+  if (RIESGO.aviso){ cont.innerHTML = `<div class="ip-vacio">${escaparHtml(RIESGO.aviso)}</div>`; return; }
+  if (!lista.length){ cont.innerHTML = '<div class="ip-vacio">Nadie en riesgo por ahora 💪</div>'; return; }
+  const col = { alto: 'var(--danger)', medio: 'var(--warn)', atencion: 'var(--muted)' }, tx = { alto: 'Riesgo alto', medio: 'Riesgo medio', atencion: 'Para vigilar' };
+  const ver = RIESGO.todos ? lista : lista.slice(0, 6);
+  cont.innerHTML = ver.map(x => {
+    const wa = riesgoWa(x.telefono, riesgoMensaje(x));
+    return `<div class="rsk-fila" style="display:flex; align-items:center; gap:10px; padding:10px 18px; border-top:1px solid var(--border);">
+      <span title="${tx[x.nivel]}" style="width:10px; height:10px; border-radius:50%; flex:none; background:${col[x.nivel]};"></span>
+      <div style="flex:1; min-width:0;"><div style="font-weight:700;">${escaparHtml(x.nombre)} <span class="muted" style="font-weight:500; font-size:11.5px;">· ${tx[x.nivel]}</span></div>
+        <div class="muted" style="font-size:12.5px;">${x.mot.map(m => escaparHtml(m.txt)).join(' · ')}</div></div>
+      ${wa ? `<button type="button" class="secondary" style="padding:6px 10px;" title="Escribirle por WhatsApp" onclick='riesgoEscribir(${JSON.stringify(x.id)})'>💬</button>` : '<span class="muted" style="font-size:11px;">Sin teléfono</span>'}
+      <button type="button" class="ghost" style="padding:6px 10px;" title="Ya lo resolví: ocultar ${RIESGO_OCULTO_DIAS} días" onclick='riesgoOcultar(${JSON.stringify(x.id)})'>✓</button></div>`;
+  }).join('') + (lista.length > 6 ? `<div style="padding:8px 18px; border-top:1px solid var(--border);"><button type="button" class="ghost" onclick="RIESGO.todos=!RIESGO.todos; riesgoRender()">${RIESGO.todos ? 'Ver menos' : 'Ver los ' + lista.length}</button></div>` : '')
+    + `<div class="muted" style="font-size:11.5px; padding:8px 18px 12px; border-top:1px solid var(--border);">Puntaje según días sin venir, frecuencia, cuota y Wellness. 💬 abre WhatsApp con el mensaje armado y lo anota como contacto; ✓ lo oculta ${RIESGO_OCULTO_DIAS} días.</div>`;
+}
+function riesgoEscribir(alumnoId){
+  const x = (RIESGO.lista || []).find(r => r.id === alumnoId); if (!x) return;
+  const wa = riesgoWa(x.telefono, riesgoMensaje(x)); if (!wa) return;
+  window.open(wa, '_blank');
+  try{ marcarContactoAlumno(alumnoId, 'riesgo'); }catch(e){}
+  riesgoOcultar(alumnoId);
+}
+
+// ---------- (v120) ACUERDO DE CONFIDENCIALIDAD, DATOS PERSONALES Y SEGURIDAD ----------
+// Cada gimnasio (su administrador) acepta dentro de la app un acuerdo con el nombre del gimnasio. Queda registrado
+// (quién, DNI, fecha, versión y huella SHA-256 del texto exacto) y se genera un PDF que se manda por mail
+// (función enviar-acuerdo + Resend). Todo apagado hasta que Martin lo activa en SQL (acuerdo_datos_config.activo).
+// ⚠ El texto de una versión publicada NO se edita: si hay que cambiarlo, se crea la versión '1.1' y se sube la
+//   versión en la configuración (así cada huella sigue coincidiendo con lo que se aceptó).
+const ACUERDO_TEXTOS = {
+  '1.0': function(c){
+    const P = c.prov || {}, G = c.gimnasio || 'EL CLIENTE';
+    return {
+      titulo: 'ACUERDO DE CONFIDENCIALIDAD, TRATAMIENTO DE DATOS PERSONALES Y SEGURIDAD DE LA INFORMACIÓN',
+      secciones: [
+        { h: 'Partes', p: [
+          `Entre ${P.titular}, CUIT ${P.cuit}, con domicilio en ${P.domicilio} (en adelante, “EL PROVEEDOR”), titular de la plataforma M2F Solutions, y ${G} (en adelante, “EL CLIENTE”), representado en este acto por la persona que lo acepta electrónicamente, se celebra el presente Acuerdo, que complementa los Términos de Uso del servicio y se rige por las cláusulas siguientes.`] },
+        { h: '1. Objeto', p: [
+          'Este Acuerdo regula la confidencialidad, el tratamiento de datos personales y las medidas de seguridad aplicables a la información que EL CLIENTE carga o genera al usar la plataforma M2F Solutions (gestión de socios, turnos, cobranzas, rutinas, evaluaciones físicas y servicios relacionados), en cumplimiento de la Ley Nº 25.326 de Protección de los Datos Personales, su Decreto Reglamentario Nº 1558/2001 y demás normas aplicables.'] },
+        { h: '2. Definiciones', p: [
+          '“Datos del Cliente”: toda información, personal o no, que EL CLIENTE, su personal o sus socios cargan o generan en la plataforma.',
+          '“Titulares”: las personas a quienes se refieren los datos (socios, alumnos, profesores y demás personal de EL CLIENTE).',
+          '“Tratamiento”: cualquier operación sobre los datos, como almacenarlos, consultarlos, modificarlos, comunicarlos o suprimirlos.',
+          '“Incidente de seguridad”: acceso, pérdida, alteración o divulgación no autorizados de Datos del Cliente.'] },
+        { h: '3. Roles de las partes', p: [
+          'EL CLIENTE es el responsable de la base de datos de sus socios y de su personal: decide para qué y cómo se usan los datos de sus Titulares.',
+          'EL PROVEEDOR actúa como prestador de servicios de tratamiento de datos por cuenta de EL CLIENTE (art. 25 de la Ley Nº 25.326): trata los datos solo para brindar el servicio y según las instrucciones de EL CLIENTE, que se expresan a través de este Acuerdo y del uso y la configuración de la plataforma.'] },
+        { h: '4. Datos que se tratan', p: [
+          'a) Identificación y contacto: los que EL CLIENTE decida cargar, como nombre y apellido, DNI, teléfono y correo electrónico.',
+          'b) Membresía y cobranzas: plan, vencimientos, estado de cuenta y pagos registrados. EL PROVEEDOR no almacena números de tarjeta; los pagos online los procesa Mercado Pago.',
+          'c) Actividad: turnos, reservas, asistencia, rutinas y registros de entrenamiento.',
+          'd) Evaluaciones físicas y bienestar: medidas corporales, composición corporal, marcas de rendimiento, cuestionarios de bienestar y lesiones o limitaciones que se registren. Estos datos pueden revelar información de salud y se consideran datos sensibles (art. 2 de la Ley Nº 25.326), por lo que reciben un nivel reforzado de protección.',
+          'e) Datos del personal: nombre, correo electrónico, rol y registros de uso de la plataforma.',
+          'f) Fotos de perfil y logotipos, cuando se carguen.'] },
+        { h: '5. Finalidad e instrucciones', p: [
+          'EL PROVEEDOR tratará los Datos del Cliente únicamente para prestar y mantener el servicio contratado. No los aplicará ni utilizará con un fin distinto, no los cederá ni los comunicará a otras personas, ni siquiera para su conservación, salvo a los proveedores indicados en la cláusula 9 o por orden de autoridad competente.',
+          'EL PROVEEDOR no usará los datos para publicidad propia ni de terceros y no los venderá. Podrá elaborar estadísticas de uso de la plataforma con información agregada y disociada, que no permita identificar a ninguna persona ni a EL CLIENTE.',
+          'Si EL PROVEEDOR considera que una instrucción de EL CLIENTE infringe la normativa, se lo hará saber.'] },
+        { h: '6. Confidencialidad', p: [
+          'EL PROVEEDOR guardará secreto sobre los Datos del Cliente. Esta obligación subsiste una vez finalizada la relación (art. 10 de la Ley Nº 25.326).',
+          'Solo accederán a los datos las personas que lo necesiten para prestar el servicio o dar soporte, sujetas a un deber de confidencialidad, y únicamente cuando sea necesario (por ejemplo, para resolver una consulta o un error).',
+          'EL CLIENTE, por su parte, mantendrá reservadas las credenciales de su cuenta y la información técnica y comercial de la plataforma a la que acceda.'] },
+        { h: '7. Medidas de seguridad', p: [
+          'EL PROVEEDOR aplica medidas técnicas y organizativas razonables para proteger los datos contra el acceso no autorizado, la pérdida, la alteración y la divulgación (art. 9 de la Ley Nº 25.326), entre ellas:',
+          'a) Separación por gimnasio: cada gimnasio accede solo a sus propios datos; la restricción se aplica en la base de datos y no solo en la pantalla.',
+          'b) Roles y permisos: administración, profesores, recepción y socios ven únicamente lo que corresponde a su rol; cada socio accede solo a su información personal.',
+          'c) Verificación en dos pasos para las cuentas de administración.',
+          'd) Cifrado de las comunicaciones (HTTPS/TLS) y de los datos almacenados por el proveedor de infraestructura.',
+          'e) Contraseñas protegidas: no se guardan en texto legible.',
+          'f) Copias de respaldo y recuperación a cargo del proveedor de infraestructura.',
+          'g) Acceso interno restringido a quienes lo necesitan para prestar el servicio.',
+          'Ninguna medida elimina todo riesgo. EL PROVEEDOR las revisará y actualizará a medida que evolucionen la tecnología y el servicio.'] },
+        { h: '8. Incidentes de seguridad', p: [
+          'Si EL PROVEEDOR detecta un incidente de seguridad que afecte Datos del Cliente, se lo comunicará a EL CLIENTE al correo del administrador de su cuenta, sin demora injustificada y como máximo dentro de las 72 horas de haberlo detectado. Indicará, en la medida en que lo conozca, qué ocurrió, qué datos están involucrados, qué medidas tomó y qué se recomienda hacer.',
+          'EL PROVEEDOR colaborará con EL CLIENTE para contener el incidente y para las comunicaciones que correspondan a los Titulares y a la autoridad.'] },
+        { h: '9. Proveedores y ubicación de los datos', p: [
+          'EL CLIENTE autoriza a EL PROVEEDOR a valerse de los siguientes proveedores para prestar el servicio:',
+          'a) Supabase Inc.: base de datos, autenticación y archivos. Los datos se alojan en servidores ubicados en São Paulo, Brasil.',
+          'b) GitHub (Microsoft): alojamiento de la aplicación web, que no contiene datos personales de los socios.',
+          'c) Resend: envío de correos de la plataforma (avisos y este Acuerdo), que incluyen la dirección de correo del destinatario y el contenido del mensaje.',
+          'd) Mercado Pago: procesamiento de pagos online, cuando EL CLIENTE lo habilita. Actúa como responsable de los datos de pago que recibe, según sus propias condiciones.',
+          'EL PROVEEDOR elegirá proveedores que ofrezcan garantías razonables de confidencialidad y seguridad, y avisará a EL CLIENTE si incorpora otros que traten Datos del Cliente.',
+          'EL CLIENTE toma conocimiento y presta su conformidad a que los datos se traten y se almacenen fuera de la República Argentina (Brasil y, para el envío de correos, Estados Unidos) con las garantías previstas en esta cláusula.'] },
+        { h: '10. Derechos de los Titulares', p: [
+          'Los Titulares pueden ejercer sus derechos de acceso, rectificación, actualización y supresión (arts. 14 a 16 de la Ley Nº 25.326) ante EL CLIENTE, que es el responsable. EL PROVEEDOR le brindará las herramientas y la colaboración razonable para atenderlos, dentro de los 5 días hábiles de solicitada.',
+          'Si un Titular se dirige a EL PROVEEDOR, este lo derivará a EL CLIENTE, salvo que la ley disponga otra cosa. La Agencia de Acceso a la Información Pública, órgano de control de la Ley Nº 25.326, atiende las denuncias y reclamos de los Titulares.'] },
+        { h: '11. Obligaciones de EL CLIENTE', p: [
+          'EL CLIENTE declara y se compromete a:',
+          'a) Contar con el consentimiento libre, expreso e informado de los Titulares, o con otra base legal suficiente, para cargar sus datos en la plataforma; en particular, para los datos de salud y de evaluaciones físicas.',
+          'b) Obtener la autorización de madres, padres o representantes legales cuando los Titulares sean menores de edad y la ley lo requiera.',
+          'c) Informar a los Titulares la finalidad del tratamiento, sus derechos y su identidad como responsable, incluida la leyenda legal prevista por la normativa.',
+          'd) Cargar solo datos necesarios, exactos y actualizados.',
+          'e) Administrar sus usuarios: no compartir contraseñas, dar de baja a quienes dejan el equipo y mantener activa la verificación en dos pasos.',
+          'f) Inscribir su base de datos en el Registro Nacional de Bases de Datos Personales, si le corresponde.',
+          'g) Usar la plataforma de manera lícita.'] },
+        { h: '12. Duración, devolución y supresión', p: [
+          'Este Acuerdo rige mientras EL CLIENTE use la plataforma. La confidencialidad continúa después.',
+          'Al terminar el servicio, EL CLIENTE puede pedir una exportación de sus datos en formato de planilla. Cumplida la prestación, EL PROVEEDOR suprimirá los Datos del Cliente de los sistemas activos dentro de los 30 días del pedido o del fin del servicio, y de las copias de respaldo en sus ciclos habituales de rotación (hasta 90 días).',
+          'Quedan a salvo los datos que EL PROVEEDOR deba conservar por obligaciones legales propias, y los que EL CLIENTE autorice conservar por escrito ante la posibilidad de futuros encargos, por un máximo de 2 años y con las debidas condiciones de seguridad (art. 25 de la Ley Nº 25.326).'] },
+        { h: '13. Información y verificación', p: [
+          'Ante un pedido por escrito, EL PROVEEDOR pondrá a disposición de EL CLIENTE la información razonable para verificar el cumplimiento de este Acuerdo, hasta una vez por año, salvo que haya ocurrido un incidente de seguridad.'] },
+        { h: '14. Responsabilidad', p: [
+          'Cada parte responde, conforme a la ley, por los daños que cause por el incumplimiento de este Acuerdo.',
+          'EL PROVEEDOR no responde por incidentes originados en el uso indebido de las credenciales de EL CLIENTE o de su personal, ni por datos cargados o instrucciones dadas por EL CLIENTE en infracción de la normativa.'] },
+        { h: '15. Relación con otros documentos y modificaciones', p: [
+          'Este Acuerdo integra los Términos de Uso de M2F Solutions; en lo relativo a datos personales y seguridad, prevalece sobre ellos.',
+          'Las modificaciones se harán mediante una nueva versión, que se informará a EL CLIENTE y requerirá su aceptación. Si alguna cláusula fuera inválida, las demás continúan vigentes.'] },
+        { h: '16. Contacto', p: [
+          `Consultas de privacidad y seguridad, y avisos de incidentes: ${P.email}.`] },
+        { h: '17. Ley aplicable y jurisdicción', p: [
+          `Este Acuerdo se rige por las leyes de la República Argentina. Las partes se someten a ${P.jurisdiccion}, con renuncia a cualquier otro fuero o jurisdicción que pudiera corresponder.`] },
+        { h: '18. Aceptación electrónica', p: [
+          'La persona que acepta declara tener facultades suficientes para obligar a EL CLIENTE y haber leído este Acuerdo.',
+          'La aceptación se realiza dentro de la plataforma, desde la cuenta de administración de EL CLIENTE, ingresando nombre, apellido y DNI. Queda registrada con fecha y hora, versión del texto y una huella digital (código de verificación) del texto aceptado. Las partes reconocen este registro como firma electrónica y prueba del consentimiento, en los términos de la Ley Nº 25.506. EL PROVEEDOR entregará a EL CLIENTE una copia en PDF.'] },
+      ],
+    };
+  },
+};
+
+let ACUERDO_EST = null;      // estado del admin logueado (acuerdo_datos_estado)
+let ACU = null;              // acuerdo abierto en el modal: { version, ctx, doc, acep, modo }
+let ACU_POSPUESTO = false;   // "Más tarde" en esta sesión: no se vuelve a abrir solo hasta el próximo ingreso
+let ACU_RES = null;          // panel de Martin: resumen por gimnasio
+
+function acuerdoDoc(version, ctx){ const f = ACUERDO_TEXTOS[version]; return f ? f(ctx) : null; }
+function acuTextoPlano(doc){
+  return [doc.titulo].concat(doc.secciones.map(s => [s.h].concat(s.p).join('\n'))).join('\n\n');
+}
+async function acuSha256(txt){
+  if (!(window.crypto && crypto.subtle)) throw new Error('Este navegador no permite registrar la aceptación. Abrí la app con Chrome o Safari actualizado.');
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(txt));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+function acuCodigo(hash){ return hash ? hash.slice(0, 16).toUpperCase().replace(/(.{4})(?=.)/g, '$1-') : ''; }
+function acuFechaHora(iso){
+  try{ return new Date(iso).toLocaleString('es-AR', { timeZone: 'America/Argentina/Buenos_Aires', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }); }catch(e){ return String(iso || ''); }
+}
+function acuUuid(){
+  try{ if (crypto.randomUUID) return crypto.randomUUID(); }catch(e){}
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => { const r = Math.random() * 16 | 0; return (c === 'x' ? r : (r & 3 | 8)).toString(16); });
+}
+function acuMsgError(e){ try{ return extraerMensajeError(e) || e.message || 'Error'; }catch(x){ return (e && e.message) || 'Error'; } }
+
+// ---------- PDF (A4) ----------
+function acuPdf(doc, ctx, acep){
+  if (!window.jspdf) throw new Error('No se pudo cargar el generador de PDF (revisá tu conexión y volvé a intentar).');
+  const { jsPDF } = window.jspdf, pdf = new jsPDF('p', 'mm', 'a4');
+  const W = 210, M = 20, ANCHO = W - M * 2, FIN = 275;
+  let y = 24;
+  // El PDF usa la tipografía estándar (Latin-1): comillas curvas → rectas y se sacan emojis u otros símbolos que saldrían rotos.
+  const L = t => String(t == null ? '' : t).replace(/[\u201C\u201D]/g, '"').replace(/[\u2018\u2019]/g, "'").replace(/[^\x20-\x7E\xA0-\xFF]/g, '').replace(/\s+/g, ' ').trim();
+  const salto = h => { if (y + h > FIN){ pdf.addPage(); y = 22; } };
+  pdf.setFont('helvetica', 'bold'); pdf.setFontSize(13); pdf.setTextColor(17, 24, 39);
+  const tit = pdf.splitTextToSize(L(doc.titulo), ANCHO);
+  pdf.text(tit, W / 2, y, { align: 'center' }); y += tit.length * 6 + 2;
+  pdf.setFont('helvetica', 'normal'); pdf.setFontSize(10); pdf.setTextColor(90, 98, 110);
+  pdf.text(L(`${ctx.gimnasio}  ·  Versión ${ctx.version}`), W / 2, y, { align: 'center' }); y += 9;
+  pdf.setTextColor(17, 24, 39);
+  doc.secciones.forEach(s => {
+    salto(14);
+    pdf.setFont('helvetica', 'bold'); pdf.setFontSize(11);
+    pdf.text(L(s.h), M, y); y += 5.5;
+    pdf.setFont('helvetica', 'normal'); pdf.setFontSize(10);
+    s.p.forEach(par => {
+      const lin = pdf.splitTextToSize(L(par), ANCHO);
+      lin.forEach(l => { salto(5); pdf.text(l, M, y); y += 4.7; });
+      y += 1.6;
+    });
+    y += 2;
+  });
+  salto(52);
+  pdf.setDrawColor(180, 186, 196); pdf.line(M, y, W - M, y); y += 7;
+  pdf.setFont('helvetica', 'bold'); pdf.setFontSize(11); pdf.text('ACEPTACIÓN', M, y); y += 6;
+  pdf.setFont('helvetica', 'normal'); pdf.setFontSize(10);
+  const P = ctx.prov || {};
+  const bloque = [`EL PROVEEDOR: ${P.titular} · CUIT ${P.cuit}`];
+  if (acep){
+    bloque.push(`EL CLIENTE: ${ctx.gimnasio}`,
+      `Aceptado electrónicamente por ${acep.nombre} (DNI ${acep.dni}), en representación de ${ctx.gimnasio}, el ${acuFechaHora(acep.aceptado_en)} (hora de Argentina).`,
+      `Versión del acuerdo: ${ctx.version}`,
+      `Código de verificación: ${acuCodigo(acep.hash)}`);
+  } else {
+    bloque.push(`EL CLIENTE: ${ctx.gimnasio}`, 'Pendiente de aceptación electrónica: el administrador del gimnasio puede aceptarlo desde la app (Configuración, Acuerdo de datos).');
+  }
+  bloque.forEach(t => { pdf.splitTextToSize(L(t), ANCHO).forEach(l => { salto(5); pdf.text(l, M, y); y += 4.8; }); y += 1; });
+  if (acep && acep.hash){
+    y += 2; salto(14); pdf.setFontSize(7.5); pdf.setTextColor(110, 118, 130);
+    pdf.text('Huella SHA-256 del texto aceptado:', M, y); y += 4;
+    pdf.text(acep.hash.slice(0, 32), M, y); y += 3.6; pdf.text(acep.hash.slice(32), M, y);
+  }
+  const n = pdf.getNumberOfPages();
+  for (let i = 1; i <= n; i++){
+    pdf.setPage(i); pdf.setFont('helvetica', 'normal'); pdf.setFontSize(8); pdf.setTextColor(120, 128, 140);
+    pdf.text(L(`Acuerdo de datos · ${ctx.gimnasio} · v${ctx.version}${acep && acep.hash ? ' · ' + acuCodigo(acep.hash) : ''}`), M, 289);
+    pdf.text(`Página ${i} de ${n}`, W - M, 289, { align: 'right' });
+  }
+  return pdf;
+}
+function acuNombreArchivo(ctx){
+  const g = String(ctx.gimnasio || 'gimnasio').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^A-Za-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40) || 'gimnasio';
+  return `Acuerdo-de-datos-${g}-v${ctx.version}.pdf`;
+}
+function acuPdfBase64(pdf){
+  const u = new Uint8Array(pdf.output('arraybuffer')); let s = '';
+  for (let i = 0; i < u.length; i += 0x8000) s += String.fromCharCode.apply(null, u.subarray(i, i + 0x8000));
+  return btoa(s);
+}
+
+// ---------- Envío por mail ----------
+// tipo: 'copia_aceptado' (ya aceptó) | 'lectura' (todavía no). Los permisos los decide el servidor.
+async function acuEnviar(gimId, tipo, destino){
+  const p = await sb('rpc/acuerdo_datos_puede_enviar', { method: 'POST', body: JSON.stringify({ p_gimnasio_id: gimId }) });
+  if (!p || !p.permitido) throw new Error((p && p.motivo) || 'No autorizado.');
+  const ctx = { gimnasio: p.gimnasio, prov: p.proveedor, version: p.version };
+  const doc = acuerdoDoc(p.version, ctx);
+  if (!doc) throw new Error('Esta versión del acuerdo no está en tu app: actualizala (recargá la página) y probá de nuevo.');
+  const pdf = acuPdf(doc, ctx, p.aceptacion);
+  const r = await sbFn('enviar-acuerdo', { gimnasio_id: gimId, tipo: p.aceptacion ? tipo : 'lectura', pdf_base64: acuPdfBase64(pdf), destinatario: destino || undefined, clave: acuUuid() });
+  if (!r || !r.ok) throw new Error((r && r.motivo) || 'No se pudo enviar.');
+  return r;
+}
+
+// ---------- Revisión al entrar (administrador) ----------
+async function acuRevisar(intento){
+  try{
+    if (!PERFIL_ACTUAL || PERFIL_ACTUAL.rol !== 'admin') return;
+    if (!ACUERDO_EST || !intento) ACUERDO_EST = await sb('rpc/acuerdo_datos_estado', { method: 'POST', body: '{}' });
+    if (!ACUERDO_EST || !ACUERDO_EST.requiere || ACU_POSPUESTO) return;
+    const gb = document.getElementById('modalGuiaBienvenida');
+    if (gb && gb.classList.contains('show') && (intento || 0) < 8){ setTimeout(() => acuRevisar((intento || 0) + 1), 4000); return; }
+    acuAbrir('firmar');
+  }catch(e){ ACUERDO_EST = null; /* sin SQL o sin conexión: la app sigue como siempre */ }
+}
+
+// ---------- Modal ----------
+function acuCerrar(){ cerrarOverlayGenerico('modalAcuerdo'); }
+function acuPosponer(){ ACU_POSPUESTO = true; acuCerrar(); }
+function acuTextoHtml(doc){
+  return `<div style="font-weight:700;margin-bottom:8px;">${escaparHtml(doc.titulo)}</div>` + doc.secciones.map(s =>
+    `<div style="font-weight:700;margin:10px 0 3px;">${escaparHtml(s.h)}</div>` + s.p.map(x => `<p style="margin:0 0 6px;">${escaparHtml(x)}</p>`).join('')).join('');
+}
+async function acuAbrir(modo){
+  try{
+    if (!ACUERDO_EST || !ACUERDO_EST.activo){ toast('El acuerdo todavía no está disponible.', true); return; }
+    const ctx = { gimnasio: ACUERDO_EST.gimnasio, prov: ACUERDO_EST.proveedor, version: ACUERDO_EST.version };
+    const doc = acuerdoDoc(ctx.version, ctx);
+    if (!doc){ toast('Hay una versión nueva del acuerdo: recargá la página para verla.', true); return; }
+    let acep = null;
+    if (ACUERDO_EST.aceptado_en || !ACUERDO_EST.requiere){
+      const r = await sb(`acuerdo_datos_aceptaciones?select=representante_nombre,representante_dni,texto_hash,aceptado_en&version=eq.${encodeURIComponent(ctx.version)}`).catch(() => null);
+      if (r && r[0]) acep = { nombre: r[0].representante_nombre, dni: r[0].representante_dni, hash: r[0].texto_hash, aceptado_en: r[0].aceptado_en };
+    }
+    ACU = { ctx, doc, acep, modo: acep ? 'ver' : 'firmar' };
+    acuPintar();
+  }catch(e){ toast('No se pudo abrir el acuerdo: ' + acuMsgError(e), true); }
+}
+function acuPintar(){
+  if (!ACU) return;
+  const { ctx, doc, acep } = ACU, ov = overlayGenerico('modalAcuerdo', 600);
+  const nom0 = PERFIL_ACTUAL && PERFIL_ACTUAL.nombre && !/@/.test(PERFIL_ACTUAL.nombre) ? PERFIL_ACTUAL.nombre : '';
+  const pie = acep ? `
+    <div class="card" style="margin:0 0 10px;"><b>✓ Aceptado</b> por ${escaparHtml(acep.nombre)} (DNI ${escaparHtml(acep.dni)}) el ${escaparHtml(acuFechaHora(acep.aceptado_en))}.<div class="muted" style="font-size:12px;margin-top:3px;">Código de verificación: ${escaparHtml(acuCodigo(acep.hash))}</div></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <button onclick="acuDescargar()">📄 Descargar PDF</button>
+      <button class="ghost" id="acuBtnMail" onclick="acuMandarMiCopia()">✉️ Enviarme una copia</button>
+      <button class="ghost" onclick="acuCerrar()">Cerrar</button>
+    </div><div id="acuMsg" class="muted" style="margin-top:8px;"></div>` : `
+    <div class="field" style="margin:0 0 8px;"><label>Nombre y apellido de quien acepta</label><input id="acuNombre" type="text" autocomplete="name" value="${escaparHtml(nom0)}" placeholder="Ej: Ana Pérez"></div>
+    <div class="field" style="margin:0 0 8px;"><label>DNI</label><input id="acuDni" type="text" inputmode="numeric" autocomplete="off" placeholder="Solo números"></div>
+    <label style="display:flex;gap:8px;align-items:flex-start;font-size:13px;margin:8px 0 12px;cursor:pointer;"><input type="checkbox" id="acuOk" style="margin-top:3px;width:auto;"><span>Leí el acuerdo completo y tengo facultades para obligar a <b>${escaparHtml(ctx.gimnasio)}</b>.</span></label>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <button id="acuBtnAceptar" onclick="acuAceptar()">Aceptar y firmar</button>
+      <button class="ghost" onclick="acuDescargar()">📄 Descargar PDF</button>
+      <button class="ghost" onclick="acuPosponer()">Más tarde</button>
+    </div><div id="acuMsg" class="muted" style="margin-top:8px;"></div>`;
+  ov.querySelector('.modal-box').innerHTML = `
+    <div class="x-wrap"><button type="button" class="x-cerrar" aria-label="Cerrar" title="Cerrar" onclick="${acep ? 'acuCerrar()' : 'acuPosponer()'}">✕</button></div>
+    <h3 style="margin:0 0 2px;">🔒 Acuerdo de datos y seguridad</h3>
+    <div class="muted" style="margin-bottom:10px;">${escaparHtml(ctx.gimnasio)} · versión ${escaparHtml(ctx.version)}${acep ? '' : ' · es necesario aceptarlo para seguir usando M2F con los datos de tus socios'}</div>
+    <div id="acuTexto" style="max-height:36vh;overflow:auto;border:1px solid var(--border);border-radius:10px;padding:12px;font-size:12.5px;line-height:1.5;margin-bottom:12px;">${acuTextoHtml(doc)}</div>
+    ${pie}`;
+  ov.classList.add('show');
+}
+function acuDescargar(){
+  try{
+    if (!ACU) return;
+    const pdf = acuPdf(ACU.doc, ACU.ctx, ACU.acep);
+    pdf.save(acuNombreArchivo(ACU.ctx));
+  }catch(e){ toast(acuMsgError(e), true); }
+}
+async function acuAceptar(){
+  const msg = document.getElementById('acuMsg'), btn = document.getElementById('acuBtnAceptar');
+  const nombre = (document.getElementById('acuNombre').value || '').trim().replace(/\s+/g, ' ');
+  const dni = (document.getElementById('acuDni').value || '').replace(/\D/g, '');
+  if (nombre.length < 3 || !/\s/.test(nombre)){ msg.textContent = 'Poné nombre y apellido de quien acepta.'; return; }
+  if (!/^[0-9]{6,10}$/.test(dni)){ msg.textContent = 'El DNI tiene que tener entre 6 y 10 números.'; return; }
+  if (!document.getElementById('acuOk').checked){ msg.textContent = 'Tildá la confirmación para poder aceptar.'; return; }
+  btn.disabled = true; msg.textContent = 'Registrando...';
+  try{
+    const hash = await acuSha256(acuTextoPlano(ACU.doc));
+    await sb('rpc/acuerdo_datos_aceptar', { method: 'POST', body: JSON.stringify({ p_version: ACU.ctx.version, p_nombre: nombre, p_dni: dni, p_hash: hash }) });
+    ACU.acep = { nombre, dni, hash, aceptado_en: new Date().toISOString() };
+    if (ACUERDO_EST){ ACUERDO_EST.requiere = false; ACUERDO_EST.aceptado_en = ACU.acep.aceptado_en; }
+    acuPintar();
+    const m2 = document.getElementById('acuMsg'); if (m2) m2.textContent = 'Aceptado ✓ Te estamos mandando la copia por mail...';
+    acuMandarMiCopia(true);
+  }catch(e){
+    btn.disabled = false; msg.textContent = acuMsgError(e);
+  }
+}
+async function acuMandarMiCopia(auto){
+  const msg = document.getElementById('acuMsg'), btn = document.getElementById('acuBtnMail');
+  if (btn) btn.disabled = true;
+  try{
+    const gid = (ACUERDO_EST && ACUERDO_EST.gimnasio_id) || (PERFIL_ACTUAL && PERFIL_ACTUAL.gimnasio_id);
+    const r = await acuEnviar(gid, 'copia_aceptado');
+    if (msg) msg.textContent = `Copia enviada a ${r.destinatario} ✓ (revisá también el correo no deseado).`;
+  }catch(e){
+    if (msg) msg.textContent = (auto ? 'Quedó aceptado, pero no se pudo mandar el mail: ' : 'No se pudo enviar: ') + acuMsgError(e) + ' Podés descargar el PDF y guardarlo.';
+  }
+  if (btn) btn.disabled = false;
+}
+
+// ---------- Panel de Martin (Negocio): estado por gimnasio ----------
+async function acuNegCargar(){
+  try{ ACU_RES = await sb('rpc/acuerdo_datos_resumen', { method: 'POST', body: '{}' }); }catch(e){ ACU_RES = null; }
+  acuNegPintar();
+}
+function acuNegPintar(){
+  const el = document.getElementById('negAcuerdos'); if (!el) return;
+  if (!ACU_RES){ el.innerHTML = ''; return; }
+  const gs = ACU_RES.gimnasios || [], ok = gs.filter(g => g.aceptado_en).length;
+  const filas = gs.map(g => {
+    const env = g.ultimo_envio ? `${g.ultimo_envio.resultado === 'ok' ? '✉️ enviado' : '⚠ falló envío'} ${negFecha(g.ultimo_envio.en)} a ${escaparHtml(g.ultimo_envio.a)}` : 'sin envíos';
+    return `<div class="ng-prox" style="flex-wrap:wrap;gap:6px;">
+      <span class="ng-prox-n">${escaparHtml(g.nombre || 'Sin nombre')}</span>
+      <span class="ng-chip ${g.aceptado_en ? '' : 'warn'}">${g.aceptado_en ? '✓ aceptó ' + negFecha(g.aceptado_en) + (g.aceptado_por ? ' · ' + escaparHtml(g.aceptado_por) : '') : 'pendiente'}</span>
+      <span class="muted" style="font-size:12px;">${env}</span>
+      <button class="ghost" onclick="acuNegEnviar('${g.id}')">📧 ${g.aceptado_en ? 'Reenviar copia' : 'Enviar'}</button>
+      <button class="ghost" onclick="acuNegPdf('${g.id}')">📄</button></div>`;
+  }).join('');
+  el.innerHTML = `<div class="card" style="margin-top:14px;">
+    <h3 class="ng-t">🔒 Acuerdos de datos <span class="muted" style="font-weight:400;font-size:12px;">· versión ${escaparHtml(ACU_RES.version)} · ${ok} de ${gs.length} aceptaron</span></h3>
+    ${ACU_RES.activo ? '' : '<div class="muted" style="margin-bottom:8px;">Apagado: los gimnasios todavía no ven nada. Completá tus datos legales y activalo en SQL (ver LEEME) cuando un abogado haya revisado el texto.</div>'}
+    ${filas || '<div class="muted">Sin gimnasios.</div>'}</div>`;
+}
+async function acuNegEnviar(id){
+  const g = ((ACU_RES && ACU_RES.gimnasios) || []).find(x => x.id === id); if (!g) return;
+  const d = prompt(`¿A qué mail mandamos el acuerdo de "${g.nombre}"?`, g.admin_email || '');
+  if (d === null) return;
+  const dest = d.trim().toLowerCase();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(dest)){ toast('Ese mail no parece válido.', true); return; }
+  toast('Enviando...');
+  try{ const r = await acuEnviar(id, g.aceptado_en ? 'copia_aceptado' : 'lectura', dest); toast(`Enviado a ${r.destinatario} ✓`); }
+  catch(e){ toast(acuMsgError(e), true); }
+  acuNegCargar();
+}
+async function acuNegPdf(id){
+  try{
+    const p = await sb('rpc/acuerdo_datos_puede_enviar', { method: 'POST', body: JSON.stringify({ p_gimnasio_id: id }) });
+    if (!p || !p.permitido) throw new Error((p && p.motivo) || 'No autorizado.');
+    const ctx = { gimnasio: p.gimnasio, prov: p.proveedor, version: p.version }, doc = acuerdoDoc(p.version, ctx);
+    if (!doc) throw new Error('Versión del acuerdo no disponible en esta app.');
+    acuPdf(doc, ctx, p.aceptacion).save(acuNombreArchivo(ctx));
+  }catch(e){ toast(acuMsgError(e), true); }
+}
+
 
 // (v90) Rotativas que están por terminar (o terminaron hace poco) sin que el alumno tenga cargada la siguiente.
 async function cargarRotativasPorTerminar(hoy){
@@ -6619,6 +7106,15 @@ function ipRenderAlertas(){
     const r0 = d.records[0];
     const det = d.records.slice(0, 3).map(r => `${nomAl(r.alumno_id)} · ${r.ejercicio_nombre} ${fk(r.peso_maximo)} kg (antes ${fk(r.previo)})`).join(' — ') + (d.records.length > 3 ? ` y ${d.records.length - 3} más` : '');
     items.push(['🏆', 'var(--accent2-text)', d.records.length === 1 ? `${nomAl(r0.alumno_id)} batió su récord en ${r0.ejercicio_nombre}` : `${d.records.length} récords nuevos esta semana`, d.records.length === 1 ? `${fk(r0.peso_maximo)} kg (antes ${fk(r0.previo)} kg)` : det, d.esAdmin ? "cambiarSubvista('logros')" : "cambiarSubvista('seguimiento')"]);
+  }
+  if (d.bajas && d.bajas.length){   // (v121) levantó menos que la vez anterior (y menos de lo sugerido)
+    const nomAl = id => ((ALUMNOS_CACHE || []).find(a => a.id === id) || {}).nombre || 'Alumno';
+    const fk = v => String(Number(v)).replace('.', ',');
+    const vistos = new Set(), bj = d.bajas.filter(b => { const k = b.alumno_id + '|' + b.ejercicio_id; if (vistos.has(k)) return false; vistos.add(k); return true; });
+    const b0 = bj[0];
+    const detB = bj.slice(0, 3).map(b => `${nomAl(b.alumno_id)} · ${b.ejercicio_nombre} ${fk(b.peso_maximo)} kg (antes ${fk(b.previo)})`).join(' — ') + (bj.length > 3 ? ` y ${bj.length - 3} más` : '');
+    items.push(['📉', 'var(--warn)', bj.length === 1 ? `${nomAl(b0.alumno_id)} bajó el peso en ${b0.ejercicio_nombre}` : `${bj.length} bajas de peso esta semana`,
+      bj.length === 1 ? `${fk(b0.peso_maximo)} kg (antes ${fk(b0.previo)} kg)${b0.sugerido != null ? ` · se le sugerían ${fk(b0.sugerido)} kg` : ''}` : detB, "cambiarSubvista('seguimiento')"]);
   }
   const sinConf = d.turnos.filter(t => t.asistio === null && t.ef === false);
   if (sinConf.length) items.push(['🕓', 'var(--accent)', `${ipPlural(sinConf.length, 'asistencia', 'asistencias')} sin confirmar`, `Turnos que ya pasaron · ${nom(sinConf)}`, "cambiarSubvista('agenda')"]);
@@ -9141,6 +9637,9 @@ function guiaFaqBase(rol){
     { q:'¿Dónde veo los cumpleaños de mis alumnos?', r:['Menú ☰ → 🔔 Alertas → 🎂 Cumpleaños del mes: los de hoy primero, con botón para saludar por WhatsApp.','Los de hoy también aparecen en tu Inicio.','A las 7:00 el staff recibe un aviso y el alumno, un saludo del gimnasio.','Para que funcione, cargá la fecha de nacimiento al dar de alta al alumno o desde su ficha (✏️ Datos).'], ir:{ s:'alertas' } },
     { q:'¿Cómo registro el pago de una cuota?', r:['Menú ☰ → 💰 Finanzas → Cobros.','Buscá al alumno y tocá 💰 Cobrar.','Elegí efectivo o transferencia (y meses de pago adelantado si querés) y confirmá.','Podés bajar o mandar por WhatsApp el recibo en PDF.'], ir:{ s:'cobranzas' } },
     { q:'¿Cómo conecto Mercado Pago?', r:['Menú ☰ → 🏢 Mi gimnasio → Cobros online.','Conectá tu cuenta y aceptá los permisos.','Desde ahí, tus alumnos ven “Pagar con Mercado Pago” cuando la cuota está por vencer o vencida.'], ir:{ s:'gimnasio' } },
+    { q:'¿Qué avisos me da la app cuando entreno?', r:['Al terminar un entrenamiento te felicita si llegaste a 5, 15, 30, 60 o 100 entrenamientos, si cumpliste la meta de la semana o si sumaste semanas seguidas.','También te avisa cuando levantaste más peso que la vez anterior en un ejercicio, y cuando batís un récord.','Tu profe ve en su Inicio si bajaste el peso en algún ejercicio, para ayudarte a retomar.'], ir:{ a:'logros' } },
+    { adm:true, q:'¿Qué es el acuerdo de datos?', r:['Es el acuerdo de confidencialidad y tratamiento de datos entre M2F y tu gimnasio: explica cómo se cuidan los datos de tus socios y de tu equipo.','Lo acepta el administrador una sola vez (nombre, DNI y tilde) y queda registrado con fecha y hora.','Te llega una copia en PDF por mail; también la descargás o la pedís de nuevo en Configuración → Acuerdo de datos.'] },
+    { adm:true, q:'¿Qué son los alumnos en riesgo?', r:['En Inicio, tarjeta “Alumnos en riesgo”: junta en una lista a quienes llevan días sin venir, vienen menos que antes, tienen la cuota vencida o Wellness bajo seguido.','Cada uno muestra el motivo y un nivel (alto, medio o para vigilar).','Tocá 💬 para escribirle por WhatsApp con el mensaje armado; queda anotado como contacto. Con ✓ lo ocultás 7 días.','Necesita que se marque la asistencia (Agenda, Recepción o QR); si no, avisa que no hay datos.'], ir:{ s:'inicio' } },
     { adm:true, q:'¿Cómo uso el link de reservas para Instagram?', r:['Menú ☰ → Mi gimnasio → 🔗 Link de reservas. Poné el nombre del link, activalo y guardá.','Tocá 📋 Copiar y pegalo en tu bio de Instagram (o 🔳 QR para un flyer).','Quien lo toca ve tus clases con los lugares, pone su DNI y reserva. Si es su primera vez, te deja nombre, apellido y WhatsApp.','Te llega un aviso al celular (a vos y al profesor de esa clase) y lo ves en Clases → 🆕 Nuevos desde el link, con botón de WhatsApp.','Por defecto la primera clase es de prueba; podés pedir que confirmes cada reserva a mano.'], ir:{ s:'gimnasio' } },
     { q:'¿Cómo suspendo una clase por lluvia?', r:['Menú ☰ → Clases → tocá la clase → ⛔ Suspender este día.','Se cancelan las reservas de ese día y a quien tiene la app le llega el aviso.','Te mostramos la lista para avisar por WhatsApp a los demás. Ese día no se puede reservar.','Si mejora el clima: ↩ Reanudar este día.'], ir:{ s:'clases' } },
     { adm:true, q:'¿Cómo tomo la asistencia con un QR?', r:['Menú ☰ → 🛎️ Recepción → 🔳 QR de asistencia → Activar (lo activa el administrador).','Imprimí el cartel y pegalo en la entrada.','Cada alumno lo escanea con su celular y queda tomada su asistencia: el turno o la clase de ese momento, igual que con el DNI.','En “Llegadas de hoy” figuran con la marca 📱 por QR. Con la cuota vencida no se marca.','Si alguien le sacó una foto y lo usa desde afuera, tocá “Generar uno nuevo” e imprimilo otra vez.'], ir:{ s:'recepcion' } },
@@ -10209,10 +10708,10 @@ async function cargarInicioAlu(alumnoId){
   document.getElementById('aluSaludo').textContent = (hh < 6 ? 'Buenas noches' : hh < 13 ? 'Buen día' : hh < 20 ? 'Buenas tardes' : 'Buenas noches') + (nombre ? ', ' + nombre : '');
   try{
     const hoy = fechaLocalISO();
-    const lunes = new Date(); lunes.setDate(lunes.getDate() - ((lunes.getDay() + 6) % 7));
+    const lunes = new Date(); lunes.setHours(0, 0, 0, 0); lunes.setDate(lunes.getDate() - ((lunes.getDay() + 6) % 7));   // (v121) lunes 00:00 local (antes: lunes 00:00 UTC)
     const [turnos, semana] = await Promise.all([
       sb(`turnos?select=id,fecha,hora,estado,rutina_dia_id,rutina_dias(nombre_dia),profesores(nombre)&alumno_id=eq.${alumnoId}&fecha=gte.${hoy}&estado=neq.cancelado&order=fecha.asc,hora.asc&limit=6`),
-      sb(`ejecuciones?select=id&alumno_id=eq.${alumnoId}&estado=eq.finalizada&fecha=gte.${fechaLocalISO(lunes)}`),
+      sb(`ejecuciones?select=id&alumno_id=eq.${alumnoId}&estado=eq.finalizada&fecha=gte.${encodeURIComponent(lunes.toISOString())}`),
     ]);
     const deHoy = turnos.filter(t => t.fecha === hoy);
     const idsDia = deHoy.map(t => t.rutina_dia_id).filter(Boolean);
@@ -14813,6 +15312,7 @@ function renderAluEvalChart(){
 // Misma función de render para el panel del profesor (por alumno elegido) y
 // para el perfil del propio alumno.
 // =====================================================================
+function logroFechaAR(v){ try{ return new Date(v).toLocaleDateString('en-CA', { timeZone: 'America/Argentina/Buenos_Aires' }); }catch(e){ return String(v).slice(0, 10); } }
 const BADGES_RACHA_SEMANAS = [2, 4, 8, 12];
 const BADGES_CONSTANCIA = [5, 15, 30, 60, 100];
 
@@ -14831,11 +15331,13 @@ function onCambiarLogrosAlumno(){
 async function fetchDatosLogros(alumnoId){
   const [alumnoRows, ejecucionesRaw, prs] = await Promise.all([
     sb(`alumnos?id=eq.${alumnoId}&select=plan_id,planes(nombre,dias_por_semana)`),
-    sb(`ejecuciones?alumno_id=eq.${alumnoId}&select=fecha`),
+    sb(`ejecuciones?alumno_id=eq.${alumnoId}&estado=eq.finalizada&select=fecha&limit=5000`),   // (v121) solo las FINALIZADAS: las "en curso" abandonadas no cuentan
     sb(`v_pr_alumno?alumno_id=eq.${alumnoId}&order=pr_fecha.desc`),
   ]);
   const plan = (alumnoRows[0] && alumnoRows[0].planes) || null;
-  const fechas = [...new Set(ejecucionesRaw.map(e => e.fecha.slice(0,10)))];
+  // (v121) Una fecha por SESIÓN finalizada (antes: por día, así que dos entrenamientos el mismo día contaban 1),
+  // y en hora argentina (antes: UTC, y una sesión de noche caía en el día siguiente).
+  const fechas = ejecucionesRaw.map(e => logroFechaAR(e.fecha));
   return { plan, fechas, prs };
 }
 
@@ -14865,10 +15367,10 @@ function calcularRachaSemanal(fechas, metaSemanal){
   const porSemana = {};
   fechas.forEach(f => {
     const clave = claveSemana(f);
-    (porSemana[clave] = porSemana[clave] || new Set()).add(f);
+    (porSemana[clave] = porSemana[clave] || []).push(f);   // (v121) se cuentan sesiones, no días distintos
   });
 
-  const claveHoy = claveSemana(new Date().toISOString().slice(0,10));
+  const claveHoy = claveSemana(logroFechaAR(new Date()));   // (v121) "hoy" en hora argentina
   const primeraClave = Object.keys(porSemana).sort()[0];
 
   // Se recorren TODAS las semanas entre la primera con datos y la actual (inclusive),
@@ -14889,7 +15391,7 @@ function calcularRachaSemanal(fechas, metaSemanal){
     cursor.setUTCDate(cursor.getUTCDate() + 7);
   }
 
-  const cumplida = clave => (porSemana[clave]?.size || 0) >= metaSemanal;
+  const cumplida = clave => (porSemana[clave]?.length || 0) >= metaSemanal;
 
   let mejor = 0, corrida = 0;
   semanas.forEach(clave => {
@@ -14906,7 +15408,7 @@ function calcularRachaSemanal(fechas, metaSemanal){
     break;
   }
 
-  return { actual, mejor, entrenosSemanaActual: porSemana[claveHoy]?.size || 0, metaSemanal };
+  return { actual, mejor, entrenosSemanaActual: porSemana[claveHoy]?.length || 0, metaSemanal };
 }
 
 function badgeRowHtml(valorActual, umbrales, icono){
@@ -16356,6 +16858,40 @@ async function recMostrarEnFin(alumnoId){
     if (el && recs.length) el.innerHTML = recHtml(recs);
   }catch(e){ /* sin la vista (falta el SQL) no se muestra nada */ }
 }
+// ---------- (v121) Felicitaciones, "subiste el peso" y "bajó la carga" ----------
+// Al terminar el entrenamiento el alumno ve: hitos de cantidad (5/15/30/60/100), meta semanal cumplida, racha (2/4/8/12 semanas)
+// y los ejercicios donde levantó MÁS que la vez anterior (los récords históricos los sigue mostrando recMostrarEnFin).
+// El profesor ve en Inicio las bajas de peso (v_cambios_peso_alumno, SQL cambios-peso.sql): levantó menos que la vez anterior
+// y por debajo de lo que se le había sugerido. Si el profe prescribió menos a propósito (descarga) no se marca.
+async function logrosMostrarEnFin(alumnoId, ejecucionId){
+  try{
+    const el = document.getElementById('finLogros'); if (!el) return;
+    const [dl, cambios] = await Promise.all([
+      fetchDatosLogros(alumnoId),
+      sb(`v_cambios_peso_alumno?select=ejercicio_nombre,peso_maximo,previo,es_record&ejecucion_id=eq.${ejecucionId}&tipo=eq.subio`).catch(() => []),
+    ]);
+    const total = dl.fechas.length, racha = calcularRachaSemanal(dl.fechas, dl.plan && dl.plan.dias_por_semana);
+    const f = v => String(Number(v)).replace('.', ',');
+    const cajas = [];
+    const caja = (ico, tit, sub) => `<div class="rec-box" style="margin-bottom:10px;"><b>${ico} ${escaparHtml(tit)}</b>${sub ? `<div class="muted" style="margin-top:4px;">${sub}</div>` : ''}</div>`;
+    if (BADGES_CONSTANCIA.includes(total)) cajas.push(caja('🏅', `¡Llegaste a ${total} entrenamientos!`, 'Sumaste un logro nuevo. Se ve en Logros → Constancia. ¡Seguí así!'));
+    if (racha && racha.metaSemanal && racha.entrenosSemanaActual === racha.metaSemanal){
+      cajas.push(caja('✅', '¡Cumpliste la meta de la semana!', `${racha.entrenosSemanaActual} de ${racha.metaSemanal} entrenamientos.`));
+      if (BADGES_RACHA_SEMANAS.includes(racha.actual)) cajas.push(caja('🔥', `¡${racha.actual} semanas seguidas cumpliendo!`, 'Sumaste un logro nuevo de racha. ¡Qué constancia!'));
+    }
+    const subas = (cambios || []).filter(c => !c.es_record);
+    if (subas.length) cajas.push(caja('📈', subas.length === 1 ? '¡Subiste el peso!' : `¡Subiste el peso en ${subas.length} ejercicios!`,
+      subas.map(c => `${escaparHtml(c.ejercicio_nombre)}: <b>${f(c.peso_maximo)} kg</b> (la vez anterior ${f(c.previo)} kg)`).join('<br>')));
+    el.innerHTML = cajas.join('');
+  }catch(e){ /* aviso best-effort: nunca rompe el cierre del entrenamiento */ }
+}
+async function cargarBajasPeso(){
+  try{
+    const desde = new Date(Date.now() - 7 * 86400000).toISOString();
+    return await sb(`v_cambios_peso_alumno?select=alumno_id,ejercicio_id,ejercicio_nombre,fecha,peso_maximo,previo,sugerido&tipo=eq.bajo&fecha=gte.${encodeURIComponent(desde)}&order=fecha.desc&limit=100`) || [];
+  }catch(e){ return []; }   // sin el SQL (vista) no se muestra nada
+}
+
 async function cargarRecordsRecientes(hoy){
   try{
     return await sb(`v_records_alumno?select=alumno_id,ejercicio_nombre,fecha,peso_maximo,previo&fecha=gte.${ipSumarDias(hoy, -6)}&order=fecha.desc&limit=100`) || [];
@@ -19867,6 +20403,7 @@ function abrirConfiguracion(){
 
     ${(!esAlu && esAdmin) || esSuper ? '<div class="cfg-sec">Gimnasio</div>' : ''}
     ${!esAlu && esAdmin ? it('🏢', 'Mi gimnasio', cerrarY("cambiarSubvista('gimnasio')"), { sub:'Nombre, logo y colores' }) : ''}
+    ${!esAlu && esAdmin && ACUERDO_EST && ACUERDO_EST.activo ? it('🔒', 'Acuerdo de datos', cerrarY("acuAbrir()"), { sub: ACUERDO_EST.requiere ? 'Pendiente de aceptar' : 'Aceptado · ver, descargar o recibir copia' }) : ''}
     ${esSuper ? it('🔑', 'Códigos de activación', cerrarY('abrirPanelCodigos()')) : ''}
     ${esSuper ? it('📊', 'Negocio', cerrarY('negAbrir()'), { sub:'Ingresos, uso y vencimientos' }) : ''}
     ${esSuper ? it('🏋️', 'Gimnasios', cerrarY('abrirPanelGimnasiosAdmin()')) : ''}
@@ -21735,6 +22272,7 @@ async function finalizarEntrenamiento(ejecucionId, rpe){
       <div class="card" style="text-align:center;">
         <div style="font-size:20px; font-weight:700; margin-bottom:8px;">Entrenamiento finalizado. ¡Buen trabajo! 💪</div>
         ${tonelajeTotal > 0 ? `<div class="muted" style="margin-bottom:14px;">Tonelaje total de hoy: <strong>${Math.round(tonelajeTotal).toLocaleString('es-AR')} kg</strong></div>` : ''}
+        <div id="finLogros"></div>
         <div id="finRecords"></div>
         <button onclick="salirEjecucion()">Volver a mi panel</button>
       </div>`;
@@ -21743,6 +22281,7 @@ async function finalizarEntrenamiento(ejecucionId, rpe){
     if (alumnoId) cargarHistorial(alumnoId);
     if (alumnoId) cargarRutinasDeAlumno('aluAlumno','listaRutinasAlu');   // (v117) que "Te toca" ya muestre el día siguiente
     if (alumnoId) recMostrarEnFin(alumnoId);
+    if (alumnoId) logrosMostrarEnFin(alumnoId, ejecucionId);   // (v121) felicitaciones + "subiste el peso"
   }catch(e){ toast('Error finalizando: ' + e.message, true); }
 }
 
