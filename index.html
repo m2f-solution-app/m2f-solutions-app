@@ -6350,6 +6350,7 @@ async function cargarInicioProfesor(){
       sb(`turnos?select=alumno_id,fecha,alumnos(nombre,tipo_alumno_id)&rutina_dia_id=is.null&fecha=gte.${hoy}&fecha=lte.${ipSumarDias(hoy, 7)}&estado=neq.cancelado${pf}&limit=300`),
     ]);
     const [wMap, prog, rotFin, recs] = await Promise.all([ cargarWellnessDelDia(hoy, tHoy), cargarProgresoTurnos(tHoy), cargarRotativasPorTerminar(hoy), cargarRecordsRecientes(hoy) ]);
+    WELLNESS_DIA = wMap;   // (v117) el popup del turno lee WELLNESS_DIA: sin esto, abierto desde Inicio decía "todavía no completó el Wellness" aunque lo hubiera completado
 
     // (v117) Una rotativa nunca se engancha al turno (el alumno la ve por "Mis rutinas"), así que
     // "sin rutina enganchada" no es "sin rutina asignada". Se mira si el alumno tiene una rotativa en curso.
@@ -13648,8 +13649,8 @@ async function crearAlumno(){
   const btn = document.getElementById('btnCrearAlumno');
   btn.disabled = true;
   try{
-    await sb('alumnos', {
-      method:'POST', headers:{Prefer:'return=minimal'},
+    const creado = await sb('alumnos?select=id', {
+      method:'POST', headers:{Prefer:'return=representation'},
       body: JSON.stringify([{
         nombre, tipo_alumno_id: tipoAlumnoId, gimnasio_id: PERFIL_ACTUAL?.gimnasio_id || null,
         altura_cm, peso_kg, objetivo: objetivo || null, telefono, email, direccion,
@@ -13673,8 +13674,41 @@ async function crearAlumno(){
     cerrarModalNuevoAlumno();
     await cargarPersonas();
     cargarListaAlumnos();
+    // (v117) Enlace rápido: recién dado de alta, a un toque el WhatsApp de bienvenida con el link de la app.
+    if (telefono) bienvenidaAlumnoAbrir({ id: (Array.isArray(creado) && creado[0] && creado[0].id) || null, nombre, telefono, dni });
   }catch(e){ toast('Error agregando alumno: ' + extraerMensajeError(e), true); }
   finally{ btn.disabled = false; }
+}
+
+// (v117) Bienvenida por WhatsApp para un alumno recién dado de alta (o desde su ficha).
+function bienvenidaAlumnoTexto(nombre, dni){
+  const pn = String(nombre || '').trim().split(' ')[0];
+  const quien = String(PERFIL_ACTUAL?.nombre || '').trim().split(' ')[0];
+  const gim = GIMNASIO_ACTUAL?.nombre || 'el gimnasio';
+  const url = window.location.origin + window.location.pathname;
+  return `Hola ${pn}! ${quien ? 'Soy ' + quien + ' de ' + gim : 'Te escribo de ' + gim}. Ya te di de alta 💪\nEntrá a la app desde acá: ${url}` + (dni ? `\nTu usuario es tu DNI (${dni}). Te paso la contraseña en un ratito.` : '');
+}
+function bienvenidaAlumnoAbrir({ id, nombre, telefono, dni }){
+  const texto = bienvenidaAlumnoTexto(nombre, dni);
+  let tel = String(telefono || '').replace(/\D/g, '').replace(/^0/, '');
+  if (tel.length === 10) tel = '549' + tel;
+  const puedeAcceso = !!(id && dni);
+  const box = modalSeguridadAbrir(`
+    <h3>Alumno agregado ✓</h3>
+    <p class="muted" style="margin:0 0 10px;">Avisale a <strong>${escaparHtml(nombre)}</strong> por WhatsApp.</p>
+    <div style="background:var(--panel2); border:1px solid var(--border); border-radius:10px; padding:10px; font-size:13.5px; white-space:pre-wrap;">${escaparHtml(texto)}</div>
+    ${tel ? `<button id="bvWa" style="width:100%; margin-top:10px;">💬 Enviar por WhatsApp</button>` : '<p class="muted" style="margin-top:10px;">No tiene teléfono cargado.</p>'}
+    ${puedeAcceso ? `<button id="bvAcceso" class="secondary" style="width:100%; margin-top:8px;">🔑 Generar acceso y enviar usuario + contraseña</button>` : ''}
+    <button id="bvCopiar" class="ghost" style="width:100%; margin-top:8px;">📋 Copiar mensaje</button>
+    <button class="ghost" style="width:100%; margin-top:8px;" onclick="modalSeguridadCerrar()">Listo</button>`);
+  const wa = box.querySelector('#bvWa');
+  if (wa) wa.onclick = () => window.open(`https://wa.me/${tel}?text=${encodeURIComponent(texto)}`, '_blank');
+  box.querySelector('#bvCopiar').onclick = async () => {
+    try{ await navigator.clipboard.writeText(texto); toast('Copiado ✓'); }
+    catch(e){ toast('No se pudo copiar.', true); }
+  };
+  const ac = box.querySelector('#bvAcceso');
+  if (ac) ac.onclick = () => { modalSeguridadCerrar(); generarAccesoAlumno(id); };
 }
 
 let VIGENTES_POR_ALUMNO = {};
@@ -13986,7 +14020,7 @@ function xFichaDat(a){
     ? `<button class="ghost" onclick="toggleActivoAlumno('${a.id}', true, '${nom}')">🟢 Reactivar</button>`
     : `<button class="ghost" style="color:var(--danger-text);" onclick="toggleActivoAlumno('${a.id}', false, '${nom}')" title="Marca al alumno como inactivo sin borrar sus datos ni su historial">🔴 Dar de baja</button>`;
   return `<div class="x-dl">${dl.map(r => `<div><div class="k">${r[0]}</div><div class="v">${xe(r[1])}</div></div>`).join('')}</div>
-    <div class="x-btns"><button class="ghost" onclick="toggleEditarAlumno('${a.id}')">✏️ Editar datos</button></div>
+    <div class="x-btns"><button class="ghost" onclick="toggleEditarAlumno('${a.id}')">✏️ Editar datos</button>${a.telefono ? `<button class="ghost" onclick="bienvenidaAlumnoAbrir({id:'${a.id}',nombre:'${nom}',telefono:'${String(a.telefono).replace(/'/g, '')}',dni:'${String(a.dni || '').replace(/'/g, '')}'})">💬 Bienvenida</button>` : ''}</div>
     ${xEditarAlumnoHtml(a)}
     <div class="x-sec">Tipo y plan</div>
     <div class="x-fi-two">
