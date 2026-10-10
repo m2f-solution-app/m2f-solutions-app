@@ -4794,7 +4794,7 @@ function atlIniciarAlu(){
   atlCargarVista('aluAtletismoContenido', id || '');
 }
 
-const APP_VERSION = 125;
+const APP_VERSION = 126;
 // (v96) Fecha de la última actualización: se cambia junto con APP_VERSION en cada entrega. Se muestra en la
 // pantalla de inicio y en el menú de cuenta ("v94 · actualizada el 5/10/2026").
 const APP_FECHA = '2026-10-10';
@@ -5183,7 +5183,12 @@ async function actualizarBotonesDosPasos(){
 // Datos de acceso recién generados (alta o reseteo): se muestran UNA vez para pasárselos
 // a la persona; no se guardan en ningún lado.
 function mostrarCredenciales({ titulo, nombre, usuario, password, telefono }){
-  const texto = `Hola ${nombre}! Tus datos para entrar a la app del gimnasio:\nUsuario: ${usuario} (tu DNI)\nContraseña temporal: ${password}\nLa primera vez te va a pedir que elijas tu propia contraseña.`;
+  // (v126) Un solo mensaje: quién escribe + link de la app + usuario + contraseña temporal.
+  const pn = String(nombre || '').trim().split(' ')[0];
+  const quien = String(PERFIL_ACTUAL?.nombre || '').trim().split(' ')[0];
+  const gim = GIMNASIO_ACTUAL?.nombre || 'el gimnasio';
+  const url = window.location.origin + window.location.pathname;
+  const texto = `Hola ${pn}! ${quien ? 'Soy ' + quien + ' de ' + gim : 'Te escribo de ' + gim}. Ya podés entrar a la app 💪\nEntrá desde acá: ${url}\nUsuario: ${usuario} (tu DNI)\nContraseña temporal: ${password}\nLa primera vez te va a pedir que elijas tu propia contraseña.`;
   let tel = String(telefono || '').replace(/\D/g, '').replace(/^0/, '');
   if (tel.length === 10) tel = '549' + tel; // número argentino cargado sin código de país
   const box = modalSeguridadAbrir(`
@@ -5194,8 +5199,8 @@ function mostrarCredenciales({ titulo, nombre, usuario, password, telefono }){
       <div style="margin-top:4px;">Contraseña temporal: <strong style="font-size:18px; letter-spacing:1px; font-family:monospace;">${escaparHtml(password)}</strong></div>
     </div>
     <p class="muted" style="font-size:12px; margin:8px 0 0;">No la guardamos en ningún lado: si se pierde, generás otra desde "🔁 Acceso".</p>
-    <button id="credCopiar" style="width:100%; margin-top:10px;">📋 Copiar mensaje</button>
-    ${tel ? `<button id="credWa" class="ghost" style="width:100%; margin-top:8px;">💬 Enviar por WhatsApp</button>` : ''}
+    <button id="credCopiar" class="ghost" style="width:100%; margin-top:10px;">📋 Copiar mensaje completo</button>
+    ${tel ? `<button id="credWa" style="width:100%; margin-top:8px;">💬 Enviar por WhatsApp (link + usuario + contraseña)</button>` : '<p class="muted" style="font-size:12px; margin:8px 0 0;">No tiene teléfono cargado: copiá el mensaje y pasáselo.</p>'}
     <button class="ghost" style="width:100%; margin-top:8px;" onclick="modalSeguridadCerrar()">Listo</button>`);
   box.querySelector('#credCopiar').onclick = async () => {
     try{ await navigator.clipboard.writeText(texto); toast('Copiado ✓'); }
@@ -14400,7 +14405,7 @@ async function crearAlumno(){
     await cargarPersonas();
     cargarListaAlumnos();
     // (v117) Enlace rápido: recién dado de alta, a un toque el WhatsApp de bienvenida con el link de la app.
-    if (telefono) bienvenidaAlumnoAbrir({ id: (Array.isArray(creado) && creado[0] && creado[0].id) || null, nombre, telefono, dni });
+    if (telefono || dni) bienvenidaAlumnoAbrir({ id: (Array.isArray(creado) && creado[0] && creado[0].id) || null, nombre, telefono, dni });
   }catch(e){ toast('Error agregando alumno: ' + extraerMensajeError(e), true); }
   finally{ btn.disabled = false; }
 }
@@ -14420,11 +14425,12 @@ function bienvenidaAlumnoAbrir({ id, nombre, telefono, dni }){
   const puedeAcceso = !!(id && dni);
   const box = modalSeguridadAbrir(`
     <h3>Alumno agregado ✓</h3>
-    <p class="muted" style="margin:0 0 10px;">Avisale a <strong>${escaparHtml(nombre)}</strong> por WhatsApp.</p>
-    <div style="background:var(--panel2); border:1px solid var(--border); border-radius:10px; padding:10px; font-size:13.5px; white-space:pre-wrap;">${escaparHtml(texto)}</div>
-    ${tel ? `<button id="bvWa" style="width:100%; margin-top:10px;">💬 Enviar por WhatsApp</button>` : '<p class="muted" style="margin-top:10px;">No tiene teléfono cargado.</p>'}
-    ${puedeAcceso ? `<button id="bvAcceso" class="secondary" style="width:100%; margin-top:8px;">🔑 Generar acceso y enviar usuario + contraseña</button>` : ''}
-    <button id="bvCopiar" class="ghost" style="width:100%; margin-top:8px;">📋 Copiar mensaje</button>
+    <p class="muted" style="margin:0 0 10px;">Dale acceso a <strong>${escaparHtml(nombre)}</strong>: se genera una contraseña temporal y le mandás todo junto (link + usuario + contraseña) en un solo WhatsApp.</p>
+    ${puedeAcceso ? `<button id="bvAcceso" style="width:100%;">🔑 Generar acceso y enviar por WhatsApp</button>` : '<p class="muted" style="margin:0 0 6px;">Para generarle el acceso hace falta cargar su DNI (✏️ Datos en la ficha).</p>'}
+    <div class="muted" style="font-size:12px; margin:12px 0 4px;">O solo avisarle, sin contraseña:</div>
+    <div style="background:var(--panel2); border:1px solid var(--border); border-radius:10px; padding:10px; font-size:13px; white-space:pre-wrap;">${escaparHtml(texto)}</div>
+    ${tel ? `<button id="bvWa" class="ghost" style="width:100%; margin-top:8px;">💬 Enviar solo el aviso</button>` : '<p class="muted" style="margin-top:8px;">No tiene teléfono cargado.</p>'}
+    <button id="bvCopiar" class="ghost" style="width:100%; margin-top:8px;">📋 Copiar aviso</button>
     <button class="ghost" style="width:100%; margin-top:8px;" onclick="modalSeguridadCerrar()">Listo</button>`);
   const wa = box.querySelector('#bvWa');
   if (wa) wa.onclick = () => window.open(`https://wa.me/${tel}?text=${encodeURIComponent(texto)}`, '_blank');
