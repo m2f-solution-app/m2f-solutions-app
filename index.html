@@ -513,6 +513,10 @@
   .gu-bien-list li{ padding:7px 0; font-size:14px; border-top:1px solid var(--border); }
   .gu-bien-list li:first-child{ border-top:none; }
   .gu-buscar{ width:100%; margin:8px 0 12px; }
+  #guiaCuerpo{ display:flex; flex-direction:column; }
+  .gu-parecidos{ font-size:12px; font-weight:700; color:var(--muted); margin:12px 0 6px; }
+  #btnAyuda .ay-txt{ display:none; }
+  @media (min-width:521px){ #btnAyuda{ width:auto; padding:0 14px 0 11px; gap:6px; } #btnAyuda .ay-txt{ display:inline; font-size:13.5px; font-weight:700; } }
   .gu-sec{ font-size:11px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); margin:14px 0 6px; }
   .gu-det{ border:1px solid var(--border); border-radius:10px; margin-bottom:6px; background:var(--panel); }
   .gu-det > summary{ cursor:pointer; padding:10px 12px; font-weight:700; font-size:14px; list-style:none; display:flex; gap:8px; align-items:center; }
@@ -1911,6 +1915,7 @@
     <a class="btn-soporte-top" id="btnSoporteTop" href="#" onclick="abrirSoporteWhatsapp(); return false;" style="text-decoration:none;">💬 Soporte</a>
     <button class="btn-instalar-app" id="btnInstalarAppTop" onclick="instalarApp()">📲 Instalar app</button>
     <button class="btn-tema" id="btnTema" onclick="ciclarTema()" title="Cambiar tema (oscuro / claro / automático)" aria-label="Cambiar tema">🌙</button>
+    <button class="btn-tema" id="btnAyuda" onclick="guiaAbrirBuscar()" title="Ayuda · buscá cómo se hace algo (atajo: ?)" aria-label="Ayuda" style="display:none;">❓<span class="ay-txt">Ayuda</span></button>
     <button class="btn-tema" id="btnConfig" onclick="abrirConfiguracion()" title="Configuración" aria-label="Configuración" style="display:none;">⚙️</button>
     <div class="tabs">
       <div class="tab active" id="tabProf" onclick="cambiarVista('profesor')">Profesor</div>
@@ -4127,6 +4132,7 @@ async function negCargar(silencioso){
     GIMNASIOS_ADMIN_CACHE = (res.gimnasios || []).map(g => Object.assign({}, g));   // lo usan 💳 Activar y 🧩 Accesos
     negPintar();
     acuNegCargar();   // (v120) estado de los acuerdos de datos (si el SQL no está, no muestra nada)
+    guiaNegCargar();  // (v123) búsquedas de la Guía sin resultado (idem)
   }catch(e){
     const falta = /negocio_resumen|function|404|PGRST202/i.test(String(e && e.message));
     cont.innerHTML = `<div class="card" style="margin:16px;">${falta ? 'Falta correr <b>negocio.sql</b> en Supabase (SQL Editor).' : 'No se pudo cargar: ' + escaparHtml(e.message || '')}</div>`;
@@ -4207,8 +4213,8 @@ function negPintar(){
     </div>
     <div class="at-chips" style="margin:14px 0 8px;">${F.map(f => `<button class="at-chip${NEG_FILTRO === f[0] ? ' on' : ''}" onclick="negFiltrar('${f[0]}')">${f[1]} · ${f[2]}</button>`).join('')}</div>
     <div class="ng-grid">${lista.map(g => negTarjeta(g, c, g.id === propio)).join('') || '<div class="muted">Ninguno con este filtro.</div>'}</div>
-    <div id="negAcuerdos"></div>`;
-  acuNegPintar();
+    <div id="negAcuerdos"></div><div id="negGuiaBusq"></div>`;
+  acuNegPintar(); guiaNegPintar();
 }
 
 // ---------- (v99) ACCESOS POR MÓDULO: qué secciones ve cada gimnasio (lo maneja solo Martin) ----------
@@ -4785,7 +4791,7 @@ function atlIniciarAlu(){
   atlCargarVista('aluAtletismoContenido', id || '');
 }
 
-const APP_VERSION = 122;
+const APP_VERSION = 123;
 // (v96) Fecha de la última actualización: se cambia junto con APP_VERSION en cada entrega. Se muestra en la
 // pantalla de inicio y en el menú de cuenta ("v94 · actualizada el 5/10/2026").
 const APP_FECHA = '2026-10-10';
@@ -5872,6 +5878,8 @@ function sincronizarTabsRol(){
   if (tabs) tabs.style.display = (SESION_ACTUAL && PERFIL_ACTUAL) ? 'none' : '';
   const cfg = document.getElementById('btnConfig');
   if (cfg) cfg.style.display = (SESION_ACTUAL && PERFIL_ACTUAL) ? '' : 'none';
+  const ay = document.getElementById('btnAyuda');   // (v123) ❓ siempre a mano, para cualquier rol con guía
+  if (ay) ay.style.display = (SESION_ACTUAL && PERFIL_ACTUAL && guiaRol()) ? '' : 'none';
 }
 
 function authCambiarTab(t){
@@ -9761,23 +9769,189 @@ async function guiaAbrir(idPaso){
   document.getElementById('guiaCuerpo').innerHTML = `
     <div class="gu-sec">Primeros pasos · ${st.hechos} de ${st.total}</div>${pasosHtml}
     <div class="gu-sec">Preguntas frecuentes</div>${faqHtml}
+    <div class="gu-parecidos" id="guiaParecidos" style="display:none;"></div>
     <div class="gu-vacio" id="guiaVacio" style="display:none;">No encontramos nada con esa búsqueda. Probá con otra palabra (ej: “rutina”, “pago”, “turno”).</div>`;
+  GUIA_IDX = null;
   const b = document.getElementById('guiaBuscar'); if (b && !idPaso) b.value = '';
   xAbrirModal('modalGuia');
   if (idPaso){ const el = document.getElementById('guiaP_' + idPaso); if (el) setTimeout(() => el.scrollIntoView({ block:'nearest', behavior:'smooth' }), 80); }
 }
-function guiaFiltrar(){
-  const q = (document.getElementById('guiaBuscar').value || '').trim().toLowerCase();
-  const ps = q.split(/\s+/).filter(Boolean);
-  let vis = 0;
-  document.querySelectorAll('#guiaCuerpo .gu-det').forEach(d => {
-    const ok = !ps.length || ps.every(w => d.dataset.q.includes(w));
-    d.style.display = ok ? '' : 'none';
-    if (ps.length && ok) d.open = true;
-    if (ok) vis++;
+// ---------- (v123) Buscador inteligente de la Guía ----------
+const GUIA_STOP = new Set('de del la el los las un una unos unas y o a al en con por para que como cual cuales mi mis tu tus su sus se me te lo le les es hay hago hacer puedo quiero quisiera necesito donde esta este esto eso ese esa si ya muy mas'.split(' '));
+const GUIA_SIN_GRUPOS = [
+  ['rutina','rutinas','plan de entrenamiento','entrenamiento','ejercicio','ejercicios','programa'],
+  ['cuota','cuotas','pago','pagos','pagar','cobro','cobros','cobrar','mensualidad','abono','vencimiento','deuda','plata','factura'],
+  ['alumno','alumnos','socio','socios','cliente','clientes','miembro'],
+  ['turno','turnos','reserva','reservas','reservar','horario','horarios','agenda','cupo','cupos','clase','clases'],
+  ['peso','pesos','kilo','kilos','kg','libras','barra','pesa'],
+  ['borrar','eliminar','quitar','sacar','baja','dar de baja','desactivar','archivar'],
+  ['crear','nueva','nuevo','agregar','armar','cargar','hacer','alta','sumar','anadir','dar de alta'],
+  ['whatsapp','wp','wasap','mensaje'],
+  ['contrasena','clave','password','pass','ingresar','entrar','login','acceso'],
+  ['asistencia','presente','ausente','asistio','falto','llego'],
+  ['evaluacion','evaluaciones','medicion','mediciones','medida','medidas','test','antropometria'],
+  ['rotativa','rotacion','ciclo','rotativas','alternar'],
+  ['profesor','profesores','profe','profes','entrenador','coach','trainer'],
+  ['editar','modificar','cambiar','corregir','actualizar'],
+  ['ver','mostrar','encontrar','buscar','donde'],
+  ['plan','planes','membresia','abono','precio','precios','tarifa'],
+  ['qr','codigo','escanear','escaner'],
+  ['informe','reporte','reportes','pdf','descargar','exportar','imprimir'],
+  ['avisar','aviso','avisos','notificacion','notificaciones','alerta','alertas','recordatorio'],
+];
+function guiaNorm(s){ return String(s == null ? '' : s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9ñ]+/g, ' ').trim(); }
+function guiaStem(w){
+  if (w.length <= 3) return w;
+  let s = w.replace(/(ando|iendo|aron|ieron|ando|ado|ido|ar|er|ir)$/, m => (w.length - m.length >= 3 ? '' : m));
+  s = s.replace(/(es|s)$/, m => (s.length - m.length >= 3 ? '' : m));
+  s = s.replace(/[aeiou]$/, m => (s.length - m.length >= 3 ? '' : m));
+  return s;
+}
+function guiaLev(a, b, max){
+  if (Math.abs(a.length - b.length) > max) return max + 1;
+  let prev = Array.from({ length: b.length + 1 }, (_, i) => i);
+  for (let i = 1; i <= a.length; i++){
+    const cur = [i]; let min = i;
+    for (let j = 1; j <= b.length; j++){
+      const v = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+      cur.push(v); if (v < min) min = v;
+    }
+    if (min > max) return max + 1;
+    prev = cur;
+  }
+  return prev[b.length];
+}
+const GUIA_GENERICOS = new Set(['crear','nueva','nuevo','agregar','armar','cargar','hacer','alta','sumar','anadir','ver','mostrar','encontrar','buscar','donde','editar','modificar','cambiar','corregir','actualizar'].map(w => guiaStem(guiaNorm(w))));
+let GUIA_SIN_MAPA = null;   // stem -> Set(stems del grupo)
+function guiaSinMapa(){
+  if (GUIA_SIN_MAPA) return GUIA_SIN_MAPA;
+  GUIA_SIN_MAPA = new Map();
+  GUIA_SIN_GRUPOS.forEach(g => {
+    const st = new Set(); g.forEach(frase => guiaNorm(frase).split(' ').forEach(w => { if (w && !GUIA_STOP.has(w)) st.add(guiaStem(w)); }));
+    st.forEach(s => { if (!GUIA_SIN_MAPA.has(s)) GUIA_SIN_MAPA.set(s, new Set()); st.forEach(o => GUIA_SIN_MAPA.get(s).add(o)); });
   });
-  document.querySelectorAll('#guiaCuerpo .gu-sec').forEach(s => { s.style.display = ps.length ? 'none' : ''; });
-  document.getElementById('guiaVacio').style.display = vis ? 'none' : '';
+  return GUIA_SIN_MAPA;
+}
+let GUIA_IDX = null, GUIA_VOCAB = null;
+function guiaIndexar(){
+  GUIA_IDX = []; GUIA_VOCAB = new Set();
+  document.querySelectorAll('#guiaCuerpo .gu-det').forEach(el => {
+    const tit = el.querySelector('summary'), cuerpo = el.dataset.q || '';
+    const toks = t => guiaNorm(t).split(' ').filter(w => w && !GUIA_STOP.has(w)).map(guiaStem);
+    const st = new Set(toks(tit ? tit.textContent : '')), sb = new Set(toks(cuerpo));
+    st.forEach(w => GUIA_VOCAB.add(w)); sb.forEach(w => GUIA_VOCAB.add(w));
+    GUIA_IDX.push({ el, st, sb });
+  });
+}
+// Puntaje de UNA palabra buscada contra un documento: 0 = no aparece.
+function guiaPuntajePalabra(stem, alts, doc, largo){
+  let mejor = 0;
+  const probar = (s, peso) => {
+    const pre = s.length >= 3;
+    const hit = set => { for (const w of set){ if (w === s || (pre && w.startsWith(s))) return true; } return false; };
+    if (hit(doc.st)) mejor = Math.max(mejor, 3 * peso);
+    else if (hit(doc.sb)) mejor = Math.max(mejor, 1 * peso);
+  };
+  probar(stem, 1);
+  alts.forEach(a => probar(a, .5));
+  if (!mejor){   // errores de tipeo (1 letra en palabras de 5+, 2 en 8+)
+    const tol = largo >= 8 ? 2 : largo >= 5 ? 1 : 0;
+    if (tol){
+      const cerca = set => { for (const w of set){ if (w.length >= 4 && guiaLev(stem, w, tol) <= tol) return true; } return false; };
+      if (cerca(doc.st)) mejor = 2 * .7; else if (cerca(doc.sb)) mejor = .7;
+    }
+  }
+  return mejor;
+}
+function guiaBuscarDocs(q){
+  let ws = guiaNorm(q).split(' ').filter(Boolean);
+  const sinStop = ws.filter(w => !GUIA_STOP.has(w)); if (sinStop.length) ws = sinStop;
+  const mapa = guiaSinMapa();
+  let terms = ws.map(w => { const s = guiaStem(w); return { s, largo: w.length, gen: GUIA_GENERICOS.has(s), alts: [...(mapa.get(s) || [])].filter(x => x !== s) }; });
+  // Los verbos genéricos (crear, hacer, cargar, ver...) suman puntos pero no son obligatorios si hay otra palabra con contenido.
+  const hayContenido = terms.some(t => !t.gen);
+  const res = GUIA_IDX.map(doc => {
+    let total = 0, ok = 0, oblig = 0, okOblig = 0;
+    terms.forEach(t => {
+      const obligatoria = !(t.gen && hayContenido);
+      const p = guiaPuntajePalabra(t.s, t.alts, doc, t.largo) * (t.gen ? .5 : 1);
+      if (obligatoria) oblig++;
+      if (p){ ok++; total += p; if (obligatoria) okOblig++; }
+    });
+    return { doc, total, ok, oblig, okOblig };
+  });
+  const todos = res.filter(r => r.oblig && r.okOblig === r.oblig).sort((a, b) => b.total - a.total);
+  const parciales = terms.filter(t => !(t.gen && hayContenido)).length > 1 ? res.filter(r => r.okOblig > 0 && r.okOblig < r.oblig).sort((a, b) => (b.okOblig - a.okOblig) || (b.total - a.total)) : [];
+  return { todos, parciales, n: terms.length };
+}
+let GUIA_LOG_T = null, GUIA_LOG_VISTOS = new Set();
+function guiaLogBusqueda(q, tipo){
+  clearTimeout(GUIA_LOG_T);
+  const n = guiaNorm(q); if (n.length < 3 || GUIA_LOG_VISTOS.has(n)) return;
+  GUIA_LOG_T = setTimeout(() => {
+    GUIA_LOG_VISTOS.add(n);
+    sb('rpc/guia_registrar_busqueda', { method: 'POST', body: JSON.stringify({ p_termino: n, p_tipo: tipo, p_rol: guiaRol() || '' }) }).catch(() => {});   // si el SQL no está corrido, no pasa nada
+  }, 1500);
+}
+function guiaFiltrar(){
+  const q = (document.getElementById('guiaBuscar').value || '').trim();
+  const vacio = document.getElementById('guiaVacio'), par = document.getElementById('guiaParecidos');
+  const docs = document.querySelectorAll('#guiaCuerpo .gu-det');
+  if (!guiaNorm(q)){
+    clearTimeout(GUIA_LOG_T);
+    docs.forEach(d => { d.style.display = ''; d.style.order = ''; });
+    document.querySelectorAll('#guiaCuerpo .gu-sec').forEach(s => { s.style.display = ''; s.style.order = ''; });
+    vacio.style.display = 'none'; if (par) par.style.display = 'none';
+    return;
+  }
+  if (!GUIA_IDX || GUIA_IDX.length !== docs.length) guiaIndexar();
+  const r = guiaBuscarDocs(q);
+  docs.forEach(d => { d.style.display = 'none'; });
+  document.querySelectorAll('#guiaCuerpo .gu-sec').forEach(s => { s.style.display = 'none'; });
+  r.todos.forEach((x, i) => { x.doc.el.style.display = ''; x.doc.el.style.order = 10 + i; x.doc.el.open = i < 2; });
+  r.parciales.slice(0, 6).forEach((x, i) => { x.doc.el.style.display = ''; x.doc.el.style.order = 600 + i; x.doc.el.open = false; });
+  const hayP = r.parciales.length > 0;
+  if (par){ par.style.display = (r.todos.length && hayP) || (!r.todos.length && hayP) ? '' : 'none'; par.style.order = 500; par.textContent = r.todos.length ? 'Resultados parecidos' : 'No hay una coincidencia exacta. Mirá estos parecidos:'; }
+  const sinNada = !r.todos.length && !hayP;
+  if (sinNada){
+    const rol = guiaRol();
+    vacio.innerHTML = `No encontramos nada para “${xe(q)}”. Probá con otra palabra (ej: “rutina”, “pago”, “turno”).` +
+      (rol && rol !== 'alumno' ? `<div style="margin-top:10px;"><button type="button" class="gu-btn" onclick="guiaPreguntarWhatsapp()">💬 Preguntanos por WhatsApp</button></div>` : '<div class="muted" style="margin-top:6px;">Si no lo encontrás, consultalo en tu gimnasio.</div>');
+    vacio.style.display = ''; vacio.style.order = 700;
+  } else vacio.style.display = 'none';
+  if (sinNada) guiaLogBusqueda(q, 'vacio'); else if (!r.todos.length) guiaLogBusqueda(q, 'parcial'); else clearTimeout(GUIA_LOG_T);
+  const c = document.getElementById('guiaCuerpo'); if (c && c.parentElement) c.parentElement.scrollTop = 0;
+}
+function guiaPreguntarWhatsapp(){
+  const q = (document.getElementById('guiaBuscar').value || '').trim();
+  abrirSoporteWhatsapp(`Hola! Busqué "${q}" en la guía de M2F Solutions y no lo encontré. ¿Me ayudan?`);
+}
+async function guiaAbrirBuscar(){
+  await guiaAbrir();
+  const b = document.getElementById('guiaBuscar'); if (b) setTimeout(() => b.focus(), 60);
+}
+// Atajo "?" o "/" (en computadora) para abrir la ayuda con el buscador
+document.addEventListener('keydown', e => {
+  if ((e.key !== '?' && e.key !== '/') || e.ctrlKey || e.metaKey || e.altKey) return;
+  const t = e.target, tag = t && t.tagName;
+  if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || (t && t.isContentEditable)) return;
+  if (document.querySelector('.modal-overlay.show')) return;
+  if (!guiaRol()) return;
+  e.preventDefault(); guiaAbrirBuscar();
+});
+// Panel de Martin (Negocio): búsquedas sin resultado
+let GUIA_NEG_ROWS = null;
+async function guiaNegCargar(){
+  try{ GUIA_NEG_ROWS = await sb('rpc/guia_busquedas_resumen', { method: 'POST', body: '{}' }); }catch(e){ GUIA_NEG_ROWS = null; }
+  guiaNegPintar();
+}
+function guiaNegPintar(){
+  const rows = GUIA_NEG_ROWS;
+  const el = document.getElementById('negGuiaBusq'); if (!el) return;
+  if (!Array.isArray(rows)){ el.innerHTML = ''; return; }
+  el.innerHTML = `<div class="card" style="margin-top:14px;"><h3 class="ng-t">🔎 Lo que buscan en la Guía y no encuentran</h3>
+    <div class="muted" style="margin-bottom:8px;font-size:12.5px;">Últimos 60 días. “Parcial” = solo hubo resultados aproximados. Cada fila es algo que conviene explicar en la Guía.</div>
+    ${rows.length ? rows.map(x => `<div class="ng-prox"><span class="ng-prox-n">${xe(x.termino)}</span><span class="ng-chip ${x.vacio ? 'warn' : ''}">${x.veces}× · ${x.gimnasios} gim.${x.vacio ? '' : ' · parcial'}</span></div>`).join('') : '<div class="muted">Todavía no hay búsquedas sin resultado.</div>'}</div>`;
 }
 function guiaCerrar(){ xCerrarModal('modalGuia'); }
 
