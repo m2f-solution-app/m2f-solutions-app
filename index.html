@@ -3693,6 +3693,7 @@
     <div class="x-wrap "><button type="button" class="x-cerrar" aria-label="Cerrar" title="Cerrar" onclick="cerrarModalAsistencia()">✕</button></div>
     <h3 id="modalAsistenciaNombre">Alumno</h3>
     <p id="modalAsistenciaSub" class="muted" style="margin-top:-8px;"></p>
+    <div id="ajusteRotLinea"></div>
     <div id="modalAsistenciaWellness"></div>
     <div id="modalAsistenciaAjuste"></div>
     <div class="row" style="gap:8px;">
@@ -4784,7 +4785,7 @@ function atlIniciarAlu(){
   atlCargarVista('aluAtletismoContenido', id || '');
 }
 
-const APP_VERSION = 121;
+const APP_VERSION = 122;
 // (v96) Fecha de la última actualización: se cambia junto con APP_VERSION en cada entrega. Se muestra en la
 // pantalla de inicio y en el menú de cuenta ("v94 · actualizada el 5/10/2026").
 const APP_FECHA = '2026-10-10';
@@ -12879,7 +12880,7 @@ async function renderAgenda(){
       const gid = salaGym();
       const [fr, tu, esp] = await Promise.all([
         sb(`sala_horarios?select=hora_inicio,hora_fin,cupo&gimnasio_id=eq.${gid}&dia_semana=eq.${dow}&activo=eq.true&order=hora_inicio.asc`),
-        sb(`turnos?select=id,hora,profesor_id,alumno_id,asistio,rutina_dia_id,rutina_ajustada_en,rutina_ajuste_motivo,rutina_dias(nombre_dia),alumnos(nombre)&fecha=eq.${fecha}&gimnasio_id=eq.${gid}&estado=neq.cancelado${profesorFiltroId ? '&profesor_id=eq.' + profesorFiltroId : ''}`),
+        sb(`turnos?select=id,hora,profesor_id,alumno_id,asistio,rutina_dia_id,rutina_ajustada_en,rutina_ajuste_motivo,rutina_dias(nombre_dia),alumnos(nombre,tipo_alumno_id)&fecha=eq.${fecha}&gimnasio_id=eq.${gid}&estado=neq.cancelado${profesorFiltroId ? '&profesor_id=eq.' + profesorFiltroId : ''}`),
         sb(`turnos_espera?select=hora&gimnasio_id=eq.${gid}&fecha=eq.${fecha}&estado=eq.espera`).catch(() => []),
       ]);
       turnosDelDia = tu;
@@ -12894,7 +12895,7 @@ async function renderAgenda(){
     } else {
     [horarios, turnosDelDia] = await Promise.all([
       sb(`horarios_trabajo?profesor_id=in.(${idsProf.join(',')})&dia_semana=eq.${dow}&activo=eq.true`),
-      sb(`turnos?select=id,hora,profesor_id,alumno_id,asistio,rutina_dia_id,rutina_ajustada_en,rutina_ajuste_motivo,rutina_dias(nombre_dia),alumnos(nombre)&fecha=eq.${fecha}&profesor_id=in.(${idsProf.join(',')})&estado=neq.cancelado`),
+      sb(`turnos?select=id,hora,profesor_id,alumno_id,asistio,rutina_dia_id,rutina_ajustada_en,rutina_ajuste_motivo,rutina_dias(nombre_dia),alumnos(nombre,tipo_alumno_id)&fecha=eq.${fecha}&profesor_id=in.(${idsProf.join(',')})&estado=neq.cancelado`),
     ]);
     }
 
@@ -12903,6 +12904,7 @@ async function renderAgenda(){
     // cuáles le quedan, sin tener que estar al lado suyo.
     const progresoPorTurno = await cargarProgresoTurnos(turnosDelDia);
     WELLNESS_DIA = await cargarWellnessDelDia(fecha, turnosDelDia);
+    const rotAg = fecha >= fechaLocalISO() ? await rotInfoAgenda(turnosDelDia, fecha) : null;   // (v122) 🔁 Rotativa / ⚠ Sin rutina en cada tarjeta
     AGENDA_TURNOS = {};
     turnosDelDia.forEach(t => { AGENDA_TURNOS[t.id] = { rutina_ajustada_en: t.rutina_ajustada_en, rutina_ajuste_motivo: t.rutina_ajuste_motivo }; });
 
@@ -12918,6 +12920,7 @@ async function renderAgenda(){
         wellness: WELLNESS_DIA[t.alumno_id] || null,
         ajustada: !!t.rutina_ajustada_en,
         profId: t.profesor_id,
+        rot: rotAg ? (rotAg.rotDe[t.alumno_id] ? { nombre: rotAg.rotDe[t.alumno_id], dia: rotAg.rotDia[t.alumno_id] || null } : (rotAg.ok && !t.rutina_dia_id ? 'sin' : null)) : null,
       });
     });
 
@@ -12973,11 +12976,18 @@ async function renderAgenda(){
                 progresoHtml = `<div class="chip-progreso en-curso">🏋️ ${r.progreso.hechos}/${r.progreso.total} ejercicios</div>`;
               }
             }
+            // (v122) Sin rutina enganchada al turno: o tiene una rotativa en curso (le toca el día X) o no tiene ninguna.
+            let rotHtml = '';
+            if (!r.rutinaDiaId && r.rot){
+              rotHtml = r.rot === 'sin'
+                ? `<div class="chip-progreso" style="color:var(--warn-text);">⚠ Sin rutina asignada</div>`
+                : `<div class="chip-progreso" style="color:var(--accent2-text);">🔁 Rotativa${r.rot.dia ? ` · <b>${escaparHtml(r.rot.dia.nombre)}</b>${r.rot.dia.manual ? ' ✎' : ''}` : ` · ${escaparHtml(r.rot.nombre)}`}</div>`;
+            }
             return `<div class="alumno-chip asistencia-${estado} ${esAuto?'asistencia-auto':''}" onclick="abrirModalAsistencia('${r.id}', ${asistioArg}, '${fecha}', '${horaStr}', '${r.alumnoId}', '${nombreEscapado}', ${rutinaDiaArg}, '${nombreDiaEscapado}', '${SH ? (r.profId || '') : prof.id}')">
               <span class="avatar">${iniciales(r.nombre)}</span>
               <div class="chip-info">
                 <div class="chip-nombre">${r.nombre}${icono}</div>
-                ${progresoHtml}
+                ${progresoHtml}${rotHtml}
                 ${SH ? `<div class="chip-progreso" style="color:var(--muted);">👤 ${escaparHtml((PROFESORES_CACHE.find(p => p.id === r.profId) || {}).nombre || 'Sin profesor')}</div>` : ''}
                 ${wellnessChipHtml(r.wellness, fecha)}
                 ${r.ajustada ? '<div class="chip-progreso" style="color:var(--warn-text);">🔄 Sesión ajustada</div>' : ''}
@@ -13050,6 +13060,7 @@ function abrirModalAsistencia(turnoId, asistioRawActual, fecha, horaStr, alumnoI
     + (efectivo === null ? '' : efectivo ? ' · presente' : asistioRawActual === null ? ' · ausente (sin confirmar)' : ' · ausente');
   document.getElementById('modalAsistenciaWellness').innerHTML = wellnessDetalleHtml(WELLNESS_DIA[alumnoId] || null, fecha);
   renderAjusteSesionEnModal();
+  rotLineaEnModal();   // (v122) la rotativa va arriba de todo del popup
   document.getElementById('btnMarcarPresente').classList.toggle('activo', efectivo === true);
   document.getElementById('btnMarcarAusente').classList.toggle('activo', efectivo === false);
   // "Quitar marca" solo tiene sentido en un turno FUTURO que alguien ya marcó a
@@ -14442,7 +14453,7 @@ function pintarFichaAlumno(){
     <div class="x-fi-body" id="fichaTabBody"></div>`;
   const body = document.getElementById('fichaTabBody');
   const tok = ++FICHA_TOK;
-  if (F.tab === 'res'){ body.innerHTML = xFichaRes(a); xFichaResCarga(a, tok); xFichaResCarga2(a, tok); }
+  if (F.tab === 'res'){ body.innerHTML = xFichaRes(a); xFichaResCarga(a, tok); xFichaResCarga2(a, tok); rotFichaResumen(a.id, tok); }
   else if (F.tab === 'dat') body.innerHTML = xFichaDat(a);
   else if (F.tab === 'rut'){ body.innerHTML = xFichaRut(a); cargarRutinaAsignadaAlumno(a.id, 'fichaRutAsignada'); }
   else if (F.tab === 'pag'){ body.innerHTML = '<div class="muted">Cargando…</div>'; xFichaPagos(a, tok); }
@@ -14453,7 +14464,7 @@ function pintarFichaAlumno(){
 function xFichaRes(a){
   const cu = xCuota(a), r = RUTINAS_ALUMNO[a.id] || {}, plan = xPlanNombre(a);
   const rut = RUTINAS_ALUMNO_OK === false ? '<div class="muted">No se pudo calcular.</div>'
-    : r.actual ? `<div style="font-weight:800;font-size:16px;">${xe(r.actual.nombre)}</div><div class="x-sub">${xe(r.actual.detalle || '')}</div>${r.sigue ? `<div class="x-item" style="margin:8px 0 0;"><div><span class="x-sub">Sigue:</span> <b>${xe(r.sigue.nombre)}</b><div class="x-sub">${xe(r.sigue.detalle)}</div></div></div>` : ''}<div class="x-btns"><button class="ghost" onclick="fichaTab('rut')">Ver todas sus rutinas</button></div>`
+    : r.actual ? `<div style="font-weight:800;font-size:16px;">${xe(r.actual.nombre)}</div><div class="x-sub">${xe(r.actual.detalle || '')}</div>${r.actual.modo === 'rotativa' ? '<div id="fichaRotDia" class="x-sub"></div>' : ''}${r.sigue ? `<div class="x-item" style="margin:8px 0 0;"><div><span class="x-sub">Sigue:</span> <b>${xe(r.sigue.nombre)}</b><div class="x-sub">${xe(r.sigue.detalle)}</div></div></div>` : ''}<div class="x-btns"><button class="ghost" onclick="fichaTab('rut')">Ver todas sus rutinas</button></div>`
     : `<span class="pill warn">Sin rutina ${r.sigue ? 'en curso' : 'asignada'}</span>${r.sigue ? `<div class="x-sub" style="margin-top:6px;">Sigue: <b>${xe(r.sigue.nombre)}</b> · ${xe(r.sigue.detalle)}</div>` : ''}<div class="x-btns"><button onclick="fichaAsignarRutina()">＋ Asignar rutina</button></div>`;
   return `<div class="x-kpis">
       <div class="x-kpi"><div class="k">Turnos este mes</div><div class="v" id="fkTurnos">…</div></div>
@@ -20487,7 +20498,6 @@ function renderAjusteSesionEnModal(){
   const ajustada = !!info.rutina_ajustada_en;
   cont.innerHTML = `
     <div style="border-top:1px solid var(--border); margin:12px 0 10px;"></div>
-    <div id="ajusteRotLinea"></div>
     <div style="font-weight:700; margin-bottom:6px;">Ajustar la sesión de este alumno</div>
     ${ajustada ? `<div class="muted" style="font-size:12px; margin-bottom:6px;">🔄 Ya fue ajustada${info.rutina_ajuste_motivo ? ': ' + escaparHtml(info.rutina_ajuste_motivo) : ''}</div>` : ''}
     <button style="width:100%;" onclick="abrirSelectorSesion()">🔄 Cambiar por otra sesión (recovery, plantilla…)</button>
@@ -20495,7 +20505,6 @@ function renderAjusteSesionEnModal(){
     <button class="ghost" style="width:100%; margin-top:8px;" onclick="crearRutinaNuevaParaTurno()">🆕 Crear una rutina nueva</button>
     ${ajustada ? `<button class="ghost" style="width:100%; margin-top:8px;" onclick="volverRutinaOriginal()">↩️ Volver a la rutina original</button>` : ''}
     <div class="muted" style="font-size:11px; margin-top:6px;">Solo cambia la sesión de este alumno en este turno; la rutina original del gimnasio no se toca.</div>`;
-  rotLineaEnModal();   // (v118) "Rotativa · le toca Día X [Cambiar día]"
 }
 
 // ----- (1) Cambiar por otra sesión -----
@@ -21296,6 +21305,39 @@ async function rotConfirmarCambiar(){
   }catch(e){ toast('No se pudo cambiar el día: ' + extraerMensajeError(e), true); }
 }
 // Línea "Rotativa · le toca Día 2 [Cambiar día]" dentro del popup del turno (Agenda / Inicio)
+// ---------- (v122) Rotativa a la vista: Agenda del día y Resumen de la ficha ----------
+// Una rotativa nunca se engancha al turno (rutina_dia_id queda vacío), así que la Agenda no mostraba nada de ella.
+// Mismo criterio que el Inicio: si el alumno tiene una rotativa en curso se muestra "🔁 Rotativa · Día X" (el día solo
+// para hoy: es el que le toca ahora); si no tiene ninguna, "⚠ Sin rutina asignada".
+async function rotInfoAgenda(turnos, fecha){
+  const rotDe = {}, rotDia = {}; let ok = false;
+  try{
+    const cand = {};
+    turnos.forEach(t => { if (!t.rutina_dia_id && t.alumno_id) cand[t.alumno_id] = { id: t.alumno_id, tipo_alumno_id: t.alumnos?.tipo_alumno_id || null }; });
+    const lista = Object.values(cand);
+    if (lista.length){
+      await cargarRutinasPorAlumno(lista, true);
+      ok = RUTINAS_ALUMNO_OK === true;
+      if (ok){
+        lista.forEach(a => { const ra = RUTINAS_ALUMNO[a.id]; if (ra && ra.actual && ra.actual.modo === 'rotativa') rotDe[a.id] = ra.actual.nombre; });
+        if (fecha === fechaLocalISO()){
+          await Promise.all(Object.keys(rotDe).map(async aid => { try{ const d = await resolverDiaRutinaRotativa(RUTINAS_ALUMNO[aid].actual.id, aid); if (d) rotDia[aid] = { nombre: rotNombreDia(d), manual: !!d._manual }; }catch(e){} }));
+        }
+      }
+    } else ok = true;
+  }catch(e){ console.error('No se pudo revisar las rotativas de la Agenda:', e); ok = false; }
+  return { rotDe, rotDia, ok };
+}
+async function rotFichaResumen(alumnoId, tok){
+  try{
+    const x = await rotActualDeAlumno(alumnoId);
+    const el = document.getElementById('fichaRotDia');
+    if (!x || !el || tok !== FICHA_TOK) return;
+    el.innerHTML = `<div style="margin-top:6px;">Le toca: <b>${xe(rotNombreDia(x.diaCursor))}</b> <span class="x-sub">(día ${(x.diaCursor.orden ?? 0) + 1} de ${x.totalDias})${x.diaCursor._manual ? ' ✎' : ''}</span></div>
+      <button type="button" class="ghost" style="margin-top:6px; padding:4px 10px; font-size:12.5px;" onclick="rotAbrirCambiarDia('${alumnoId}', '${x.rutina.id}', '')">✎ Cambiar día</button>`;
+  }catch(e){ /* sin esto la ficha se ve igual que antes */ }
+}
+
 async function rotLineaEnModal(){
   const c = ASISTENCIA_MODAL_CTX, el = document.getElementById('ajusteRotLinea');
   if (!c || !el) return;
@@ -21304,6 +21346,7 @@ async function rotLineaEnModal(){
     if (!ASISTENCIA_MODAL_CTX || ASISTENCIA_MODAL_CTX.turnoId !== c.turnoId || !document.getElementById('ajusteRotLinea')) return;
     if (!x){ el.innerHTML = ''; return; }
     const m = x.diaCursor._manual;
+    if (c.fecha < dateAIso(new Date())){ el.innerHTML = `<div class="muted" style="font-size:12.5px; margin-bottom:10px;">🔁 Tiene una rotativa asignada: ${escaparHtml(x.rutina.nombre)}</div>`; return; }
     el.innerHTML = `<div style="background:var(--panel2); border:1px solid var(--border); border-radius:10px; padding:8px 10px; margin-bottom:10px;">
       <div class="muted" style="font-size:12px;">🔁 Rotativa · ${escaparHtml(x.rutina.nombre)}</div>
       <div style="font-weight:700;">Le toca: ${escaparHtml(rotNombreDia(x.diaCursor))} <span class="muted" style="font-weight:400; font-size:12px;">(día ${(x.diaCursor.orden ?? 0) + 1} de ${x.totalDias})</span></div>
