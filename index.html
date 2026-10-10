@@ -1697,6 +1697,12 @@
   .x-li .mid{ flex:1; min-width:0; }
   .x-li .end{ text-align:right; flex:none; max-width:42%; }
   .x-li .go{ color:var(--muted); font-size:18px; flex:none; }
+  .baja-op{ display:flex; gap:10px; align-items:flex-start; padding:10px 12px; border:1px solid var(--border); border-radius:12px; margin:8px 0; cursor:pointer; font-size:14px; text-transform:none; letter-spacing:0; text-align:left; font-weight:400; color:var(--text); }
+  .baja-op b{ font-weight:700; }
+  .baja-op .muted{ font-size:12.5px; text-transform:none; letter-spacing:0; }
+  .baja-op input{ margin-top:3px; width:auto; }
+  .baja-op:has(input:checked){ border-color:var(--accent); background:rgba(255,122,48,.08); }
+  .prof-baja-mini{ flex:none; padding:6px 10px; font-size:12px; min-height:0; }
   @media (max-width:720px){
     .x-tbl-wrap{ display:none; }
     .x-lst{ display:block; }
@@ -3881,20 +3887,17 @@
     <p id="bajaProfesorNombre" class="muted" style="margin-top:-8px; font-weight:700;"></p>
     <div id="bajaProfesorCargando">Consultando turnos pendientes...</div>
     <div id="bajaProfesorSinPendientes" style="display:none;">
-      <p>No tiene turnos pendientes — se puede dar de baja directamente.</p>
+      <p>No tiene turnos pendientes — se da de baja directamente.</p>
     </div>
     <div id="bajaProfesorConPendientes" style="display:none;">
       <p id="bajaProfesorAviso" class="muted"></p>
-      <div class="field">
-        <label><input type="radio" name="bajaProfesorModo" value="reasignar" checked onchange="actualizarModoBajaProfesor()"> Reasignar esos turnos a otro profesor</label>
-      </div>
-      <div class="field" id="bajaProfesorSelectorWrap" style="margin-left:22px;">
+      <label class="baja-op"><input type="radio" name="bajaProfesorModo" value="reasignar" onchange="actualizarModoBajaProfesor()"> <span><b id="bajaOpReasT">Reemplazarlo con otro profesor</b><br><span class="muted" id="bajaOpReasD">Sus turnos pasan a otro profesor y se avisa a los alumnos.</span></span></label>
+      <div class="field" id="bajaProfesorSelectorWrap" style="margin:0 0 8px 26px; display:none;">
         <select id="bajaProfesorDestino"></select>
       </div>
-      <div class="field">
-        <label><input type="radio" name="bajaProfesorModo" value="cancelar" onchange="actualizarModoBajaProfesor()"> Cancelar esos turnos y avisar a los alumnos</label>
-      </div>
+      <label class="baja-op"><input type="radio" name="bajaProfesorModo" value="cancelar" id="bajaOpCancelarR" onchange="actualizarModoBajaProfesor()"> <span><b id="bajaOpCanT">No reemplazarlo</b><br><span class="muted" id="bajaOpCanD">Se cancelan sus turnos pendientes y se avisa a los alumnos.</span></span></label>
     </div>
+    <p class="muted" style="font-size:12.5px; margin:10px 0 0;">Sus horarios dejan de estar disponibles para reservar. No se borra nada: lo podés reactivar cuando quieras desde la lista de inactivos.</p>
     <div class="row" style="justify-content:flex-end; margin-top:12px;">
       <button class="ghost" onclick="cerrarModalBajaProfesor()">Cancelar</button>
       <button class="danger" id="btnConfirmarBajaProfesor" onclick="confirmarBajaProfesor()">Dar de baja</button>
@@ -4791,7 +4794,7 @@ function atlIniciarAlu(){
   atlCargarVista('aluAtletismoContenido', id || '');
 }
 
-const APP_VERSION = 123;
+const APP_VERSION = 125;
 // (v96) Fecha de la última actualización: se cambia junto con APP_VERSION en cada entrega. Se muestra en la
 // pantalla de inicio y en el menú de cuenta ("v94 · actualizada el 5/10/2026").
 const APP_FECHA = '2026-10-10';
@@ -11942,12 +11945,14 @@ function renderListaProfesores(){
   const st = id => (PROF_STATS && PROF_STATS[id]) || { hoy: 0, sem: 0 };
   const cargado = PROF_STATS !== null;
   const rolPill = p => p.perfil_id ? `<span class="pill ${p.perfiles?.rol === 'admin' ? 'warn' : ''}">${p.perfiles?.rol === 'admin' ? 'Administrador' : 'Profesor'}</span>` : '<span class="pill">Sin cuenta</span>';
+  const puedeBaja = p => !(PERFIL_ACTUAL && p.perfil_id && p.perfil_id === PERFIL_ACTUAL.id);   // (v124) uno no se da de baja a sí mismo
+  const btnBaja = (p, cls) => puedeBaja(p) ? `<button type="button" class="ghost ${cls}" style="color:var(--danger-text);" onclick="event.stopPropagation();abrirModalBajaProfesor('${p.id}','${(p.nombre || '').replace(/'/g, '&apos;')}')">Dar de baja</button>` : '';
   const rows = PROFESORES_CACHE.map(p => `<tr onclick="abrirFichaProfesor('${p.id}')">
       <td>${xQuien(p.nombre, p.dni ? 'DNI ' + p.dni : 'Sin DNI')}</td><td>${rolPill(p)}</td>
       <td>${cargado ? st(p.id).hoy : '…'}</td><td>${cargado ? st(p.id).sem : '…'}</td>
       <td>${p.tarifa_hora != null && p.tarifa_hora !== '' ? xe(formatearMonto(p.tarifa_hora)) : '<span class="muted">—</span>'}</td>
-      <td class="r"><button class="ghost" onclick="event.stopPropagation();abrirFichaProfesor('${p.id}')">Ver ficha</button></td></tr>`).join('');
-  const lista = PROFESORES_CACHE.map(p => `<div class="x-li" onclick="abrirFichaProfesor('${p.id}')">${xAv(p.nombre)}<div class="mid"><div class="x-nm">${xe(p.nombre)}</div><div class="x-sub">${cargado ? `${st(p.id).hoy} turnos hoy · ${st(p.id).sem} en 7 días` : 'Cargando…'}</div>${p.perfil_id ? '' : '<div style="margin-top:5px"><span class="pill warn">Sin cuenta</span></div>'}</div><span class="go">›</span></div>`).join('');
+      <td class="r"><button class="ghost" onclick="event.stopPropagation();abrirFichaProfesor('${p.id}')">Ver ficha</button> ${btnBaja(p, '')}</td></tr>`).join('');
+  const lista = PROFESORES_CACHE.map(p => `<div class="x-li" onclick="abrirFichaProfesor('${p.id}')">${xAv(p.nombre)}<div class="mid"><div class="x-nm">${xe(p.nombre)}</div><div class="x-sub">${cargado ? `${st(p.id).hoy} turnos hoy · ${st(p.id).sem} en 7 días` : 'Cargando…'}</div>${p.perfil_id ? '' : '<div style="margin-top:5px"><span class="pill warn">Sin cuenta</span></div>'}</div>${btnBaja(p, 'prof-baja-mini')}<span class="go">›</span></div>`).join('');
   cont.className = '';
   cont.innerHTML = `<div class="x-tbl-wrap" style="overflow-x:auto;"><table class="x-tbl"><thead><tr><th>Profesor</th><th>Rol</th><th>Turnos hoy</th><th>Próx. 7 días</th><th>Tarifa/hora</th><th></th></tr></thead><tbody>${rows}</tbody></table></div><div class="x-lst">${lista}</div>`;
 }
@@ -12000,9 +12005,9 @@ function pintarFichaProfesor(){
       </div>
       <div class="x-sec">Rol</div>
       ${p.perfil_id ? `<select onchange="cambiarRolProfesor('${p.perfil_id}','${(p.nombre || '').replace(/'/g, '&apos;')}',this.value)" style="width:auto;"><option value="profesor" ${rol === 'profesor' ? 'selected' : ''}>Profesor</option><option value="admin" ${rol === 'admin' ? 'selected' : ''}>Administrador</option></select>` : '<span class="pill">sin cuenta (cargado antes del login)</span>'}
-      <div class="x-sec">Baja</div>
+      ${(PERFIL_ACTUAL && p.perfil_id === PERFIL_ACTUAL.id) ? '' : `<div class="x-sec">Baja</div>
       <button class="ghost" style="color:var(--danger-text);" onclick="cerrarFicha();abrirModalBajaProfesor('${p.id}','${(p.nombre || '').replace(/'/g, '&apos;')}')">Dar de baja</button>
-      <div class="x-sub" style="margin-top:8px;">Si tiene turnos pendientes, te va a pedir reasignarlos o cancelarlos antes de confirmar.</div>`;
+      <div class="x-sub" style="margin-top:8px;">Si tiene turnos pendientes, elegís si lo reemplazás con otro profesor o no.</div>`}`;
   } else if (F.tab === 'age'){
     body.innerHTML = '<div class="muted">Cargando…</div>'; xFichaProfAgenda(p, tok);
   } else if (F.tab === 'acc'){
@@ -12066,22 +12071,38 @@ async function reactivarProfesor(profesorId){
 // saltea este paso.
 let BAJA_PROFESOR_CTX = null; // {profesorId, nombre, pendientes: [...]}
 async function abrirModalBajaProfesor(profesorId, nombre){
-  BAJA_PROFESOR_CTX = { profesorId, nombre, pendientes: [] };
+  BAJA_PROFESOR_CTX = { profesorId, nombre, pendientes: [], listo: false };
   document.getElementById('bajaProfesorNombre').textContent = nombre;
   document.getElementById('bajaProfesorCargando').style.display = '';
   document.getElementById('bajaProfesorSinPendientes').style.display = 'none';
   document.getElementById('bajaProfesorConPendientes').style.display = 'none';
+  document.querySelectorAll('input[name="bajaProfesorModo"]').forEach(r => { r.checked = false; r.disabled = false; });
+  document.getElementById('bajaProfesorSelectorWrap').style.display = 'none';
+  const btn = document.getElementById('btnConfirmarBajaProfesor'); btn.disabled = true; btn.textContent = 'Dar de baja';
   document.getElementById('modalBajaProfesor').classList.add('show');
   try{
+    try{ await salaCargar(); }catch(e){}
+    const hr = salaHorario();   // (v125) en "turnos por horario" el turno es de la sala: no se cancela ni se avisa, solo cambia el profesor vinculado
+    BAJA_PROFESOR_CTX.horario = hr;
+    document.getElementById('bajaOpReasT').textContent = hr ? 'Pasarlos a otro profesor' : 'Reemplazarlo con otro profesor';
+    document.getElementById('bajaOpReasD').textContent = hr ? 'Cambia solo el profesor vinculado a esos turnos. Los alumnos no pierden nada ni reciben aviso.' : 'Sus turnos pasan a otro profesor y se avisa a los alumnos.';
+    document.getElementById('bajaOpCanT').textContent = hr ? 'Dejarlos sin profesor asignado' : 'No reemplazarlo';
+    document.getElementById('bajaOpCanD').textContent = hr ? 'Los turnos siguen en pie (son de la sala); después podés vincularles un profesor desde la Agenda.' : 'Se cancelan sus turnos pendientes y se avisa a los alumnos.';
+    document.getElementById('bajaOpCancelarR').value = hr ? 'desvincular' : 'cancelar';
     const hoy = dateAIso(new Date());
-    const pendientes = await sb(`turnos?select=id&profesor_id=eq.${profesorId}&fecha=gte.${hoy}&estado=neq.cancelado`);
-    BAJA_PROFESOR_CTX.pendientes = pendientes;
+    const pendientes = await sb(`turnos?select=id,alumno_id&profesor_id=eq.${profesorId}&fecha=gte.${hoy}&estado=neq.cancelado&limit=5000`);
+    if (!BAJA_PROFESOR_CTX || BAJA_PROFESOR_CTX.profesorId !== profesorId) return;
+    BAJA_PROFESOR_CTX.pendientes = pendientes; BAJA_PROFESOR_CTX.listo = true;
     document.getElementById('bajaProfesorCargando').style.display = 'none';
     if (!pendientes.length){
       document.getElementById('bajaProfesorSinPendientes').style.display = '';
+      btn.disabled = false;
     } else {
-      document.getElementById('bajaProfesorAviso').textContent = `Tiene ${pendientes.length} turno(s) reservado(s) todavía. Elegí qué hacer con ellos antes de dar de baja:`;
-      document.getElementById('bajaProfesorDestino').innerHTML = PROFESORES_CACHE.filter(p => p.id !== profesorId).map(p => `<option value="${p.id}">${p.nombre}</option>`).join('');
+      const alus = new Set(pendientes.map(t => t.alumno_id)).size;
+      const otros = PROFESORES_CACHE.filter(p => p.id !== profesorId);
+      document.getElementById('bajaProfesorAviso').textContent = `Tiene ${pendientes.length} turno${pendientes.length === 1 ? '' : 's'} pendiente${pendientes.length === 1 ? '' : 's'} (${alus} alumno${alus === 1 ? '' : 's'}). ¿Qué hacemos con ${pendientes.length === 1 ? 'ese turno' : 'esos turnos'}?` + (hr ? ' Tu gimnasio saca los turnos por horario: son de la sala y no se pierden.' : '');
+      document.getElementById('bajaProfesorDestino').innerHTML = otros.map(p => `<option value="${p.id}">${xe(p.nombre)}</option>`).join('');
+      if (!otros.length){ const r = document.querySelector('input[name="bajaProfesorModo"][value="reasignar"]'); r.disabled = true; r.closest('label').style.opacity = '.5'; r.closest('label').querySelector('.muted').textContent = 'No hay otro profesor activo.'; }
       document.getElementById('bajaProfesorConPendientes').style.display = '';
       actualizarModoBajaProfesor();
     }
@@ -12097,6 +12118,12 @@ function cerrarModalBajaProfesor(){
 function actualizarModoBajaProfesor(){
   const modo = document.querySelector('input[name="bajaProfesorModo"]:checked')?.value;
   document.getElementById('bajaProfesorSelectorWrap').style.display = modo === 'reasignar' ? '' : 'none';
+  const btn = document.getElementById('btnConfirmarBajaProfesor');
+  if (!BAJA_PROFESOR_CTX || !BAJA_PROFESOR_CTX.listo) return;
+  if (BAJA_PROFESOR_CTX.pendientes.length){
+    btn.disabled = !modo;   // hay que elegir: reemplazarlo o no
+    btn.textContent = modo === 'reasignar' ? (BAJA_PROFESOR_CTX.horario ? 'Pasar turnos y dar de baja' : 'Reemplazar y dar de baja') : modo === 'cancelar' ? 'Cancelar turnos y dar de baja' : modo === 'desvincular' ? 'Dejar sin profesor y dar de baja' : 'Dar de baja';
+  }
 }
 async function confirmarBajaProfesor(){
   if (!BAJA_PROFESOR_CTX) return;
@@ -12106,7 +12133,15 @@ async function confirmarBajaProfesor(){
   try{
     if (pendientes.length){
       const modo = document.querySelector('input[name="bajaProfesorModo"]:checked')?.value;
-      if (modo === 'reasignar'){
+      if (!modo){ toast('Elegí si lo reemplazás o no.', true); btn.disabled = false; return; }
+      if (BAJA_PROFESOR_CTX.horario){
+        // (v125) Por horario: el turno es de la sala. Solo se cambia (o se quita) el profesor vinculado; sin cancelar ni avisar.
+        let destino = null;
+        if (modo === 'reasignar'){ destino = document.getElementById('bajaProfesorDestino').value; if (!destino){ toast('Elegí a qué profesor pasarlos.', true); btn.disabled = false; return; } }
+        const hoy = dateAIso(new Date());
+        await sb(`turnos?profesor_id=eq.${profesorId}&fecha=gte.${hoy}&estado=neq.cancelado`, { method:'PATCH', headers:{ Prefer:'return=minimal' }, body: JSON.stringify({ profesor_id: destino }) });
+        toast(`${pendientes.length} turno(s) ${destino ? 'pasado(s) al otro profesor' : 'sin profesor asignado'} ✓`);
+      } else if (modo === 'reasignar'){
         const destino = document.getElementById('bajaProfesorDestino').value;
         if (!destino){ toast('Elegí a qué profesor reasignar.', true); btn.disabled = false; return; }
         const r = await sb('rpc/reasignar_turnos_profesor', { method:'POST', body: JSON.stringify({ p_profesor_origen_id: profesorId, p_profesor_destino_id: destino }) });
