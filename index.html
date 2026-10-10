@@ -3466,6 +3466,7 @@
     <div id="subvistaAluInicio">
       <div class="vista-eyebrow" id="aluSaludo"></div>
       <div class="vista-titulo">Hoy</div>
+      <div id="aluRotPregunta"></div>
       <div class="alu-hero" id="aluInicioHero">Cargando...</div>
       <div id="aluQrWrap"></div>
       <div id="guiaCardAlu"></div>
@@ -4776,10 +4777,10 @@ function atlIniciarAlu(){
   atlCargarVista('aluAtletismoContenido', id || '');
 }
 
-const APP_VERSION = 117;
+const APP_VERSION = 118;
 // (v96) Fecha de la última actualización: se cambia junto con APP_VERSION en cada entrega. Se muestra en la
 // pantalla de inicio y en el menú de cuenta ("v94 · actualizada el 5/10/2026").
-const APP_FECHA = '2026-10-07';
+const APP_FECHA = '2026-10-10';
 function appVersionTxt(){ const [y, m, d] = APP_FECHA.split('-'); return `v${APP_VERSION} · actualizada el ${+d}/${+m}/${y}`; }
 (function(){ const el = document.getElementById('lcVersion'); if (el) el.textContent = 'M2F Solutions · ' + appVersionTxt(); })();
 
@@ -6354,7 +6355,7 @@ async function cargarInicioProfesor(){
 
     // (v117) Una rotativa nunca se engancha al turno (el alumno la ve por "Mis rutinas"), así que
     // "sin rutina enganchada" no es "sin rutina asignada". Se mira si el alumno tiene una rotativa en curso.
-    const rotDe = {};
+    const rotDe = {}, rotDia = {};
     try{
       const cand = {};
       tHoy.forEach(t => { if (!t.rutina_dia_id && t.alumno_id) cand[t.alumno_id] = { id: t.alumno_id, tipo_alumno_id: t.alumnos?.tipo_alumno_id || null }; });
@@ -6363,11 +6364,14 @@ async function cargarInicioProfesor(){
       if (lista.length){
         await cargarRutinasPorAlumno(lista, true);
         if (RUTINAS_ALUMNO_OK) lista.forEach(a => { const ra = RUTINAS_ALUMNO[a.id]; if (ra && ra.actual && ra.actual.modo === 'rotativa') rotDe[a.id] = ra.actual.nombre; });
+        // (v118) qué día le toca a cada uno (mismo cursor que ve el alumno)
+        await Promise.all(Object.keys(rotDe).map(async aid => { try{ const d = await resolverDiaRutinaRotativa(RUTINAS_ALUMNO[aid].actual.id, aid); if (d) rotDia[aid] = { nombre: rotNombreDia(d), manual: !!d._manual }; }catch(e){} }));
       }
     }catch(e){ console.error('No se pudo revisar las rotativas del Inicio:', e); }
 
     const turnos = tHoy.map(t => ({
       rotativa: !t.rutina_dia_id ? (rotDe[t.alumno_id] || '') : '',
+      rotDia: !t.rutina_dia_id ? (rotDia[t.alumno_id] || null) : null,
       id: t.id, hora: t.hora, h: String(t.hora).slice(0, 5), alumnoId: t.alumno_id, nombre: t.alumnos?.nombre || 'Alumno',
       asistio: t.asistio, ef: asistenciaEfectiva(t.asistio, hoy, t.hora), rutinaDiaId: t.rutina_dia_id,
       nombreDia: t.rutina_dias?.nombre_dia || '', ajustada: !!t.rutina_ajustada_en, profId: t.profesor_id,
@@ -6523,7 +6527,7 @@ function ipRenderTurnos(){
     <div class="ip-lst">
       <div class="ip-lst-h"><span>${s.h} · ${ipPlural(s.items.length, 'anotado', 'anotados')}</span><span>Asistencia ${marc}/${s.items.length}</span></div>
       ${s.items.map(t => {
-        const rut = t.rutinaDiaId ? `Rutina · ${ipEsc(t.nombreDia || 'asignada')}` : t.rotativa ? `🔁 Rotativa · ${ipEsc(t.rotativa)}` : '⚠ Sin rutina asignada';
+        const rut = t.rutinaDiaId ? `Rutina · ${ipEsc(t.nombreDia || 'asignada')}` : t.rotativa ? `🔁 Rotativa · ${ipEsc(t.rotativa)}${t.rotDia ? ` · <b>${ipEsc(t.rotDia.nombre)}</b>${t.rotDia.manual ? ' ✎' : ''}` : ''}` : '⚠ Sin rutina asignada';
         let extra = '';
         if (t.prog){ extra = (t.prog.total > 0 && t.prog.hechos >= t.prog.total) ? ' · ✅ completa' : ` · 🏋️ ${t.prog.hechos}/${t.prog.total}`; }
         if (t.ajustada) extra += ' · 🔄 ajustada';
@@ -10096,6 +10100,7 @@ function cerrarMenuAlu(){
 }
 // ---------- Inicio del alumno (v74): hero del día + próximos turnos ----------
 let _INICIO_TOKEN = 0;
+function inicioHoyISO(){ return new Date(fechaLocalISO() + 'T00:00:00').toISOString(); }   // (v118) 00:00 de hoy (hora local) para filtrar por finalizada_en
 function fechaLocalISO(d){
   d = d || new Date();
   return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
@@ -10224,7 +10229,7 @@ async function cargarInicioAlu(alumnoId){
       // Igual que el botón "Comenzar": sin turno con rutina, se busca una rutina asignada para hoy.
       const d = await resolverDiaSinTurno(alumnoId, hoy);
       if (d){
-        const ya = await sb(`ejecuciones?select=id&alumno_id=eq.${alumnoId}&rutina_dia_id=eq.${d.id}&estado=eq.finalizada&limit=1`);
+        const ya = await sb(`ejecuciones?select=id&alumno_id=eq.${alumnoId}&rutina_dia_id=eq.${d.id}&estado=eq.finalizada&finalizada_en=gte.${encodeURIComponent(inicioHoyISO())}&limit=1`);   // (v118) solo cuenta lo de HOY: si no, al dar la vuelta la rotativa figuraba "completada"
         modo = ya.length ? 'hecho' : 'pendiente'; dia = d; turnoHoy = deHoy[0] || null;
       } else modo = deHoy.length ? 'sinrutina' : 'libre';
       if (deHoy.length && !turnoHoy) turnoHoy = deHoy[0];
@@ -10247,6 +10252,7 @@ async function cargarInicioAlu(alumnoId){
       proxTxt = (prox.fecha === hoy ? 'Hoy' : d.toLocaleDateString('es-AR', { weekday:'short', day:'numeric' }).replace('.','')) + ' · ' + prox.hora.slice(0,5);
     }
     cargarPlanAlu(alumnoId, tok); // (v90) sin await: no frena el resto del inicio
+    rotPintarPregunta(alumnoId, 'aluRotPregunta');   // (v118) "hiciste una sesión especial, ¿qué te toca?"
     document.getElementById('aluInicioTiles').innerHTML =
       `<div class="alu-tile"><div class="n">${semana.length}</div><div class="l">Entrenamientos esta semana</div></div>
        <div class="alu-tile"><div class="n" style="font-size:20px; padding-top:5px;">${proxTxt}</div><div class="l">Próximo turno</div></div>`;
@@ -12759,7 +12765,7 @@ async function cargarRutinaAsignadaAlumno(alumnoId, contId){
       return { r, origen, rot, leToca, vig, chips, n: dias.length };
     };
     const fila = x => `<tr>
-        <td data-l="Rutina"><div style="font-weight:700;">${escaparHtml(x.r.nombre)}</div>${x.origen ? `<div class="muted" style="font-size:11.5px;">${x.origen}</div>` : ''}${x.leToca ? `<div style="font-size:12.5px; color:var(--accent-text);">Le toca ahora: <b>${escaparHtml(x.leToca.nombre_dia || 'el siguiente día')}</b></div>` : ''}</td>
+        <td data-l="Rutina"><div style="font-weight:700;">${escaparHtml(x.r.nombre)}</div>${x.origen ? `<div class="muted" style="font-size:11.5px;">${x.origen}</div>` : ''}${x.leToca ? `<div style="font-size:12.5px; color:var(--accent-text);">Le toca ahora: <b>${escaparHtml(x.leToca.nombre_dia || 'el siguiente día')}</b></div>${x.rot && x.leToca._manual ? `<div class="muted" style="font-size:11.5px;">${escaparHtml(rotOrigenTxt(x.leToca._manual))}</div>` : ''}${x.rot ? `<button type="button" class="ghost" style="padding:2px 9px; font-size:11.5px; margin-top:4px;" onclick="rotAbrirCambiarDia('${alumnoId}','${x.r.id}','${contId}')">✎ Cambiar día</button>` : ''}` : ''}</td>
         <td data-l="Tipo">${x.rot ? '🔁 Rotativa' : '📅 Fecha fija'}<div class="muted" style="font-size:11.5px;">${x.n} día${x.n === 1 ? '' : 's'}</div></td>
         <td data-l="Vigencia" style="font-size:12.5px;">${x.vig}</td>
         <td data-l="Días"><div class="ra-dias">${x.chips || '<span class="muted">—</span>'}</div></td>
@@ -19453,10 +19459,11 @@ async function cargarRutinasDeAlumno(selectId, contenedorId){
   cont.innerHTML = 'Cargando...';
   try{
     const hoy = fechaLocalISO();
-    const [rows, rotativas, ejecFinalizadas] = await Promise.all([
+    const [rows, rotativas, ejecFinalizadas, pregRot] = await Promise.all([
       sb(`turnos?select=id,fecha,hora,rutina_dia_id,rutina_dias(id,nombre_dia,rutinas(nombre))&alumno_id=eq.${alumnoId}&estado=neq.cancelado&rutina_dia_id=not.is.null&order=fecha.desc,hora.desc&limit=30`),
       listarRutinasRotativasDeAlumno(alumnoId),
       sb(`ejecuciones?select=rutina_dia_id&alumno_id=eq.${alumnoId}&estado=eq.finalizada&limit=500`),
+      rotPreguntaHtml(alumnoId),   // (v118)
     ]);
     const diasCompletados = new Set(ejecFinalizadas.map(e => e.rutina_dia_id));
     // Sin ninguna rutina enganchada (ni por turno ni rotativa): ocultamos la sección del menú.
@@ -19469,7 +19476,7 @@ async function cargarRutinasDeAlumno(selectId, contenedorId){
       titulo: x.rutina.nombre, sub: `Tu ciclo arranca el ${fechaLegible(x.empieza)}`,
       estadoCls: '', estadoTxt: 'Próximo', acciones: '',
     }) : tcardHtml({
-      titulo: x.rutina.nombre, sub: `Te toca: ${x.diaCursor.nombre_dia} (día ${(x.diaCursor.orden ?? 0) + 1} de ${x.totalDias})`,
+      titulo: x.rutina.nombre, sub: `Te toca: ${x.diaCursor.nombre_dia} (día ${(x.diaCursor.orden ?? 0) + 1} de ${x.totalDias})` + (x.diaCursor._manual ? ` · ${escaparHtml(rotOrigenTxt(x.diaCursor._manual))}` : ''),
       estadoCls: '', estadoTxt: 'Rotativa',
       acciones: `<button onclick="comenzarEntrenamiento('${x.diaCursor.id}','${alumnoId}','${esc1(x.diaCursor.nombre_dia)}')">Ver / Empezar</button>`,
     })).join('');
@@ -19488,7 +19495,7 @@ async function cargarRutinasDeAlumno(selectId, contenedorId){
       });
     }).join('');
 
-    cont.innerHTML = htmlRotativas + htmlTurnos;
+    cont.innerHTML = pregRot + htmlRotativas + htmlTurnos;
   }catch(e){ cont.innerHTML = 'Error: ' + e.message; }
 }
 
@@ -19943,6 +19950,7 @@ function renderAjusteSesionEnModal(){
   const ajustada = !!info.rutina_ajustada_en;
   cont.innerHTML = `
     <div style="border-top:1px solid var(--border); margin:12px 0 10px;"></div>
+    <div id="ajusteRotLinea"></div>
     <div style="font-weight:700; margin-bottom:6px;">Ajustar la sesión de este alumno</div>
     ${ajustada ? `<div class="muted" style="font-size:12px; margin-bottom:6px;">🔄 Ya fue ajustada${info.rutina_ajuste_motivo ? ': ' + escaparHtml(info.rutina_ajuste_motivo) : ''}</div>` : ''}
     <button style="width:100%;" onclick="abrirSelectorSesion()">🔄 Cambiar por otra sesión (recovery, plantilla…)</button>
@@ -19950,6 +19958,7 @@ function renderAjusteSesionEnModal(){
     <button class="ghost" style="width:100%; margin-top:8px;" onclick="crearRutinaNuevaParaTurno()">🆕 Crear una rutina nueva</button>
     ${ajustada ? `<button class="ghost" style="width:100%; margin-top:8px;" onclick="volverRutinaOriginal()">↩️ Volver a la rutina original</button>` : ''}
     <div class="muted" style="font-size:11px; margin-top:6px;">Solo cambia la sesión de este alumno en este turno; la rutina original del gimnasio no se toca.</div>`;
+  rotLineaEnModal();   // (v118) "Rotativa · le toca Día X [Cambiar día]"
 }
 
 // ----- (1) Cambiar por otra sesión -----
@@ -20030,6 +20039,7 @@ async function elegirSesionParaTurno(diaId){
   if (!r.ok){ toast('No se pudo cambiar la sesión: ' + r.msg, true); return; }
   cerrarOverlayGenerico('modalSelectorSesion');
   toast(`Sesión cambiada ✓ ${c.nombre} ya la ve en su app.`);
+  await rotPreguntarSiCuenta(c.alumnoId, diaId);   // (v118) ¿cuenta como el día de la rotativa?
   renderAgenda();
 }
 
@@ -20050,6 +20060,7 @@ async function ajustarRutinaDeHoy(){
   if (r.cancelado) return;
   if (!r.ok){ toast(r.sinRutina ? 'Este turno no tiene rutina para ajustar.' : 'No se pudo preparar el ajuste: ' + r.msg, true); return; }
   const diaId = typeof r.data === 'string' ? r.data : (Array.isArray(r.data) ? r.data[0] : r.data);
+  if (origenDia){ try{ await rotAjusteCuenta(c.alumnoId, origenDia, diaId); }catch(e){ console.error(e); } }   // (v118) el día de la rotativa ajustado cuenta como hecho al terminarlo
   const wellnessHtml = wellnessDetalleHtml(WELLNESS_DIA[c.alumnoId] || null, c.fecha);
   const nombre = c.nombre;
   cerrarModalAsistencia();
@@ -20094,6 +20105,7 @@ async function aplicarEspecialAlTurnoSiCorresponde(res, alumnoId){
   if (r.cancelado) return;
   if (!r.ok){ toast('La rutina se guardó, pero no se pudo aplicar al turno: ' + r.msg, true); return; }
   toast('Rutina guardada y aplicada al turno ✓');
+  await rotPreguntarSiCuenta(alumnoId, dia.id);   // (v118) ¿cuenta como el día de la rotativa?
 }
 
 // ----- Volver a la original -----
@@ -20493,7 +20505,7 @@ async function irEntrenamientoHoy(){
     // cubre rotativa (nunca usa turno) y fecha fija entrenada a distancia.
     const diaSinTurno = await resolverDiaSinTurno(alumnoId, hoy);
     if (diaSinTurno){
-      const yaHecho = await sb(`ejecuciones?select=id&alumno_id=eq.${alumnoId}&rutina_dia_id=eq.${diaSinTurno.id}&estado=eq.finalizada&limit=1`);
+      const yaHecho = await sb(`ejecuciones?select=id&alumno_id=eq.${alumnoId}&rutina_dia_id=eq.${diaSinTurno.id}&estado=eq.finalizada&finalizada_en=gte.${encodeURIComponent(inicioHoyISO())}&limit=1`);   // (v118) solo lo de HOY
       if (yaHecho.length){
         toast('Ya completaste el entrenamiento de hoy ✓');
         cambiarSubvistaAlu('turnos');
@@ -20627,6 +20639,8 @@ async function resolverDiaRutinaRotativa(rutinaId, alumnoId){
     const inicio = await obtenerInicioRotativa(rutinaId);
     if (inicio && fechaLocalISO() < inicio) return null;
     const ejecs = await sb(`ejecuciones?select=id,rutina_dia_id,estado,fecha&alumno_id=eq.${alumnoId}&rutina_dia_id=in.(${idsDias.join(',')})${inicio ? `&fecha=gte.${inicio}` : ''}&order=fecha.desc`);
+    const manual = await rotCursorVigente(rutinaId, alumnoId, dias, ejecs);   // (v118) día fijado a mano por el profe / el alumno
+    if (manual) return manual;
     const enCurso = ejecs.find(e => e.estado !== 'finalizada');
     if (enCurso) return dias.find(d => d.id === enCurso.rutina_dia_id) || dias[0];
     const ultimaFinalizada = ejecs.find(e => e.estado === 'finalizada');
@@ -20636,6 +20650,240 @@ async function resolverDiaRutinaRotativa(rutinaId, alumnoId){
     }
     return dias[0];
   }catch(e){ console.error('No se pudo resolver el día de la rutina rotativa:', e); return null; }
+}
+
+// ---------- (v118) Cursor manual de la rotativa: qué día le toca al alumno ----------
+// El día que le toca sigue saliendo del cursor automático (resolverDiaRutinaRotativa: el que sigue
+// al último que finalizó). Se suma un cambio MANUAL guardado en la base (tabla rutina_cursor) que
+// manda hasta que el alumno entrene un día de esa rotativa. Lo puede dejar:
+//  · el profe/admin ("Cambiar día", en la ficha del alumno y en el popup del turno),
+//  · el profe al cambiarle la sesión a un turno ("¿cuenta como el Día 2?"),
+//  · el propio alumno, cuando hizo una sesión especial ("¿qué te toca hoy?").
+// Alumno y profe leen el mismo registro, así que ven siempre el mismo día.
+const ROT_ORIGEN_TXT = { profe: 'Lo fijó el profe', alumno: 'Lo eligió el alumno', sesion_especial: 'Por una sesión especial', ajuste: 'Por el ajuste de la sesión' };
+async function rotCursorUltimo(rutinaId, alumnoId){
+  try{
+    const r = await sb(`rutina_cursor?select=id,dia_id,esperar_dia_id,origen,nota,creado_en,creado_por_nombre&alumno_id=eq.${alumnoId}&rutina_id=eq.${rutinaId}&order=creado_en.desc&limit=1`);
+    return (r && r[0]) || null;
+  }catch(e){ return null; }   // tabla todavía sin crear (SQL v118 sin correr): todo sigue como antes
+}
+// Devuelve el día fijado a mano si todavía rige (el alumno no entrenó un día de esta rotativa desde entonces).
+async function rotCursorVigente(rutinaId, alumnoId, dias, ejecs){
+  const cur = await rotCursorUltimo(rutinaId, alumnoId);
+  if (!cur) return null;
+  let desde = new Date(cur.creado_en);
+  if (cur.esperar_dia_id){
+    // Rige recién cuando el alumno finaliza esa otra sesión (ej: la sesión especial que reemplaza al día).
+    let f = null;
+    try{ const r = await sb(`ejecuciones?select=finalizada_en&alumno_id=eq.${alumnoId}&rutina_dia_id=eq.${cur.esperar_dia_id}&estado=eq.finalizada&finalizada_en=gte.${encodeURIComponent(cur.creado_en)}&order=finalizada_en.desc&limit=1`); f = r && r[0]; }catch(e){}
+    if (!f || !f.finalizada_en) return null;
+    desde = new Date(f.finalizada_en);
+  }
+  if (ejecs.some(e => new Date(e.fecha) >= desde)) return null;   // ya entrenó la rotativa después: vuelve al cálculo normal
+  const dia = dias.find(d => d.id === cur.dia_id);
+  return dia ? { ...dia, _manual: { origen: cur.origen, por: cur.creado_por_nombre || '', nota: cur.nota || '', cuando: cur.creado_en } } : null;
+}
+async function rotCursorGuardar({ alumnoId, rutinaId, diaId, origen, nota, esperarDiaId }){
+  await sb('rutina_cursor', { method: 'POST', headers: { Prefer: 'return=minimal' },
+    body: JSON.stringify({ alumno_id: alumnoId, rutina_id: rutinaId, dia_id: diaId, origen, nota: nota || null, esperar_dia_id: esperarDiaId || null }) });
+}
+function rotNombreDia(d){ return (d && d.nombre_dia) || ('Día ' + (((d && d.orden) ?? 0) + 1)); }
+function rotSiguienteDia(dias, actualId){ const i = dias.findIndex(d => d.id === actualId); return dias[(i + 1) % dias.length]; }
+async function rotDiasDe(rutinaId){ return sb(`rutina_dias?select=id,nombre_dia,orden&rutina_id=eq.${rutinaId}&order=orden.asc`); }
+async function rotActualDeAlumno(alumnoId){   // la rotativa en curso del alumno + el día que le toca, o null
+  const lista = await listarRutinasRotativasDeAlumno(alumnoId);
+  return lista.find(x => x.diaCursor) || null;
+}
+function rotOrigenTxt(m){
+  if (!m) return '';
+  const cuando = m.cuando ? new Date(m.cuando).toLocaleDateString('es-AR', { day: 'numeric', month: 'short' }).replace('.', '') : '';
+  const base = ROT_ORIGEN_TXT[m.origen] || 'Cambio manual';
+  return `✎ ${base}${m.por && m.origen !== 'alumno' ? ' (' + m.por + ')' : ''}${cuando ? ' · ' + cuando : ''}`;
+}
+function rotRefrescarVistas(alumnoId, contId){
+  try{ if (document.getElementById('ipTurnos') && typeof cargarInicioProfesor === 'function') cargarInicioProfesor(); }catch(e){}
+  try{ if (ASISTENCIA_MODAL_CTX) rotLineaEnModal(); }catch(e){}
+  try{ if (contId && alumnoId && document.getElementById(contId)) cargarRutinaAsignadaAlumno(alumnoId, contId); }catch(e){}
+  try{ cargarRutinasDeAlumno('aluAlumno', 'listaRutinasAlu'); }catch(e){}
+}
+
+// ----- (A) Profe/admin: elegir qué día le toca -----
+let ROT_CAMBIAR = null;
+async function rotAbrirCambiarDia(alumnoId, rutinaId, contId){
+  const ov = overlayGenerico('modalRotCambiar', 460);
+  ov.querySelector('.modal-box').innerHTML = `<div class="x-wrap "><button type="button" class="x-cerrar" aria-label="Cerrar" title="Cerrar" onclick="cerrarOverlayGenerico('modalRotCambiar')">✕</button></div>
+    <h3 style="margin-top:0;">🔁 ¿Qué día le toca?</h3><div id="rotCambiarCuerpo" class="muted">Cargando...</div>`;
+  ov.classList.add('show');
+  const cuerpo = document.getElementById('rotCambiarCuerpo');
+  try{
+    const [al] = await sb(`alumnos?select=nombre&id=eq.${alumnoId}`);
+    const [ru] = await sb(`rutinas?select=id,nombre&id=eq.${rutinaId}`);
+    const dias = await rotDiasDe(rutinaId);
+    const actual = await resolverDiaRutinaRotativa(rutinaId, alumnoId);
+    if (!ru || !dias.length || !actual){ cuerpo.textContent = 'Esta rotativa todavía no le toca a nadie (no arrancó o no tiene días).'; return; }
+    const ej = await sb(`ejecuciones?select=rutina_dia_id,finalizada_en,fecha&alumno_id=eq.${alumnoId}&estado=eq.finalizada&rutina_dia_id=in.(${dias.map(d => d.id).join(',')})&order=fecha.desc&limit=300`);
+    const ultima = {}; ej.forEach(e => { if (!ultima[e.rutina_dia_id]) ultima[e.rutina_dia_id] = e.finalizada_en || e.fecha; });
+    ROT_CAMBIAR = { alumnoId, rutinaId, contId: contId || '', actualId: actual.id, sel: actual.id, dias, ultima, rutinaNombre: ru.nombre, alumno: (al && al.nombre) || '' };
+    rotRenderCambiar(actual);
+  }catch(e){ cuerpo.textContent = 'Error: ' + e.message; }
+}
+function rotRenderCambiar(actual){
+  const R = ROT_CAMBIAR; if (!R) return;
+  const cuerpo = document.getElementById('rotCambiarCuerpo'); if (!cuerpo) return;
+  if (actual) R._manual = actual._manual || null;
+  const fecha = f => f ? new Date(f).toLocaleDateString('es-AR', { day: 'numeric', month: 'short' }).replace('.', '') : '';
+  cuerpo.innerHTML = `
+    <div style="font-size:13px; margin-bottom:8px;"><b>${escaparHtml(R.alumno)}</b> · ${escaparHtml(R.rutinaNombre)}</div>
+    ${R._manual ? `<div class="muted" style="font-size:12px; margin-bottom:8px;">${escaparHtml(rotOrigenTxt(R._manual))}${R._manual.nota ? ' — ' + escaparHtml(R._manual.nota) : ''}</div>` : ''}
+    <div style="display:flex; flex-direction:column; gap:6px;">${R.dias.map(d => `
+      <button type="button" class="ghost" style="text-align:left; ${R.sel === d.id ? 'border-color:var(--accent); background:rgba(255,122,47,.12);' : ''}" onclick="ROT_CAMBIAR._nota=document.getElementById('rotCambiarNota').value; ROT_CAMBIAR.sel='${d.id}'; rotRenderCambiar()">
+        <b>${escaparHtml(rotNombreDia(d))}</b>
+        <span class="muted" style="font-size:12px;"> · ${R.ultima[d.id] ? 'última vez ' + fecha(R.ultima[d.id]) : 'todavía no lo hizo'}${d.id === R.actualId ? ' · 👉 le toca ahora' : ''}</span>
+      </button>`).join('')}</div>
+    <input id="rotCambiarNota" placeholder="Motivo (opcional). Ej: la sesión especial del jueves cuenta como el Día 2" style="width:100%; margin-top:10px;">
+    <div class="row" style="justify-content:flex-end; gap:8px; margin-top:12px;">
+      <button class="ghost" onclick="cerrarOverlayGenerico('modalRotCambiar')">Cancelar</button>
+      <button ${R.sel === R.actualId ? 'disabled' : ''} onclick="rotConfirmarCambiar()">Dejar ${escaparHtml(rotNombreDia(R.dias.find(d => d.id === R.sel)))} como el que le toca</button>
+    </div>
+    <div class="muted" style="font-size:11.5px; margin-top:8px;">El alumno lo ve al instante. Cuando entrene ese día, la rotativa sigue sola con el siguiente.</div>`;
+  const inp = document.getElementById('rotCambiarNota'); if (inp && R._nota) inp.value = R._nota;
+}
+async function rotConfirmarCambiar(){
+  const R = ROT_CAMBIAR; if (!R || R.sel === R.actualId) return;
+  const nota = (document.getElementById('rotCambiarNota')?.value || '').trim();
+  try{
+    await rotCursorGuardar({ alumnoId: R.alumnoId, rutinaId: R.rutinaId, diaId: R.sel, origen: 'profe', nota });
+    cerrarOverlayGenerico('modalRotCambiar');
+    toast('Listo ✓ ' + (R.alumno ? R.alumno.split(' ')[0] + ' ' : '') + 'ya ve el ' + rotNombreDia(R.dias.find(d => d.id === R.sel)) + ' como el que le toca.');
+    rotRefrescarVistas(R.alumnoId, R.contId);
+  }catch(e){ toast('No se pudo cambiar el día: ' + extraerMensajeError(e), true); }
+}
+// Línea "Rotativa · le toca Día 2 [Cambiar día]" dentro del popup del turno (Agenda / Inicio)
+async function rotLineaEnModal(){
+  const c = ASISTENCIA_MODAL_CTX, el = document.getElementById('ajusteRotLinea');
+  if (!c || !el) return;
+  try{
+    const x = await rotActualDeAlumno(c.alumnoId);
+    if (!ASISTENCIA_MODAL_CTX || ASISTENCIA_MODAL_CTX.turnoId !== c.turnoId || !document.getElementById('ajusteRotLinea')) return;
+    if (!x){ el.innerHTML = ''; return; }
+    const m = x.diaCursor._manual;
+    el.innerHTML = `<div style="background:var(--panel2); border:1px solid var(--border); border-radius:10px; padding:8px 10px; margin-bottom:10px;">
+      <div class="muted" style="font-size:12px;">🔁 Rotativa · ${escaparHtml(x.rutina.nombre)}</div>
+      <div style="font-weight:700;">Le toca: ${escaparHtml(rotNombreDia(x.diaCursor))} <span class="muted" style="font-weight:400; font-size:12px;">(día ${(x.diaCursor.orden ?? 0) + 1} de ${x.totalDias})</span></div>
+      ${m ? `<div class="muted" style="font-size:11.5px;">${escaparHtml(rotOrigenTxt(m))}</div>` : ''}
+      <button type="button" class="ghost" style="margin-top:6px; padding:4px 10px; font-size:12.5px;" onclick="rotCambiarDesdeModal()">✎ Cambiar día</button></div>`;
+  }catch(e){ el.innerHTML = ''; }
+}
+async function rotCambiarDesdeModal(){
+  const c = ASISTENCIA_MODAL_CTX; if (!c) return;
+  const x = await rotActualDeAlumno(c.alumnoId); if (!x) return;
+  cerrarModalAsistencia();
+  rotAbrirCambiarDia(c.alumnoId, x.rutina.id, '');
+}
+
+// ----- (B) Profe: al cambiarle la sesión a un turno, "¿esta sesión cuenta como el Día X?" -----
+let ROT_CUENTA = null;
+async function rotPreguntarSiCuenta(alumnoId, diaEspecialId){
+  try{
+    const x = await rotActualDeAlumno(alumnoId);
+    if (!x) return;
+    const dias = await rotDiasDe(x.rutina.id);
+    if (dias.length < 2) return;
+    const sig = rotSiguienteDia(dias, x.diaCursor.id);
+    await new Promise(res => {
+      ROT_CUENTA = { res, alumnoId, rutinaId: x.rutina.id, actual: x.diaCursor, sig, espId: diaEspecialId, rutinaNombre: x.rutina.nombre };
+      const ov = overlayGenerico('modalRotCuenta', 440);
+      ov.style.zIndex = '1010';
+      ov.querySelector('.modal-box').innerHTML = `<h3 style="margin-top:0;">🔁 ¿Cuenta como el ${escaparHtml(rotNombreDia(x.diaCursor))}?</h3>
+        <div class="muted" style="font-size:13px; margin-bottom:12px;">Este alumno tiene la rotativa «${escaparHtml(x.rutina.nombre)}» y le tocaba el <b>${escaparHtml(rotNombreDia(x.diaCursor))}</b>. Con esta sesión especial:</div>
+        <button style="width:100%;" onclick="rotCuentaElegir(true)">✅ Sí, cuenta: después sigue con el ${escaparHtml(rotNombreDia(sig))}</button>
+        <button class="ghost" style="width:100%; margin-top:8px;" onclick="rotCuentaElegir(false)">↩️ No, después sigue con el ${escaparHtml(rotNombreDia(x.diaCursor))}</button>
+        <div style="text-align:center; margin-top:10px;"><span class="muted" style="cursor:pointer; text-decoration:underline; font-size:12px;" onclick="rotCuentaElegir(null)">Decidir después (se lo pregunta al alumno)</span></div>`;
+      ov.classList.add('show');
+    });
+  }catch(e){ console.error('rotPreguntarSiCuenta:', e); }
+}
+async function rotCuentaElegir(cuenta){
+  const R = ROT_CUENTA; if (!R) return;
+  ROT_CUENTA = null;
+  cerrarOverlayGenerico('modalRotCuenta');
+  try{
+    if (cuenta === true || cuenta === false){
+      const dia = cuenta ? R.sig : R.actual;
+      await rotCursorGuardar({ alumnoId: R.alumnoId, rutinaId: R.rutinaId, diaId: dia.id, origen: 'sesion_especial', esperarDiaId: R.espId,
+        nota: cuenta ? `La sesión especial reemplaza el ${rotNombreDia(R.actual)}` : `La sesión especial no reemplaza: sigue con el ${rotNombreDia(R.actual)}` });
+      toast(cuenta ? `Listo ✓ Cuando la termine, le toca el ${rotNombreDia(R.sig)}.` : `Listo ✓ Después de la sesión sigue con el ${rotNombreDia(R.actual)}.`);
+      rotRefrescarVistas(R.alumnoId);
+    }
+  }catch(e){ toast('No se pudo guardar el día de la rotativa: ' + extraerMensajeError(e), true); }
+  R.res();
+}
+// Ajustar la rutina de HOY cuando es una rotativa: la copia ES ese día ajustado, así que al terminarla toca el que sigue.
+async function rotAjusteCuenta(alumnoId, origenDiaId, copiaDiaId){
+  const x = await rotActualDeAlumno(alumnoId);
+  if (!x || x.diaCursor.id !== origenDiaId) return;
+  const dias = await rotDiasDe(x.rutina.id);
+  if (dias.length < 2) return;
+  const sig = rotSiguienteDia(dias, origenDiaId);
+  await rotCursorGuardar({ alumnoId, rutinaId: x.rutina.id, diaId: sig.id, origen: 'ajuste', esperarDiaId: copiaDiaId,
+    nota: `El ${rotNombreDia(x.diaCursor)} se entrena ajustado: al terminarlo sigue el ${rotNombreDia(sig)}` });
+}
+
+// ----- (D) Alumno: "hiciste una sesión especial, ¿qué te toca hoy?" -----
+let ROT_PREG = null;
+async function rotPreguntaPendiente(alumnoId){
+  try{
+    const x = await rotActualDeAlumno(alumnoId);
+    if (!x || (x.totalDias || 0) < 2) return null;
+    const rutinaId = x.rutina.id;
+    const [ini, ult, asig, cur] = await Promise.all([
+      obtenerInicioRotativa(rutinaId),
+      sb(`ejecuciones?select=rutina_dia_id,finalizada_en,rutina_dias(id,nombre_dia,rutina_id,rutinas(id,nombre,modo_dias,es_ajuste))&alumno_id=eq.${alumnoId}&estado=eq.finalizada&order=finalizada_en.desc&limit=1`),
+      sb(`rutina_asignaciones?select=rutina_id&alumno_id=eq.${alumnoId}`),
+      rotCursorUltimo(rutinaId, alumnoId),
+    ]);
+    const e = ult && ult[0];
+    if (!e || !e.finalizada_en) return null;
+    const ru = e.rutina_dias && e.rutina_dias.rutinas;
+    if (!ru || ru.id === rutinaId || ru.modo_dias === 'rotativa') return null;           // lo último que hizo no fue una sesión especial
+    if (!(ru.es_ajuste || ru.modo_dias === 'plantilla' || asig.some(a => a.rutina_id === ru.id))) return null;
+    if (ini && e.finalizada_en.slice(0, 10) < ini) return null;                          // fue antes de arrancar esta rotativa
+    if (Date.now() - new Date(e.finalizada_en).getTime() > 21 * 86400000) return null;    // hace mucho: ya no se pregunta
+    if (cur && (new Date(cur.creado_en) >= new Date(e.finalizada_en) || cur.esperar_dia_id === e.rutina_dia_id)) return null;   // ya se decidió
+    const dias = await rotDiasDe(rutinaId);
+    const despues = await sb(`ejecuciones?select=id&alumno_id=eq.${alumnoId}&rutina_dia_id=in.(${dias.map(d => d.id).join(',')})&fecha=gt.${encodeURIComponent(e.finalizada_en)}&limit=1`);
+    if (despues.length) return null;                                                     // ya entrenó la rotativa después
+    return { alumnoId, rutinaId, rutinaNombre: x.rutina.nombre, actual: x.diaCursor, sig: rotSiguienteDia(dias, x.diaCursor.id), especial: ru.nombre, cuando: e.finalizada_en };
+  }catch(e){ console.error('rotPreguntaPendiente:', e); return null; }
+}
+async function rotPreguntaHtml(alumnoId){
+  const p = await rotPreguntaPendiente(alumnoId);
+  ROT_PREG = p;
+  if (!p) return '';
+  const f = new Date(p.cuando).toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' });
+  return `<div class="rot-preg" style="border:1.5px solid var(--accent); background:var(--panel2); border-radius:14px; padding:14px; margin-bottom:12px;">
+    <div style="font-weight:700; font-size:16px;">🔁 ¿Qué día de tu rotativa te toca?</div>
+    <div class="muted" style="font-size:13px; margin:4px 0 10px;">El ${escaparHtml(f)} hiciste una sesión especial. Elegí cómo seguís en «${escaparHtml(p.rutinaNombre)}»:</div>
+    <button type="button" style="width:100%;" onclick="rotElegirAlumno('${p.actual.id}')">Seguir con el ${escaparHtml(rotNombreDia(p.actual))}<span style="font-weight:400; font-size:12px;"> · el que te tocaba</span></button>
+    <button type="button" class="ghost" style="width:100%; margin-top:8px;" onclick="rotElegirAlumno('${p.sig.id}')">Pasar al ${escaparHtml(rotNombreDia(p.sig))}<span style="font-weight:400; font-size:12px;"> · la especial ya cuenta como ${escaparHtml(rotNombreDia(p.actual))}</span></button>
+    <div class="muted" style="font-size:11.5px; margin-top:8px;">Tu profe lo ve al instante.</div></div>`;
+}
+async function rotPintarPregunta(alumnoId, contId){
+  const el = document.getElementById(contId); if (!el) return;
+  const h = await rotPreguntaHtml(alumnoId);
+  const el2 = document.getElementById(contId); if (el2) el2.innerHTML = h;
+}
+async function rotElegirAlumno(diaId){
+  const p = ROT_PREG; if (!p) return;
+  try{
+    await rotCursorGuardar({ alumnoId: p.alumnoId, rutinaId: p.rutinaId, diaId, origen: 'alumno',
+      nota: diaId === p.actual.id ? `Siguió con el ${rotNombreDia(p.actual)} después de la sesión especial` : `Pasó al ${rotNombreDia(p.sig)}: la sesión especial contó como ${rotNombreDia(p.actual)}` });
+    ROT_PREG = null;
+    toast('Listo ✓ Tu profe ya lo ve.');
+    const el = document.getElementById('aluRotPregunta'); if (el) el.innerHTML = '';
+    try{ cargarInicioAlu(p.alumnoId); }catch(e){}
+    try{ cargarRutinasDeAlumno('aluAlumno', 'listaRutinasAlu'); }catch(e){}
+  }catch(e){ toast('No se pudo guardar: ' + extraerMensajeError(e), true); }
 }
 
 // Camino "sin turno": busca directo una rutina asignada al alumno sin pasar por
