@@ -4672,6 +4672,7 @@ function atlTimerToggle(idx, s){
   window._serieTimers[key] = setInterval(() => { inp.value = atlFmtT((Date.now() - t0) / 1000); atlRowCalc(idx, s); }, 100);
 }
 async function atlFinalizar(idx){
+  ejecMarcarInicio();   // (v130)
   const b = window._bloques[idx], p = b.prescripcion, fondo = p.carrera.tipo === 'fondo';
   const filas = [];
   for (let s = 0; s < (p.series || 1); s++){
@@ -4829,7 +4830,7 @@ function atlIniciarAlu(){
   atlCargarVista('aluAtletismoContenido', id || '');
 }
 
-const APP_VERSION = 129;
+const APP_VERSION = 130;
 // (v96) Fecha de la última actualización: se cambia junto con APP_VERSION en cada entrega. Se muestra en la
 // pantalla de inicio y en el menú de cuenta ("v94 · actualizada el 5/10/2026").
 const APP_FECHA = '2026-10-13';
@@ -22151,6 +22152,30 @@ async function comenzarEntrenamiento(rutinaDiaId, alumnoId, nombreDia){
   }
 }
 
+// ---------- (v130) Inicio REAL del entrenamiento ----------
+// Antes, ejecuciones.fecha era el momento en que se ABRÍA el día (al tocar "Ver / Empezar" se crea la ejecución). Si el alumno abría el
+// día siguiente al terminar el anterior y lo entrenaba al otro día, quedaba con la fecha de un día antes. Ahora la fecha se pisa con el
+// primer toque real (tocar un campo de una serie, el cronómetro, o finalizar / omitir el primer ejercicio). Solo si la sesión arranca de
+// cero y la carga el propio alumno (la carga del staff con "día en que lo hizo" mantiene su fecha). No necesita SQL.
+let EJEC_ID_ACTUAL = null, EJEC_INICIO_MARCADO = true;
+function ejecInicioArmar(ejecucionId){
+  EJEC_ID_ACTUAL = ejecucionId;
+  const bl = window._bloques || [];
+  EJEC_INICIO_MARCADO = !!EJEC_STAFF || bl.some(b => b.finalizado || b.omitido);
+  const cont = document.getElementById('ejecucionContainer');
+  if (cont && !cont.dataset.inicioHook){
+    cont.dataset.inicioHook = '1';
+    const h = e => { if (e.target && e.target.matches && e.target.matches('input, select, textarea')) ejecMarcarInicio(); };
+    cont.addEventListener('focusin', h); cont.addEventListener('input', h);
+  }
+}
+function ejecMarcarInicio(){
+  if (EJEC_INICIO_MARCADO || !EJEC_ID_ACTUAL) return;
+  EJEC_INICIO_MARCADO = true;
+  sb(`ejecuciones?id=eq.${EJEC_ID_ACTUAL}`, { method:'PATCH', headers:{ Prefer:'return=minimal' }, body: JSON.stringify({ fecha: new Date().toISOString() }) })
+    .catch(e => { EJEC_INICIO_MARCADO = false; console.error('No se pudo marcar el inicio del entrenamiento:', e); });
+}
+
 function renderEjecucion(ejecucionId, nombreDia, bloques){
   const cont = document.getElementById('ejecucionContainer');
 
@@ -22199,6 +22224,7 @@ function renderEjecucion(ejecucionId, nombreDia, bloques){
     </div>
   `;
   window._bloques = bloques;
+  ejecInicioArmar(ejecucionId);   // (v130)
   actualizarProgresoEjec();
 }
 
@@ -22387,6 +22413,7 @@ function bloqueHtml(b, idx){
 // (v79) Cronómetro por serie (ejercicios por tiempo): ▶ cuenta hasta el objetivo y deja los segundos cargados.
 window._serieTimers = window._serieTimers || {};
 function serieTimerToggle(idx, s, objetivo){
+  ejecMarcarInicio();   // (v130)
   const key = `${idx}-${s}`;
   const inp = document.getElementById(`tiempo-${idx}-${s}`), btn = document.getElementById(`play-${idx}-${s}`), row = document.getElementById(`serie-${idx}-${s}`);
   if (!inp || !btn || !row) return;
@@ -22498,6 +22525,7 @@ async function confirmarSustitucion(idx, ejercicioJson){
 // (24/9) Pedido de Martin: si no llega con el tiempo (o hay otro motivo), poder cerrar
 // el ejercicio sin tener que elegir un sustituto, y poder finalizar el entrenamiento igual.
 async function marcarEjercicioOmitido(idx){
+  ejecMarcarInicio();   // (v130)
   const b = window._bloques[idx];
   const causa = document.getElementById(`causaOmision-${idx}`).value;
   try{
@@ -22517,6 +22545,7 @@ async function marcarEjercicioOmitido(idx){
 }
 
 async function finalizarEjercicio(idx){
+  ejecMarcarInicio();   // (v130)
   const b = window._bloques[idx];
   const p = b.prescripcion;
   if (p.carrera) return atlFinalizar(idx);   // (v98)
