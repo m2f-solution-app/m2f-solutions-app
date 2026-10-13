@@ -3291,6 +3291,12 @@
             </div>
             <button onclick="guardarGimnasio()" id="btnGuardarGimnasio" style="align-self:end;">Guardar</button>
           </div>
+          <div id="gimProfRecWrap" style="display:none; margin-top:12px;">
+            <label style="display:flex; gap:10px; align-items:flex-start; cursor:pointer;">
+              <input type="checkbox" id="gimProfRec" onchange="prGuardar(this.checked)" style="width:auto; margin-top:3px;" />
+              <span><b>Los profesores pueden usar Recepción</b><br><span class="muted" style="font-size:12px;">Pueden sacarle un turno a un alumno y marcar su llegada (queda registrado quién lo hizo). El QR de asistencia sigue siendo solo del administrador.</span></span>
+            </label>
+          </div>
           <div class="row" id="gimTelefonoWrap" style="display:none; margin-top:12px; align-items:end;">
             <div class="field" style="flex:1; min-width:220px; max-width:320px;">
               <label>WhatsApp de contacto</label>
@@ -3936,6 +3942,35 @@ const BUCKET = "Ejercicios";
 // Sin el SQL: TEL_OK = false → no se muestra el campo ni se pide nada.
 let TEL_OK = null, TEL_PEDIDO = false;
 function telValido(v){ return String(v || '').replace(/\D/g, '').length >= 8; }
+// ---------- (v128) Profesores en Recepción ----------
+// El administrador decide (Mi gimnasio) si los profesores pueden usar Recepción: sacar turno a un alumno y marcar su llegada.
+// Se guarda en gimnasios.profes_recepcion; las funciones recepcion_* de la base lo vuelven a validar.
+async function prCargar(){
+  if (!GIMNASIO_ACTUAL) return;
+  try{
+    const r = await sb(`gimnasios?select=profes_recepcion&id=eq.${GIMNASIO_ACTUAL.id}`);
+    GIMNASIO_ACTUAL.profes_recepcion = !!(r && r[0] && r[0].profes_recepcion);
+    GIMNASIO_ACTUAL._prOk = true;
+  }catch(e){ GIMNASIO_ACTUAL.profes_recepcion = false; GIMNASIO_ACTUAL._prOk = false; }   // SQL v128 sin correr: todo sigue como antes
+  prPintar();
+  try{ aplicarPermisosPorRol(); }catch(e){}
+}
+function prPintar(){
+  const w = document.getElementById('gimProfRecWrap'); if (!w) return;
+  w.style.display = (GIMNASIO_ACTUAL && GIMNASIO_ACTUAL._prOk === true && PERFIL_ACTUAL && PERFIL_ACTUAL.rol === 'admin') ? '' : 'none';
+  const c = document.getElementById('gimProfRec'); if (c) c.checked = !!(GIMNASIO_ACTUAL && GIMNASIO_ACTUAL.profes_recepcion);
+}
+async function prGuardar(v){
+  if (!GIMNASIO_ACTUAL || !PERFIL_ACTUAL || PERFIL_ACTUAL.rol !== 'admin') return;
+  try{
+    await sb(`gimnasios?id=eq.${GIMNASIO_ACTUAL.id}`, { method:'PATCH', headers:{ Prefer:'return=minimal' }, body: JSON.stringify({ profes_recepcion: !!v }) });
+    GIMNASIO_ACTUAL.profes_recepcion = !!v;
+    toast(v ? 'Los profesores ya pueden usar Recepción ✓' : 'Recepción quedó solo para el administrador ✓');
+  }catch(e){
+    toast('No se pudo guardar: ' + extraerMensajeError(e), true);
+    const c = document.getElementById('gimProfRec'); if (c) c.checked = !v;
+  }
+}
 async function telCargar(){
   if (!GIMNASIO_ACTUAL || !PERFIL_ACTUAL || PERFIL_ACTUAL.rol !== 'admin') return;
   try{
@@ -4794,10 +4829,10 @@ function atlIniciarAlu(){
   atlCargarVista('aluAtletismoContenido', id || '');
 }
 
-const APP_VERSION = 126;
+const APP_VERSION = 128;
 // (v96) Fecha de la última actualización: se cambia junto con APP_VERSION en cada entrega. Se muestra en la
 // pantalla de inicio y en el menú de cuenta ("v94 · actualizada el 5/10/2026").
-const APP_FECHA = '2026-10-10';
+const APP_FECHA = '2026-10-13';
 function appVersionTxt(){ const [y, m, d] = APP_FECHA.split('-'); return `v${APP_VERSION} · actualizada el ${+d}/${+m}/${y}`; }
 (function(){ const el = document.getElementById('lcVersion'); if (el) el.textContent = 'M2F Solutions · ' + appVersionTxt(); })();
 
@@ -7442,7 +7477,7 @@ async function rcReservar(marcar){
     RC.ultimo = { tipo:'reserva', nuevo: r.turno_id, previo: r.reemplazo_turno_id || null };
     // Enganche de rutina (mismo que la reserva del alumno). Un usuario de Recepción no lee rutinas,
     // así que ahí queda para cuando el alumno abra la app; el administrador lo resuelve en el momento.
-    if (PERFIL_ACTUAL?.rol === 'admin') intentarAsignarRutina(r.turno_id, f.alumno_id, fecha).catch(() => {});
+    if (PERFIL_ACTUAL?.rol === 'admin' || PERFIL_ACTUAL?.rol === 'profesor') intentarAsignarRutina(r.turno_id, f.alumno_id, fecha).catch(() => {});
     RC.slot = null; RC.ocupado = false; RC.disp = null; RC.dispKey = '';
     await rcRefrescar(`📅 Turno ${rcEtiquetaDia(fecha, f.hoy).toLowerCase()} ${rcHora(s.hora)} reservado para ${f.nombre}${r.llegada ? ' y llegada marcada' : ''}${previo ? ` (reemplaza al de ${previo.hora})` : ''}.`);
   }catch(e){ RC.ocupado = false; toast(extraerMensajeError(e), true); RC.disp = null; RC.dispKey = ''; rcRefrescar(); }
@@ -8501,7 +8536,7 @@ function qrLinkStaff(){
 
 // ====== Recepción / administrador ======
 function qrUrl(cod){ return location.origin + location.pathname.replace(/[^\/]*\.html?$/i, '') + '?qr=' + encodeURIComponent(cod); }
-function qrBtnRecepcion(){ const b = rcEl('rcQrBtn'); if (b) b.style.display = QRX.ok ? '' : 'none'; }
+function qrBtnRecepcion(){ const b = rcEl('rcQrBtn'); if (b) b.style.display = (QRX.ok && PERFIL_ACTUAL?.rol !== 'profesor') ? '' : 'none'; }
 // Llegadas de hoy que marcó el propio alumno con el QR (ids de turno y de inscripción a clase)
 async function qrLlegadasHoy(){
   if (QRX.ok === false) return new Set();
@@ -11227,6 +11262,7 @@ async function cargarGimnasioActual(){
   rpxCfgCargar().catch(() => {});   // (v111) link público de reservas (Mi gimnasio)
   salaCargar().catch(() => {});   // (v105) turnos por profesor o por horario
   modulosCargar().catch(() => {});   // (v99) qué secciones tiene este gimnasio
+  prCargar().catch(() => {});   // (v128) ¿los profesores pueden usar Recepción?
   atlRefrescar().catch(() => {});   // (v98) módulo Atletismo: muestra u oculta su menú
 }
 
@@ -11364,10 +11400,11 @@ function aplicarPermisosPorRol(){
     const el = document.getElementById(id);
     if (el) el.style.display = esAdmin ? '' : 'none';
   });
-  // (v85) Recepción la ven el administrador y el usuario de Recepción; el profesor no.
+  // (v85) Recepción la ven el administrador y el usuario de Recepción; el profesor solo si el admin lo habilitó (v128).
+  const esProfeRec = PERFIL_ACTUAL?.rol === 'profesor' && typeof GIMNASIO_ACTUAL !== 'undefined' && GIMNASIO_ACTUAL && GIMNASIO_ACTUAL.profes_recepcion === true;
   ['menuRecepcion', 'ttRecepcion'].forEach(id => {
     const el = document.getElementById(id);
-    if (el) el.style.display = (esAdmin || esRecep) ? '' : 'none';
+    if (el) el.style.display = (esAdmin || esRecep || esProfeRec) ? '' : 'none';
   });
   // El usuario de Recepción solo ve esa pantalla: sin menú, barra ni navegación inferior.
   ['menuDrawerBtnProf', 'topToolbarProf', 'bottomNavProf', 'menuProfDrawer', 'staffCuentaCard'].forEach(id => {
@@ -16112,7 +16149,8 @@ function clBloque(o, s, d){
   const tip = `${c.ini}–${c.fin} · ${c.nombre}${c.prof ? ' · ' + c.prof : ' · Profesor a confirmar'}${c.nota ? ' · ' + c.nota : ''}${res ? ' · ' + est.t : ''}${falta ? ' · Falta cargar el cupo' : ''}`;
   const chip = res ? `<span class="cl-cp ${est.k}">${cx ? clEstadoCorto(c, iso) : est.t}</span>` : (falta ? `<span class="cl-cp full">${cx ? '⚠ Cupo' : '⚠ Sin cupo'}</span>` : '');
   let body;
-  if (h < 34) body = `<div class="n"><span class="t">${c.ini}</span> ${ejEsc(c.nombre)} ${chip}</div>`;
+  if (h < (chip && !cx ? 52 : 34)) body = `<div class="n"><span class="t">${c.ini}</span> ${ejEsc(c.nombre)} ${chip}</div>`;
+  else if (cx && h < 52 && chip) body = `<div class="n"><span class="t">${c.ini}</span> ${ejEsc(c.nombre)}</div><div class="cpl">${chip}</div>`;   // (v127) clase corta y angosta: sin renglón de hora aparte
   else if (cx){
     body = `<div class="t">${c.ini}</div><div class="n">${ejEsc(c.nombre)}</div>${chip ? `<div class="cpl">${chip}</div>` : ''}`;
     if (h >= 84) body += `<div class="p ${c.prof ? '' : 'tbc'}">👤 ${ejEsc(c.prof || 'A confirmar')}</div>`;
@@ -16378,7 +16416,7 @@ function clEstadoTxt(c, iso){
 
 // (v104) estado en pocas letras, para cuando varias clases comparten la misma hora y cada bloque queda angosto
 function clEstadoCorto(c, iso){
-  if (rpxSusp(c.id, iso)) return '⛔';   // (v111)
+  if (rpxSusp(c.id, iso)) return esMovilB3() ? '⛔ Susp.' : '⛔';   // (v111) (v127: en el celu se lee la palabra)
   const o = clOc(c.id, iso), movil = esMovilB3();
   if (CL.rolAlumno && o.mi === 'anotado') return movil ? '✓ Anotado' : '✓';
   if (CL.rolAlumno && o.mi === 'espera') return '⏳' + (o.pos ? ' ' + o.pos + '°' : '');
@@ -16427,9 +16465,9 @@ function clAluAbrir(id, iso){
   ov.querySelector('.modal-box').innerHTML = `
     <div class="row" style="justify-content:space-between; align-items:flex-start; gap:10px; flex-wrap:nowrap;"><h3 style="margin:0;">${ejEsc(c.nombre)}</h3><button type="button" class="ghost cl-sm" onclick="cerrarOverlayGenerico('clResOv')" aria-label="Cerrar">✕</button></div>
     <div class="cl-det"><div>📅 <b>${clFechaTxt(iso, true)}</b> · ${c.ini} a ${c.fin}</div><div>👤 ${ejEsc(c.prof || 'Profesor a confirmar')}</div>${pubLugarHtml(c) ? `<div>${pubLugarHtml(c)}</div>` : ''}${c.nota ? `<div>📝 ${ejEsc(c.nota)}</div>` : ''}</div>
-    ${clCupoHtml(c, o)}${estado}
+    ${sp ? '' : clCupoHtml(c, o)}${estado}
     <div class="row" style="gap:8px; margin-top:14px;">${btn}<button type="button" class="ghost" style="margin-left:auto;" onclick="cerrarOverlayGenerico('clResOv')">Cerrar</button></div>
-    ${!empezo && !(o.mi === 'anotado' && tarde) ? `<div class="muted" style="font-size:12px; margin-top:10px;">${o.mi === 'espera' ? 'De la lista de espera podés salir cuando quieras.' : 'Podés cancelar ' + lim + '.'}</div>` : ''}`;
+    ${!sp && !empezo && !(o.mi === 'anotado' && tarde) ? `<div class="muted" style="font-size:12px; margin-top:10px;">${o.mi === 'espera' ? 'De la lista de espera podés salir cuando quieras.' : 'Podés cancelar ' + lim + '.'}</div>` : ''}`;
   ov.classList.add('show');
 }
 async function clAluAnotar(){
@@ -16693,15 +16731,16 @@ function clListaAluHtml(){
     return `<span class="${i === o ? 'on' : ''} ${i === 0 ? 'hoy' : ''}" onclick="CL.diaLista=${i};clRenderEn()">${CL_DIAS[kk]}<small>${i === 0 ? 'hoy' : String(d.getDate()).padStart(2, '0') + '/' + String(d.getMonth() + 1).padStart(2, '0')}</small></span>`; }).join('');
   const cs = CL.rows.filter(c => c.cupo && c.dias.includes(k) && clInicio(c, iso) > ahora).sort((a, b) => clTm(a.ini) - clTm(b.ini) || a.nombre.localeCompare(b.nombre));
   const filas = cs.map(c => {
-    const oc = clOc(c.id, iso), lleno = oc.a >= c.cupo, quedan = Math.max(0, c.cupo - oc.a);
+    const oc = clOc(c.id, iso), lleno = oc.a >= c.cupo, quedan = Math.max(0, c.cupo - oc.a), sp = rpxSusp(c.id, iso);
     let acc;
-    if (oc.mi === 'anotado') acc = `<span class="pill ok">✓ Anotado</span><button type="button" class="ghost sl-b" onclick="clAluAbrir('${c.id}','${iso}')">Cancelar</button>`;
+    if (sp) acc = `<span class="pill bad">⛔ Suspendida</span>`;   // (v127) antes seguía mostrando "Anotarme"
+    else if (oc.mi === 'anotado') acc = `<span class="pill ok">✓ Anotado</span><button type="button" class="ghost sl-b" onclick="clAluAbrir('${c.id}','${iso}')">Cancelar</button>`;
     else if (oc.mi === 'espera') acc = `<span class="pill warn">⏳ En espera${oc.pos ? ' · ' + oc.pos + '°' : ''}</span><button type="button" class="ghost sl-b" onclick="clAluAbrir('${c.id}','${iso}')">Salir</button>`;
     else acc = `<button type="button" class="${lleno ? 'secondary ' : ''}sl-b" onclick="clListaAluAnotar('${c.id}','${iso}')">${lleno ? 'Lista de espera' : 'Anotarme'}</button>`;
-    return `<div class="sl-row ${oc.mi === 'anotado' ? 'mio' : ''}">
+    return `<div class="sl-row ${sp ? 'off' : oc.mi === 'anotado' ? 'mio' : ''}">
       <div class="sl-h">${c.ini}<small>a ${c.fin}</small></div>
-      <div class="sl-m" onclick="clAluAbrir('${c.id}','${iso}')" style="cursor:pointer;"><div class="sl-n">${ejEsc(c.nombre)}</div><div class="sl-bar ${lleno ? 'full' : ''}"><i style="width:${Math.min(100, oc.a / c.cupo * 100)}%"></i></div>
-        <div class="sl-c">${lleno ? `<b>Completa</b><span class="sl-lug"> · ${oc.a} de ${c.cupo}</span>` : `Quedan <b>${quedan}</b> de ${c.cupo}<span class="sl-lug"> lugares</span>`}</div>
+      <div class="sl-m" onclick="clAluAbrir('${c.id}','${iso}')" style="cursor:pointer;"><div class="sl-n">${ejEsc(c.nombre)}</div>${sp ? '' : `<div class="sl-bar ${lleno ? 'full' : ''}"><i style="width:${Math.min(100, oc.a / c.cupo * 100)}%"></i></div>`}
+        <div class="sl-c">${sp ? `<b>${sp.motivo ? ejEsc(sp.motivo) : 'Sin clase este día'}</b>` : lleno ? `<b>Completa</b><span class="sl-lug"> · ${oc.a} de ${c.cupo}</span>` : `Quedan <b>${quedan}</b> de ${c.cupo}<span class="sl-lug"> lugares</span>`}</div>
         <div class="sl-p">👤 ${ejEsc(c.prof || 'Profesor a confirmar')}${c.nota ? ' · 📝 ' + ejEsc(c.nota) : ''}</div></div>
       <div class="sl-a">${acc}</div></div>`;
   }).join('');
@@ -21734,12 +21773,24 @@ async function resolverDiaSinTurno(alumnoId, fecha){
 // rotativa (no tiene fechas) y para fecha fija.
 async function contarSemanaActualRutina(rutinaId, alumnoId){
   try{
-    const dias = await sb(`rutina_dias?select=id&rutina_id=eq.${rutinaId}`);
+    // (v128) Una "semana" = una vuelta completa de la rotación TAL COMO ERA cuando se entrenó. Cada sesión finalizada
+    // suma 1/N (N = días que tenía la rotativa en ese momento), así agregar o quitar un día no mueve la semana ya ganada.
+    // Si la columna rutina_dias.creado_en todavía no existe (SQL v128 sin correr), vale la cuenta de siempre.
+    let dias, conFecha = true;
+    try{ dias = await sb(`rutina_dias?select=id,creado_en&rutina_id=eq.${rutinaId}`); }
+    catch(e){ conFecha = false; dias = await sb(`rutina_dias?select=id&rutina_id=eq.${rutinaId}`); }
     const idsDias = dias.map(d => d.id);
     if (!idsDias.length) return 1;
     const inicioSem = await obtenerInicioRotativa(rutinaId); // (v88) la semana 1 arranca en la fecha de inicio
-    const finalizadas = await sb(`ejecuciones?select=id&alumno_id=eq.${alumnoId}&rutina_dia_id=in.(${idsDias.join(',')})&estado=eq.finalizada${inicioSem ? `&fecha=gte.${inicioSem}` : ''}`);
-    return Math.floor(finalizadas.length / idsDias.length) + 1;
+    const finalizadas = await sb(`ejecuciones?select=id,fecha,finalizada_en&alumno_id=eq.${alumnoId}&rutina_dia_id=in.(${idsDias.join(',')})&estado=eq.finalizada${inicioSem ? `&fecha=gte.${inicioSem}` : ''}&order=fecha.asc`);
+    if (!conFecha || !dias.some(d => d.creado_en)) return Math.floor(finalizadas.length / idsDias.length) + 1;
+    let suma = 0;
+    finalizadas.forEach(e => {
+      const t = new Date(e.finalizada_en || e.fecha).getTime();
+      const n = dias.filter(d => !d.creado_en || new Date(d.creado_en).getTime() <= t).length || idsDias.length;
+      suma += 1 / n;
+    });
+    return Math.floor(suma + 1e-6) + 1;
   }catch(e){ console.error('No se pudo calcular la semana actual de la rutina:', e); return 1; }
 }
 
