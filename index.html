@@ -4829,7 +4829,7 @@ function atlIniciarAlu(){
   atlCargarVista('aluAtletismoContenido', id || '');
 }
 
-const APP_VERSION = 128;
+const APP_VERSION = 129;
 // (v96) Fecha de la última actualización: se cambia junto con APP_VERSION en cada entrega. Se muestra en la
 // pantalla de inicio y en el menú de cuenta ("v94 · actualizada el 5/10/2026").
 const APP_FECHA = '2026-10-13';
@@ -13427,7 +13427,7 @@ async function mostrarRutinaDiaModal(alumnoId, rutinaDiaId, tituloTxt){
   try{
     const [items, ejecs] = await Promise.all([
       sb(`rutina_ejercicios?select=id,orden,bloque,series,repeticiones,peso_sugerido,tiempo_trabajo_seg,descanso_seg,rir,notas,unilateral,peso_corporal,variante,ejercicios(id,nombre,grupo_muscular,provider_ref_id,video_provider,video_url_propio)&rutina_dia_id=eq.${rutinaDiaId}&order=orden.asc`),
-      sb(`ejecuciones?select=id,estado&rutina_dia_id=eq.${rutinaDiaId}&alumno_id=eq.${alumnoId}&order=fecha.desc&limit=1`),
+      sb(`ejecuciones?select=id,estado,cargada_por_nombre&rutina_dia_id=eq.${rutinaDiaId}&alumno_id=eq.${alumnoId}&order=fecha.desc&limit=1`).catch(() => sb(`ejecuciones?select=id,estado&rutina_dia_id=eq.${rutinaDiaId}&alumno_id=eq.${alumnoId}&order=fecha.desc&limit=1`)),
     ]);
     if (!items.length){ cont.innerHTML = '<div class="empty">Esa rutina no tiene ejercicios cargados.</div>'; return; }
 
@@ -13435,18 +13435,28 @@ async function mostrarRutinaDiaModal(alumnoId, rutinaDiaId, tituloTxt){
     // entrenamiento, mostramos acá mismo qué ejercicios ya finalizó/omitió y cuáles
     // le quedan pendientes — sin esto, el profesor solo veía el plan, no el avance real.
     let progresoPorRutinaEjercicio = {};
+    let rutinaCompleta = false;
     let resumenProgresoHtml = `<div class="muted" style="margin-bottom:10px;">Todavía no empezó este entrenamiento.</div>`;
     if (ejecs.length){
       const eeFilas = await sb(`ejecucion_ejercicios?select=rutina_ejercicio_id,finalizado,omitido&ejecucion_id=eq.${ejecs[0].id}`);
       eeFilas.forEach(ee => { progresoPorRutinaEjercicio[ee.rutina_ejercicio_id] = ee; });
       const hechos = eeFilas.filter(ee => ee.finalizado || ee.omitido).length;
-      resumenProgresoHtml = (ejecs[0].estado === 'finalizada' || (eeFilas.length && hechos >= eeFilas.length))
+      rutinaCompleta = !!(ejecs[0].estado === 'finalizada' || (eeFilas.length && hechos >= eeFilas.length));
+      resumenProgresoHtml = rutinaCompleta
         ? `<div class="badge-ok" style="display:inline-block; margin-bottom:10px;">✅ Rutina completa</div>`
         : `<div class="pill" style="margin-bottom:10px;">🏋️ En curso · ${hechos}/${eeFilas.length} ejercicios</div>`;
     }
 
     let bloqueActual = null;
-    cont.innerHTML = resumenProgresoHtml + items.map(item => {
+    const hoyCarga = fechaLocalISO();
+    const cargaStaffHtml = staffPuedeCargar() ? `
+      <div style="border:1px dashed var(--border); border-radius:10px; padding:10px; margin-bottom:12px;">
+        <button type="button" style="width:100%;" onclick="staffEjecAbrir('${alumnoId}','${rutinaDiaId}')">${ejecs.length && !rutinaCompleta ? '✍️ Seguir cargando por el alumno' : '✍️ Cargar el entrenamiento por el alumno'}</button>
+        <div class="row" style="margin-top:8px; align-items:center; gap:8px;"><label class="muted" style="font-size:12px; margin:0;">Día en que lo hizo</label><input type="date" id="staffEjecFecha" value="${hoyCarga}" max="${hoyCarga}" style="width:auto;"></div>
+        <div class="muted" style="font-size:12px; margin-top:6px;">Cargás series, pesos y RIR como si fueras el alumno. Queda anotado que lo cargó el profe.</div>
+      </div>` : '';
+    const cargadoPorHtml = (ejecs.length && ejecs[0].cargada_por_nombre) ? `<div class="muted" style="font-size:12px; margin-bottom:8px;">✍️ Cargado por ${escaparHtml(ejecs[0].cargada_por_nombre)}</div>` : '';
+    cont.innerHTML = cargaStaffHtml + resumenProgresoHtml + cargadoPorHtml + items.map(item => {
       const encabezadoBloque = item.bloque !== bloqueActual ? (bloqueActual = item.bloque, `<div class="pill" style="margin:10px 0 6px;">${item.bloque || 'General'}</div>`) : '';
       const itemPorLadoTxt = item.unilateral ? ` · ${formatoPorLado(item.series)}` : '';
       const detalle = item.tiempo_trabajo_seg
@@ -21254,6 +21264,7 @@ function extraerMensajeError(e){
 // Pantalla de ejecución a pantalla completa: oculta el panel del alumno (turnos,
 // rutinas, historial) mientras entrena, y vuelve a mostrarlo al salir/finalizar.
 function salirEjecucion(){
+  if (EJEC_STAFF){ staffEjecSalir(); return; }   // (v129) el staff que cargó por el alumno vuelve a su panel
   document.getElementById('ejecucionContainer').style.display = 'none';
   document.getElementById('ejecucionContainer').innerHTML = '';
   document.getElementById('alumnoHome').style.display = '';
@@ -21914,6 +21925,55 @@ async function cargarUltimosPesos(ejercicioIds){
   return resultado;
 }
 
+// ---------- (v129) El profesor / administrador carga el entrenamiento POR el alumno ----------
+// Reutiliza la misma pantalla de ejecución del alumno (series, pesos, RIR, "no pude", sustituir, RPE) pero con la sesión del staff.
+// Lo habilita el SQL v129 (el staff puede crear/editar —nunca borrar— ejecuciones de su gimnasio) y deja anotado quién lo cargó.
+// "Día en que lo hizo": si es anterior a hoy, la sesión se guarda con esa fecha (fecha y finalizada_en).
+let EJEC_STAFF = null;   // { alumnoId, alumno, diaId, fechaIso }
+function staffPuedeCargar(){ return !!(PERFIL_ACTUAL && (PERFIL_ACTUAL.rol === 'admin' || PERFIL_ACTUAL.rol === 'profesor')); }
+async function staffEjecAbrir(alumnoId, rutinaDiaId){
+  if (!staffPuedeCargar() || !alumnoId || !rutinaDiaId) return;
+  const hoy = fechaLocalISO();
+  const inp = document.getElementById('staffEjecFecha');
+  const fecha = (inp && inp.value) || hoy;
+  if (fecha > hoy){ toast('El día no puede ser futuro.', true); return; }
+  let al, dia;
+  try{
+    [al] = await sb(`alumnos?select=id,nombre&id=eq.${alumnoId}`);
+    [dia] = await sb(`rutina_dias?select=id,nombre_dia,orden&id=eq.${rutinaDiaId}`);
+  }catch(e){ toast('No se pudo abrir: ' + extraerMensajeError(e), true); return; }
+  if (!al || !dia){ toast('No se encontró el alumno o el día de la rutina.', true); return; }
+  const nombreDia = dia.nombre_dia || `Día ${(dia.orden ?? 0) + 1}`;
+  try{ cerrarModalRutinaDia(); }catch(e){}
+  try{ cerrarModalAsistencia(); }catch(e){}
+  EJEC_STAFF = { alumnoId, alumno: al.nombre, diaId: rutinaDiaId, fechaIso: fecha !== hoy ? new Date(fecha + 'T12:00:00').toISOString() : null };
+  const sel = document.getElementById('aluAlumno');
+  if (sel){ sel.innerHTML = `<option value="${alumnoId}">${escaparHtml(al.nombre)}</option>`; sel.value = alumnoId; }
+  document.getElementById('profesorApp').style.display = 'none';
+  document.getElementById('vistaAlumno').style.display = '';
+  const ag = document.getElementById('alumnoAuthGate'); if (ag) ag.style.display = 'none';
+  document.getElementById('alumnoHome').style.display = 'none';
+  document.getElementById('bottomNavAlu').classList.remove('show');
+  let bar = document.getElementById('staffEjecBar');
+  if (!bar){ bar = document.createElement('div'); bar.id = 'staffEjecBar'; document.getElementById('vistaAlumno').insertBefore(bar, document.getElementById('ejecucionContainer')); }
+  bar.style.cssText = 'position:sticky; top:0; z-index:60; display:flex; gap:10px; align-items:center; justify-content:space-between; background:#ea580c; color:#fff; padding:10px 14px; border-radius:12px; margin:8px 0; font-weight:700; font-size:14px;';
+  const cuando = EJEC_STAFF.fechaIso ? ` · del ${fechaCortaISO(fecha)}` : '';
+  bar.innerHTML = `<span>✍️ Cargando por ${escaparHtml(al.nombre)}${cuando}</span><button type="button" onclick="staffEjecSalir()" style="width:auto; padding:6px 12px; background:#fff; color:#9a3412; border:0; border-radius:8px; font-weight:700;">Salir</button>`;
+  window.scrollTo(0, 0);
+  await comenzarEntrenamiento(rutinaDiaId, alumnoId, nombreDia);
+  const cont = document.getElementById('ejecucionContainer');
+  if (!cont || cont.style.display === 'none' || !cont.innerHTML) staffEjecSalir();   // no arrancó (día futuro / ya completo): vuelve al panel
+}
+function staffEjecSalir(){
+  const e = EJEC_STAFF; EJEC_STAFF = null;
+  const cont = document.getElementById('ejecucionContainer'); if (cont){ cont.style.display = 'none'; cont.innerHTML = ''; }
+  const bar = document.getElementById('staffEjecBar'); if (bar) bar.remove();
+  document.getElementById('vistaAlumno').style.display = 'none';
+  document.getElementById('profesorApp').style.display = '';
+  window.scrollTo(0, 0);
+  if (e){ try{ rotRefrescarVistas(e.alumnoId); }catch(x){} }
+}
+
 // ---------- Ejecución de un día (vista alumno) ----------
 async function comenzarEntrenamiento(rutinaDiaId, alumnoId, nombreDia){
   // (v54, 24/9) Bug encontrado por Martin: tanto "Rutinas" (botón "Ver / Empezar") como
@@ -21976,7 +22036,7 @@ async function comenzarEntrenamiento(rutinaDiaId, alumnoId, nombreDia){
     } else {
       [ejecucion] = await sb('ejecuciones', {
         method:'POST', headers:{Prefer:'return=representation'},
-        body: JSON.stringify([{ rutina_dia_id: rutinaDiaId, alumno_id: alumnoId }])
+        body: JSON.stringify([Object.assign({ rutina_dia_id: rutinaDiaId, alumno_id: alumnoId }, (EJEC_STAFF && EJEC_STAFF.fechaIso) ? { fecha: EJEC_STAFF.fechaIso } : {})])
       });
       eeFilas = await sb('ejecucion_ejercicios', {
         method:'POST', headers:{Prefer:'return=representation'},
@@ -22574,7 +22634,7 @@ async function confirmarRpeYFinalizar(){
 
 async function finalizarEntrenamiento(ejecucionId, rpe){
   try{
-    await sb(`ejecuciones?id=eq.${ejecucionId}`, { method:'PATCH', headers:{Prefer:'return=minimal'}, body: JSON.stringify({estado:'finalizada', rpe}) });
+    await sb(`ejecuciones?id=eq.${ejecucionId}`, { method:'PATCH', headers:{Prefer:'return=minimal'}, body: JSON.stringify(Object.assign({estado:'finalizada', rpe}, (EJEC_STAFF && EJEC_STAFF.fechaIso) ? { finalizada_en: EJEC_STAFF.fechaIso } : {})) });
     toast('Entrenamiento finalizado ✓');
     const tonelajeTotal = window._tonelajeTotal || 0;
     document.getElementById('ejecucionContainer').innerHTML = `
@@ -22583,7 +22643,7 @@ async function finalizarEntrenamiento(ejecucionId, rpe){
         ${tonelajeTotal > 0 ? `<div class="muted" style="margin-bottom:14px;">Tonelaje total de hoy: <strong>${Math.round(tonelajeTotal).toLocaleString('es-AR')} kg</strong></div>` : ''}
         <div id="finLogros"></div>
         <div id="finRecords"></div>
-        <button onclick="salirEjecucion()">Volver a mi panel</button>
+        <button onclick="salirEjecucion()">${EJEC_STAFF ? 'Volver al panel' : 'Volver a mi panel'}</button>
       </div>`;
     window._tonelajeTotal = 0;
     const alumnoId = document.getElementById('aluAlumno').value;
