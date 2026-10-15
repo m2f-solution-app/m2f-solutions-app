@@ -4830,10 +4830,10 @@ function atlIniciarAlu(){
   atlCargarVista('aluAtletismoContenido', id || '');
 }
 
-const APP_VERSION = 130;
+const APP_VERSION = 131;
 // (v96) Fecha de la última actualización: se cambia junto con APP_VERSION en cada entrega. Se muestra en la
 // pantalla de inicio y en el menú de cuenta ("v94 · actualizada el 5/10/2026").
-const APP_FECHA = '2026-10-13';
+const APP_FECHA = '2026-10-15';
 function appVersionTxt(){ const [y, m, d] = APP_FECHA.split('-'); return `v${APP_VERSION} · actualizada el ${+d}/${+m}/${y}`; }
 (function(){ const el = document.getElementById('lcVersion'); if (el) el.textContent = 'M2F Solutions · ' + appVersionTxt(); })();
 
@@ -22145,6 +22145,7 @@ async function comenzarEntrenamiento(rutinaDiaId, alumnoId, nombreDia){
       };
     });
     window._tonelajeTotal = tonelajeAcumulado;
+    window._ejecDiaId = rutinaDiaId;   // (v131) para comparar el resumen final con la última vez de este día
 
     renderEjecucion(ejecucion.id, nombreDia, bloques);
   }catch(e){
@@ -22661,15 +22662,116 @@ async function confirmarRpeYFinalizar(){
   await finalizarEntrenamiento(ejecucionId, rpe);
 }
 
+
+// ---------- (v131) Resumen del entrenamiento al finalizar (después del RPE) ----------
+// Ejercicios hechos, series, volumen, RPE (todo local) + tiempo y "tu progreso" (una consulta aparte,
+// best-effort: si falla, el resumen se ve igual sin esos dos datos).
+function finResumenCss(){
+  if (document.getElementById('finResumenCss')) return;
+  const st = document.createElement('style'); st.id = 'finResumenCss';
+  st.textContent = `
+    .fin-trofeo{width:92px;height:92px;border-radius:50%;margin:4px auto 10px;display:flex;align-items:center;justify-content:center;font-size:44px;background:color-mix(in srgb,var(--accent2) 22%,transparent);box-shadow:0 0 0 0 color-mix(in srgb,var(--accent2) 45%,transparent);animation:finPop .6s cubic-bezier(.2,1.4,.4,1) both, finPulso 2.2s ease-out .6s 2}
+    .fin-tit{font-size:21px;font-weight:800;margin:0 0 2px}
+    .fin-sub{color:var(--muted);font-size:14px;margin-bottom:14px}
+    .fin-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;text-align:left;margin-bottom:12px}
+    .fin-t{background:var(--panel2);border:1px solid var(--border);border-radius:14px;padding:12px 14px;animation:finSube .5s ease both}
+    .fin-t .k{font-size:11px;font-weight:700;letter-spacing:.06em;color:var(--muted);text-transform:uppercase}
+    .fin-t .v{font-size:28px;font-weight:800;margin-top:2px;line-height:1.15}
+    .fin-t .v small{font-size:14px;font-weight:600;color:var(--muted)}
+    .fin-prog{background:var(--panel2);border:1px solid var(--border);border-radius:14px;padding:12px 14px;text-align:left;margin-bottom:12px;animation:finSube .5s ease both}
+    .fin-prog .top{display:flex;justify-content:space-between;align-items:center;gap:8px}
+    .fin-prog .tt{font-weight:800}
+    .fin-prog .sub{color:var(--muted);font-size:12px}
+    .fin-prog .chip{font-weight:800;font-size:13px;padding:4px 10px;border-radius:999px;background:color-mix(in srgb,var(--accent2) 18%,transparent);color:var(--accent2-text);white-space:nowrap}
+    .fin-prog .chip.baja{background:color-mix(in srgb,var(--warn) 20%,transparent);color:var(--warn-text)}
+    .fin-bars{display:flex;align-items:flex-end;gap:8px;height:70px;margin-top:10px}
+    .fin-bars i{flex:1;border-radius:7px 7px 3px 3px;background:var(--border);transform-origin:bottom;animation:finBarra .7s cubic-bezier(.2,1,.3,1) both}
+    .fin-bars i.hoy{background:var(--accent)}
+    @keyframes finPop{from{transform:scale(.3);opacity:0}to{transform:scale(1);opacity:1}}
+    @keyframes finPulso{to{box-shadow:0 0 0 26px transparent}}
+    @keyframes finSube{from{transform:translateY(14px);opacity:0}to{transform:none;opacity:1}}
+    @keyframes finBarra{from{transform:scaleY(0)}to{transform:scaleY(1)}}
+    @media (prefers-reduced-motion:reduce){.fin-trofeo,.fin-t,.fin-prog,.fin-bars i{animation:none!important}}`;
+  document.head.appendChild(st);
+}
+function finNum(n){ return Math.round(n).toLocaleString('es-AR'); }
+function finResumenHtml(rpe, tonelaje){
+  finResumenCss();
+  const bl = (window._bloques || []).filter(b => b && b.prescripcion);
+  const hechos = bl.filter(b => b.finalizado && !b.omitido).length;
+  let serPlan = 0, serHechas = 0;
+  bl.forEach(b => {
+    if (b.prescripcion.carrera) return;
+    serPlan += Number(b.prescripcion.series) || 0;
+    if (b.omitido) return;
+    serHechas += (b.seriesPrevias || []).filter(s => s && (s.peso_realizado != null || s.repeticiones_realizadas != null || s.tiempo_realizado_seg != null)).length;
+  });
+  const t = (ico, k, v, extra) => `<div class="fin-t" style="animation-delay:${extra}s"><div class="k">${ico} ${k}</div><div class="v">${v}</div></div>`;
+  const nombreDia = (document.querySelector('#ejecucionContainer .ejec-tit h2') || {}).textContent || '';
+  return `
+    <div class="fin-trofeo">🏆</div>
+    <div class="fin-tit">¡Entrenamiento completado!</div>
+    <div class="fin-sub">${nombreDia ? escaparHtml(nombreDia) + ' · ' : ''}¡Buen trabajo! 💪</div>
+    <div class="fin-grid">
+      ${t('🏋️', 'Ejercicios', `<span data-count="${hechos}">${hechos}</span><small> / ${bl.length}</small>`, 0.15)}
+      ${t('✅', 'Series', serPlan ? `<span data-count="${serHechas}">${serHechas}</span><small> / ${serPlan}</small>` : '—', 0.25)}
+      ${t('⏱️', 'Tiempo', '<span id="finTiempo">—</span>', 0.35)}
+      ${t('🔥', 'Volumen', tonelaje > 0 ? `<span data-count="${Math.round(tonelaje)}" data-fmt="1">${finNum(tonelaje)}</span><small> kg</small>` : '—', 0.45)}
+      ${rpe != null ? t('💥', 'Esfuerzo (RPE)', `<span data-count="${rpe}">${rpe}</span><small> / 10</small>`, 0.55) : ''}
+    </div>`;
+}
+function finResumenAnimar(){
+  try{
+    if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    document.querySelectorAll('#ejecucionContainer [data-count]').forEach(el => {
+      const fin = Number(el.dataset.count); if (!isFinite(fin) || fin <= 0) return;
+      const fmt = el.dataset.fmt ? finNum : (v => String(Math.round(v)));
+      const t0 = performance.now(), dur = 900;
+      const paso = ahora => { const p = Math.min(1, (ahora - t0) / dur); el.textContent = fmt(fin * (1 - Math.pow(1 - p, 3))); if (p < 1) requestAnimationFrame(paso); };
+      el.textContent = fmt(0); requestAnimationFrame(paso);
+    });
+  }catch(e){}
+}
+async function finProgresoCargar(alumnoId, ejecucionId, diaId, tonelajeHoy){
+  try{
+    const rows = await sb(`ejecuciones?select=id,fecha,estado,ejecucion_ejercicios(series_registradas(tonelaje))&alumno_id=eq.${alumnoId}&rutina_dia_id=eq.${diaId}&estado=eq.finalizada&order=fecha.desc&limit=5`);
+    const mias = (rows || []).slice().sort((a, b) => String(a.fecha).localeCompare(String(b.fecha)));
+    const i = mias.findIndex(r => r.id === ejecucionId);
+    if (i >= 0 && !(typeof EJEC_STAFF !== 'undefined' && EJEC_STAFF)){
+      const ms = Date.now() - new Date(mias[i].fecha).getTime(), min = Math.round(ms / 60000);
+      const el = document.getElementById('finTiempo');
+      if (el && min >= 2 && min <= 240) el.innerHTML = min >= 60 ? `${Math.floor(min / 60)}<small> h </small>${String(min % 60).padStart(2, '0')}<small> min</small>` : `${min}<small> min</small>`;
+    }
+    const vol = r => (r.ejecucion_ejercicios || []).reduce((a, ee) => a + (ee.series_registradas || []).reduce((x, s) => x + (Number(s.tonelaje) || 0), 0), 0);
+    const serie = mias.slice(-4).map(r => ({ v: r.id === ejecucionId ? Math.max(tonelajeHoy, vol(r)) : vol(r), hoy: r.id === ejecucionId }));
+    const box = document.getElementById('finProgreso'); if (!box) return;
+    const actual = serie.findIndex(s => s.hoy);
+    if (actual < 0 || serie[actual].v <= 0) return;
+    const prev = actual > 0 ? serie[actual - 1].v : 0;
+    let chip = '<span class="chip">¡Primera vez en este día!</span>';
+    if (prev > 0){
+      const d = (serie[actual].v - prev) / prev * 100, r = Math.round(d);
+      chip = `<span class="chip ${r < 0 ? 'baja' : ''}">${r > 0 ? '↗ +' : r < 0 ? '↘ ' : '＝ '}${r}%</span>`;
+    }
+    const max = Math.max(...serie.map(s => s.v)) || 1;
+    box.innerHTML = `<div class="fin-prog" style="animation-delay:.7s">
+      <div class="top"><div><div class="tt">Tu progreso</div><div class="sub">Volumen de este día, últimas ${serie.length > 1 ? serie.length + ' veces' : 'veces'}</div></div>${chip}</div>
+      ${serie.length > 1 ? `<div class="fin-bars">${serie.map((s, k) => `<i class="${s.hoy ? 'hoy' : ''}" style="height:${Math.max(10, Math.round(s.v / max * 100))}%;animation-delay:${0.9 + k * 0.12}s" title="${finNum(s.v)} kg"></i>`).join('')}</div>` : ''}
+    </div>`;
+  }catch(e){ /* best-effort */ }
+}
+
 async function finalizarEntrenamiento(ejecucionId, rpe){
   try{
     await sb(`ejecuciones?id=eq.${ejecucionId}`, { method:'PATCH', headers:{Prefer:'return=minimal'}, body: JSON.stringify(Object.assign({estado:'finalizada', rpe}, (EJEC_STAFF && EJEC_STAFF.fechaIso) ? { finalizada_en: EJEC_STAFF.fechaIso } : {})) });
     toast('Entrenamiento finalizado ✓');
     const tonelajeTotal = window._tonelajeTotal || 0;
+    const resumenFin = finResumenHtml(rpe, tonelajeTotal);   // (v131)
+    const diaIdFin = window._ejecDiaId || null;
     document.getElementById('ejecucionContainer').innerHTML = `
       <div class="card" style="text-align:center;">
-        <div style="font-size:20px; font-weight:700; margin-bottom:8px;">Entrenamiento finalizado. ¡Buen trabajo! 💪</div>
-        ${tonelajeTotal > 0 ? `<div class="muted" style="margin-bottom:14px;">Tonelaje total de hoy: <strong>${Math.round(tonelajeTotal).toLocaleString('es-AR')} kg</strong></div>` : ''}
+        ${resumenFin}
+        <div id="finProgreso"></div>
         <div id="finLogros"></div>
         <div id="finRecords"></div>
         <button onclick="salirEjecucion()">${EJEC_STAFF ? 'Volver al panel' : 'Volver a mi panel'}</button>
@@ -22680,6 +22782,8 @@ async function finalizarEntrenamiento(ejecucionId, rpe){
     if (alumnoId) cargarRutinasDeAlumno('aluAlumno','listaRutinasAlu');   // (v117) que "Te toca" ya muestre el día siguiente
     if (alumnoId) recMostrarEnFin(alumnoId);
     if (alumnoId) logrosMostrarEnFin(alumnoId, ejecucionId);   // (v121) felicitaciones + "subiste el peso"
+    finResumenAnimar();   // (v131)
+    if (alumnoId && diaIdFin) finProgresoCargar(alumnoId, ejecucionId, diaIdFin, tonelajeTotal);   // (v131) tiempo + comparación con la última vez
   }catch(e){ toast('Error finalizando: ' + e.message, true); }
 }
 
