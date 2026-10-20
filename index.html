@@ -803,6 +803,39 @@
   .landing-opt:nth-child(1) .emoji{ background:rgba(255,122,48,.15); }
   .landing-opt:nth-child(2) .emoji{ background:rgba(61,220,132,.13); }
   .landing-opt:nth-child(3) .emoji{ background:rgba(255,210,61,.14); }
+    /* (v132) Modo personal */
+  .landing-opt:nth-child(4) .emoji{ background:rgba(77,163,255,.15); }
+  .per-acciones{ display:flex; gap:8px; flex-wrap:wrap; margin:10px 0 4px; }
+  .per-acciones button{ flex:1 1 auto; }
+  .per-top{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px; }
+  .per-top button{ flex:1 1 auto; }
+  .per-rutina{ border:1px solid var(--border); background:var(--panel2); border-radius:16px; padding:12px; margin-bottom:12px; }
+  .per-rutina.actual{ border-color:var(--accent); }
+  .per-dia{ display:flex; justify-content:space-between; align-items:center; gap:10px; padding:9px 0; border-top:1px solid var(--border); margin-top:6px; }
+  .per-tabs{ display:flex; gap:6px; overflow-x:auto; padding-bottom:6px; margin-bottom:8px; }
+  .per-tabs button{ flex-shrink:0; background:var(--panel2); color:var(--text); border:1px solid var(--border); padding:6px 12px; border-radius:999px; font-weight:700; }
+  .per-tabs button.on{ background:var(--accent); color:#000; border-color:var(--accent); }
+  .per-tabs button.mas{ background:transparent; border-style:dashed; color:var(--muted); }
+  .per-ej{ border:1px solid var(--border); background:var(--panel2); border-radius:14px; padding:10px; margin-bottom:10px; }
+  .per-grid{ display:grid; grid-template-columns:repeat(5,1fr); gap:6px; margin:8px 0 6px; }
+  .per-grid label{ font-size:11px; color:var(--muted); font-weight:700; display:block; }
+  .per-grid input{ width:100%; margin-top:2px; padding:7px 6px; text-align:center; }
+  .per-nota{ width:100%; font-size:13px; }
+  .per-mini{ padding:2px 9px; min-width:32px; }
+  .per-check{ display:flex; align-items:center; gap:8px; margin:0 0 12px; font-size:14px; }
+  .per-check input{ width:auto; }
+  .per-chips{ display:flex; gap:6px; flex-wrap:wrap; margin:8px 0; }
+  .per-chips button{ padding:4px 10px; font-size:12px; }
+  .per-res{ max-height:46vh; overflow-y:auto; }
+  .per-res-i{ padding:10px 4px; border-bottom:1px solid var(--border); cursor:pointer; }
+  .per-res-i:hover{ background:var(--panel2); }
+  .per-timer{ text-align:center; font-weight:800; font-size:15px; padding:8px; margin-bottom:8px; background:var(--panel2); border:1px solid var(--border); border-radius:12px; }
+  body.es-personal #aluInicioTiles .alu-tile:nth-child(2){ display:none; }
+  body.es-personal .card.flush:has(#aluInicioProx){ display:none; }
+  @media (max-width:420px){ .per-grid{ grid-template-columns:repeat(3,1fr); } }
+  body.es-personal #bannerCuotaAlu, body.es-personal #vigenciaPlanAlu{ display:none !important; }
+  .per-check{ text-transform:none; letter-spacing:0; font-weight:600; }
+  .per-dia{ flex-wrap:wrap; }
   .lc-desc{ display:block; font-size:11.5px; font-weight:500; color:var(--muted); margin-top:5px; line-height:1.4; }
   .lc-login-link{ position:relative; z-index:2; margin-top:28px; font-size:13.5px; color:var(--muted); }
   .lc-login-link a{ color:var(--accent-text); font-weight:800; text-decoration:none; }
@@ -1897,9 +1930,10 @@
       <button class="landing-opt" onclick="elegirTipoIngreso('gimnasio')"><span class="emoji">🏢</span>Gimnasio<span class="lc-desc">Tengo local y equipo de profes</span></button>
       <button class="landing-opt" onclick="elegirTipoIngreso('independiente')"><span class="emoji">🧑‍🏫</span>Profesor<br>independiente<span class="lc-desc">Entreno a mis alumnos yo solo/a</span></button>
       <button class="landing-opt" onclick="elegirTipoIngreso('alumno')"><span class="emoji">🏃</span>Alumno/a<span class="lc-desc">Soy socio de un gym que usa M2F</span></button>
+      <button class="landing-opt" onclick="elegirTipoIngreso('personal')"><span class="emoji">💪</span>Entreno<br>por mi cuenta<span class="lc-desc">Armo mis rutinas y sigo mi progreso · 30 días gratis</span></button>
     </div>
     <div class="lc-login-link">
-      ¿Ya tenés cuenta de gimnasio o profesor? <a href="#" onclick="elegirTipoIngreso('login'); return false;">Ingresar →</a>
+      ¿Ya tenés cuenta? <a href="#" onclick="elegirTipoIngreso('login'); return false;">Ingresar →</a>
     </div>
     <div style="position:relative; z-index:2; margin-top:18px;">
       <button class="btn-instalar-app" id="btnInstalarAppLanding" onclick="instalarApp()">📲 Instalar app</button>
@@ -3459,6 +3493,7 @@
 
   <div id="alumnoHome" style="display:none;">
     <div id="bannerCuotaAlu"></div>
+    <div id="bannerPersonal" style="display:none; margin-bottom:12px;"></div>   <!-- (v132) prueba / plan de la cuenta personal -->
 
     <button class="menu-drawer-btn" id="menuDrawerBtnAlu" onclick="abrirMenuAlu()">☰ Menú</button>
 
@@ -3489,6 +3524,7 @@
       <div class="vista-titulo">Hoy</div>
       <div id="aluRotPregunta"></div>
       <div class="alu-hero" id="aluInicioHero">Cargando...</div>
+      <div id="perAcciones"></div>
       <div id="aluQrWrap"></div>
       <div id="guiaCardAlu"></div>
       <div id="wellnessCard" class="card" style="display:none; border-color:var(--accent); cursor:pointer;" onclick="abrirWellness()">
@@ -4830,10 +4866,11 @@ function atlIniciarAlu(){
   atlCargarVista('aluAtletismoContenido', id || '');
 }
 
-const APP_VERSION = 131;
+const APP_VERSION = 132;
+let ES_PERSONAL = false;   // (v132) cuenta personal (gimnasios.tipo = 'personal'); se calcula en perAplicar()
 // (v96) Fecha de la última actualización: se cambia junto con APP_VERSION en cada entrega. Se muestra en la
 // pantalla de inicio y en el menú de cuenta ("v94 · actualizada el 5/10/2026").
-const APP_FECHA = '2026-10-15';
+const APP_FECHA = '2026-10-20';
 function appVersionTxt(){ const [y, m, d] = APP_FECHA.split('-'); return `v${APP_VERSION} · actualizada el ${+d}/${+m}/${y}`; }
 (function(){ const el = document.getElementById('lcVersion'); if (el) el.textContent = 'M2F Solutions · ' + appVersionTxt(); })();
 
@@ -5789,6 +5826,10 @@ function cerrarModalMediaEjercicio(){
 // cliente, del bloqueo real que ya hacen las políticas RLS del servidor: éste
 // solo existe para dar un mensaje en español en vez del error crudo de RLS.
 function chequearBloqueoEscrituraStaff(path, opts){
+  // (v132) Cuenta personal con la prueba/plan vencido: no crea rutinas ni registra entrenamientos (el servidor también lo corta).
+  if (ES_PERSONAL && GIMNASIO_ACTUAL_BLOQUEADO && String(opts.method || 'GET').toUpperCase() !== 'GET' && /^(ejecuciones|ejecucion_ejercicios|series_registradas|rpc\/personal_)/.test(path)){
+    throw new Error('PERSONAL_VENCIDO: tu prueba o tu plan venció.');
+  }
   if (!PERFIL_ACTUAL || PERFIL_ACTUAL.rol === 'alumno') return;
   const metodo = (opts.method || 'GET').toUpperCase();
   if (metodo === 'GET' || !GIMNASIO_ACTUAL_BLOQUEADO) return;
@@ -5999,6 +6040,11 @@ function elegirTipoIngreso(tipo){
   if (tipo === 'login'){
     authCambiarTab('login');
     contexto.textContent = '';
+  } else if (tipo === 'personal'){   // (v132)
+    authCambiarTab('signup');
+    contexto.textContent = 'Entreno por mi cuenta · 30 días gratis';
+    campoGimnasio.style.display = 'none';
+    labelNombre.textContent = 'Tu nombre';
   } else if (tipo === 'independiente'){
     authCambiarTab('signup');
     contexto.textContent = 'Profesor independiente';
@@ -6067,6 +6113,7 @@ async function hacerLogin(){
     SESION_ACTUAL = data.session;
     await cargarPerfilDeSesion();
     if (!PERFIL_ACTUAL){ msg.textContent = 'Tu cuenta no tiene un gimnasio asociado todavía.'; return; }
+    if (PERFIL_ACTUAL.rol === 'alumno'){ await perIrAAlumno(); return; }   // (v132) cuenta personal (o alumno que entró por acá): va a su pantalla
     await entrarComoStaff();
   }catch(e){
     // Si todavía no confirmó el email, en vez del error crudo de Supabase mostramos
@@ -6079,6 +6126,7 @@ async function hacerLogin(){
 }
 
 async function hacerSignup(){
+  const esPersonal = TIPO_INGRESO === 'personal';   // (v132)
   const esIndependiente = TIPO_INGRESO === 'independiente';
   const nombre = document.getElementById('signupNombre').value.trim();
   const nombreGimnasio = document.getElementById('signupGimnasio').value.trim();
@@ -6088,7 +6136,7 @@ async function hacerSignup(){
   const telefonoContacto = document.getElementById('signupTelefono').value.trim();   // (v102)
   const msg = document.getElementById('authMsg');
   msg.textContent = '';
-  if (!nombre || (!esIndependiente && !nombreGimnasio) || !email || !password){
+  if (!nombre || (!esIndependiente && !esPersonal && !nombreGimnasio) || !email || !password){
     msg.textContent = 'Completá todos los campos.'; return;
   }
   if (!telValido(telefonoContacto)){
@@ -6104,8 +6152,8 @@ async function hacerSignup(){
       email, password,
       options: { data: {
         nombre,
-        nombre_gimnasio: esIndependiente ? null : nombreGimnasio,
-        tipo_gimnasio: esIndependiente ? 'independiente' : 'gimnasio',
+        nombre_gimnasio: (esIndependiente || esPersonal) ? null : nombreGimnasio,
+        tipo_gimnasio: esPersonal ? 'personal' : (esIndependiente ? 'independiente' : 'gimnasio'),
         codigo_activacion: codigoActivacion,
         telefono_contacto: telefonoContacto,
       } }
@@ -6114,7 +6162,7 @@ async function hacerSignup(){
     if (data.session){
       SESION_ACTUAL = data.session;
       await cargarPerfilDeSesion();
-      await entrarComoStaff();
+      if (esPersonal) await perIrAAlumno(); else await entrarComoStaff();   // (v132)
     } else {
       mostrarPantallaConfirmarEmail(email);
     }
@@ -10961,6 +11009,7 @@ async function cargarInicioAlu(alumnoId){
     if (modo === 'pendiente') pintar(turnoHoy ? `Hoy · ${horaT}` : 'Hoy · sin turno', dia?.nombre_dia || 'Tu entrenamiento', prof || 'Tu rutina de hoy está lista.', '<button onclick="irEntrenamientoHoy()">Comenzar entrenamiento</button>');
     else if (modo === 'hecho') pintar('Hoy', '¡Entrenamiento completado!', 'Buen trabajo' + (nombre ? ', ' + nombre : '') + '. Mirá cómo venís en tu seguimiento.', '<button class="hero-soft" onclick="cambiarSubvistaAlu(\'seguimiento\')">Ver mi seguimiento</button>');
     else if (modo === 'sinrutina') pintar(`Hoy · ${horaT}`, 'Tenés turno hoy', 'Todavía no hay una rutina planificada para este día.', '<button class="hero-soft" onclick="cambiarSubvistaAlu(\'turnos\')">Ver mis turnos</button>');
+    else if (ES_PERSONAL) pintar('Hoy', 'Entrená a tu manera', 'Armá tu rutina o arrancá una sesión libre.', '<button onclick="perNuevaRutina()">Crear rutina</button> <button class="hero-soft" onclick="perSesionLibre()">Sesión libre</button>');   // (v132)
     else pintar('Hoy', 'Hoy no tenés entrenamiento', 'Reservá tu próximo turno cuando quieras.', '<button onclick="cambiarSubvistaAlu(\'turnos\')">Reservar turno</button>');
 
     const prox = turnos[0];
@@ -11257,6 +11306,7 @@ async function cargarGimnasioActual(){
   renderMarcaGimnasio();
   renderCobrosOnlineGimnasio();
   renderBannerSuscripcion();
+  try{ perAplicar(); }catch(e){ console.error(e); }   // (v132) modo personal
   cargarPlanesPrepago();
   telCargar().catch(() => {});   // (v102) WhatsApp de contacto del gimnasio
   clCfgCargar().catch(() => {});   // (v103) reglas de reservas de clases (Mi gimnasio)
@@ -20268,6 +20318,7 @@ async function cargarRutinasDeAlumno(selectId, contenedorId){
   const cont = document.getElementById(contenedorId);
   const menuItem = document.getElementById('menuAluRutinas');
   if (!alumnoId){ cont.innerHTML = 'Elegí tu nombre arriba.'; if (menuItem) menuItem.style.display = ''; return; }
+  if (ES_PERSONAL && selectId === 'aluAlumno'){ if (menuItem) menuItem.style.display = ''; return perCargarRutinas(alumnoId, cont); }   // (v132)
   cont.innerHTML = 'Cargando...';
   try{
     const hoy = fechaLocalISO();
@@ -20525,14 +20576,14 @@ function abrirWellness(){
     </div>`).join('');
   ov.querySelector('.modal-box').innerHTML = `
     <h3 style="margin-top:0;">¿Cómo llegás hoy a entrenar?</h3>
-    <p class="muted" style="margin:0 0 12px;">30 segundos. Tu profe lo usa para ajustar la sesión de hoy.</p>
+    <p class="muted" style="margin:0 0 12px;">${ES_PERSONAL ? '30 segundos. Te sirve para ver cómo llegás y cómo rinde tu entrenamiento.' : '30 segundos. Tu profe lo usa para ajustar la sesión de hoy.'}</p>
     ${bloques}
     <div class="field" style="margin-bottom:12px;">
-      <label>¿Algo más que quieras contarle a tu profe? (opcional)</label>
+      <label>${ES_PERSONAL ? '¿Algo más que quieras anotar? (opcional)' : '¿Algo más que quieras contarle a tu profe? (opcional)'}</label>
       <textarea id="wellnessNota" maxlength="300" rows="2" placeholder="Ej: me duele la rodilla izquierda"></textarea>
     </div>
     <button id="btnEnviarWellness" style="width:100%;" onclick="enviarWellness()">Enviar</button>
-    <button class="ghost" style="width:100%; margin-top:8px;" onclick="posponerWellness()">Ahora no</button>`;
+    <button class="ghost" style="width:100%; margin-top:8px;" onclick="posponerWellness()">${ES_PERSONAL ? 'Saltear y entrenar' : 'Ahora no'}</button>`;
   ov.classList.add('show');
 }
 
@@ -20549,6 +20600,7 @@ function wellnessElegir(k, v){
 function posponerWellness(){
   WELLNESS_POSPUESTO_HASTA = Date.now() + 60*60*1000; // no insistir durante 1 hora
   document.getElementById('modalWellness')?.classList.remove('show');
+  perWellnessSeguir();   // (v132) cuenta personal: sigue hacia el entrenamiento
 }
 
 async function enviarWellness(){
@@ -20572,7 +20624,8 @@ async function enviarWellness(){
     }).catch(() => {});
     document.getElementById('modalWellness').classList.remove('show');
     wellnessCardMostrar(false);
-    toast('¡Gracias! Tu profe ya lo puede ver ✓');
+    toast(ES_PERSONAL ? '¡Gracias! Wellness guardado ✓' : '¡Gracias! Tu profe ya lo puede ver ✓');
+    perWellnessSeguir();   // (v132)
   }catch(e){
     toast('No se pudo enviar: ' + (e.message || e), true);
   }finally{
@@ -22791,13 +22844,13 @@ async function cargarHistorial(alumnoId){
   const cont = document.getElementById('historialAlu');
   cont.innerHTML = 'Cargando...';
   try{
-    const rows = await sb(`ejecuciones?select=id,fecha,estado,rutina_dias(nombre_dia,rutinas(nombre))&alumno_id=eq.${alumnoId}&order=fecha.desc&limit=20`);
+    const rows = await sb(`ejecuciones?select=id,fecha,estado${ES_PERSONAL ? ',finalizada_en,rpe' : ''},rutina_dias(nombre_dia,rutinas(nombre))&alumno_id=eq.${alumnoId}&order=fecha.desc&limit=20`);
     if (!rows.length){ cont.innerHTML = '<div class="empty">Todavía no registraste entrenamientos.</div>'; return; }
     cont.innerHTML = rows.map(r => `
       <div class="row" style="justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--border);">
         <div>
           <div style="font-weight:600;">${r.rutina_dias?.rutinas?.nombre || '-'} · ${r.rutina_dias?.nombre_dia || '-'}</div>
-          <div class="muted">${new Date(r.fecha).toLocaleString()}</div>
+          <div class="muted">${ES_PERSONAL ? new Date(r.fecha).toLocaleDateString('es-AR', { weekday:'short', day:'numeric', month:'short' }) + perTiempoTxt(r) : new Date(r.fecha).toLocaleString()}</div>
         </div>
         <span class="${r.estado==='finalizada' ? 'badge-ok' : 'pill'}">${r.estado}</span>
       </div>
@@ -23037,6 +23090,457 @@ if ('serviceWorker' in navigator){
 
 // Arranque: primero se fija si ya había una sesión activa (login previo guardado
 // por supabase-js), y recién con eso resuelto carga los datos ya scopeados.
+// ======================================================================================================
+// (v132) MODO PERSONAL — "Entreno por mi cuenta" (con costo)
+// Una cuenta personal es un alumno de un "gimnasio" de una sola persona (gimnasios.tipo = 'personal'):
+// arma sus propias rutinas, entrena (wellness antes de empezar, series, RPE, tiempos) y ve su evolución.
+// Todo lo demás (alumno de gimnasio, profesores, recepción) funciona igual que siempre: nada de esto se activa si ES_PERSONAL es false.
+// Autoría de rutinas: solo vía RPC personal_* (SQL personal-v132.sql). Pasada la prueba, el servidor bloquea crear/entrenar.
+// ======================================================================================================
+const PERSONAL_PRECIO_MES = null;   // ej: 4999 → se muestra "$4.999/mes". null = "consultá el valor" (lo defino con Martin)
+let PER_ED = null;                  // estado del editor de rutinas / sesión libre
+let PER_CACHE = { dias: {} };       // id de día → { nombre }  (para no meter nombres dentro de onclick="")
+let PER_SESION = { diaId: null, nombre: '' };   // sesión que se está entrenando (para "agregar ejercicio" en vivo)
+let PER_PICK = null;                // estado del buscador de ejercicios
+let PER_T0 = null, PER_TIMER = null;
+
+function perPrecioTxt(){ return PERSONAL_PRECIO_MES ? '$' + Number(PERSONAL_PRECIO_MES).toLocaleString('es-AR') + '/mes' : ''; }
+function perEsc(s){ return escaparHtml(String(s == null ? '' : s)); }
+function perAlumnoId(){ return document.getElementById('aluAlumno')?.value || ''; }
+function perBloqueado(){ return ES_PERSONAL && GIMNASIO_ACTUAL_BLOQUEADO; }
+
+function perAplicar(){
+  ES_PERSONAL = !!(GIMNASIO_ACTUAL && GIMNASIO_ACTUAL.tipo === 'personal' && PERFIL_ACTUAL && PERFIL_ACTUAL.rol === 'alumno');
+  document.body.classList.toggle('es-personal', ES_PERSONAL);
+  perBanner();
+  perPintarAcciones();
+}
+
+function perBanner(){
+  const c = document.getElementById('bannerPersonal');
+  if (!c) return;
+  if (!ES_PERSONAL){ c.style.display = 'none'; c.innerHTML = ''; return; }
+  const precio = perPrecioTxt();
+  const estado = GIMNASIO_ACTUAL_ESTADO;   // 'trial' | 'activa' | 'bloqueada' (lo calcula renderBannerSuscripcion)
+  const fin = estado === 'trial' ? GIMNASIO_ACTUAL.prueba_vence_en : GIMNASIO_ACTUAL.suscripcion_vence_en;
+  const dias = fin ? Math.max(0, Math.ceil((new Date(fin).getTime() - Date.now()) / 86400000)) : 0;
+  if (estado === 'trial'){
+    c.innerHTML = `<div class="warn-banner" style="background:rgba(255,210,61,.12); border-color:rgba(255,210,61,.4); color:var(--warn-text);">⏳ <strong>Prueba gratis</strong>: te quedan <strong>${dias} día${dias === 1 ? '' : 's'}</strong>. Después, para crear rutinas y registrar entrenamientos activás el plan Personal${precio ? ' (' + precio + ')' : ''}. <span style="cursor:pointer; text-decoration:underline; margin-left:6px; white-space:nowrap;" onclick="perActivarPlan()">Ver plan →</span></div>`;
+  } else if (estado === 'bloqueada'){
+    c.innerHTML = `<div class="warn-banner" style="background:rgba(255,93,93,.12); border-color:rgba(255,93,93,.4); color:var(--danger-text);">🔒 Terminó tu prueba. Seguís viendo tu historial y tu progreso, pero para <strong>crear rutinas y registrar entrenamientos</strong> activá tu plan Personal${precio ? ' (' + precio + ')' : ''}. <span style="cursor:pointer; text-decoration:underline; margin-left:6px; white-space:nowrap;" onclick="perActivarPlan()">Activar plan →</span></div>`;
+  } else if (dias > 0 && dias <= 5){
+    c.innerHTML = `<div class="warn-banner" style="background:rgba(255,210,61,.12); border-color:rgba(255,210,61,.4); color:var(--warn-text);">Tu plan Personal vence en <strong>${dias} día${dias === 1 ? '' : 's'}</strong>. <span style="cursor:pointer; text-decoration:underline; margin-left:6px; white-space:nowrap;" onclick="perActivarPlan()">Renovar →</span></div>`;
+  } else { c.style.display = 'none'; c.innerHTML = ''; return; }
+  c.style.display = '';
+}
+
+function perActivarPlan(){
+  const email = (PERFIL_ACTUAL && PERFIL_ACTUAL.email) || '';
+  abrirSoporteWhatsapp(`Hola! Quiero activar mi plan Personal en M2F Solutions. Mi cuenta es ${email}.`);
+}
+function perPaywall(){
+  const ov = overlayGenerico('modalPerPaywall', 420);
+  ov.style.zIndex = '1200';
+  const precio = perPrecioTxt();
+  ov.querySelector('.modal-box').innerHTML = `
+    <h3 style="margin-top:0;">🔒 Activá tu plan Personal</h3>
+    <p class="muted" style="margin:0 0 12px;">Tu prueba terminó. Para <strong>crear rutinas y registrar entrenamientos</strong> necesitás el plan Personal${precio ? ' (<strong>' + precio + '</strong>)' : ''}. Todo lo que ya cargaste se conserva y lo seguís viendo.</p>
+    <button style="width:100%;" onclick="cerrarOverlayGenerico('modalPerPaywall'); perActivarPlan();">Activar por WhatsApp</button>
+    <button class="ghost" style="width:100%; margin-top:8px;" onclick="cerrarOverlayGenerico('modalPerPaywall')">Ahora no</button>`;
+  ov.classList.add('show');
+}
+function perErr(e){
+  const m = (() => { try{ return extraerMensajeError(e); }catch(_){ return (e && e.message) || String(e); } })();
+  if (/PERSONAL_VENCIDO/.test(m)){ GIMNASIO_ACTUAL_BLOQUEADO = true; perPaywall(); return; }
+  toast(m.replace(/^PERSONAL_NO_APLICA:\s*/, ''), true);
+}
+
+// Atajos en el Inicio (debajo de la tarjeta de hoy)
+function perPintarAcciones(){
+  const c = document.getElementById('perAcciones');
+  if (!c) return;
+  c.innerHTML = ES_PERSONAL ? `<div class="per-acciones"><button class="ghost" onclick="cambiarSubvistaAlu('rutinas')">🗂️ Mis rutinas</button><button class="ghost" onclick="perNuevaRutina()">＋ Nueva rutina</button><button class="ghost" onclick="perSesionLibre()">⚡ Sesión libre</button></div>` : '';
+}
+
+// ---------- Mis rutinas (vista personal) ----------
+async function perCargarRutinas(alumnoId, cont){
+  cont.innerHTML = 'Cargando...';
+  try{
+    const [rutinas, ejecs] = await Promise.all([
+      sb(`rutinas?select=id,nombre,activa,etiqueta,fecha_inicio,creado_en,rutina_dias(id,nombre_dia,orden,creado_en,rutina_ejercicios(id))&alumno_id=eq.${alumnoId}&order=creado_en.desc&limit=80`),
+      sb(`ejecuciones?select=rutina_dia_id,fecha,estado&alumno_id=eq.${alumnoId}&order=fecha.desc&limit=500`),
+    ]);
+    const ultima = {}, enCurso = new Set();
+    ejecs.forEach(x => { if (x.estado === 'finalizada'){ if (!ultima[x.rutina_dia_id]) ultima[x.rutina_dia_id] = x.fecha; } else enCurso.add(x.rutina_dia_id); });
+    const activas = rutinas.filter(r => r.activa && r.etiqueta !== 'libre')
+      .sort((a, b) => String(b.fecha_inicio || '').localeCompare(String(a.fecha_inicio || '')) || String(b.creado_en).localeCompare(String(a.creado_en)));
+    const libre = rutinas.find(r => r.etiqueta === 'libre');
+    const actual = activas[0] || null;
+    let tocaId = null;
+    if (actual){ try{ const d = await resolverDiaRutinaRotativa(actual.id, alumnoId); tocaId = d && d.id; }catch(e){} }
+    PER_CACHE = { dias: {} };
+    const diasOrdenados = (r) => (r.rutina_dias || []).slice().sort((a, b) => (a.orden || 0) - (b.orden || 0));
+    const filaDia = (d, r) => {
+      PER_CACHE.dias[d.id] = { nombre: d.nombre_dia };
+      const n = (d.rutina_ejercicios || []).length;
+      const u = ultima[d.id] ? 'Última vez: ' + fechaCortaISO(String(ultima[d.id]).slice(0, 10)) : 'Todavía sin hacer';
+      const toca = d.id === tocaId && r === actual;
+      return `<div class="per-dia">
+        <div style="min-width:0;"><div style="font-weight:700;">${perEsc(d.nombre_dia)}${toca ? ' <span class="badge-ok">Te toca</span>' : ''}</div>
+        <div class="muted" style="font-size:12px;">${n} ejercicio${n === 1 ? '' : 's'} · ${u}</div></div>
+        <button onclick="perEmpezarDia('${d.id}')">${enCurso.has(d.id) ? 'Retomar' : 'Empezar'}</button></div>`;
+    };
+    const tarjetaRutina = (r) => `<div class="per-rutina ${r === actual ? 'actual' : ''}">
+        <div class="row" style="justify-content:space-between; align-items:flex-start; gap:8px;">
+          <div style="min-width:0;"><div style="font-weight:800; font-size:16px;">${perEsc(r.nombre)}</div>
+          ${r === actual ? '<div class="muted" style="font-size:12px;">Tu rutina actual</div>' : ''}</div>
+          <div class="row" style="gap:6px; flex-shrink:0;">
+            ${r === actual ? '' : `<button class="ghost" style="padding:4px 10px; font-size:12px;" onclick="perActivar('${r.id}')">Usar esta</button>`}
+            <button class="ghost" style="padding:4px 10px; font-size:12px;" onclick="perEditarRutina('${r.id}')">✎ Editar</button>
+            <button class="ghost" style="padding:4px 10px; font-size:12px;" onclick="perEliminar('${r.id}')" title="Eliminar">🗑️</button>
+          </div></div>
+        ${diasOrdenados(r).map(d => filaDia(d, r)).join('')}</div>`;
+    const sesionesLibres = libre ? (libre.rutina_dias || []).slice().sort((a, b) => String(b.creado_en).localeCompare(String(a.creado_en))).slice(0, 8) : [];
+    cont.innerHTML = `
+      <div class="per-top">
+        <button onclick="perNuevaRutina()">＋ Nueva rutina</button>
+        <button class="ghost" onclick="perSesionLibre()">⚡ Entrenar sin rutina</button>
+      </div>
+      ${activas.length ? activas.map(tarjetaRutina).join('') : '<div class="empty">Todavía no armaste ninguna rutina. Creá una (por ejemplo la que te dieron en el gimnasio) o arrancá una sesión libre.</div>'}
+      ${sesionesLibres.length ? `<div class="sec-t" style="margin:18px 0 6px;">Sesiones libres</div>` + sesionesLibres.map(d => {
+        PER_CACHE.dias[d.id] = { nombre: d.nombre_dia };
+        const n = (d.rutina_ejercicios || []).length;
+        return `<div class="per-dia"><div style="min-width:0;"><div style="font-weight:700;">${perEsc(d.nombre_dia)}</div><div class="muted" style="font-size:12px;">${n} ejercicio${n === 1 ? '' : 's'} · ${ultima[d.id] ? 'Última vez: ' + fechaCortaISO(String(ultima[d.id]).slice(0, 10)) : 'Sin terminar'}</div></div>
+          <div class="row" style="gap:6px;"><button class="ghost" style="padding:4px 10px; font-size:12px;" onclick="perSesionARutina('${d.id}')">Guardar como rutina</button><button onclick="perEmpezarDia('${d.id}')">${enCurso.has(d.id) ? 'Retomar' : 'Repetir'}</button></div></div>`;
+      }).join('') : ''}`;
+  }catch(e){ cont.innerHTML = 'Error: ' + perEsc(e.message); }
+}
+
+function perEmpezarDia(diaId){
+  const nombre = (PER_CACHE.dias[diaId] || {}).nombre || 'Entrenamiento';
+  comenzarEntrenamiento(diaId, perAlumnoId(), nombre);
+}
+async function perActivar(id){
+  if (perBloqueado()) return perPaywall();
+  try{ await sb('rpc/personal_activar_rutina', { method: 'POST', body: JSON.stringify({ p_rutina_id: id }) }); toast('Listo: es tu rutina actual ✓'); perCargarRutinas(perAlumnoId(), document.getElementById('listaRutinasAlu')); cargarInicioAlu(perAlumnoId()); }
+  catch(e){ perErr(e); }
+}
+async function perEliminar(id){
+  if (perBloqueado()) return perPaywall();
+  if (!confirm('¿Eliminar esta rutina? Si ya la entrenaste, el historial se conserva.')) return;
+  try{ await sb('rpc/personal_eliminar_rutina', { method: 'POST', body: JSON.stringify({ p_rutina_id: id }) }); toast('Rutina eliminada ✓'); perCargarRutinas(perAlumnoId(), document.getElementById('listaRutinasAlu')); cargarInicioAlu(perAlumnoId()); }
+  catch(e){ perErr(e); }
+}
+
+// ---------- Editor de rutina / sesión libre ----------
+function perEjVacio(ej){ return { ejercicio_id: ej.id, nombre: ej.nombre, grupo: ej.grupo_muscular || '', series: 3, repeticiones: '10', peso_sugerido: '', descanso_seg: '', rir: '', notas: '' }; }
+function perNuevaRutina(){
+  if (perBloqueado()) return perPaywall();
+  PER_ED = { modo: 'rutina', rutinaId: null, nombre: '', dias: [{ nombre_dia: 'Día A', ejercicios: [] }], di: 0 };
+  perEdRender();
+}
+function perSesionLibre(){
+  if (perBloqueado()) return perPaywall();
+  PER_ED = { modo: 'libre', rutinaId: null, nombre: '', dias: [{ nombre_dia: 'Sesión libre', ejercicios: [] }], di: 0, comoRutina: false };
+  perEdRender();
+}
+async function perEditarRutina(id){
+  if (perBloqueado()) return perPaywall();
+  try{
+    const [r] = await sb(`rutinas?select=id,nombre&id=eq.${id}`);
+    const dias = await sb(`rutina_dias?select=id,nombre_dia,orden,rutina_ejercicios(id,orden,ejercicio_id,series,repeticiones,peso_sugerido,descanso_seg,rir,notas,ejercicios(nombre,grupo_muscular))&rutina_id=eq.${id}&order=orden.asc`);
+    PER_ED = { modo: 'rutina', rutinaId: id, nombre: r.nombre, di: 0, dias: dias.map(d => ({
+      nombre_dia: d.nombre_dia,
+      ejercicios: (d.rutina_ejercicios || []).slice().sort((a, b) => a.orden - b.orden).map(x => ({ ejercicio_id: x.ejercicio_id, nombre: x.ejercicios?.nombre || '', grupo: x.ejercicios?.grupo_muscular || '', series: x.series, repeticiones: x.repeticiones, peso_sugerido: x.peso_sugerido == null ? '' : x.peso_sugerido, descanso_seg: x.descanso_seg == null ? '' : x.descanso_seg, rir: x.rir == null ? '' : x.rir, notas: x.notas || '' })),
+    })) };
+    if (!PER_ED.dias.length) PER_ED.dias = [{ nombre_dia: 'Día A', ejercicios: [] }];
+    perEdRender();
+  }catch(e){ perErr(e); }
+}
+async function perSesionARutina(diaId){
+  if (perBloqueado()) return perPaywall();
+  try{
+    const [d] = await sb(`rutina_dias?select=id,nombre_dia,rutina_ejercicios(orden,ejercicio_id,series,repeticiones,peso_sugerido,descanso_seg,rir,notas,ejercicios(nombre,grupo_muscular))&id=eq.${diaId}`);
+    const exs = (d.rutina_ejercicios || []).slice().sort((a, b) => a.orden - b.orden).map(x => ({ ejercicio_id: x.ejercicio_id, nombre: x.ejercicios?.nombre || '', grupo: x.ejercicios?.grupo_muscular || '', series: x.series, repeticiones: x.repeticiones, peso_sugerido: x.peso_sugerido == null ? '' : x.peso_sugerido, descanso_seg: x.descanso_seg == null ? '' : x.descanso_seg, rir: x.rir == null ? '' : x.rir, notas: x.notas || '' }));
+    PER_ED = { modo: 'rutina', rutinaId: null, nombre: '', di: 0, dias: [{ nombre_dia: 'Día A', ejercicios: exs }] };
+    perEdRender();
+  }catch(e){ perErr(e); }
+}
+function perEdCerrar(){
+  if (PER_ED && PER_ED.dias.some(d => d.ejercicios.length) && !PER_ED._guardado && !confirm('¿Salir sin guardar?')) return;
+  cerrarOverlayGenerico('modalPerEditor'); PER_ED = null;
+}
+function perEdSet(di, ei, k, v){ PER_ED.dias[di].ejercicios[ei][k] = v; }
+function perEdMover(di, ei, dir){
+  const L = PER_ED.dias[di].ejercicios, j = ei + dir;
+  if (j < 0 || j >= L.length) return;
+  [L[ei], L[j]] = [L[j], L[ei]]; perEdRender();
+}
+function perEdQuitar(di, ei){ PER_ED.dias[di].ejercicios.splice(ei, 1); perEdRender(); }
+function perEdDia(i){ PER_ED.di = i; perEdRender(); }
+function perEdDiaMas(){
+  if (PER_ED.dias.length >= 14){ toast('Máximo 14 días por rutina.', true); return; }
+  const letras = 'ABCDEFGHIJKLMN';
+  PER_ED.dias.push({ nombre_dia: 'Día ' + (letras[PER_ED.dias.length] || PER_ED.dias.length + 1), ejercicios: [] });
+  PER_ED.di = PER_ED.dias.length - 1; perEdRender();
+}
+function perEdDiaQuitar(){
+  if (PER_ED.dias.length <= 1) return;
+  if (PER_ED.dias[PER_ED.di].ejercicios.length && !confirm('¿Quitar este día con sus ejercicios?')) return;
+  PER_ED.dias.splice(PER_ED.di, 1); PER_ED.di = Math.max(0, PER_ED.di - 1); perEdRender();
+}
+function perEdAgregarEj(){
+  perPickerAbrir((ej) => { PER_ED.dias[PER_ED.di].ejercicios.push(perEjVacio(ej)); perEdRender(); }, false);
+}
+function perEdRender(){
+  const E = PER_ED; if (!E) return;
+  const ov = overlayGenerico('modalPerEditor', 680);
+  ov.style.zIndex = '1100';
+  const di = E.di, dia = E.dias[di];
+  const esLibre = E.modo === 'libre';
+  const tabs = esLibre ? '' : `<div class="per-tabs">${E.dias.map((d, i) => `<button class="${i === di ? 'on' : ''}" onclick="perEdDia(${i})">${perEsc(d.nombre_dia)}</button>`).join('')}<button class="mas" onclick="perEdDiaMas()">＋ Día</button></div>`;
+  const ejs = dia.ejercicios.map((x, i) => `
+    <div class="per-ej">
+      <div class="row" style="justify-content:space-between; align-items:flex-start; gap:6px;">
+        <div style="min-width:0;"><div style="font-weight:700;">${perEsc(x.nombre)}</div><div class="muted" style="font-size:12px;">${perEsc(x.grupo)}</div></div>
+        <div class="row" style="gap:4px; flex-shrink:0;">
+          <button class="ghost per-mini" onclick="perEdMover(${di},${i},-1)" ${i === 0 ? 'disabled' : ''}>↑</button>
+          <button class="ghost per-mini" onclick="perEdMover(${di},${i},1)" ${i === dia.ejercicios.length - 1 ? 'disabled' : ''}>↓</button>
+          <button class="ghost per-mini" onclick="perEdQuitar(${di},${i})">✕</button>
+        </div></div>
+      <div class="per-grid">
+        <label>Series<input type="number" inputmode="numeric" min="1" max="20" value="${perEsc(x.series)}" oninput="perEdSet(${di},${i},'series',this.value)"></label>
+        <label>Reps<input type="text" value="${perEsc(x.repeticiones)}" placeholder="10-12" oninput="perEdSet(${di},${i},'repeticiones',this.value)"></label>
+        <label>Kg<input type="number" inputmode="decimal" step="0.5" min="0" value="${perEsc(x.peso_sugerido)}" oninput="perEdSet(${di},${i},'peso_sugerido',this.value)"></label>
+        <label>Desc. (s)<input type="number" inputmode="numeric" min="0" value="${perEsc(x.descanso_seg)}" oninput="perEdSet(${di},${i},'descanso_seg',this.value)"></label>
+        <label>RIR<input type="number" inputmode="numeric" min="0" max="10" value="${perEsc(x.rir)}" oninput="perEdSet(${di},${i},'rir',this.value)"></label>
+      </div>
+      <input type="text" class="per-nota" maxlength="300" placeholder="Nota (opcional)" value="${perEsc(x.notas)}" oninput="perEdSet(${di},${i},'notas',this.value)">
+    </div>`).join('');
+  ov.querySelector('.modal-box').innerHTML = `
+    <div class="row" style="justify-content:space-between; align-items:center; margin-bottom:8px;">
+      <h3 style="margin:0;">${esLibre ? '⚡ Sesión libre' : (E.rutinaId ? '✎ Editar rutina' : '＋ Nueva rutina')}</h3>
+      <button type="button" class="x-cerrar est" aria-label="Cerrar" title="Cerrar" onclick="perEdCerrar()">✕</button></div>
+    ${esLibre ? '<p class="muted" style="margin:0 0 10px; font-size:13px;">Elegí los ejercicios que vas a hacer hoy y empezá. Si querés, la guardás como rutina para repetirla.</p>' : ''}
+    <div class="field"><label>${esLibre ? 'Nombre de la sesión (opcional)' : 'Nombre de la rutina'}</label><input id="perEdNombre" maxlength="80" placeholder="${esLibre ? 'Ej: Pecho y tríceps' : 'Ej: Fuerza 3 días'}" value="${perEsc(E.nombre)}" oninput="PER_ED.nombre=this.value"></div>
+    ${tabs}
+    ${esLibre ? '' : `<div class="row" style="gap:8px; align-items:flex-end; margin-bottom:8px;"><div class="field" style="flex:1; margin:0;"><label>Nombre del día</label><input maxlength="60" value="${perEsc(dia.nombre_dia)}" oninput="PER_ED.dias[${di}].nombre_dia=this.value"></div>${E.dias.length > 1 ? '<button class="ghost" onclick="perEdDiaQuitar()" style="padding:8px 12px;">Quitar día</button>' : ''}</div>`}
+    ${ejs || '<div class="empty" style="padding:14px;">Todavía no agregaste ejercicios.</div>'}
+    <button class="ghost" style="width:100%; margin:8px 0 12px;" onclick="perEdAgregarEj()">＋ Agregar ejercicio</button>
+    ${esLibre ? `<label class="per-check"><input type="checkbox" ${E.comoRutina ? 'checked' : ''} onchange="PER_ED.comoRutina=this.checked"> Guardarla también como rutina</label>` : ''}
+    <button style="width:100%;" id="btnPerGuardar" onclick="perEdGuardar()">${esLibre ? 'Empezar a entrenar' : 'Guardar rutina'}</button>`;
+  ov.classList.add('show');
+}
+function perEdArmarDias(){
+  return PER_ED.dias.map((d, i) => ({
+    nombre_dia: (d.nombre_dia || '').trim() || 'Día ' + (i + 1),
+    ejercicios: d.ejercicios.map(x => ({
+      ejercicio_id: x.ejercicio_id,
+      series: Math.max(1, parseInt(x.series, 10) || 3),
+      repeticiones: String(x.repeticiones || '10').trim() || '10',
+      peso_sugerido: x.peso_sugerido === '' || x.peso_sugerido == null ? null : Number(x.peso_sugerido),
+      descanso_seg: x.descanso_seg === '' || x.descanso_seg == null ? null : parseInt(x.descanso_seg, 10),
+      rir: x.rir === '' || x.rir == null ? null : parseInt(x.rir, 10),
+      notas: (x.notas || '').trim() || null,
+    })),
+  }));
+}
+async function perEdGuardar(){
+  const E = PER_ED; if (!E) return;
+  const esLibre = E.modo === 'libre';
+  if (!esLibre && !(E.nombre || '').trim()){ toast('Ponele un nombre a la rutina.', true); return; }
+  const vacio = E.dias.findIndex(d => !d.ejercicios.length);
+  if (vacio >= 0){ if (!esLibre) E.di = vacio; perEdRender(); toast(esLibre ? 'Agregá al menos un ejercicio.' : `El día "${E.dias[vacio].nombre_dia}" no tiene ejercicios.`, true); return; }
+  const btn = document.getElementById('btnPerGuardar'); if (btn) btn.disabled = true;
+  try{
+    const dias = perEdArmarDias();
+    if (!esLibre){
+      await sb('rpc/personal_guardar_rutina', { method: 'POST', body: JSON.stringify({ p_rutina_id: E.rutinaId, p_nombre: E.nombre.trim(), p_dias: dias }) });
+      E._guardado = true; cerrarOverlayGenerico('modalPerEditor'); PER_ED = null;
+      toast('Rutina guardada ✓');
+      perCargarRutinas(perAlumnoId(), document.getElementById('listaRutinasAlu')); cargarInicioAlu(perAlumnoId());
+      return;
+    }
+    const nombre = (E.nombre || '').trim() || 'Sesión libre ' + fechaCortaISO(fechaLocalISO());
+    let diaId;
+    if (E.comoRutina){
+      const rid = await sb('rpc/personal_guardar_rutina', { method: 'POST', body: JSON.stringify({ p_rutina_id: null, p_nombre: nombre, p_dias: [{ nombre_dia: nombre, ejercicios: dias[0].ejercicios }] }) });
+      const [d] = await sb(`rutina_dias?select=id&rutina_id=eq.${rid}&order=orden.asc&limit=1`);
+      diaId = d.id; PER_CACHE.dias[diaId] = { nombre };
+    } else {
+      diaId = await sb('rpc/personal_sesion_libre', { method: 'POST', body: JSON.stringify({ p_nombre: nombre, p_ejercicios: dias[0].ejercicios }) });
+      PER_CACHE.dias[diaId] = { nombre };
+    }
+    E._guardado = true; cerrarOverlayGenerico('modalPerEditor'); PER_ED = null;
+    cambiarSubvistaAlu('rutinas');
+    perEmpezarDia(diaId);
+  }catch(e){ perErr(e); }
+  finally{ if (btn) btn.disabled = false; }
+}
+
+// ---------- Buscador de ejercicios (catálogo + propios) ----------
+// conParams=true: después de elegir pide series/reps/kg (se usa al agregar un ejercicio EN VIVO durante el entrenamiento).
+function perPickerAbrir(onPick, conParams, titulo){
+  PER_PICK = { onPick, conParams: !!conParams, ej: null, titulo: titulo || '' };
+  const ov = overlayGenerico('modalPerPicker', 520);
+  ov.style.zIndex = '1150';
+  perPickerRender('');
+  ov.classList.add('show');
+  setTimeout(() => document.getElementById('perPickQ')?.focus(), 80);
+}
+function perPickerRender(q){
+  const ov = overlayGenerico('modalPerPicker', 520);
+  const grupos = ['Pecho', 'Espalda', 'Piernas', 'Hombros', 'Brazos', 'Core', 'Glúteos'];
+  ov.querySelector('.modal-box').innerHTML = `
+    <div class="row" style="justify-content:space-between; align-items:center; margin-bottom:8px;"><h3 style="margin:0;">Agregar ejercicio</h3><button type="button" class="x-cerrar est" aria-label="Cerrar" title="Cerrar" onclick="cerrarOverlayGenerico('modalPerPicker')">✕</button></div>
+    ${PER_PICK.titulo ? `<p class="muted" style="margin:0 0 8px; font-size:13px;">${perEsc(PER_PICK.titulo)}</p>` : ''}
+    <input id="perPickQ" type="search" placeholder="Buscá: sentadilla, pecho, mancuerna…" value="${perEsc(q)}" oninput="perPickerBuscar(this.value)" style="width:100%;">
+    <div class="per-chips">${grupos.map(g => `<button class="ghost" onclick="perPickerBuscar('${g}', true)">${g}</button>`).join('')}</div>
+    <div id="perPickRes" class="per-res"></div>
+    <div id="perPickNuevo"></div>`;
+  perPickerBuscar(q);
+}
+function perPickerBuscar(q, reflejar){
+  if (reflejar){ const i = document.getElementById('perPickQ'); if (i) i.value = q; }
+  const res = document.getElementById('perPickRes'); if (!res) return;
+  const L = filtrarEjercicios(q);
+  PER_PICK.lista = L;
+  const crear = `<button class="ghost" style="width:100%; margin-top:8px;" onclick="perPickerNuevoForm()">＋ Crear ejercicio propio${q ? ' «' + perEsc(q.slice(0, 30)) + '»' : ''}</button>`;
+  if (!q.trim()){ res.innerHTML = '<div class="muted" style="padding:10px 2px; font-size:13px;">Escribí el nombre o el músculo, o tocá un grupo.</div>' + crear; return; }
+  res.innerHTML = (L.length ? L.map((e, i) => `<div class="per-res-i" onclick="perPickerElegir(${i})"><div style="font-weight:700;">${perEsc(e.nombre)}</div><div class="muted" style="font-size:12px;">${perEsc([e.grupo_muscular, e.equipamiento].filter(Boolean).join(' · '))}</div></div>`).join('') : '<div class="muted" style="padding:10px 2px;">No encontramos ese ejercicio.</div>') + crear;
+}
+function perPickerElegir(i){
+  const ej = PER_PICK.lista[i]; if (!ej) return;
+  if (!PER_PICK.conParams){ cerrarOverlayGenerico('modalPerPicker'); PER_PICK.onPick(ej, null); return; }
+  PER_PICK.ej = ej;
+  document.getElementById('perPickRes').innerHTML = `
+    <div style="font-weight:800; margin:6px 0;">${perEsc(ej.nombre)}</div>
+    <div class="per-grid" style="grid-template-columns:repeat(3,1fr);">
+      <label>Series<input id="perLvSeries" type="number" inputmode="numeric" min="1" max="20" value="3"></label>
+      <label>Reps<input id="perLvReps" type="text" value="10"></label>
+      <label>Kg<input id="perLvKg" type="number" inputmode="decimal" step="0.5" min="0" placeholder="–"></label></div>
+    <p class="muted" style="font-size:12px; margin:8px 0;">Se suma a este día de tu rutina. Lo que ya registraste se conserva.</p>
+    <button style="width:100%;" onclick="perPickerConfirmar()">Agregar a la sesión</button>`;
+}
+function perPickerConfirmar(){
+  const ej = PER_PICK.ej; if (!ej) return;
+  const p = { series: Math.max(1, parseInt(document.getElementById('perLvSeries').value, 10) || 3), repeticiones: (document.getElementById('perLvReps').value || '10').trim() || '10', peso_sugerido: document.getElementById('perLvKg').value === '' ? null : Number(document.getElementById('perLvKg').value) };
+  cerrarOverlayGenerico('modalPerPicker'); PER_PICK.onPick(ej, p);
+}
+function perPickerNuevoForm(){
+  const c = document.getElementById('perPickNuevo'); if (!c) return;
+  const nombre = (document.getElementById('perPickQ')?.value || '').trim();
+  c.innerHTML = `<div class="per-ej" style="margin-top:10px;">
+    <div style="font-weight:700; margin-bottom:6px;">Ejercicio propio</div>
+    <div class="field"><label>Nombre</label><input id="perNxNombre" maxlength="80" value="${perEsc(nombre)}"></div>
+    <div class="field"><label>Grupo muscular</label><input id="perNxGrupo" maxlength="40" placeholder="Ej: Espalda"></div>
+    <div class="field"><label>Link de video (opcional)</label><input id="perNxUrl" placeholder="YouTube, .mp4…"></div>
+    <button style="width:100%;" onclick="perPickerCrear()">Crear y usar</button></div>`;
+  document.getElementById('perNxGrupo')?.focus();
+}
+async function perPickerCrear(){
+  try{
+    const ej = await sb('rpc/personal_crear_ejercicio', { method: 'POST', body: JSON.stringify({ p_nombre: document.getElementById('perNxNombre').value, p_grupo: document.getElementById('perNxGrupo').value, p_categoria: null, p_url: document.getElementById('perNxUrl').value }) });
+    TODOS_EJERCICIOS.unshift(ej);
+    PER_PICK.lista = [ej]; perPickerElegir(0);
+  }catch(e){ perErr(e); }
+}
+
+// ---------- Durante el entrenamiento ----------
+// (a) Wellness ANTES de empezar (si todavía no lo hizo hoy) y bloqueo por plan vencido.
+// (b) Cronómetro de sesión (arranca con la primera serie, igual que el "inicio real" de v130) + botón para sumar un ejercicio en vivo.
+const _comenzarEntrenamientoOrig = comenzarEntrenamiento;
+comenzarEntrenamiento = async function(rutinaDiaId, alumnoId, nombreDia){
+  if (!ES_PERSONAL) return _comenzarEntrenamientoOrig(rutinaDiaId, alumnoId, nombreDia);
+  if (GIMNASIO_ACTUAL_BLOQUEADO){ perPaywall(); return; }
+  PER_SESION = { diaId: rutinaDiaId, nombre: nombreDia };
+  try{
+    if (Date.now() >= WELLNESS_POSPUESTO_HASTA){
+      const hoy = dateAIso(new Date());
+      const r = await sb(`wellness_respuestas?select=id&alumno_id=eq.${alumnoId}&fecha=eq.${hoy}&limit=1`);
+      if (!r.length){ await new Promise(res => { WELLNESS_CTX.alumnoId = alumnoId; WELLNESS_CTX.despues = res; abrirWellness(); }); }
+    }
+  }catch(e){ /* el wellness nunca frena el entrenamiento */ }
+  return _comenzarEntrenamientoOrig(rutinaDiaId, alumnoId, nombreDia);
+};
+function perWellnessSeguir(){ const cb = WELLNESS_CTX.despues; WELLNESS_CTX.despues = null; if (cb) cb(); }
+
+const _renderEjecucionOrig = renderEjecucion;
+renderEjecucion = function(...a){
+  const r = _renderEjecucionOrig.apply(this, a);
+  if (ES_PERSONAL){ try{ perEjecDecorar(a[0]); }catch(e){ console.error(e); } }
+  return r;
+};
+const _ejecMarcarInicioOrig = ejecMarcarInicio;
+ejecMarcarInicio = function(){
+  const antes = EJEC_INICIO_MARCADO;
+  _ejecMarcarInicioOrig();
+  if (ES_PERSONAL && !antes && EJEC_INICIO_MARCADO && !PER_T0){ PER_T0 = Date.now(); perTimerTick(); }
+};
+function perTimerTick(){
+  const el = document.getElementById('perTimer'); if (!el){ clearInterval(PER_TIMER); PER_TIMER = null; return; }
+  if (!PER_T0){ el.textContent = '⏱ El tiempo corre desde tu primera serie'; return; }
+  const s = Math.max(0, Math.floor((Date.now() - PER_T0) / 1000)), h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), x = s % 60;
+  const ini = new Date(PER_T0).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
+  el.textContent = `⏱ ${h ? h + ':' : ''}${String(m).padStart(h ? 2 : 1, '0')}:${String(x).padStart(2, '0')} · empezaste ${ini}`;
+}
+async function perEjecDecorar(ejecucionId){
+  const cont = document.getElementById('ejecucionContainer'); if (!cont) return;
+  PER_T0 = null; clearInterval(PER_TIMER);
+  cont.insertAdjacentHTML('afterbegin', '<div id="perTimer" class="per-timer"></div>');
+  cont.insertAdjacentHTML('beforeend', `<div class="card per-add"><button class="ghost" style="width:100%;" onclick="perEjecAgregarAbrir()">＋ Agregar ejercicio a esta sesión</button></div>`);
+  if (EJEC_INICIO_MARCADO){   // retomó una sesión ya empezada: el cronómetro sigue desde su hora de inicio real
+    try{ const [e] = await sb(`ejecuciones?select=fecha&id=eq.${ejecucionId}`); if (e) PER_T0 = new Date(e.fecha).getTime(); }catch(_){}
+  }
+  perTimerTick(); PER_TIMER = setInterval(perTimerTick, 1000);
+}
+function perEjecAgregarAbrir(){
+  if (!PER_SESION.diaId) return;
+  perPickerAbrir(perEjecAgregar, true, `Se suma a «${PER_SESION.nombre}».`);
+}
+async function perEjecAgregar(ej, p){
+  try{
+    await sb('rpc/personal_agregar_ejercicio', { method: 'POST', body: JSON.stringify({ p_dia_id: PER_SESION.diaId, p_ejercicio: Object.assign({ ejercicio_id: ej.id }, p) }) });
+    toast(`«${ej.nombre}» agregado ✓`);
+    comenzarEntrenamiento(PER_SESION.diaId, perAlumnoId(), PER_SESION.nombre);   // retoma la misma sesión y suma el ejercicio nuevo
+  }catch(e){ perErr(e); }
+}
+
+// Entrada tras login/alta de una cuenta con rol 'alumno' desde el formulario de "profesor / gimnasio" (cuentas personales)
+async function perIrAAlumno(){
+  await Promise.all([cargarPersonas(), cargarGimnasioActual(), cargarCategoriasYEquipos()]);
+  await cargarPlanesEnSelectAlumno();
+  document.getElementById('landingSelector').style.display = 'none';
+  document.getElementById('appShell').style.display = '';
+  cambiarVista('alumno');
+  await entrarComoAlumnoLogueado();
+}
+function perTiempoTxt(r){
+  if (!r.finalizada_en) return '';
+  const a = new Date(r.fecha), b = new Date(r.finalizada_en), min = Math.max(1, Math.round((b - a) / 60000));
+  const hm = (d) => d.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
+  return ` · ${hm(a)}–${hm(b)} · ${min >= 60 ? Math.floor(min / 60) + ' h ' + (min % 60) + ' min' : min + ' min'}${r.rpe != null ? ' · RPE ' + r.rpe : ''}`;
+}
+
+// Seguimiento de la cuenta personal: suma la carga aguda (ACWR) de v114, que antes solo veía el profe.
+const _cargarSeguimientoOrig = cargarSeguimiento;
+cargarSeguimiento = async function(contId, alumnoId){
+  const r = await _cargarSeguimientoOrig(contId, alumnoId);
+  if (ES_PERSONAL && contId === 'aluSeguimientoContenido'){ try{ perCargaAguda(alumnoId); }catch(e){ console.error(e); } }
+  return r;
+};
+function perCargaAguda(alumnoId){
+  const base = document.getElementById('aluSeguimientoContenido'); if (!base) return;
+  let c = document.getElementById('perCargaCard');
+  if (!c){
+    c = document.createElement('div'); c.id = 'perCargaCard'; c.className = 'card';
+    c.innerHTML = '<h2 style="margin-top:0;">Carga aguda (ACWR)</h2><p class="muted" style="margin:0 0 8px; font-size:13px;">Compara lo que entrenaste esta semana con tu promedio de las últimas 4. Entre 0,8 y 1,3 es la zona óptima; por encima de 1,5 conviene bajar un cambio.</p><div id="perCargaCuerpo"></div>';
+    base.insertAdjacentElement('afterend', c);
+  }
+  const tok = (perCargaAguda._t = (perCargaAguda._t || 0) + 1);
+  caPintar('perCargaCuerpo', alumnoId, () => tok === perCargaAguda._t);
+}
+
 (async function iniciar(){
   const ocultarSplash = () => { const sp = document.getElementById('splashInicio'); if (sp) sp.remove(); };
   try{
