@@ -805,6 +805,33 @@
   .landing-opt:nth-child(3) .emoji{ background:rgba(255,210,61,.14); }
     /* (v132) Modo personal */
   .landing-opt:nth-child(4) .emoji{ background:rgba(77,163,255,.15); }
+
+  /* ---- (v133) Intro de bienvenida: "M2F" entra girando de chico a grande y las 4 tarjetas caen
+       encima hasta taparlo. Solo la primera vez en el dispositivo (o con ?intro=1), nunca con
+       sesión iniciada ni con "reducir movimiento". Todo CSS; el JS solo pone/saca la clase. ---- */
+  .lc-hero{ display:none; position:absolute; inset:0; z-index:1; pointer-events:none;
+    flex-direction:column; align-items:center; justify-content:center; text-align:center; line-height:1; }
+  .lc-hero small{ font-size:15px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; color:var(--lc-soft); margin-bottom:8px; }
+  .lc-hero b{ font-size:clamp(58px,19vw,92px); font-weight:900; color:var(--accent-text); letter-spacing:-.02em; }
+  .lc-hero span{ font-size:clamp(22px,7vw,32px); font-weight:800; color:var(--text); margin-top:4px; }
+  #landingSelector.lc-intro .lc-hero{ display:flex;
+    animation:lcHeroIn 1.5s cubic-bezier(.2,.85,.3,1.1) backwards, lcHeroOut .5s ease 2.3s forwards; }
+  #landingSelector.lc-intro .landing-opts{ pointer-events:none; }
+  #landingSelector.lc-intro .landing-opt{ position:relative; z-index:2; animation:lcCae .95s cubic-bezier(.3,.7,.35,1) backwards; }
+  #landingSelector.lc-intro .landing-opt:nth-child(1){ animation-delay:1.55s; }
+  #landingSelector.lc-intro .landing-opt:nth-child(2){ animation-delay:1.75s; }
+  #landingSelector.lc-intro .landing-opt:nth-child(3){ animation-delay:1.95s; }
+  #landingSelector.lc-intro .landing-opt:nth-child(4){ animation-delay:2.15s; }
+  #landingSelector.lc-intro .landing-box > *:not(.landing-opts){ animation:lcFadeIn .7s ease 2.9s backwards; }
+  @keyframes lcHeroIn{ 0%{ transform:scale(.03) rotate(-720deg); opacity:0; } 15%{ opacity:1; } 100%{ transform:scale(1) rotate(0); opacity:1; } }
+  @keyframes lcHeroOut{ to{ opacity:0; transform:scale(.96); } }
+  @keyframes lcCae{
+    0%{ transform:translateY(-120vh) rotate(-14deg); opacity:1; }
+    60%{ transform:translateY(0) rotate(2deg); }
+    78%{ transform:translateY(-26px) rotate(-1deg); }
+    100%{ transform:translateY(0) rotate(0); }
+  }
+  @keyframes lcFadeIn{ from{ opacity:0; transform:translateY(10px); } to{ opacity:1; transform:none; } }
   .per-acciones{ display:flex; gap:8px; flex-wrap:wrap; margin:10px 0 4px; }
   .per-acciones button{ flex:1 1 auto; }
   .per-top{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px; }
@@ -1931,6 +1958,7 @@
       <button class="landing-opt" onclick="elegirTipoIngreso('independiente')"><span class="emoji">🧑‍🏫</span>Profesor<br>independiente<span class="lc-desc">Entreno a mis alumnos yo solo/a</span></button>
       <button class="landing-opt" onclick="elegirTipoIngreso('alumno')"><span class="emoji">🏃</span>Alumno/a<span class="lc-desc">Soy socio de un gym que usa M2F</span></button>
       <button class="landing-opt" onclick="elegirTipoIngreso('personal')"><span class="emoji">💪</span>Entreno<br>por mi cuenta<span class="lc-desc">Armo mis rutinas y sigo mi progreso · 30 días gratis</span></button>
+      <div class="lc-hero" aria-hidden="true"><small>Bienvenido a</small><b>M2F</b><span>Solutions</span></div>
     </div>
     <div class="lc-login-link">
       ¿Ya tenés cuenta? <a href="#" onclick="elegirTipoIngreso('login'); return false;">Ingresar →</a>
@@ -1941,6 +1969,27 @@
     <div id="lcVersion" style="position:relative; z-index:2; margin-top:12px; font-size:11.5px; opacity:.65; text-align:center;"></div>
   </div>
 </div>
+
+<script>
+/* (v133) Intro de bienvenida de la landing — ver CSS ".lc-hero". Primera vez por dispositivo o ?intro=1. */
+(function(){
+  try{
+    var forzar = /[?&]intro=1\b/.test(location.search);
+    var hay = false, visto = false;
+    try{ for (var i = 0; i < localStorage.length; i++){ if (/^sb-.*-auth-token$/.test(localStorage.key(i))) { hay = true; break; } } }catch(e){}
+    try{ visto = !!localStorage.getItem('m2f_intro_v1'); }catch(e){}
+    var reducir = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reducir || (!forzar && (hay || visto))) return;
+    var el = document.getElementById('landingSelector');
+    if (!el) return;
+    el.classList.add('lc-intro');
+    try{ localStorage.setItem('m2f_intro_v1', '1'); }catch(e){}
+    var fin = function(){ el.classList.remove('lc-intro'); el.removeEventListener('click', fin, true); };
+    el.addEventListener('click', function(ev){ if (el.classList.contains('lc-intro')){ ev.stopPropagation(); ev.preventDefault(); fin(); } }, true);
+    setTimeout(fin, 3900);
+  }catch(e){}
+})();
+</script>
 
 <div id="appShell" style="display:none;">
 
@@ -1992,8 +2041,8 @@
         <div class="field" style="margin-bottom:10px;"><label>Email</label><input type="email" id="signupEmail" /></div>
         <div class="field" style="margin-bottom:10px;"><label>WhatsApp de contacto</label><input type="tel" inputmode="tel" autocomplete="tel" id="signupTelefono" placeholder="Con código de área. Ej: 341 555 1234" /></div>
         <div class="field" style="margin-bottom:14px;"><label>Contraseña</label><div class="password-wrap"><input type="password" id="signupPassword" placeholder="Mínimo 8 caracteres, con letras" /><button type="button" class="toggle-pass" onclick="togglePasswordVisibility('signupPassword', this)">👁️</button></div></div>
-        <div class="field" style="margin-bottom:6px;"><label>Código de activación (opcional)</label><input id="signupCodigo" placeholder="Si no tenés uno, dejalo vacío" /></div>
-        <p class="muted" style="font-size:12px; margin:0 0 14px;">Sin código arrancás con <strong>14 días de prueba gratis</strong>, sin compromiso.</p>
+        <div class="field" style="margin-bottom:6px;" id="campoCodigoSignup"><label>Código de activación (opcional)</label><input id="signupCodigo" placeholder="Si no tenés uno, dejalo vacío" /></div>
+        <p class="muted" id="notaPruebaSignup" style="font-size:12px; margin:0 0 14px;">Sin código arrancás con <strong>14 días de prueba gratis</strong>, sin compromiso.</p>
         <button onclick="hacerSignup()" id="btnSignup" style="width:100%;">Crear cuenta</button>
       </div>
 
@@ -4322,6 +4371,7 @@ const MOD_PRESETS = {
   independiente: { n: 'Independiente', ico: '🧍', on: ['agenda', 'evaluaciones', 'logros', 'seguimiento', 'planes', 'finanzas'] },
   gimnasio:      { n: 'Gimnasio',      ico: '🏋️', on: ['agenda', 'evaluaciones', 'logros', 'seguimiento', 'planes', 'finanzas', 'recepcion', 'clases', 'alertas', 'equipo'] },
   pro:           { n: 'Pro',           ico: '🚀', on: '*' },
+  personal:      { n: 'Personal',      ico: '💪', on: ['seguimiento', 'logros'] },   // (v132) entrena por su cuenta: solo rutinas + progreso
 };
 const MOD_BLOQUEO_SERVIDOR = ['clases', 'evaluaciones', 'alertas', 'finanzas', 'recepcion', 'proyeccion_ingresos'];   // etapa 1 (SQL) + proyección (ya la valida su RPC)
 function modOn(k){
@@ -6037,6 +6087,14 @@ function elegirTipoIngreso(tipo){
   const contexto = document.getElementById('authContexto');
   const campoGimnasio = document.getElementById('campoNombreGimnasio');
   const labelNombre = document.getElementById('labelNombreSignup');
+  // (v132) Cuenta personal: sin código de activación y con su propia leyenda de prueba (30 días).
+  const campoCodigo = document.getElementById('campoCodigoSignup');
+  const notaPrueba = document.getElementById('notaPruebaSignup');
+  if (campoCodigo) campoCodigo.style.display = (tipo === 'personal') ? 'none' : '';
+  if (tipo === 'personal'){ const ic = document.getElementById('signupCodigo'); if (ic) ic.value = ''; }
+  if (notaPrueba) notaPrueba.innerHTML = (tipo === 'personal')
+    ? 'Arrancás con <strong>30 días de prueba gratis</strong>, sin compromiso.'
+    : 'Sin código arrancás con <strong>14 días de prueba gratis</strong>, sin compromiso.';
   if (tipo === 'login'){
     authCambiarTab('login');
     contexto.textContent = '';
