@@ -2322,6 +2322,10 @@
             <div class="ip-pn-h"><div><b>Alumnos en riesgo</b><div class="ip-sub">Escribiles antes de que se vayan</div></div><span class="ip-pill" id="ipRiesgoCount"></span></div>
             <div class="ip-pn-b" id="ipRiesgo"></div>
           </section>
+          <section class="card ip-pn" id="ipPnSolos" style="display:none;">
+            <div class="ip-pn-h"><div><b>Entrenaron por su cuenta</b><div class="ip-sub">Sin turno · últimos 3 días</div></div><span class="ip-pill acc" id="ipSolosCount"></span></div>
+            <div class="ip-pn-b" id="ipSolos"></div>
+          </section>
           <section class="card ip-pn" id="ipPnDash">
             <div class="ip-pn-h"><div><b>Tus números</b><div class="ip-sub">Últimos 14 días</div></div></div>
             <div class="ip-pn-b"><div class="ip-kpis" id="ipKpis"></div><div class="ip-charts">
@@ -4916,7 +4920,7 @@ function atlIniciarAlu(){
   atlCargarVista('aluAtletismoContenido', id || '');
 }
 
-const APP_VERSION = 134;
+const APP_VERSION = 135;
 let ES_PERSONAL = false;   // (v132) cuenta personal (gimnasios.tipo = 'personal'); se calcula en perAplicar()
 // (v96) Fecha de la última actualización: se cambia junto con APP_VERSION en cada entrega. Se muestra en la
 // pantalla de inicio y en el menú de cuenta ("v94 · actualizada el 5/10/2026").
@@ -6622,6 +6626,7 @@ async function cargarInicioProfesor(){
     INICIO.d = { hoy, ahora, nowMin, esAdmin, propio, profId, turnos, slots, serie14, etq14, semana, pctAsist,
                  turnosSemana: semana.reduce((s, x) => s + x.n, 0), sinRutina: Object.values(sinRutinaMap), rotFin, records: recs, bajas };
     ipRenderTodo();
+    ipSolosCargar();   // (v135) entrenaron por su cuenta
     riesgoCargar();   // (v119) alumnos en riesgo (solo administrador; no frena el Inicio)
   }catch(e){
     console.error('Inicio del profesor:', e);
@@ -6721,6 +6726,43 @@ function riesgoMensaje(x){
   if (m.kind === 'nunca') return `Hola ${n}! Te escribo de ${gim}. Todavía no pudimos vernos entrenar: ¿te ayudo a elegir un horario para empezar?`;
   return `Hola ${n}! Hace unos días que no te vemos en ${gim} 💪 ¿Todo bien? Si querés, te ayudo a retomar con una rutina más liviana.`;
 }
+// (v135) Alumnos que finalizaron un entrenamiento un día en que NO tenían turno (a distancia, en otro lugar, rotativa sin turno).
+// No es asistencia presencial: es un registro para que el profe vea que entrenó, cómo llegó (Wellness) y con qué esfuerzo (RPE).
+async function ipSolosCargar(){
+  const box = document.getElementById('ipPnSolos'), cont = document.getElementById('ipSolos'), cnt = document.getElementById('ipSolosCount');
+  if (!box || !cont) return;
+  try{
+    const hoy = dateAIso(new Date());
+    const desde = ipSumarDias(hoy, -2);
+    const ej = await sb(`ejecuciones?select=id,alumno_id,fecha,rpe,finalizada_en,rutina_dias(nombre_dia)&estado=eq.finalizada&cargada_por=is.null&fecha=gte.${encodeURIComponent(new Date(desde + 'T00:00:00').toISOString())}&order=fecha.desc&limit=200`);
+    if (!ej || !ej.length){ box.style.display = 'none'; return; }
+    const ids = [...new Set(ej.map(e => e.alumno_id))].join(',');
+    const [tur, wel, alus] = await Promise.all([
+      sb(`turnos?select=alumno_id,fecha&alumno_id=in.(${ids})&fecha=gte.${desde}&fecha=lte.${hoy}&estado=neq.cancelado&limit=1000`),
+      sb(`wellness_respuestas?select=alumno_id,fecha,total,semaforo,nota&alumno_id=in.(${ids})&fecha=gte.${desde}&fecha=lte.${hoy}&limit=500`).catch(() => []),
+      sb(`alumnos?select=id,nombre&id=in.(${ids})`),
+    ]);
+    const nom = {}; alus.forEach(a => { nom[a.id] = a.nombre; });
+    const conTurno = new Set(tur.map(t => t.alumno_id + '|' + t.fecha));
+    const wMap = {}; wel.forEach(w => { wMap[w.alumno_id + '|' + w.fecha] = w; });
+    const vistos = new Set(), filas = [];
+    ej.forEach(e => {
+      const f = dateAIso(new Date(e.finalizada_en || e.fecha));
+      const k = e.alumno_id + '|' + f;
+      if (conTurno.has(k) || vistos.has(k)) return;
+      vistos.add(k);
+      const min = e.finalizada_en ? Math.round((new Date(e.finalizada_en) - new Date(e.fecha)) / 60000) : 0;
+      filas.push({ nombre: nom[e.alumno_id] || 'Alumno', f, rutina: e.rutina_dias?.nombre_dia || '', rpe: e.rpe, min: (min >= 2 && min <= 240) ? min : 0, w: wMap[k] || null });
+    });
+    if (!filas.length){ box.style.display = 'none'; return; }
+    const cuando = f => f === hoy ? 'Hoy' : f === ipSumarDias(hoy, -1) ? 'Ayer' : fechaCortaISO(f);
+    cnt.textContent = filas.length === 1 ? '1 entrenó' : `${filas.length} entrenaron`;
+    cont.innerHTML = filas.slice(0, 20).map(r => `<div class="ip-w"><div class="top">${ipAv({ nombre: r.nombre, w: r.w })}<div class="ip-nm"><b>${ipEsc(r.nombre)}</b><span>${cuando(r.f)} · ${ipEsc(r.rutina || 'Entrenamiento')}${r.min ? ' · ' + r.min + ' min' : ''}${r.rpe ? ' · RPE ' + r.rpe : ''}</span></div>${r.w ? ipPillW(r) : '<span class="ip-pill">Sin Wellness</span>'}</div>
+      ${r.w && r.w.nota ? `<div class="ip-nota">💬 ${ipEsc(r.w.nota)}</div>` : ''}</div>`).join('');
+    box.style.display = '';
+  }catch(e){ box.style.display = 'none'; }   // best-effort: nunca rompe el Inicio
+}
+
 async function riesgoCargar(forzar){
   const box = document.getElementById('ipPnRiesgo'); if (!box) return;
   if (!PERFIL_ACTUAL || PERFIL_ACTUAL.rol !== 'admin'){ box.style.display = 'none'; return; }
@@ -9831,6 +9873,7 @@ function guiaFaqBase(rol){
     { adm:true, q:'¿Cómo doy de alta a un alumno y le doy acceso?', r:['Menú ☰ → Alumnos → ＋ Nuevo alumno: nombre y DNI.','Abrí su ficha y asignale un plan.','Tocá 🔑 Acceso: se crea su usuario (su DNI) y una contraseña temporal que se muestra una sola vez.','El alumno entra por la pestaña Alumno y elige su contraseña.'], ir:{ s:'alumnos' } },
     { q:'¿Cómo cargo una evaluación física?', r:['Menú ☰ → 📏 Evaluaciones.','Elegí al alumno → Nueva evaluación → fecha y métricas.','Para evaluar a todo un equipo: chip “Por equipo”, elegí métricas, equipo y fecha, y cargá un valor por jugador.'], ir:{ s:'evaluaciones' } },
     { q:'¿Cómo marco la asistencia?', r:['Menú ☰ → Agenda (o ✓ en Inicio).','Tocá al alumno y elegí Presente o Ausente.','La llegada marcada en Recepción también aparece ahí.'], ir:{ s:'agenda' } },
+    { q:'¿Qué es “Entrenaron por su cuenta”?', r:['En Inicio, panel con los alumnos que finalizaron un entrenamiento un día en que no tenían turno (a distancia, en otro lugar, rotativa sin turno).','Muestra el día, la rutina, los minutos, el RPE y el Wellness si lo respondió.','No cuenta como asistencia presencial en la Agenda. Te llega además un aviso al celular, uno por alumno y por día.','Si el alumno nunca tuvo turno, el aviso llega a los administradores.'], ir:{ s:'inicio' } },
     { q:'¿Qué es la carga aguda (ACWR) y dónde la veo?', r:['Mide cuánto entrenó el alumno esta semana comparado con su promedio de las últimas 4. Carga de cada sesión = minutos × RPE.','Se calcula sola: el inicio es cuando toca “Empezar entrenamiento” y el fin cuando confirma el RPE.','La ves en Seguimiento (al elegir al alumno) y en su ficha → pestaña Carga.','Óptima 0,8–1,3 · Precaución 1,3–1,5 · Riesgo +1,5. Si además su Wellness está en amarillo o rojo, conviene bajar la carga.'], ir:{ s:'seguimiento' } },
     { q:'¿Cómo veo cómo viene entrenando un alumno?', r:['Menú ☰ → 📈 Seguimiento y elegí al alumno.','Ves sesiones, volumen, rutina asignada, récords y cada ejercicio con sus series.'], ir:{ s:'seguimiento' } },
     { adm:true, q:'¿Cómo hago para que el cupo sea del horario y no del profesor?', r:['Menú ☰ → 🕒 Horarios → pestaña “Sala y cupos”.','Cargá las franjas de la sala con su cupo por hora (por ejemplo, mañana 20 y tarde 30).','Elegí “Por horario”. El alumno pasa a elegir día y hora; el profesor queda vinculado solo, a modo informativo.','Con el horario completo hay lista de espera. Podés volver a “Por profesor” cuando quieras.'], ir:{ s:'horarios' } },
@@ -20602,6 +20645,7 @@ const WELLNESS_SUGERENCIA = {
 };
 let WELLNESS_CTX = { alumnoId: null, valores: {} };
 let WELLNESS_POSPUESTO_HASTA = 0;
+let WELLNESS_SALTADO_HASTA = 0;   // (v135) "Saltear y entrenar" desde Empezar: no volver a pedirlo durante 1 hora
 let WELLNESS_DIA = {}; // alumno_id -> respuesta del día que se está viendo en la Agenda
 let WELLNESS_LISTENER_PUESTO = false;
 
@@ -20689,7 +20733,7 @@ function abrirWellness(){
       <textarea id="wellnessNota" maxlength="300" rows="2" placeholder="Ej: me duele la rodilla izquierda"></textarea>
     </div>
     <button id="btnEnviarWellness" style="width:100%;" onclick="enviarWellness()">Enviar</button>
-    <button class="ghost" style="width:100%; margin-top:8px;" onclick="posponerWellness()">${ES_PERSONAL ? 'Saltear y entrenar' : 'Ahora no'}</button>`;
+    <button class="ghost" style="width:100%; margin-top:8px;" onclick="posponerWellness()">${(ES_PERSONAL || WELLNESS_CTX.despues) ? 'Saltear y entrenar' : 'Ahora no'}</button>`;
   ov.classList.add('show');
 }
 
@@ -20705,6 +20749,7 @@ function wellnessElegir(k, v){
 
 function posponerWellness(){
   WELLNESS_POSPUESTO_HASTA = Date.now() + 60*60*1000; // no insistir durante 1 hora
+  if (WELLNESS_CTX.despues) WELLNESS_SALTADO_HASTA = Date.now() + 60*60*1000;   // (v135) lo salteó al empezar: no se lo pedimos de nuevo si retoma la sesión
   document.getElementById('modalWellness')?.classList.remove('show');
   perWellnessSeguir();   // (v132) cuenta personal: sigue hacia el entrenamiento
 }
@@ -23557,7 +23602,11 @@ async function perPickerCrear(){
 // (b) Cronómetro de sesión (arranca con la primera serie, igual que el "inicio real" de v130) + botón para sumar un ejercicio en vivo.
 const _comenzarEntrenamientoOrig = comenzarEntrenamiento;
 comenzarEntrenamiento = async function(rutinaDiaId, alumnoId, nombreDia){
-  if (!ES_PERSONAL) return _comenzarEntrenamientoOrig(rutinaDiaId, alumnoId, nombreDia);
+  if (!ES_PERSONAL){
+    // (v135) Wellness al tocar "Empezar entrenamiento" (con o sin turno hoy). Se puede saltear; el staff que carga por el alumno no lo responde.
+    if (!EJEC_STAFF) await wellnessAntesDeEmpezar(rutinaDiaId, alumnoId);
+    return _comenzarEntrenamientoOrig(rutinaDiaId, alumnoId, nombreDia);
+  }
   if (GIMNASIO_ACTUAL_BLOQUEADO){ perPaywall(); return; }
   PER_SESION = { diaId: rutinaDiaId, nombre: nombreDia };
   try{
@@ -23569,6 +23618,24 @@ comenzarEntrenamiento = async function(rutinaDiaId, alumnoId, nombreDia){
   }catch(e){ /* el wellness nunca frena el entrenamiento */ }
   return _comenzarEntrenamientoOrig(rutinaDiaId, alumnoId, nombreDia);
 };
+// (v135) Pide el Wellness antes de empezar si hoy todavía no lo respondió. No pregunta si la sesión ya está en curso,
+// ya se hizo o es de otro día (comenzarEntrenamiento va a avisar), ni si lo salteó hace menos de 1 hora. Nunca frena el entrenamiento.
+async function wellnessAntesDeEmpezar(rutinaDiaId, alumnoId){
+  try{
+    if (Date.now() < WELLNESS_SALTADO_HASTA) return;
+    const hoy = dateAIso(new Date());
+    const [resp, enCurso, dia, hechas] = await Promise.all([
+      sb(`wellness_respuestas?select=id&alumno_id=eq.${alumnoId}&fecha=eq.${hoy}&limit=1`),
+      sb(`ejecuciones?select=id&rutina_dia_id=eq.${rutinaDiaId}&alumno_id=eq.${alumnoId}&estado=neq.finalizada&limit=1`),
+      sb(`rutina_dias?select=fecha&id=eq.${rutinaDiaId}`),
+      sb(`ejecuciones?select=id&rutina_dia_id=eq.${rutinaDiaId}&alumno_id=eq.${alumnoId}&estado=eq.finalizada&limit=1`),
+    ]);
+    if (resp.length || enCurso.length) return;
+    const f = dia[0]?.fecha;
+    if (f && (f > hoy || hechas.length)) return;
+    await new Promise(res => { WELLNESS_CTX.alumnoId = alumnoId; WELLNESS_CTX.despues = res; abrirWellness(); });
+  }catch(e){ /* el wellness nunca frena el entrenamiento */ }
+}
 function perWellnessSeguir(){ const cb = WELLNESS_CTX.despues; WELLNESS_CTX.despues = null; if (cb) cb(); }
 
 const _renderEjecucionOrig = renderEjecucion;
