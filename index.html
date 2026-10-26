@@ -4916,11 +4916,11 @@ function atlIniciarAlu(){
   atlCargarVista('aluAtletismoContenido', id || '');
 }
 
-const APP_VERSION = 132;
+const APP_VERSION = 134;
 let ES_PERSONAL = false;   // (v132) cuenta personal (gimnasios.tipo = 'personal'); se calcula en perAplicar()
 // (v96) Fecha de la última actualización: se cambia junto con APP_VERSION en cada entrega. Se muestra en la
 // pantalla de inicio y en el menú de cuenta ("v94 · actualizada el 5/10/2026").
-const APP_FECHA = '2026-10-20';
+const APP_FECHA = '2026-10-26';
 function appVersionTxt(){ const [y, m, d] = APP_FECHA.split('-'); return `v${APP_VERSION} · actualizada el ${+d}/${+m}/${y}`; }
 (function(){ const el = document.getElementById('lcVersion'); if (el) el.textContent = 'M2F Solutions · ' + appVersionTxt(); })();
 
@@ -5258,6 +5258,41 @@ async function pasoConfigurarDosPasos({ obligatorio }){
   });
 }
 
+// ---------- (v134) Verificación en dos pasos con plazo para cuentas nuevas ----------
+const DOS_PASOS_GRACIA_DIAS = 7;   // días desde el alta del administrador antes de exigir los 2 pasos
+let DOS_PASOS_PENDIENTE = false;
+function diasDesdeAlta(){
+  const t = PERFIL_ACTUAL && PERFIL_ACTUAL.creado_en ? new Date(PERFIL_ACTUAL.creado_en).getTime() : NaN;
+  if (!isFinite(t)) return 9999;   // sin fecha: se comporta como antes (obligatoria)
+  return Math.floor((Date.now() - t) / 86400000);
+}
+// Antes de una acción sensible (hoy: conectar Mercado Pago): si es admin y todavía no tiene 2 pasos, se los pide ahora.
+async function exigirDosPasosAhora(motivo){
+  try{
+    if (!PERFIL_ACTUAL || PERFIL_ACTUAL.rol !== 'admin') return true;
+    if (await factorTotpVerificado()) return true;
+    toast('Para ' + motivo + ' activá primero la verificación en dos pasos 🛡️');
+    const ok = await pasoConfigurarDosPasos({ obligatorio: false });
+    if (ok){ DOS_PASOS_PENDIENTE = false; const b = document.getElementById('bannerDosPasos'); if (b) b.remove(); toast('Verificación en dos pasos activada ✓'); actualizarBotonesDosPasos(); }
+    return !!ok;
+  }catch(e){ toast('No se pudo verificar la seguridad: ' + e.message, true); return false; }
+}
+// Aviso suave (una vez cada 20 h, con "Más tarde") para el admin que todavía no activó los 2 pasos.
+function dosPasosAviso(){
+  if (!DOS_PASOS_PENDIENTE || document.getElementById('bannerDosPasos')) return;
+  try{ const t = +localStorage.getItem('m2f_2fa_aviso') || 0; if (Date.now() - t < 20 * 3600 * 1000) return; }catch(e){}
+  const dias = Math.max(0, DOS_PASOS_GRACIA_DIAS - diasDesdeAlta());
+  const d = document.createElement('div');
+  d.id = 'bannerDosPasos';
+  d.style.cssText = 'position:fixed; left:12px; right:12px; bottom:84px; z-index:900; max-width:520px; margin:0 auto; background:var(--panel); border:1px solid var(--accent); border-radius:18px; padding:14px; box-shadow:0 10px 30px rgba(0,0,0,.5);';
+  d.innerHTML = `<div style="font-weight:800; margin-bottom:4px;">🛡️ Protegé tu cuenta</div>
+    <div class="muted" style="font-size:13px; margin-bottom:10px;">Activá la verificación en dos pasos (1 minuto): manejás cobros y datos de tus alumnos. Va a ser obligatoria ${dias > 0 ? 'en ' + dias + ' día' + (dias === 1 ? '' : 's') : 'desde hoy'}.</div>
+    <div class="row" style="gap:8px;"><button id="b2faOk" style="flex:1;">Activar ahora</button><button id="b2faLater" class="ghost" style="flex:1;">Más tarde</button></div>`;
+  document.body.appendChild(d);
+  d.querySelector('#b2faLater').onclick = () => { try{ localStorage.setItem('m2f_2fa_aviso', String(Date.now())); }catch(e){} d.remove(); };
+  d.querySelector('#b2faOk').onclick = async () => { d.remove(); await gestionarDosPasos(); try{ if (await factorTotpVerificado()) DOS_PASOS_PENDIENTE = false; }catch(e){} };
+}
+
 async function controlesDeSeguridad(){
   if (!SESION_ACTUAL || !PERFIL_ACTUAL) return false;
   try{
@@ -5265,8 +5300,15 @@ async function controlesDeSeguridad(){
     await cargarPerfilDeSesion(); // con la sesión ya completa se lee bien el perfil
     if (!PERFIL_ACTUAL) return false;
     if (!await pasoCambioPasswordObligatorio()) return false;
+    // (v134) Cuenta nueva: entra sin 2 pasos durante DOS_PASOS_GRACIA_DIAS (menos fricción en el primer ingreso).
+    // Pasado el plazo, o antes de conectar Mercado Pago, es obligatoria igual que antes.
+    DOS_PASOS_PENDIENTE = false;
     if (PERFIL_ACTUAL.rol === 'admin' && !(await factorTotpVerificado())){
-      if (!await pasoConfigurarDosPasos({ obligatorio: true })) return false;
+      if (diasDesdeAlta() >= DOS_PASOS_GRACIA_DIAS){
+        if (!await pasoConfigurarDosPasos({ obligatorio: true })) return false;
+      } else {
+        DOS_PASOS_PENDIENTE = true;   // aviso suave en el Inicio (ver dosPasosAviso)
+      }
     }
     return true;
   }catch(e){
@@ -6148,6 +6190,7 @@ async function entrarComoStaff(){
   actualizarBotonesPush();
   setTimeout(guiaBienvenida, 800); // (v97) bienvenida única para usuarios nuevos
   if (PERFIL_ACTUAL.rol === 'admin') setTimeout(() => acuRevisar(0), 2200);   // (v120) acuerdo de datos (solo si está activado)
+  if (DOS_PASOS_PENDIENTE) setTimeout(dosPasosAviso, 3500);   // (v134) aviso suave de 2 pasos (cuenta nueva)
 }
 
 async function hacerLogin(){
@@ -6619,19 +6662,21 @@ function riesgoWa(tel, msg){
 async function riesgoCalcular(){
   const gym = PERFIL_ACTUAL && PERFIL_ACTUAL.gimnasio_id; if (!gym) return { lista: [], aviso: '' };
   const hoy = fechaLocalISO(), d56 = ipSumarDias(hoy, -56), d28 = ipSumarDias(hoy, -27), d14 = ipSumarDias(hoy, -14), d35 = ipSumarDias(hoy, -35), d8 = ipSumarDias(hoy, -8);
-  const [als, tur, cla, wel, vig, fut] = await Promise.all([
+  const [als, tur, cla, wel, vig, fut, eje] = await Promise.all([
     riesgoTodo(`alumnos?select=id,nombre,telefono,creado_en&gimnasio_id=eq.${gym}&activo=eq.true`),
     riesgoTodo(`turnos?select=id,alumno_id,fecha&gimnasio_id=eq.${gym}&asistio=eq.true&fecha=gte.${d56}&fecha=lte.${hoy}`),
     riesgoTodo(`clases_inscripciones?select=id,alumno_id,fecha&gimnasio_id=eq.${gym}&asistio=eq.true&fecha=gte.${d56}&fecha=lte.${hoy}`).catch(() => []),
     riesgoTodo(`wellness_respuestas?select=id,alumno_id&gimnasio_id=eq.${gym}&fecha=gte.${d14}&semaforo=in.(rojo,amarillo)`).catch(() => []),
     sb(`v_plan_vigente_alumno?select=alumno_id,plan_id,estado_pago,dias_para_vencer,vigencia_hasta&limit=5000`).catch(() => []),
     riesgoTodo(`turnos?select=id,alumno_id&gimnasio_id=eq.${gym}&estado=neq.cancelado&fecha=gt.${hoy}`).catch(() => []),
+    riesgoTodo(`ejecuciones?select=id,alumno_id,fecha&estado=eq.finalizada&fecha=gte.${d56}`).catch(() => []),   // (v133) entrenar también cuenta como asistencia, aunque no haya turno
   ]);
   const asist = {};   // alumno → fechas con presente (turnos + clases, sin repetir el día)
   [...tur, ...cla].forEach(r => { (asist[r.alumno_id] = asist[r.alumno_id] || new Set()).add(r.fecha); });
+  eje.forEach(r => { (asist[r.alumno_id] = asist[r.alumno_id] || new Set()).add(fechaLocalISO(new Date(r.fecha))); });   // (v133) entrenamiento finalizado = asistencia
   const conAsist28 = als.filter(a => asist[a.id] && [...asist[a.id]].some(f => f >= d28)).length;
   if (als.length >= 5 && conAsist28 < als.length * 0.2)
-    return { lista: [], aviso: 'Casi no hay asistencia marcada en las últimas 4 semanas. Para que esta lista sirva hay que registrarla (Agenda, Recepción o QR); si no, todos parecerían ausentes.' };
+    return { lista: [], aviso: 'Casi no hay asistencia marcada en las últimas 4 semanas. Para que esta lista sirva hay que registrarla (Agenda, Recepción, QR o entrenamientos finalizados); si no, todos parecerían ausentes.' };
   const wN = {}; wel.forEach(r => { wN[r.alumno_id] = (wN[r.alumno_id] || 0) + 1; });
   const vg = {}; vig.forEach(v => { vg[v.alumno_id] = v; });
   const futSet = new Set(fut.map(r => r.alumno_id)), usaTurnos = fut.length > 0;
@@ -9798,7 +9843,7 @@ function guiaFaqBase(rol){
     { q:'¿Cómo conecto Mercado Pago?', r:['Menú ☰ → 🏢 Mi gimnasio → Cobros online.','Conectá tu cuenta y aceptá los permisos.','Desde ahí, tus alumnos ven “Pagar con Mercado Pago” cuando la cuota está por vencer o vencida.'], ir:{ s:'gimnasio' } },
     { q:'¿Qué avisos me da la app cuando entreno?', r:['Al terminar un entrenamiento te felicita si llegaste a 5, 15, 30, 60 o 100 entrenamientos, si cumpliste la meta de la semana o si sumaste semanas seguidas.','También te avisa cuando levantaste más peso que la vez anterior en un ejercicio, y cuando batís un récord.','Tu profe ve en su Inicio si bajaste el peso en algún ejercicio, para ayudarte a retomar.'], ir:{ a:'logros' } },
     { adm:true, q:'¿Qué es el acuerdo de datos?', r:['Es el acuerdo de confidencialidad y tratamiento de datos entre M2F y tu gimnasio: explica cómo se cuidan los datos de tus socios y de tu equipo.','Lo acepta el administrador una sola vez (nombre, DNI y tilde) y queda registrado con fecha y hora.','Te llega una copia en PDF por mail; también la descargás o la pedís de nuevo en Configuración → Acuerdo de datos.'] },
-    { adm:true, q:'¿Qué son los alumnos en riesgo?', r:['En Inicio, tarjeta “Alumnos en riesgo”: junta en una lista a quienes llevan días sin venir, vienen menos que antes, tienen la cuota vencida o Wellness bajo seguido.','Cada uno muestra el motivo y un nivel (alto, medio o para vigilar).','Tocá 💬 para escribirle por WhatsApp con el mensaje armado; queda anotado como contacto. Con ✓ lo ocultás 7 días.','Necesita que se marque la asistencia (Agenda, Recepción o QR); si no, avisa que no hay datos.'], ir:{ s:'inicio' } },
+    { adm:true, q:'¿Qué son los alumnos en riesgo?', r:['En Inicio, tarjeta “Alumnos en riesgo”: junta en una lista a quienes llevan días sin venir, vienen menos que antes, tienen la cuota vencida o Wellness bajo seguido.','Cada uno muestra el motivo y un nivel (alto, medio o para vigilar).','Tocá 💬 para escribirle por WhatsApp con el mensaje armado; queda anotado como contacto. Con ✓ lo ocultás 7 días.','Cuenta como asistencia lo que se marca en Agenda, Recepción o QR, y también cada entrenamiento finalizado en la app (aunque el alumno no tenga turno). Si casi no hay datos, avisa.'], ir:{ s:'inicio' } },
     { adm:true, q:'¿Cómo uso el link de reservas para Instagram?', r:['Menú ☰ → Mi gimnasio → 🔗 Link de reservas. Poné el nombre del link, activalo y guardá.','Tocá 📋 Copiar y pegalo en tu bio de Instagram (o 🔳 QR para un flyer).','Quien lo toca ve tus clases con los lugares, pone su DNI y reserva. Si es su primera vez, te deja nombre, apellido y WhatsApp.','Te llega un aviso al celular (a vos y al profesor de esa clase) y lo ves en Clases → 🆕 Nuevos desde el link, con botón de WhatsApp.','Por defecto la primera clase es de prueba; podés pedir que confirmes cada reserva a mano.'], ir:{ s:'gimnasio' } },
     { q:'¿Cómo suspendo una clase por lluvia?', r:['Menú ☰ → Clases → tocá la clase → ⛔ Suspender este día.','Se cancelan las reservas de ese día y a quien tiene la app le llega el aviso.','Te mostramos la lista para avisar por WhatsApp a los demás. Ese día no se puede reservar.','Si mejora el clima: ↩ Reanudar este día.'], ir:{ s:'clases' } },
     { adm:true, q:'¿Cómo tomo la asistencia con un QR?', r:['Menú ☰ → 🛎️ Recepción → 🔳 QR de asistencia → Activar (lo activa el administrador).','Imprimí el cartel y pegalo en la entrada.','Cada alumno lo escanea con su celular y queda tomada su asistencia: el turno o la clase de ese momento, igual que con el DNI.','En “Llegadas de hoy” figuran con la marca 📱 por QR. Con la cuota vencida no se marca.','Si alguien le sacó una foto y lo usa desde afuera, tocá “Generar uno nuevo” e imprimilo otra vez.'], ir:{ s:'recepcion' } },
@@ -11700,8 +11745,9 @@ async function guardarRecargoMercadoPago(){
   }catch(e){ toast('Error guardando el recargo: ' + extraerMensajeError(e), true); }
 }
 
-function conectarMercadoPago(){
+async function conectarMercadoPago(){
   if (!GIMNASIO_ACTUAL || !MP_CLIENT_ID) return;
+  if (!await exigirDosPasosAhora('conectar Mercado Pago')) return;   // (v134)
   try{ localStorage.setItem('m2f_mp_conectando', '1'); }catch(e){}
   const params = new URLSearchParams({
     client_id: MP_CLIENT_ID,
@@ -14850,15 +14896,17 @@ function xFichaRes(a){
 async function xFichaResCarga(a, tok){
   try{
     const hoy = new Date(), mesIni = fechaLocalISO(new Date(hoy.getFullYear(), hoy.getMonth(), 1));
-    const [mes, ult] = await Promise.all([
+    const [mes, ult, ue] = await Promise.all([
       sb(`turnos?select=fecha,asistio&alumno_id=eq.${a.id}&estado=neq.cancelado&fecha=gte.${mesIni}`),
       sb(`turnos?select=fecha&alumno_id=eq.${a.id}&asistio=eq.true&order=fecha.desc&limit=1`),
+      sb(`ejecuciones?select=fecha&alumno_id=eq.${a.id}&estado=eq.finalizada&order=fecha.desc&limit=1`).catch(() => []),   // (v133) entrenar también cuenta
     ]);
     if (tok !== FICHA_TOK) return;
     const asist = mes.filter(t => t.asistio === true).length;
     const k1 = document.getElementById('fkTurnos'), k2 = document.getElementById('fkUlt');
     if (k1) k1.textContent = `${asist} / ${mes.length}`;
-    if (k2) k2.textContent = ult[0] ? formatearFechaCorta(ult[0].fecha) : 'Nunca';
+    const fT = ult[0] ? ult[0].fecha : null, fE = ue[0] ? fechaLocalISO(new Date(ue[0].fecha)) : null, fU = (fT && fE) ? (fT > fE ? fT : fE) : (fT || fE);
+    if (k2) k2.textContent = fU ? formatearFechaCorta(fU) : 'Nunca';
   }catch(e){ const k1 = document.getElementById('fkTurnos'), k2 = document.getElementById('fkUlt'); if (k1) k1.textContent = '—'; if (k2) k2.textContent = '—'; }
 }
 function xEditarAlumnoHtml(a){
