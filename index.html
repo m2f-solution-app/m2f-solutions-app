@@ -2510,7 +2510,7 @@
               <label>Modo de rutina</label>
               <select id="profModoDias" onchange="CONS['dia'].setModoDias(this.value)">
                 <option value="fecha_fija">Fecha fija · por tipo de entrenamiento</option>
-                <option value="rotativa">Rotativa · para cualquier alumno (se repite sola)</option>
+                <option value="rotativa">Mensual · para cualquier alumno (se repite sola)</option>
                 <option value="plantilla">Plantilla · para cualquier alumno (la elegís desde la Agenda)</option>
               </select>
             </div>
@@ -2530,7 +2530,7 @@
               <input type="date" id="profFechaInicio" title="Opcional. Desde esa fecha arranca en el Día 1. Vacío = arranca apenas esté asignada." onchange="CONS['dia'].estado.fechaInicio=this.value||null">
             </div>
           </div>
-          <div class="muted" id="profModoDiasHint" style="font-size:12px; margin-top:6px; display:none;">Rotativa: no hace falta cargar fecha en los días. Se van a repetir solos, en el orden en que los agregues, según lo que el alumno ya entrenó — el "días por semana" y la "duración" son solo orientativos, no se fuerzan.</div>
+          <div class="muted" id="profModoDiasHint" style="font-size:12px; margin-top:6px; display:none;">Mensual: no hace falta cargar fecha en los días. Se van a repetir solos, en el orden en que los agregues, según lo que el alumno ya entrenó — el "días por semana" y la "duración" son solo orientativos, no se fuerzan.</div>
           <div class="row" style="margin-top:14px;">
             <div class="field" id="profTipoWrap" style="flex:1; min-width:200px;">
               <label>Tipo de entrenamiento</label>
@@ -2644,11 +2644,11 @@
           <h2 style="margin-top:0">2 · ¿Cómo se repite?</h2>
           <div class="nr-opts two">
             <div class="nr-opt" id="nrOptM-fecha_fija" onclick="nrSetModo('fecha_fija')"><div class="ic">📅</div><div class="t">Fecha fija</div><div class="d">Cada día va con su fecha del calendario. Ej: la semana del 12 al 18.</div></div>
-            <div class="nr-opt" id="nrOptM-rotativa" onclick="nrSetModo('rotativa')"><div class="ic">🔁</div><div class="t">Rotativa</div><div class="d">Los días se repiten solos (A → B → C → A), sin fechas. Permite progresión semanal.</div></div>
+            <div class="nr-opt" id="nrOptM-rotativa" onclick="nrSetModo('rotativa')"><div class="ic">🔁</div><div class="t">Mensual</div><div class="d">Los días se repiten solos (A → B → C → A), sin fechas. Permite progresión semanal.</div></div>
           </div>
           <select id="espModoDias" style="display:none;" onchange="CONS['esp'].setModoDias(this.value); nrRender()">
             <option value="fecha_fija">Fecha fija</option>
-            <option value="rotativa">Rotativa (sin días fijos, se repite sola)</option>
+            <option value="rotativa">Mensual (sin días fijos, se repite sola)</option>
             <option value="plantilla">Plantilla</option>
           </select>
           <div id="nrVolver2" class="row" style="display:none; margin-top:12px; gap:10px; align-items:center;"><button type="button" class="ghost" onclick="nrListo()">← Volver sin cambiar</button><span class="muted">Tus días y ejercicios se conservan.</span></div>
@@ -2678,7 +2678,7 @@
               <input type="date" id="espFechaInicio" title="Opcional. Desde esa fecha arranca en el Día 1. Vacío = arranca apenas esté asignada." onchange="CONS['esp'].estado.fechaInicio=this.value||null">
             </div>
           </div>
-          <div class="muted" id="espModoDiasHint" style="font-size:12px; margin-top:6px; display:none;">Rotativa: no hace falta cargar fecha en los días. Sirve tanto para el que también usa turno (por cupo/aforo) como para el que entrena a distancia sin reservar nada — el turno es un tema aparte.</div>
+          <div class="muted" id="espModoDiasHint" style="font-size:12px; margin-top:6px; display:none;">Mensual: no hace falta cargar fecha en los días. Sirve tanto para el que también usa turno (por cupo/aforo) como para el que entrena a distancia sin reservar nada — el turno es un tema aparte.</div>
           <div class="nr-explica" id="nrExplica"></div>
         </div>
 
@@ -4920,7 +4920,7 @@ function atlIniciarAlu(){
   atlCargarVista('aluAtletismoContenido', id || '');
 }
 
-const APP_VERSION = 135;
+const APP_VERSION = 136;
 let ES_PERSONAL = false;   // (v132) cuenta personal (gimnasios.tipo = 'personal'); se calcula en perAplicar()
 // (v96) Fecha de la última actualización: se cambia junto con APP_VERSION en cada entrega. Se muestra en la
 // pantalla de inicio y en el menú de cuenta ("v94 · actualizada el 5/10/2026").
@@ -7260,7 +7260,7 @@ function ipRenderTurnos(){
     <div class="ip-lst">
       <div class="ip-lst-h"><span>${s.h} · ${ipPlural(s.items.length, 'anotado', 'anotados')}</span><span>Asistencia ${marc}/${s.items.length}</span></div>
       ${s.items.map(t => {
-        const rut = t.rutinaDiaId ? `Rutina · ${ipEsc(t.nombreDia || 'asignada')}` : t.rotativa ? `🔁 Rotativa · ${ipEsc(t.rotativa)}${t.rotDia ? ` · <b>${ipEsc(t.rotDia.nombre)}</b>${t.rotDia.manual ? ' ✎' : ''}` : ''}` : '⚠ Sin rutina asignada';
+        const rut = t.rutinaDiaId ? `Rutina · ${ipEsc(t.nombreDia || 'asignada')}` : t.rotativa ? `🔁 Mensual · ${ipEsc(t.rotativa)}${t.rotDia ? ` · <b>${ipEsc(t.rotDia.nombre)}</b>${t.rotDia.manual ? ' ✎' : ''}` : ''}` : '⚠ Sin rutina asignada';
         let extra = '';
         if (t.prog){ extra = (t.prog.total > 0 && t.prog.hechos >= t.prog.total) ? ' · ✅ completa' : ` · 🏋️ ${t.prog.hechos}/${t.prog.total}`; }
         if (t.ajustada) extra += ' · 🔄 ajustada';
@@ -7309,7 +7309,7 @@ function ipRenderWell(){
   el.innerHTML = l.map(t => {
     const bajo = t.w ? WELLNESS_ITEMS.filter(it => t.w[it.k] != null) : [];
     const c = cls(t);
-    return `<div class="ip-w"><div class="top">${ipAv(t)}<div class="ip-nm"><b>${ipEsc(t.nombre)}</b><span>Turno ${t.h} · ${t.rutinaDiaId ? ipEsc(t.nombreDia || 'con rutina') : t.rotativa ? 'Rotativa' : 'Sin rutina'}</span></div>${ipPillW(t)}</div>
+    return `<div class="ip-w"><div class="top">${ipAv(t)}<div class="ip-nm"><b>${ipEsc(t.nombre)}</b><span>Turno ${t.h} · ${t.rutinaDiaId ? ipEsc(t.nombreDia || 'con rutina') : t.rotativa ? 'Mensual' : 'Sin rutina'}</span></div>${ipPillW(t)}</div>
       ${(c === 'rd' || c === 'y') && bajo.length ? `<div class="ip-mini">${bajo.map(it => `<span class="${t.w[it.k] <= 2 ? 'low' : ''}">${ipEsc(IP_CORTO[it.k] || it.titulo)} ${t.w[it.k]}</span>`).join('')}</div>` : ''}
       ${t.w && t.w.nota ? `<div class="ip-nota">💬 ${ipEsc(t.w.nota)}</div>` : ''}
       ${c === 'rd' || c === 'y' ? `<div class="ip-wact"><button class="ip-btn sm" onclick="ipAbrirTurno('${t.id}')">Ajustar / ver turno</button></div>` : ''}</div>`;
@@ -7342,7 +7342,7 @@ function ipRenderAlertas(){
     const unico = d.rotFin.length === 1 ? d.rotFin[0] : null;
     const alumnosUnicos = [...new Set(d.rotFin.map(x => x.alumnoId).filter(Boolean))];
     items.push(['⏳', 'var(--warn)',
-      unico ? `${unico.alumno || 'Rotativa general'}: la rotativa ${cuando(unico)}` : `${d.rotFin.length} rotativas por terminar`,
+      unico ? `${unico.alumno || 'Mensual general'}: la rutina mensual ${cuando(unico)}` : `${d.rotFin.length} rutinas mensuales por terminar`,
       (unico ? `${unico.rutina} · falta cargar la siguiente` : d.rotFin.slice(0, 3).map(x => `${x.alumno || x.rutina} (${cuando(x)})`).join(', ') + (d.rotFin.length > 3 ? ` y ${d.rotFin.length - 3} más` : '')),
       alumnosUnicos.length === 1 ? `irAAsignarEspecialDesdeModal('${alumnosUnicos[0]}')` : "cambiarSubvista('especiales')"]);
   }
@@ -9824,7 +9824,7 @@ function guiaPasosBase(rol){
   const alu = { id:'alu', ico:'👤', t:'Agregá a tus alumnos', d:'Con nombre y DNI alcanza; el resto se completa después desde su ficha.', ir:{ s:'alumnos' }, auto:c => c.alumnos > 0,
     det:['Menú ☰ → Alumnos → ＋ Nuevo alumno.','Cargá nombre y DNI (el DNI habilita su acceso).','Desde su ficha: asignale plan y tocá 🔑 Acceso para darle usuario y contraseña temporal.'] };
   const rut = { id:'rut', ico:'🏋️', t:'Armá tu primera rutina', d:'Una pantalla guiada en 4 pasos: para quién, cómo se repite, datos y ejercicios.', ir:{ s:'especiales' }, auto:c => c.rutinas > 0,
-    det:['Menú ☰ → Nueva rutina.','Paso 1: para quién es (alumno, tipo de entrenamiento, equipo o plantilla).','Paso 2 y 3: fecha fija o rotativa, y nombre.','Paso 4: sumá días y ejercicios con series, reps, carga, pausa y RIR. Guardá.'] };
+    det:['Menú ☰ → Nueva rutina.','Paso 1: para quién es (alumno, tipo de entrenamiento, equipo o plantilla).','Paso 2 y 3: fecha fija o mensual, y nombre.','Paso 4: sumá días y ejercicios con series, reps, carga, pausa y RIR. Guardá.'] };
   const mp = { id:'mp', ico:'💸', t:'Conectá Mercado Pago para cobrar online', d:'Tus alumnos pagan la cuota desde la app y la vigencia se actualiza sola.', ir:{ s:'gimnasio' }, opc:true, auto:c => !!(c.g && c.g.mp_conectado),
     det:['Menú ☰ → Mi gimnasio → Cobros online.','Conectá tu cuenta de Mercado Pago y aceptá los permisos.','Sin esto igual podés registrar pagos en efectivo o transferencia.'] };
   const prof = { id:'prof', ico:'🧑‍🏫', t:'Sumá a tus profesores', d:'Alta con nombre y DNI; la app genera una contraseña temporal.', ir:{ s:'profesores' }, opc:true, auto:c => c.profesores > 1,
@@ -9867,13 +9867,13 @@ function guiaPasosBase(rol){
 function guiaFaq(rol){ return guiaFaqBase(rol).filter(modGuiaOk); }   // (v99)
 function guiaFaqBase(rol){
   const staff = [
-    { q:'¿Cómo creo una rutina?', r:['Menú ☰ → 🏋️ Nueva rutina.','Paso 1: elegí para quién es (un alumno, un tipo de entrenamiento, un equipo o una plantilla).','Paso 2: fecha fija o rotativa. Paso 3: nombre (y días por semana si es rotativa).','Paso 4: agregá días y ejercicios con el buscador; cargá series, reps, carga, pausa y RIR.','Tocá 💾 Guardar rutina: el alumno la ve al instante.'], ir:{ s:'especiales' } },
-    { q:'¿Cómo le asigno una rutina a un alumno?', r:['Al crearla, en el paso 1 elegí “Un alumno”: tiene prioridad sobre la de biblioteca.','Si es por tipo de entrenamiento, se engancha sola cuando el alumno reserva turno ese día.','Una rotativa la ve el alumno en “Mis rutinas” aunque no tenga turno.'], ir:{ s:'especiales' } },
+    { q:'¿Cómo creo una rutina?', r:['Menú ☰ → 🏋️ Nueva rutina.','Paso 1: elegí para quién es (un alumno, un tipo de entrenamiento, un equipo o una plantilla).','Paso 2: fecha fija o mensual. Paso 3: nombre (y días por semana si es mensual).','Paso 4: agregá días y ejercicios con el buscador; cargá series, reps, carga, pausa y RIR.','Tocá 💾 Guardar rutina: el alumno la ve al instante.'], ir:{ s:'especiales' } },
+    { q:'¿Cómo le asigno una rutina a un alumno?', r:['Al crearla, en el paso 1 elegí “Un alumno”: tiene prioridad sobre la de biblioteca.','Si es por tipo de entrenamiento, se engancha sola cuando el alumno reserva turno ese día.','Una rutina mensual la ve el alumno en “Mis rutinas” aunque no tenga turno.'], ir:{ s:'especiales' } },
     { q:'¿Cómo cambio la rutina de un alumno solo por hoy?', r:['Menú ☰ → Agenda y tocá al alumno.','Elegí 🔄 Cambiar por otra sesión, o ✏️ Ajustar la rutina.','Escribí el motivo: el cambio vale para ese turno y el alumno lo ve al instante.'], ir:{ s:'agenda' } },
     { adm:true, q:'¿Cómo doy de alta a un alumno y le doy acceso?', r:['Menú ☰ → Alumnos → ＋ Nuevo alumno: nombre y DNI.','Abrí su ficha y asignale un plan.','Tocá 🔑 Acceso: se crea su usuario (su DNI) y una contraseña temporal que se muestra una sola vez.','El alumno entra por la pestaña Alumno y elige su contraseña.'], ir:{ s:'alumnos' } },
     { q:'¿Cómo cargo una evaluación física?', r:['Menú ☰ → 📏 Evaluaciones.','Elegí al alumno → Nueva evaluación → fecha y métricas.','Para evaluar a todo un equipo: chip “Por equipo”, elegí métricas, equipo y fecha, y cargá un valor por jugador.'], ir:{ s:'evaluaciones' } },
     { q:'¿Cómo marco la asistencia?', r:['Menú ☰ → Agenda (o ✓ en Inicio).','Tocá al alumno y elegí Presente o Ausente.','La llegada marcada en Recepción también aparece ahí.'], ir:{ s:'agenda' } },
-    { q:'¿Qué es “Entrenaron por su cuenta”?', r:['En Inicio, panel con los alumnos que finalizaron un entrenamiento un día en que no tenían turno (a distancia, en otro lugar, rotativa sin turno).','Muestra el día, la rutina, los minutos, el RPE y el Wellness si lo respondió.','No cuenta como asistencia presencial en la Agenda. Te llega además un aviso al celular, uno por alumno y por día.','Si el alumno nunca tuvo turno, el aviso llega a los administradores.'], ir:{ s:'inicio' } },
+    { q:'¿Qué es “Entrenaron por su cuenta”?', r:['En Inicio, panel con los alumnos que finalizaron un entrenamiento un día en que no tenían turno (a distancia, en otro lugar, rutina mensual sin turno).','Muestra el día, la rutina, los minutos, el RPE y el Wellness si lo respondió.','No cuenta como asistencia presencial en la Agenda. Te llega además un aviso al celular, uno por alumno y por día.','Si el alumno nunca tuvo turno, el aviso llega a los administradores.'], ir:{ s:'inicio' } },
     { q:'¿Qué es la carga aguda (ACWR) y dónde la veo?', r:['Mide cuánto entrenó el alumno esta semana comparado con su promedio de las últimas 4. Carga de cada sesión = minutos × RPE.','Se calcula sola: el inicio es cuando toca “Empezar entrenamiento” y el fin cuando confirma el RPE.','La ves en Seguimiento (al elegir al alumno) y en su ficha → pestaña Carga.','Óptima 0,8–1,3 · Precaución 1,3–1,5 · Riesgo +1,5. Si además su Wellness está en amarillo o rojo, conviene bajar la carga.'], ir:{ s:'seguimiento' } },
     { q:'¿Cómo veo cómo viene entrenando un alumno?', r:['Menú ☰ → 📈 Seguimiento y elegí al alumno.','Ves sesiones, volumen, rutina asignada, récords y cada ejercicio con sus series.'], ir:{ s:'seguimiento' } },
     { adm:true, q:'¿Cómo hago para que el cupo sea del horario y no del profesor?', r:['Menú ☰ → 🕒 Horarios → pestaña “Sala y cupos”.','Cargá las franjas de la sala con su cupo por hora (por ejemplo, mañana 20 y tarde 30).','Elegí “Por horario”. El alumno pasa a elegir día y hora; el profesor queda vinculado solo, a modo informativo.','Con el horario completo hay lista de espera. Podés volver a “Por profesor” cuando quieras.'], ir:{ s:'horarios' } },
@@ -10028,7 +10028,7 @@ const GUIA_SIN_GRUPOS = [
   ['contrasena','clave','password','pass','ingresar','entrar','login','acceso'],
   ['asistencia','presente','ausente','asistio','falto','llego'],
   ['evaluacion','evaluaciones','medicion','mediciones','medida','medidas','test','antropometria'],
-  ['rotativa','rotacion','ciclo','rotativas','alternar'],
+  ['rotativa','mensual','mensuales','rotacion','ciclo','rotativas','alternar'],
   ['profesor','profesores','profe','profes','entrenador','coach','trainer'],
   ['editar','modificar','cambiar','corregir','actualizar'],
   ['ver','mostrar','encontrar','buscar','donde'],
@@ -13353,7 +13353,7 @@ async function renderAgenda(){
     // cuáles le quedan, sin tener que estar al lado suyo.
     const progresoPorTurno = await cargarProgresoTurnos(turnosDelDia);
     WELLNESS_DIA = await cargarWellnessDelDia(fecha, turnosDelDia);
-    const rotAg = fecha >= fechaLocalISO() ? await rotInfoAgenda(turnosDelDia, fecha) : null;   // (v122) 🔁 Rotativa / ⚠ Sin rutina en cada tarjeta
+    const rotAg = fecha >= fechaLocalISO() ? await rotInfoAgenda(turnosDelDia, fecha) : null;   // (v122) 🔁 Mensual / ⚠ Sin rutina en cada tarjeta
     AGENDA_TURNOS = {};
     turnosDelDia.forEach(t => { AGENDA_TURNOS[t.id] = { rutina_ajustada_en: t.rutina_ajustada_en, rutina_ajuste_motivo: t.rutina_ajuste_motivo }; });
 
@@ -13430,7 +13430,7 @@ async function renderAgenda(){
             if (!r.rutinaDiaId && r.rot){
               rotHtml = r.rot === 'sin'
                 ? `<div class="chip-progreso" style="color:var(--warn-text);">⚠ Sin rutina asignada</div>`
-                : `<div class="chip-progreso" style="color:var(--accent2-text);">🔁 Rotativa${r.rot.dia ? ` · <b>${escaparHtml(r.rot.dia.nombre)}</b>${r.rot.dia.manual ? ' ✎' : ''}` : ` · ${escaparHtml(r.rot.nombre)}`}</div>`;
+                : `<div class="chip-progreso" style="color:var(--accent2-text);">🔁 Mensual${r.rot.dia ? ` · <b>${escaparHtml(r.rot.dia.nombre)}</b>${r.rot.dia.manual ? ' ✎' : ''}` : ` · ${escaparHtml(r.rot.nombre)}`}</div>`;
             }
             return `<div class="alumno-chip asistencia-${estado} ${esAuto?'asistencia-auto':''}" onclick="abrirModalAsistencia('${r.id}', ${asistioArg}, '${fecha}', '${horaStr}', '${r.alumnoId}', '${nombreEscapado}', ${rutinaDiaArg}, '${nombreDiaEscapado}', '${SH ? (r.profId || '') : prof.id}')">
               <span class="avatar">${iniciales(r.nombre)}</span>
@@ -13735,7 +13735,7 @@ async function cargarRutinaAsignadaAlumno(alumnoId, contId){
     };
     const fila = x => `<tr>
         <td data-l="Rutina"><div style="font-weight:700;">${escaparHtml(x.r.nombre)}</div>${x.origen ? `<div class="muted" style="font-size:11.5px;">${x.origen}</div>` : ''}${x.leToca ? `<div style="font-size:12.5px; color:var(--accent-text);">Le toca ahora: <b>${escaparHtml(x.leToca.nombre_dia || 'el siguiente día')}</b></div>${x.rot && x.leToca._manual ? `<div class="muted" style="font-size:11.5px;">${escaparHtml(rotOrigenTxt(x.leToca._manual))}</div>` : ''}${x.rot ? `<button type="button" class="ghost" style="padding:2px 9px; font-size:11.5px; margin-top:4px;" onclick="rotAbrirCambiarDia('${alumnoId}','${x.r.id}','${contId}')">✎ Cambiar día</button>` : ''}` : ''}</td>
-        <td data-l="Tipo">${x.rot ? '🔁 Rotativa' : '📅 Fecha fija'}<div class="muted" style="font-size:11.5px;">${x.n} día${x.n === 1 ? '' : 's'}</div></td>
+        <td data-l="Tipo">${x.rot ? '🔁 Mensual' : '📅 Fecha fija'}<div class="muted" style="font-size:11.5px;">${x.n} día${x.n === 1 ? '' : 's'}</div></td>
         <td data-l="Vigencia" style="font-size:12.5px;">${x.vig}</td>
         <td data-l="Días"><div class="ra-dias">${x.chips || '<span class="muted">—</span>'}</div></td>
       </tr>`;
@@ -14721,7 +14721,7 @@ function xEstadoRutina(r, hoy){
     const ini = r.fecha_inicio || null, dur = r.duracion_semanas || null, fin = finCicloRotativa(ini, dur);
     if (ini && ini > hoy) return { st:'prox', ini, detalle:`Empieza el ${fechaCortaISO(ini)}` };
     if (fin && fin < hoy) return { st:'fin', ini: ini || '', fin, detalle:`Terminó el ${fechaCortaISO(fin)}` };
-    let det = 'Rotativa';
+    let det = 'Mensual';
     if (ini && dur){ const sem = Math.min(dur, Math.floor(diasEntreISO(ini, hoy) / 7) + 1); det = `Sem ${sem}/${dur}${fin ? ` · hasta el ${fechaCortaISO(fin)}` : ''}`; }
     return { st:'curso', ini: ini || '', fin, detalle: det };
   }
@@ -18176,7 +18176,7 @@ function nrDestinoTxt(){
 }
 function nrModoTxt(){
   const m = CONS['esp'].estado.modoDias;
-  return m === 'rotativa' ? '🔁 Rotativa' : m === 'plantilla' ? '🧩 Plantilla' : '📅 Fecha fija';
+  return m === 'rotativa' ? '🔁 Mensual' : m === 'plantilla' ? '🧩 Plantilla' : '📅 Fecha fija';
 }
 function nrExplicaTxt(){
   const d = nrValDestino(), rot = CONS['esp'].estado.modoDias === 'rotativa';
@@ -18311,7 +18311,7 @@ const TRAER = {}; // diaId -> { rutinaNombre, dias }
 
 function traerDiaEtiqueta(r){
   return r.especialDe ? `⭐ Especial de ${escaparHtml(r.especialDe.slice(0, 2).join(', '))}${r.especialDe.length > 2 ? '…' : ''}`
-    : r.modo_dias === 'plantilla' ? '🧩 Plantilla' : r.modo_dias === 'rotativa' ? '🔁 Rotativa' : `🏷️ ${escaparHtml(r.tipos_alumno?.nombre || 'Sin tipo')}`;
+    : r.modo_dias === 'plantilla' ? '🧩 Plantilla' : r.modo_dias === 'rotativa' ? '🔁 Mensual' : `🏷️ ${escaparHtml(r.tipos_alumno?.nombre || 'Sin tipo')}`;
 }
 
 function traerDiaToggle(prefijo, diaId){
@@ -18436,7 +18436,7 @@ function traerDiaAplicar(prefijo, diaId, idx, modo){
   cons.render();
   const avisos = [];
   if (sinCatalogo) avisos.push(`${sinCatalogo} ejercicio${sinCatalogo === 1 ? '' : 's'} ya no existe${sinCatalogo === 1 ? '' : 'n'} en el catálogo y no se copiaron`);
-  if (conSemanasPerdidas) avisos.push('la progresión se pasó a "Fijo" porque esta rutina no es rotativa');
+  if (conSemanasPerdidas) avisos.push('la progresión se pasó a "Fijo" porque esta rutina no es mensual');
   toast(`✓ Traído "${rot}" de ${nombreOrigen} (${ejs.length} ejercicio${ejs.length === 1 ? '' : 's'})` + (avisos.length ? ' — ' + avisos.join('; ') : ''));
 }
 
@@ -18479,7 +18479,7 @@ async function espBaseBuscar(){
   }).slice(0, 30);
   if (!lista.length){ cont.innerHTML = '<div class="empty">No encontramos rutinas con ese nombre.</div>'; return; }
   const etiqueta = r => r.especialDe ? `⭐ Especial de ${escaparHtml(r.especialDe.slice(0, 2).join(', '))}${r.especialDe.length > 2 ? '…' : ''}`
-    : r.modo_dias === 'plantilla' ? '🧩 Plantilla' : r.modo_dias === 'rotativa' ? '🔁 Rotativa' : `🏷️ ${escaparHtml(r.tipos_alumno?.nombre || 'Sin tipo')}`;
+    : r.modo_dias === 'plantilla' ? '🧩 Plantilla' : r.modo_dias === 'rotativa' ? '🔁 Mensual' : `🏷️ ${escaparHtml(r.tipos_alumno?.nombre || 'Sin tipo')}`;
   cont.innerHTML = lista.map(r => `
     <button type="button" class="ghost" style="width:100%; text-align:left; display:block; margin-bottom:6px;" onclick="espCargarDesdeRutina('${r.id}')">
       <span style="font-weight:700;">${escaparHtml(r.nombre)}</span>
@@ -18596,7 +18596,7 @@ async function copiarRutinaParaAlumno(rutinaId){
   // si el nombre ya termina en " · <alumno>" se lo saca para no apilar nombres
   const m = MCR.nombreBase.match(/^(.*) · ([^·]+)$/);
   if (m && ALUMNOS_CACHE.some(a => (a.nombre || '').trim() === m[2].trim())) MCR.nombreBase = m[1];
-  document.getElementById('mcrOrigen').innerHTML = `<b>${escaparHtml(MCR.nombreBase)}</b>${nDias ? ` · ${nDias} día${nDias === 1 ? '' : 's'}` : ''}${MCR.modoRutina === 'rotativa' ? ' · 🔁 rotativa' : ''}`;
+  document.getElementById('mcrOrigen').innerHTML = `<b>${escaparHtml(MCR.nombreBase)}</b>${nDias ? ` · ${nDias} día${nDias === 1 ? '' : 's'}` : ''}${MCR.modoRutina === 'rotativa' ? ' · 🔁 mensual' : ''}`;
   document.getElementById('mcrBuscar').value = '';
   document.getElementById('mcrResultados').innerHTML = '';
   document.getElementById('mcrError').style.display = 'none';
@@ -18739,7 +18739,7 @@ async function guardarRutina(){
       document.getElementById('profPlantillaNombre').value = '';
       cargarGrillaRutinas();
     },
-    msgOk: esPlantilla ? 'Plantilla guardada ✓ La vas a poder elegir a mano desde la Agenda (botón "Cambiar por otra sesión").' : esRotativaLibre ? 'Rutina rotativa guardada ✓ Se asigna sola a cualquier alumno que no tenga una especial: arranca en el día 1 y va rotando.' : 'Rutina guardada ✓ Se va a asignar sola a los alumnos de ese tipo cuando reserven turno para esas fechas.',
+    msgOk: esPlantilla ? 'Plantilla guardada ✓ La vas a poder elegir a mano desde la Agenda (botón "Cambiar por otra sesión").' : esRotativaLibre ? 'Rutina mensual guardada ✓ Se asigna sola a cualquier alumno que no tenga una especial: arranca en el día 1 y va rotando.' : 'Rutina guardada ✓ Se va a asignar sola a los alumnos de ese tipo cuando reserven turno para esas fechas.',
   });
 }
 
@@ -18801,8 +18801,8 @@ async function guardarRutinaEspecial(){
       tipoId = v === '__todos' ? null : v;
       if (modoDias === 'rotativa'){
         if (!nombreFinal){ toast('Ponele un nombre a la rutina.', true); return; }
-        msg = tipoId ? 'Rutina rotativa guardada ✓ Se asigna sola a los alumnos de ese tipo que no tengan una especial: arranca en el día 1 y va rotando.'
-                     : 'Rutina rotativa guardada ✓ Se asigna sola a cualquier alumno que no tenga una especial: arranca en el día 1 y va rotando.';
+        msg = tipoId ? 'Rutina mensual guardada ✓ Se asigna sola a los alumnos de ese tipo que no tengan una especial: arranca en el día 1 y va rotando.'
+                     : 'Rutina mensual guardada ✓ Se asigna sola a cualquier alumno que no tenga una especial: arranca en el día 1 y va rotando.';
       } else {
         const fechas = Object.values(cons.estado.dias).map(d => d.fecha).filter(Boolean).sort();
         const tn = (TIPOS_ALUMNO_CACHE.find(t => t.id === tipoId) || {}).nombre || 'General';
@@ -19726,7 +19726,7 @@ let RUTINAS_CACHE = [];
 let RUT_FILTRO = { origen:'todos', modo:'todos' };
 const RUT_ABIERTAS = new Set();
 const RUT_ORIGENES = [['todos','Todas'],['alumnos','👤 De un alumno'],['generales','🌐 Generales']];
-const RUT_MODOS = [['todos','Todos'],['rotativa','🔁 Rotativas'],['fecha_fija','📅 Por fecha'],['plantilla','🧩 Plantillas']];
+const RUT_MODOS = [['todos','Todos'],['rotativa','🔁 Mensuales'],['fecha_fija','📅 Por fecha'],['plantilla','🧩 Plantillas']];
 
 function rutNorm(t){ return String(t == null ? '' : t).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase(); }
 
@@ -19818,7 +19818,7 @@ function rutTarjetaHtml(r, abierta){
   const dias = (r.rutina_dias || []).slice().sort((a, b) => (a.orden ?? 0) - (b.orden ?? 0) || (a.fecha || '').localeCompare(b.fecha || ''));
   const al = rutAlumnos(r); const est = rutEstadoCiclo(r);
   const pills = [];
-  if (r.modo_dias === 'rotativa') pills.push(`<span class="pill">🔁 Rotativa · ${dias.length} día${dias.length === 1 ? '' : 's'}${r.duracion_semanas ? ` · ${r.duracion_semanas} sem` : ''}</span>`);
+  if (r.modo_dias === 'rotativa') pills.push(`<span class="pill">🔁 Mensual · ${dias.length} día${dias.length === 1 ? '' : 's'}${r.duracion_semanas ? ` · ${r.duracion_semanas} sem` : ''}</span>`);
   else if (r.modo_dias === 'plantilla') pills.push('<span class="pill">🧩 Plantilla</span>');
   else pills.push(`<span class="pill">📅 Por fecha · ${dias.length} día${dias.length === 1 ? '' : 's'}</span>`);
   if (al.length) pills.push(`<span class="pill">👤 ${escaparHtml(al.length === 1 ? al[0] : al.length + ' alumnos')}</span>`);
@@ -20152,7 +20152,7 @@ function cicloRotativoEdicionHtml(diaId){
   const chip = (m, t) => `<span class="chip-toggle" onclick="setModoProgEdicionTodos('${diaId}','${m}')">${t}</span>`;
   return `
     <div style="margin-bottom:14px; padding:10px; border:1px dashed var(--border); border-radius:10px;">
-      <div style="font-weight:700; margin-bottom:8px;">🔁 Ciclo rotativo <span class="muted" style="font-weight:400; font-size:11px;">· la fecha vale para toda la rutina</span></div>
+      <div style="font-weight:700; margin-bottom:8px;">🔁 Ciclo mensual <span class="muted" style="font-weight:400; font-size:11px;">· la fecha vale para toda la rutina</span></div>
       <div class="row" style="align-items:flex-end;">
         <div class="field" style="min-width:170px;">
           <label>📅 Inicia el ciclo el</label>
@@ -20303,7 +20303,7 @@ async function agregarDiaRotativa(diaId){
 async function quitarDiaRotativa(diaId){
   const E = EDICION_DIAS[diaId]; if (!E) return;
   const lista = E.dias || [];
-  if (lista.length <= 1){ toast('La rotativa necesita al menos un día.', true); return; }
+  if (lista.length <= 1){ toast('La rutina mensual necesita al menos un día.', true); return; }
   try{
     const ejecs = await sb(`ejecuciones?select=id&rutina_dia_id=eq.${diaId}&limit=200`);
     if (ejecs.length){
@@ -20489,7 +20489,7 @@ async function cargarRutinasDeAlumno(selectId, contenedorId){
       estadoCls: '', estadoTxt: 'Próximo', acciones: '',
     }) : tcardHtml({
       titulo: x.rutina.nombre, sub: `Te toca: ${x.diaCursor.nombre_dia} (día ${(x.diaCursor.orden ?? 0) + 1} de ${x.totalDias})` + (x.diaCursor._manual ? ` · ${escaparHtml(rotOrigenTxt(x.diaCursor._manual))}` : ''),
-      estadoCls: '', estadoTxt: 'Rotativa',
+      estadoCls: '', estadoTxt: 'Mensual',
       acciones: `<button onclick="comenzarEntrenamiento('${x.diaCursor.id}','${alumnoId}','${esc1(x.diaCursor.nombre_dia)}')">Ver / Empezar</button>`,
     })).join('');
 
@@ -21736,7 +21736,7 @@ async function rotAbrirCambiarDia(alumnoId, rutinaId, contId){
     const [ru] = await sb(`rutinas?select=id,nombre&id=eq.${rutinaId}`);
     const dias = await rotDiasDe(rutinaId);
     const actual = await resolverDiaRutinaRotativa(rutinaId, alumnoId);
-    if (!ru || !dias.length || !actual){ cuerpo.textContent = 'Esta rotativa todavía no le toca a nadie (no arrancó o no tiene días).'; return; }
+    if (!ru || !dias.length || !actual){ cuerpo.textContent = 'Esta rutina mensual todavía no le toca a nadie (no arrancó o no tiene días).'; return; }
     const ej = await sb(`ejecuciones?select=rutina_dia_id,finalizada_en,fecha&alumno_id=eq.${alumnoId}&estado=eq.finalizada&rutina_dia_id=in.(${dias.map(d => d.id).join(',')})&order=fecha.desc&limit=300`);
     const ultima = {}; ej.forEach(e => { if (!ultima[e.rutina_dia_id]) ultima[e.rutina_dia_id] = e.finalizada_en || e.fecha; });
     ROT_CAMBIAR = { alumnoId, rutinaId, contId: contId || '', actualId: actual.id, sel: actual.id, dias, ultima, rutinaNombre: ru.nombre, alumno: (al && al.nombre) || '' };
@@ -21761,7 +21761,7 @@ function rotRenderCambiar(actual){
       <button class="ghost" onclick="cerrarOverlayGenerico('modalRotCambiar')">Cancelar</button>
       <button ${R.sel === R.actualId ? 'disabled' : ''} onclick="rotConfirmarCambiar()">Dejar ${escaparHtml(rotNombreDia(R.dias.find(d => d.id === R.sel)))} como el que le toca</button>
     </div>
-    <div class="muted" style="font-size:11.5px; margin-top:8px;">El alumno lo ve al instante. Cuando entrene ese día, la rotativa sigue sola con el siguiente.</div>`;
+    <div class="muted" style="font-size:11.5px; margin-top:8px;">El alumno lo ve al instante. Cuando entrene ese día, la rutina mensual sigue sola con el siguiente.</div>`;
   const inp = document.getElementById('rotCambiarNota'); if (inp && R._nota) inp.value = R._nota;
 }
 async function rotConfirmarCambiar(){
@@ -21777,7 +21777,7 @@ async function rotConfirmarCambiar(){
 // Línea "Rotativa · le toca Día 2 [Cambiar día]" dentro del popup del turno (Agenda / Inicio)
 // ---------- (v122) Rotativa a la vista: Agenda del día y Resumen de la ficha ----------
 // Una rotativa nunca se engancha al turno (rutina_dia_id queda vacío), así que la Agenda no mostraba nada de ella.
-// Mismo criterio que el Inicio: si el alumno tiene una rotativa en curso se muestra "🔁 Rotativa · Día X" (el día solo
+// Mismo criterio que el Inicio: si el alumno tiene una rotativa en curso se muestra "🔁 Mensual · Día X" (el día solo
 // para hoy: es el que le toca ahora); si no tiene ninguna, "⚠ Sin rutina asignada".
 async function rotInfoAgenda(turnos, fecha){
   const rotDe = {}, rotDia = {}; let ok = false;
@@ -21816,9 +21816,9 @@ async function rotLineaEnModal(){
     if (!ASISTENCIA_MODAL_CTX || ASISTENCIA_MODAL_CTX.turnoId !== c.turnoId || !document.getElementById('ajusteRotLinea')) return;
     if (!x){ el.innerHTML = ''; return; }
     const m = x.diaCursor._manual;
-    if (c.fecha < dateAIso(new Date())){ el.innerHTML = `<div class="muted" style="font-size:12.5px; margin-bottom:10px;">🔁 Tiene una rotativa asignada: ${escaparHtml(x.rutina.nombre)}</div>`; return; }
+    if (c.fecha < dateAIso(new Date())){ el.innerHTML = `<div class="muted" style="font-size:12.5px; margin-bottom:10px;">🔁 Tiene una rutina mensual asignada: ${escaparHtml(x.rutina.nombre)}</div>`; return; }
     el.innerHTML = `<div style="background:var(--panel2); border:1px solid var(--border); border-radius:10px; padding:8px 10px; margin-bottom:10px;">
-      <div class="muted" style="font-size:12px;">🔁 Rotativa · ${escaparHtml(x.rutina.nombre)}</div>
+      <div class="muted" style="font-size:12px;">🔁 Mensual · ${escaparHtml(x.rutina.nombre)}</div>
       <div style="font-weight:700;">Le toca: ${escaparHtml(rotNombreDia(x.diaCursor))} <span class="muted" style="font-weight:400; font-size:12px;">(día ${(x.diaCursor.orden ?? 0) + 1} de ${x.totalDias})</span></div>
       ${m ? `<div class="muted" style="font-size:11.5px;">${escaparHtml(rotOrigenTxt(m))}</div>` : ''}
       <button type="button" class="ghost" style="margin-top:6px; padding:4px 10px; font-size:12.5px;" onclick="rotCambiarDesdeModal()">✎ Cambiar día</button></div>`;
@@ -21845,7 +21845,7 @@ async function rotPreguntarSiCuenta(alumnoId, diaEspecialId){
       const ov = overlayGenerico('modalRotCuenta', 440);
       ov.style.zIndex = '1010';
       ov.querySelector('.modal-box').innerHTML = `<h3 style="margin-top:0;">🔁 ¿Cuenta como el ${escaparHtml(rotNombreDia(x.diaCursor))}?</h3>
-        <div class="muted" style="font-size:13px; margin-bottom:12px;">Este alumno tiene la rotativa «${escaparHtml(x.rutina.nombre)}» y le tocaba el <b>${escaparHtml(rotNombreDia(x.diaCursor))}</b>. Con esta sesión especial:</div>
+        <div class="muted" style="font-size:13px; margin-bottom:12px;">Este alumno tiene la rutina mensual «${escaparHtml(x.rutina.nombre)}» y le tocaba el <b>${escaparHtml(rotNombreDia(x.diaCursor))}</b>. Con esta sesión especial:</div>
         <button style="width:100%;" onclick="rotCuentaElegir(true)">✅ Sí, cuenta: después sigue con el ${escaparHtml(rotNombreDia(sig))}</button>
         <button class="ghost" style="width:100%; margin-top:8px;" onclick="rotCuentaElegir(false)">↩️ No, después sigue con el ${escaparHtml(rotNombreDia(x.diaCursor))}</button>
         <div style="text-align:center; margin-top:10px;"><span class="muted" style="cursor:pointer; text-decoration:underline; font-size:12px;" onclick="rotCuentaElegir(null)">Decidir después (se lo pregunta al alumno)</span></div>`;
@@ -21865,7 +21865,7 @@ async function rotCuentaElegir(cuenta){
       toast(cuenta ? `Listo ✓ Cuando la termine, le toca el ${rotNombreDia(R.sig)}.` : `Listo ✓ Después de la sesión sigue con el ${rotNombreDia(R.actual)}.`);
       rotRefrescarVistas(R.alumnoId);
     }
-  }catch(e){ toast('No se pudo guardar el día de la rotativa: ' + extraerMensajeError(e), true); }
+  }catch(e){ toast('No se pudo guardar el día de la rutina mensual: ' + extraerMensajeError(e), true); }
   R.res();
 }
 // Ajustar la rutina de HOY cuando es una rotativa: la copia ES ese día ajustado, así que al terminarla toca el que sigue.
@@ -21912,7 +21912,7 @@ async function rotPreguntaHtml(alumnoId){
   if (!p) return '';
   const f = new Date(p.cuando).toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' });
   return `<div class="rot-preg" style="border:1.5px solid var(--accent); background:var(--panel2); border-radius:14px; padding:14px; margin-bottom:12px;">
-    <div style="font-weight:700; font-size:16px;">🔁 ¿Qué día de tu rotativa te toca?</div>
+    <div style="font-weight:700; font-size:16px;">🔁 ¿Qué día de tu rutina mensual te toca?</div>
     <div class="muted" style="font-size:13px; margin:4px 0 10px;">El ${escaparHtml(f)} hiciste una sesión especial. Elegí cómo seguís en «${escaparHtml(p.rutinaNombre)}»:</div>
     <button type="button" style="width:100%;" onclick="rotElegirAlumno('${p.actual.id}')">Seguir con el ${escaparHtml(rotNombreDia(p.actual))}<span style="font-weight:400; font-size:12px;"> · el que te tocaba</span></button>
     <button type="button" class="ghost" style="width:100%; margin-top:8px;" onclick="rotElegirAlumno('${p.sig.id}')">Pasar al ${escaparHtml(rotNombreDia(p.sig))}<span style="font-weight:400; font-size:12px;"> · la especial ya cuenta como ${escaparHtml(rotNombreDia(p.actual))}</span></button>
