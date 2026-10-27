@@ -613,6 +613,59 @@
   .x-arow.cum-paso{ opacity:.6; }
   .badge-sub.cum-b{ background:var(--accent); color:#1a1000; border-color:var(--accent); }
 
+
+  /* ---- (v137) Sesión de equipo ---- */
+  .se-box{ max-width:600px !important; text-align:left !important; max-height:92vh; overflow-y:auto; padding-bottom:0 !important; }
+  .se-box h3{ font-size:19px; margin:0 0 4px; }
+  .se-sub{ color:var(--muted); font-size:13px; margin:0 0 12px; line-height:1.45; }
+  .se-chips{ display:flex; gap:6px; flex-wrap:wrap; }
+  .se-box .se-chips button{ flex:none !important; width:auto; padding:7px 13px !important; font-size:13px; border-radius:999px; background:var(--panel2); color:var(--text); border:1px solid var(--border); font-weight:600; }
+  .se-chips button.on{ background:var(--accent); color:#1a1000; border-color:var(--accent); font-weight:800; }
+  .se-f{ margin:12px 0; } .se-f > label{ display:block; font-size:12px; font-weight:700; color:var(--muted); margin-bottom:5px; text-transform:uppercase; letter-spacing:.04em; }
+  .se-plan{ background:var(--inset); border:1px solid var(--border); border-radius:14px; padding:10px 12px; font-size:13.5px; }
+  .se-plan div{ display:flex; justify-content:space-between; gap:10px; padding:4px 0; border-bottom:1px dashed var(--border); } .se-plan div:last-child{ border:0; }
+  .se-note{ background:var(--note-bg); border:1px solid var(--note-bd); color:var(--note-text); border-radius:12px; padding:9px 12px; font-size:12.5px; margin:10px 0; line-height:1.45; }
+  .se-note.bad{ background:rgba(255,93,93,.1); border-color:rgba(255,93,93,.4); color:var(--danger-text); }
+  .se-tb{ display:flex; gap:6px; flex-wrap:wrap; margin:8px 0; align-items:center; }
+  .se-box .se-tb button{ flex:none !important; width:auto; padding:7px 14px !important; font-size:12.5px; white-space:nowrap; }
+  .se-sem{ display:flex; gap:8px; margin:6px 0 8px; } .se-sem span{ flex:1; text-align:center; background:var(--inset); border:1px solid var(--border); border-radius:12px; padding:7px 4px; font-size:12.5px; font-weight:700; }
+  .se-pl{ border:1px solid var(--border); border-radius:14px; margin:7px 0; background:var(--panel2); overflow:hidden; }
+  .se-pl.aus{ opacity:.78; } .se-pl.rojo{ border-color:rgba(255,93,93,.55); }
+  .se-r{ display:flex; align-items:center; gap:10px; padding:9px 11px; }
+  .se-box button.se-ck{ width:32px !important; height:32px; padding:0 !important; flex:none !important; min-width:0; border-radius:9px !important; background:var(--inset) !important; color:transparent !important; border:2px solid var(--border) !important; font-size:17px; }
+  .se-box button.se-ck.on{ background:var(--accent2) !important; color:#06210f !important; border-color:var(--accent2) !important; }
+  .se-box button.se-ck:disabled{ opacity:.55; }
+  .se-n{ flex:1; min-width:0; } .se-n b{ display:block; font-size:14.5px; } .se-n small{ color:var(--muted); font-size:12px; }
+  .se-wl{ font-size:12px; font-weight:800; padding:3px 9px; border-radius:999px; border:1px solid var(--border); white-space:nowrap; flex:none; }
+  .se-wl.verde{ color:var(--accent2-text); border-color:color-mix(in srgb, var(--accent2) 50%, var(--border)); } .se-wl.amarillo{ color:var(--warn-text); border-color:color-mix(in srgb, var(--warn) 55%, var(--border)); } .se-wl.rojo{ color:var(--danger-text); border-color:color-mix(in srgb, var(--danger) 55%, var(--border)); } .se-wl.sin{ color:var(--muted); }
+  .se-box button.se-ed{ width:auto !important; flex:none !important; padding:6px 11px !important; font-size:13px; background:transparent !important; border:1px solid var(--border) !important; color:var(--muted) !important; border-radius:9px !important; }
+  .se-box button.se-ed.on{ color:var(--accent-text) !important; border-color:var(--accent) !important; }
+  .se-x{ padding:0 11px 10px; font-size:12.5px; }
+  .se-alr{ color:var(--danger-text); font-weight:600; margin-bottom:4px; }
+  .se-bdg{ display:inline-block; margin-left:6px; font-size:10.5px; font-weight:800; padding:1px 7px; border-radius:999px; background:var(--note-bg); color:var(--note-text); border:1px solid var(--note-bd); vertical-align:middle; }
+  .se-adj .ar{ display:flex; align-items:center; gap:8px; padding:7px 0; border-top:1px dashed var(--border); }
+  .se-adj .ar > b{ flex:1; font-size:13px; } .se-adj .ar small{ color:var(--muted); font-weight:500; }
+  .se-st{ display:flex; align-items:center; gap:6px; } .se-box .se-st button{ flex:none !important; width:30px !important; height:30px; padding:0 !important; border-radius:9px !important; } .se-st span{ min-width:54px; text-align:center; font-weight:800; font-size:13px; }
+  .se-adj label{ font-size:12px; display:flex; gap:5px; align-items:center; white-space:nowrap; color:var(--muted); text-transform:none; letter-spacing:0; font-weight:600; margin:0; }
+  .se-bar{ position:sticky; bottom:0; background:var(--panel); border-top:1px solid var(--border); margin:12px -22px 0; padding:12px 22px calc(12px + env(safe-area-inset-bottom)); }
+  .se-cnt{ display:flex; gap:12px; flex-wrap:wrap; font-size:12.5px; font-weight:700; margin-bottom:8px; color:var(--muted); }
+  .se-box button.se-go{ flex:1 !important; width:100%; padding:13px !important; font-size:15px; font-weight:800; }
+  .se-bar .ghost{ flex:none !important; padding:12px 18px !important; }
+  .se-g3{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin:12px 0; }
+  .se-g3 > div{ background:var(--inset); border:1px solid var(--border); border-radius:14px; padding:10px 6px; text-align:center; } .se-g3 b{ display:block; font-size:22px; } .se-g3 span{ font-size:11.5px; color:var(--muted); }
+  .se-prog{ height:9px; background:var(--inset); border-radius:99px; overflow:hidden; border:1px solid var(--border); } .se-prog i{ display:block; height:100%; background:var(--accent2); border-radius:99px; }
+  .se-tbl{ width:100%; border-collapse:collapse; font-size:13px; } .se-tbl th{ text-align:left; color:var(--muted); font-size:11.5px; text-transform:uppercase; padding:6px 4px; } .se-tbl td{ padding:7px 4px; border-top:1px solid var(--border); }
+  .se-tag{ display:inline-block; font-size:11.5px; font-weight:700; padding:2px 8px; border-radius:999px; border:1px solid var(--border); }
+  .se-tag.ok{ color:var(--accent2-text); } .se-tag.no{ color:var(--danger-text); } .se-tag.ya{ color:var(--warn-text); }
+  .se-rec{ display:flex; justify-content:space-between; align-items:center; gap:8px; padding:9px 0; border-top:1px solid var(--border); font-size:13.5px; } .se-rec:first-child{ border-top:0; }
+  .se-rec button{ width:auto; padding:6px 12px; font-size:12.5px; flex:none !important; }
+  .se-btns{ display:flex; flex-direction:column; gap:9px; margin:14px 0; padding-bottom:18px; }
+  .se-box .se-btns button{ width:100%; padding:12px !important; flex:none !important; }
+  /* tarjeta "Poné tu RPE" del alumno */
+  .rpe-grid{ display:grid; grid-template-columns:repeat(5,1fr); gap:6px; margin:10px 0 6px; }
+  .rpe-grid button{ padding:11px 0; font-size:16px; font-weight:800; border-radius:12px; background:var(--panel2); color:var(--text); border:1px solid var(--border); }
+  .rpe-grid button.on{ background:var(--accent); color:#1a1000; border-color:var(--accent); }
+
   /* ---- Modal de confirmación (reserva de turno) ---- */
   .modal-overlay{
     position:fixed; inset:0; background:rgba(0,0,0,.6); display:none;
@@ -2758,6 +2811,17 @@
         </div>
 
         <div id="equipoContenido" style="display:none;">
+          <div class="card" id="sesEqCard">
+            <!-- (v137) Sesión de equipo: el profe finaliza el entrenamiento de todo el plantel en una sola pantalla -->
+            <div class="row" style="justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
+              <div style="flex:1; min-width:200px;">
+                <h3 style="margin:0;">⚡ Sesión de equipo</h3>
+                <div class="muted" style="font-size:13px; margin-top:2px;">Tildá quiénes entrenaron y finalizá para todos juntos, con las cargas planificadas.</div>
+              </div>
+              <button onclick="sesEqAbrir()" style="width:auto;">＋ Cargar sesión</button>
+            </div>
+            <div id="sesEqRecientes" style="margin-top:8px;"></div>
+          </div>
           <div class="card">
             <h3 style="margin-top:0;">Entrenamientos planificados esta semana</h3>
             <div id="equipoEntrenamientos" class="muted">Cargando...</div>
@@ -3586,6 +3650,7 @@
           <button type="button" style="flex-shrink:0;" onclick="event.stopPropagation(); abrirWellness()">Completar</button>
         </div>
       </div>
+      <div id="rpeCardAlu"></div>   <!-- (v137) "Poné tu RPE" cuando el profe cargó el entrenamiento por el alumno -->
       <div class="alu-tiles" id="aluInicioTiles"></div>
       <div class="card flush" id="aluPlanCard" style="display:none;">
         <div class="sec-head"><div class="sec-t">Mi plan de entrenamiento</div><button class="sec-link" onclick="cambiarSubvistaAlu('rutinas')">Ver rutinas</button></div>
@@ -3860,6 +3925,14 @@
     <div class="x-wrap "><button type="button" class="x-cerrar" aria-label="Cerrar" title="Cerrar" onclick="cerrarModalRutinaDia()">✕</button></div>
     <h3 id="modalRutinaDiaTitulo">Rutina del turno</h3>
     <div id="modalRutinaDiaContenido" style="max-height:60vh; overflow-y:auto;"></div>
+  </div>
+</div>
+
+<!-- (v137) Sesión de equipo -->
+<div class="modal-overlay" id="modalSesEq" onclick="if(event.target===this)sesEqCerrar()">
+  <div class="modal-box se-box">
+    <div class="x-wrap"><button type="button" class="x-cerrar" aria-label="Cerrar" title="Cerrar" onclick="sesEqCerrar()">✕</button></div>
+    <div id="sesEqBody"></div>
   </div>
 </div>
 
@@ -4920,11 +4993,11 @@ function atlIniciarAlu(){
   atlCargarVista('aluAtletismoContenido', id || '');
 }
 
-const APP_VERSION = 136;
+const APP_VERSION = 137;
 let ES_PERSONAL = false;   // (v132) cuenta personal (gimnasios.tipo = 'personal'); se calcula en perAplicar()
 // (v96) Fecha de la última actualización: se cambia junto con APP_VERSION en cada entrega. Se muestra en la
 // pantalla de inicio y en el menú de cuenta ("v94 · actualizada el 5/10/2026").
-const APP_FECHA = '2026-10-26';
+const APP_FECHA = '2026-10-27';
 function appVersionTxt(){ const [y, m, d] = APP_FECHA.split('-'); return `v${APP_VERSION} · actualizada el ${+d}/${+m}/${y}`; }
 (function(){ const el = document.getElementById('lcVersion'); if (el) el.textContent = 'M2F Solutions · ' + appVersionTxt(); })();
 
@@ -9362,6 +9435,7 @@ function rpxIrAplicar(r){
   try{
     if (PERFIL_ACTUAL.rol === 'alumno'){
       if (r === 'clases'){ cambiarSubvistaAlu('turnos'); ALU_TAB = 'clases'; setTimeout(() => { try{ aluTabsPintar(); }catch(e){} }, 1500); }
+      else if (r === 'rpe'){ cambiarSubvistaAlu('inicio'); if (typeof WELLNESS_CTX !== 'undefined' && WELLNESS_CTX.alumnoId) rpeCardAluCargar(WELLNESS_CTX.alumnoId); }   // (v137) aviso de RPE → Inicio, donde está la tarjeta
       else if (r === 'wellness'){ if (typeof WELLNESS_CTX !== 'undefined' && WELLNESS_CTX.alumnoId) revisarWellnessPendiente(WELLNESS_CTX.alumnoId, true); }   // (v112) aviso de Wellness → abre el cuestionario
     } else if (r === 'clases') cambiarSubvista('clases');
   }catch(e){}
@@ -18956,11 +19030,14 @@ async function cargarVistaEquipo(){
   contJugadores.innerHTML = 'Cargando...';
 
   const miembros = ALUMNOS_CACHE.filter(a => a.equipo_id === equipoId);
+  const sesEqCardEl = document.getElementById('sesEqCard');   // (v137)
+  if (sesEqCardEl) sesEqCardEl.style.display = miembros.length ? '' : 'none';
   if (!miembros.length){
     contEntrenamientos.innerHTML = '<div class="empty">Este equipo todavía no tiene jugadores asignados (asignalos desde "👤 Alumnos").</div>';
     contJugadores.innerHTML = '';
     return;
   }
+  sesEqRecientes();   // (v137)
   const idsAlumnos = miembros.map(m => m.id);
 
   try{
@@ -19048,6 +19125,400 @@ function irAEvaluacionAlumnoDesdeEquipo(alumnoId){
   sel.value = alumnoId;
   sel.dispatchEvent(new Event('change'));
   sincronizarComboBuscable('evalAlumno');
+}
+
+// ============================================================================
+// (v137) SESIÓN DE EQUIPO — el profe finaliza el entrenamiento de todo el plantel juntos.
+// Pedido de Martin (Oct/2026): cargas = lo planificado con excepciones por jugador, el RPE lo pone
+// cada jugador desde su app, se puede cargar un día pasado, semáforo de Wellness, y deshacer.
+// Todo se guarda con UNA llamada (RPC sesion_equipo_finalizar): o se crea para todos o no se crea nada.
+// ============================================================================
+const SESEQ_MOTIVOS = { lesion:'🩹 Lesión', viaje:'✈️ Viaje', partido:'⚽ Partido', enfermo:'🤒 Enfermo', sin_aviso:'❓ Sin aviso', otro:'Otro' };
+const SESEQ_ERRORES = {
+  sesion_existente:'Ya hay una sesión cargada para ese equipo, rutina y día. Deshacela primero si querés rehacerla.',
+  fecha_futura:'No se puede cargar un día futuro.',
+  fecha_muy_vieja:'Solo se pueden cargar hasta 90 días hacia atrás.',
+  sin_presentes:'Tildá al menos un jugador que haya entrenado.',
+  equipo_invalido:'Ese equipo no es de tu gimnasio.',
+  rutina_invalida:'Esa rutina no es de tu gimnasio.',
+  jugador_invalido:'Hay un jugador que ya no pertenece al equipo. Actualizá la pantalla e intentá de nuevo.',
+  sin_permiso:'No tenés permiso para cargar sesiones de equipo.',
+  duracion_invalida:'La duración tiene que estar entre 5 y 240 minutos.',
+  hora_futura:'El entrenamiento no puede terminar en el futuro. Corregí la hora de inicio o la duración.',
+  sesion_invalida:'No se encontró la sesión.', ya_anulada:'Esa sesión ya estaba deshecha.',
+};
+let SESEQ = null;
+
+function sesEqErr(e){
+  const m = (typeof extraerMensajeError === 'function' ? extraerMensajeError(e) : String(e.message || e)).trim();
+  return SESEQ_ERRORES[m] || m;
+}
+function sesEqFechaIso(delta){
+  const d = new Date(); d.setDate(d.getDate() - delta); return fechaLocalISO(d);
+}
+function sesEqKg(v){ return (v === null || v === undefined) ? '' : (Math.round(Number(v) * 10) / 10) + ' kg'; }
+function sesEqWClase(w){ return w ? (w.semaforo === 'rojo' ? 'rojo' : (w.semaforo === 'amarillo' ? 'amarillo' : 'verde')) : 'sin'; }
+function sesEqWTxt(w){ return w ? ((WELLNESS_ICONO[w.semaforo] || '') + ' ' + w.total + '/25') : 'Sin Wellness'; }
+// Hora de inicio por defecto: si es hoy, "ahora menos la duración" (redondeado a 5 min); si es un día pasado, 18:00.
+function sesEqHoraDefault(){
+  const S = SESEQ; if (!S || S.horaManual) return;
+  if (S.fecha === sesEqFechaIso(0)){
+    const d = new Date(Date.now() - S.dur * 60000); let m = d.getHours() * 60 + d.getMinutes(); m = Math.max(0, Math.floor(m / 5) * 5);
+    S.hora = String(Math.floor(m / 60)).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0');
+  } else S.hora = '18:00';
+}
+function sesEqFinTxt(){
+  const S = SESEQ, [h, m] = (S.hora || '18:00').split(':').map(Number), f = h * 60 + m + S.dur;
+  return String(Math.floor(f / 60) % 24).padStart(2, '0') + ':' + String(f % 60).padStart(2, '0');
+}
+function sesEqHoraOk(){
+  const S = SESEQ; if (S.fecha !== sesEqFechaIso(0)) return true;
+  const [h, m] = (S.hora || '18:00').split(':').map(Number), d = new Date(); return (h * 60 + m + S.dur) <= (d.getHours() * 60 + d.getMinutes() + 5);
+}
+function sesEqHoraSet(v){ if (!v) return; SESEQ.hora = v; SESEQ.horaManual = true; sesEqPaso1(); }
+function sesEqDur(d){ const S = SESEQ; S.dur = Math.max(15, Math.min(120, S.dur + d)); sesEqHoraDefault(); sesEqPaso1(); }
+function sesEqBody(html){ document.getElementById('sesEqBody').innerHTML = html; const b = document.querySelector('#modalSesEq .se-box'); if (b) b.scrollTop = 0; }
+function sesEqCerrar(){
+  document.getElementById('modalSesEq').classList.remove('show');
+  SESEQ = null;
+  try{ if (typeof cargarVistaEquipo === 'function' && document.getElementById('subvistaEquipo').style.display !== 'none') sesEqRecientes(); }catch(e){}
+}
+function sesEqEquipoActual(){
+  const id = document.getElementById('equipoSeleccionado')?.value;
+  const eq = (typeof EQUIPOS_CACHE !== 'undefined' ? EQUIPOS_CACHE : []).find(x => x.id === id);
+  return { id, nombre: eq ? eq.nombre : '' };
+}
+
+// ---------- Sesiones recientes (tarjeta en ⚽ Equipo) ----------
+async function sesEqRecientes(){
+  const cont = document.getElementById('sesEqRecientes');
+  const eq = sesEqEquipoActual();
+  if (!cont || !eq.id) return;
+  try{
+    const ses = await sb(`sesiones_equipo?select=id,fecha,rutina_dias(nombre_dia)&equipo_id=eq.${eq.id}&anulada_en=is.null&order=fecha.desc,creada_en.desc&limit=5`);
+    if (!ses.length){ cont.innerHTML = ''; return; }
+    const ids = ses.map(s => s.id).join(',');
+    const [ejs, aus] = await Promise.all([
+      sb(`ejecuciones?select=sesion_equipo_id,rpe&sesion_equipo_id=in.(${ids})`),
+      sb(`sesiones_equipo_ausencias?select=sesion_id&sesion_id=in.(${ids})`),
+    ]);
+    cont.innerHTML = `<div class="muted" style="font-size:11.5px; font-weight:800; text-transform:uppercase; letter-spacing:.05em; margin:6px 0 2px;">Sesiones recientes</div>` + ses.map(s => {
+      const e = ejs.filter(x => x.sesion_equipo_id === s.id), conRpe = e.filter(x => x.rpe != null).length, a = aus.filter(x => x.sesion_id === s.id).length;
+      return `<div class="se-rec"><div><b>${escaparHtml(formatearFechaCorta(s.fecha))}</b> · ${escaparHtml(s.rutina_dias?.nombre_dia || 'Entrenamiento')}<br><span class="muted" style="font-size:12px;">${e.length} entrenaron${a ? ' · ' + a + ' ausentes' : ''} · RPE ${conRpe}/${e.length}</span></div><button class="ghost" onclick="sesEqPanel('${s.id}')">Ver</button></div>`;
+    }).join('');
+  }catch(e){ cont.innerHTML = ''; }
+}
+
+// ---------- Paso 1: qué entrenaron ----------
+async function sesEqAbrir(){
+  const eq = sesEqEquipoActual();
+  if (!eq.id){ toast('Elegí un equipo primero.', true); return; }
+  const miembros = ALUMNOS_CACHE.filter(a => a.equipo_id === eq.id && a.activo !== false);
+  if (!miembros.length){ toast('Este equipo no tiene jugadores.', true); return; }
+  SESEQ = { equipoId: eq.id, equipoNombre: eq.nombre, miembros, dias: [], diaId: null, ejercicios: [], fechaSel: '0', fecha: sesEqFechaIso(0), wel: {}, ya: {}, pres: {}, motivo: {}, adj: {}, dur: 60, hora: null, horaManual: false, abierto: null, filtro: 't', paso: 1, sesionExistente: null, enviando: false };
+  document.getElementById('modalSesEq').classList.add('show');
+  sesEqBody('<h3>⚡ Sesión de equipo</h3><p class="se-sub">Cargando rutinas del equipo…</p>');
+  try{
+    const ids = miembros.map(m => m.id);
+    const asig = await sb(`rutina_asignaciones?select=rutina_id,rutinas(id,nombre,activa,rutina_dias(id,nombre_dia,orden,fecha,objetivo))&alumno_id=in.(${ids.join(',')})`);
+    const vistos = {};
+    asig.forEach(a => {
+      const r = a.rutinas; if (!r || r.activa === false || vistos[r.id]) return; vistos[r.id] = 1;
+      (r.rutina_dias || []).slice().sort((x, y) => (x.orden || 0) - (y.orden || 0)).forEach(d => SESEQ.dias.push({ id: d.id, label: `${r.nombre} · ${d.nombre_dia}${d.fecha ? ' (' + formatearFechaCorta(d.fecha) + ')' : ''}`, fecha: d.fecha, nombreDia: d.nombre_dia }));
+    });
+    if (!SESEQ.dias.length){
+      sesEqBody('<h3>⚡ Sesión de equipo</h3><div class="se-note bad">Este equipo todavía no tiene una rutina asignada. Armala desde "⭐ Rutinas especiales" eligiendo "Un equipo completo".</div>');
+      return;
+    }
+    const conFecha = SESEQ.dias.find(d => d.fecha === SESEQ.fecha);
+    SESEQ.diaId = (conFecha || SESEQ.dias[0]).id;
+    sesEqHoraDefault();
+    await sesEqCargarContexto();
+    sesEqPaso1();
+  }catch(e){ sesEqBody(`<h3>⚡ Sesión de equipo</h3><div class="se-note bad">No se pudo abrir: ${escaparHtml(sesEqErr(e))}</div>`); }
+}
+
+// Trae todo lo que depende del día de rutina + la fecha: ejercicios, Wellness, quién ya entrenó, sesión existente.
+async function sesEqCargarContexto(){
+  const S = SESEQ, ids = S.miembros.map(m => m.id).join(',');
+  const sig = new Date(S.fecha + 'T12:00:00'); sig.setDate(sig.getDate() + 1);
+  const d0 = encodeURIComponent(S.fecha + 'T00:00:00-03:00'), d1 = encodeURIComponent(fechaLocalISO(sig) + 'T00:00:00-03:00');
+  const [ejer, wel, ya, ses] = await Promise.all([
+    sb(`rutina_ejercicios?select=id,orden,series,repeticiones,peso_sugerido,tiempo_trabajo_seg,peso_corporal,carrera,ejercicios(nombre)&rutina_dia_id=eq.${S.diaId}&order=orden.asc`),
+    sb(`wellness_respuestas?select=alumno_id,total,semaforo,nota&fecha=eq.${S.fecha}&alumno_id=in.(${ids})`),
+    sb(`ejecuciones?select=alumno_id,estado&rutina_dia_id=eq.${S.diaId}&alumno_id=in.(${ids})&estado=in.(finalizada,en_curso)&fecha=gte.${d0}&fecha=lt.${d1}`),
+    sb(`sesiones_equipo?select=id&equipo_id=eq.${S.equipoId}&rutina_dia_id=eq.${S.diaId}&fecha=eq.${S.fecha}&anulada_en=is.null&limit=1`),
+  ]);
+  S.ejercicios = ejer; S.wel = {}; wel.forEach(w => { S.wel[w.alumno_id] = w; });
+  S.ya = {}; ya.forEach(x => { S.ya[x.alumno_id] = true; });
+  S.sesionExistente = ses.length ? ses[0].id : null;
+  // estado inicial: todos presentes salvo los que ya entrenaron ese día; se conserva lo que ya se había tocado
+  S.miembros.forEach(m => { if (S.pres[m.id] === undefined) S.pres[m.id] = true; if (!S.motivo[m.id]) S.motivo[m.id] = 'sin_aviso'; if (!S.adj[m.id]) S.adj[m.id] = {}; });
+}
+
+function sesEqPlanHtml(){
+  const E = SESEQ.ejercicios;
+  if (!E.length) return '<div class="se-note bad">Este día de la rutina no tiene ejercicios cargados.</div>';
+  return `<div class="se-plan">${E.map(e => {
+    const det = e.carrera ? 'carrera (no se carga en v1)' : `${e.series} × ${e.tiempo_trabajo_seg ? e.tiempo_trabajo_seg + ' s' : (e.repeticiones || '-')}${e.peso_sugerido != null ? ' · ' + (e.peso_corporal ? '+' : '') + sesEqKg(e.peso_sugerido) : (e.peso_corporal ? ' · peso corporal' : '')}`;
+    return `<div><span>${escaparHtml(e.ejercicios?.nombre || '-')}</span><b>${escaparHtml(det)}</b></div>`;
+  }).join('')}</div>`;
+}
+
+function sesEqPaso1(){
+  const S = SESEQ; S.paso = 1;
+  const chip = (v, t) => `<button class="${S.fechaSel === v ? 'on' : ''}" onclick="sesEqFecha('${v}')">${t}</button>`;
+  const pasado = S.fecha !== sesEqFechaIso(0);
+  sesEqBody(`
+    <h3>⚡ Sesión de equipo</h3>
+    <p class="se-sub">${escaparHtml(S.equipoNombre)} · ${S.miembros.length} jugadores. Se cargan las cargas <b>planificadas</b> para todos; después ajustás a quien hizo otra cosa.</p>
+    <div class="se-f"><label>Rutina y día</label>
+      <select id="sesEqDia" onchange="sesEqCambiarDia(this.value)">${S.dias.map(d => `<option value="${d.id}" ${d.id === S.diaId ? 'selected' : ''}>${escaparHtml(d.label)}</option>`).join('')}</select></div>
+    <div class="se-f"><label>¿Qué día entrenaron?</label>
+      <div class="se-chips">${chip('0', 'Hoy')}${chip('1', 'Ayer')}${chip('2', 'Hace 2 días')}${chip('x', 'Otro día…')}</div>
+      <input type="date" id="sesEqFechaIn" value="${S.fecha}" max="${sesEqFechaIso(0)}" style="margin-top:8px; display:${S.fechaSel === 'x' ? '' : 'none'};" onchange="sesEqFechaManual(this.value)">
+      ${pasado ? '<div class="se-note">📅 <b>Cargando un día pasado.</b> Los entrenamientos quedan con esa fecha y el semáforo de Wellness es el que respondieron ese día.</div>' : ''}</div>
+    <div class="se-f"><label>Hora de inicio y duración</label>
+      <div style="display:flex; gap:10px; align-items:center;"><input type="time" id="sesEqHora" value="${S.hora || '18:00'}" onchange="sesEqHoraSet(this.value)" style="flex:1; min-width:0;">
+        <div class="se-st"><button onclick="sesEqDur(-5)">−</button><span style="min-width:62px;">${S.dur} min</span><button onclick="sesEqDur(5)">+</button></div></div>
+      <div class="se-note">⏱ Termina a las <b>${sesEqFinTxt()}</b>. Con la duración y el RPE de cada jugador se arma su <b>carga aguda</b> (minutos × RPE): poné lo que realmente duró.</div>
+      ${sesEqHoraOk() ? '' : '<div class="se-note bad">Ese horario termina en el futuro. Corregí la hora de inicio o la duración.</div>'}</div>
+    <div class="se-f"><label>Plan del día</label>${sesEqPlanHtml()}</div>
+    ${S.sesionExistente ? `<div class="se-note bad">⚠ Ya hay una sesión cargada para este día y esta rutina. <a href="#" onclick="sesEqPanel('${S.sesionExistente}'); return false;">Verla / deshacerla</a></div>` : ''}
+    <div class="se-bar"><button class="se-go" ${(S.sesionExistente || !S.ejercicios.length || !sesEqHoraOk()) ? 'disabled' : ''} onclick="sesEqPaso2()">Siguiente: ¿quiénes entrenaron? →</button></div>
+  `);
+}
+async function sesEqCambiarDia(id){ SESEQ.diaId = id; SESEQ.adj = {}; try{ await sesEqCargarContexto(); }catch(e){ toast(sesEqErr(e), true); } sesEqPaso1(); }
+async function sesEqFecha(v){
+  const S = SESEQ; S.fechaSel = v;
+  if (v !== 'x') S.fecha = sesEqFechaIso(Number(v));
+  S.horaManual = false; sesEqHoraDefault();
+  const conFecha = S.dias.find(d => d.fecha === S.fecha); if (conFecha) S.diaId = conFecha.id;
+  if (v === 'x'){ sesEqPaso1(); return; }
+  try{ await sesEqCargarContexto(); }catch(e){ toast(sesEqErr(e), true); }
+  sesEqPaso1();
+}
+async function sesEqFechaManual(v){
+  if (!v) return; const S = SESEQ;
+  if (v > sesEqFechaIso(0)){ toast('No se puede cargar un día futuro.', true); return; }
+  S.fecha = v; S.horaManual = false; sesEqHoraDefault(); const conFecha = S.dias.find(d => d.fecha === v); if (conFecha) S.diaId = conFecha.id;
+  try{ await sesEqCargarContexto(); }catch(e){ toast(sesEqErr(e), true); }
+  sesEqPaso1();
+}
+
+// ---------- Paso 2: quiénes entrenaron ----------
+function sesEqPaso2(){ SESEQ.paso = 2; sesEqRender2(); }
+function sesEqAjustes(id){
+  // lista de ajustes reales (distintos del plan) de un jugador
+  const out = [], a = SESEQ.adj[id] || {};
+  SESEQ.ejercicios.forEach(e => {
+    const x = a[e.id]; if (!x) return;
+    const base = e.peso_sugerido == null ? null : Number(e.peso_sugerido);
+    const cambio = x.omitido || (x.peso != null && Number(x.peso) !== (base == null ? 0 : base));
+    if (cambio) out.push({ rutina_ejercicio_id: e.id, omitido: !!x.omitido, peso: x.omitido ? null : (x.peso != null ? Number(x.peso) : null) });
+  });
+  return out;
+}
+function sesEqRender2(){
+  const S = SESEQ, M = S.miembros;
+  const pres = M.filter(m => S.pres[m.id] && !S.ya[m.id]), aus = M.filter(m => !S.pres[m.id] && !S.ya[m.id]), ya = M.filter(m => S.ya[m.id]);
+  const cnt = k => M.filter(m => (S.wel[m.id]?.semaforo) === k).length, sinW = M.filter(m => !S.wel[m.id]).length;
+  const aj = pres.filter(m => sesEqAjustes(m.id).length).length;
+  sesEqBody(`
+    <h3>¿Quiénes entrenaron?</h3>
+    <p class="se-sub">${escaparHtml(S.equipoNombre)} · ${escaparHtml(formatearFechaCorta(S.fecha))} · ${escaparHtml(S.dias.find(d => d.id === S.diaId)?.nombreDia || '')}</p>
+    <div class="se-sem"><span style="color:var(--accent2-text)">🟢 ${cnt('verde')}</span><span style="color:var(--warn-text)">🟡 ${cnt('amarillo')}</span><span style="color:var(--danger-text)">🔴 ${cnt('rojo')}</span><span class="muted">Sin resp. ${sinW}</span></div>
+    <div class="se-tb">
+      <button class="ghost" onclick="sesEqTodos(true)">✓ Todos</button><button class="ghost" onclick="sesEqTodos(false)">✗ Ninguno</button>
+      <select id="sesEqFiltro" onchange="sesEqFiltro(this.value)" style="width:auto; padding:7px 10px; font-size:13px;">
+        <option value="t" ${S.filtro === 't' ? 'selected' : ''}>Ver todos</option><option value="a" ${S.filtro === 'a' ? 'selected' : ''}>⚠ Con alerta</option>
+        <option value="u" ${S.filtro === 'u' ? 'selected' : ''}>Ausentes</option><option value="aj" ${S.filtro === 'aj' ? 'selected' : ''}>Ajustados</option></select>
+    </div>
+    <div id="sesEqLista"></div>
+    <div class="se-note">💡 Tildá a los que entrenaron. A quien falta, destildalo y elegí el motivo: queda registrado. Si un jugador hizo otra cosa, tocá ✎.</div>
+    <div class="se-bar">
+      <div class="se-cnt"><span style="color:var(--accent2-text)">✅ ${pres.length} presentes</span><span>✗ ${aus.length} ausentes</span>${ya.length ? `<span style="color:var(--warn-text)">✔ ${ya.length} ya entrenó</span>` : ''}${aj ? `<span>✎ ${aj} ajustados</span>` : ''}</div>
+      <div style="display:flex; gap:8px;"><button class="ghost" style="width:auto;" onclick="sesEqPaso1()">←</button><button class="se-go" ${pres.length ? '' : 'disabled'} onclick="sesEqConfirmar()">Revisar y finalizar</button></div>
+    </div>
+  `);
+  sesEqRenderLista();
+}
+function sesEqRenderLista(){
+  const S = SESEQ, cont = document.getElementById('sesEqLista'); if (!cont) return;
+  const L = S.miembros.filter(m => {
+    const w = S.wel[m.id], alerta = w && (w.semaforo === 'rojo' || w.semaforo === 'amarillo');
+    if (S.filtro === 'a') return alerta; if (S.filtro === 'u') return !S.pres[m.id] && !S.ya[m.id];
+    if (S.filtro === 'aj') return S.pres[m.id] && sesEqAjustes(m.id).length > 0; return true;
+  });
+  if (!L.length){ cont.innerHTML = '<div class="se-sub" style="padding:8px 2px;">No hay jugadores con este filtro.</div>'; return; }
+  cont.innerHTML = L.map(m => {
+    const w = S.wel[m.id], wc = sesEqWClase(w), ya = S.ya[m.id], pr = S.pres[m.id] && !ya, n = sesEqAjustes(m.id).length, ab = S.abierto === m.id;
+    return `<div class="se-pl ${wc === 'rojo' ? 'rojo' : ''} ${pr || ya ? '' : 'aus'}">
+      <div class="se-r"><button class="se-ck ${pr ? 'on' : ''}" ${ya ? 'disabled' : ''} onclick="sesEqTog('${m.id}')">✓</button>
+        <div class="se-n"><b>${escaparHtml(m.nombre)}${n ? `<span class="se-bdg">✎ ajustado ${n}</span>` : ''}${ya ? '<span class="se-bdg">✔ ya entrenó</span>' : ''}</b><small>${escaparHtml(m.posicion || '')}</small></div>
+        <span class="se-wl ${wc}">${sesEqWTxt(w)}</span>
+        ${pr ? `<button class="se-ed ${ab ? 'on' : ''}" onclick="sesEqEd('${m.id}')">✎</button>` : ''}</div>
+      ${wc === 'rojo' && pr && !ab ? `<div class="se-x"><div class="se-alr">⚠ Wellness bajo ese día${w.nota ? ': ' + escaparHtml(w.nota) : ''}. Si entrenó, ajustale la carga con ✎.</div></div>` : ''}
+      ${ya ? '<div class="se-x muted">Ya tiene este entrenamiento cargado ese día (lo hizo solo o ya se cargó). No se vuelve a cargar.</div>' : ''}
+      ${!pr && !ya ? `<div class="se-x"><div class="se-chips">${Object.keys(SESEQ_MOTIVOS).map(k => `<button class="${S.motivo[m.id] === k ? 'on' : ''}" onclick="sesEqMot('${m.id}','${k}')">${SESEQ_MOTIVOS[k]}</button>`).join('')}</div></div>` : ''}
+      ${pr && ab ? `<div class="se-x se-adj">${S.ejercicios.filter(e => !e.carrera).map(e => {
+        const a = S.adj[m.id][e.id] || {}, base = e.peso_sugerido == null ? null : Number(e.peso_sugerido), pesoAct = a.peso != null ? a.peso : base, cambio = a.omitido || (a.peso != null && a.peso !== (base == null ? 0 : base));
+        const conPeso = base != null || e.peso_corporal;
+        return `<div class="ar"><b style="${a.omitido ? 'text-decoration:line-through; opacity:.5;' : ''}">${escaparHtml(e.ejercicios?.nombre || '-')}<br><small>${e.series} × ${e.tiempo_trabajo_seg ? e.tiempo_trabajo_seg + ' s' : escaparHtml(e.repeticiones || '-')}${cambio && base != null ? ' · plan ' + sesEqKg(base) : ''}</small></b>
+          ${conPeso ? `<div class="se-st"><button onclick="sesEqStep('${m.id}','${e.id}',-1)">−</button><span>${e.peso_corporal ? '+' : ''}${sesEqKg(pesoAct == null ? 0 : pesoAct)}</span><button onclick="sesEqStep('${m.id}','${e.id}',1)">+</button></div>` : ''}
+          <label><input type="checkbox" style="width:auto;" ${a.omitido ? 'checked' : ''} onchange="sesEqSkip('${m.id}','${e.id}',this.checked)"> no lo hizo</label></div>`;
+      }).join('')}<button class="ghost" style="width:auto; margin-top:6px; padding:7px 12px; font-size:12.5px;" onclick="sesEqReset('${m.id}')">↺ Volver al plan</button></div>` : ''}
+    </div>`;
+  }).join('');
+}
+function sesEqTog(id){ const S = SESEQ; S.pres[id] = !S.pres[id]; if (!S.pres[id] && S.abierto === id) S.abierto = null; sesEqRender2(); }
+function sesEqTodos(v){ const S = SESEQ; S.miembros.forEach(m => { if (!S.ya[m.id]) S.pres[m.id] = v; }); S.abierto = null; sesEqRender2(); }
+function sesEqFiltro(v){ SESEQ.filtro = v; sesEqRenderLista(); }
+function sesEqMot(id, k){ SESEQ.motivo[id] = k; sesEqRenderLista(); }
+function sesEqEd(id){ SESEQ.abierto = SESEQ.abierto === id ? null : id; sesEqRenderLista(); }
+function sesEqEj(id, eid){ return (SESEQ.adj[id][eid] = SESEQ.adj[id][eid] || {}); }
+function sesEqStep(id, eid, d){
+  const e = SESEQ.ejercicios.find(x => x.id === eid), a = sesEqEj(id, eid), base = e.peso_sugerido == null ? 0 : Number(e.peso_sugerido);
+  const act = a.peso != null ? a.peso : base; a.peso = Math.max(0, Math.round((act + d * 2.5) * 10) / 10); sesEqRender2Lista();
+}
+function sesEqSkip(id, eid, v){ sesEqEj(id, eid).omitido = !!v; sesEqRender2Lista(); }
+function sesEqReset(id){ SESEQ.adj[id] = {}; sesEqRender2Lista(); }
+function sesEqRender2Lista(){ sesEqRenderLista(); /* conserva la posición; los contadores se refrescan al cerrar el ajuste */ const b = document.querySelector('#modalSesEq .se-cnt'); if (b){ const S = SESEQ, pres = S.miembros.filter(m => S.pres[m.id] && !S.ya[m.id]); const n = pres.filter(m => sesEqAjustes(m.id).length).length; const yaN = S.miembros.filter(m => S.ya[m.id]).length, ausN = S.miembros.filter(m => !S.pres[m.id] && !S.ya[m.id]).length; b.innerHTML = `<span style="color:var(--accent2-text)">✅ ${pres.length} presentes</span><span>✗ ${ausN} ausentes</span>${yaN ? `<span style="color:var(--warn-text)">✔ ${yaN} ya entrenó</span>` : ''}${n ? `<span>✎ ${n} ajustados</span>` : ''}`; } }
+
+// ---------- Paso 3: confirmar ----------
+function sesEqConfirmar(){
+  const S = SESEQ; S.paso = 3;
+  const pres = S.miembros.filter(m => S.pres[m.id] && !S.ya[m.id]), aus = S.miembros.filter(m => !S.pres[m.id] && !S.ya[m.id]), aj = pres.filter(m => sesEqAjustes(m.id).length);
+  const diaTxt = S.dias.find(d => d.id === S.diaId)?.label || '';
+  sesEqBody(`
+    <h3>Confirmá la sesión</h3>
+    <p class="se-sub">${escaparHtml(S.equipoNombre)} · ${escaparHtml(diaTxt)} · <b>${escaparHtml(fechaLegible(S.fecha))}</b> · ${S.hora} a ${sesEqFinTxt()} (${S.dur} min)</p>
+    <div class="se-g3"><div><b>${pres.length}</b><span>entrenamientos que se crean</span></div><div><b>${aus.length}</b><span>ausentes</span></div><div><b>${aj.length}</b><span>con ajustes</span></div></div>
+    ${aus.length ? `<div class="se-plan">${aus.map(m => `<div><span>${escaparHtml(m.nombre)}</span><b>${SESEQ_MOTIVOS[S.motivo[m.id]]}</b></div>`).join('')}</div>` : ''}
+    <div class="se-note" style="margin-top:12px;">📲 A cada jugador que entrenó le llega un aviso para que ponga su RPE desde su celular. Su entrenamiento queda como hecho, "cargado por el profe". Podés deshacer toda la sesión después.</div>
+    <div class="se-bar"><div style="display:flex; gap:8px;"><button class="ghost" style="width:auto;" onclick="sesEqRender2()">←</button><button class="se-go" id="sesEqBtnFin" onclick="sesEqFinalizar()">Finalizar para ${pres.length} jugador${pres.length === 1 ? '' : 'es'}</button></div></div>
+  `);
+}
+async function sesEqFinalizar(){
+  const S = SESEQ; if (!S || S.enviando) return; S.enviando = true;
+  const btn = document.getElementById('sesEqBtnFin'); if (btn){ btn.disabled = true; btn.textContent = 'Guardando…'; }
+  const presentes = S.miembros.filter(m => S.pres[m.id] && !S.ya[m.id]).map(m => ({ alumno_id: m.id, ajustes: sesEqAjustes(m.id) }));
+  const ausentes = S.miembros.filter(m => !S.pres[m.id] && !S.ya[m.id]).map(m => ({ alumno_id: m.id, motivo: S.motivo[m.id] || 'sin_aviso' }));
+  try{
+    const r = await sb('rpc/sesion_equipo_finalizar', { method: 'POST', body: JSON.stringify({ p_equipo: S.equipoId, p_rutina_dia: S.diaId, p_fecha: S.fecha, p_presentes: presentes, p_ausentes: ausentes, p_hora: S.hora + ':00', p_duracion_min: S.dur }) });
+    S.enviando = false; S.resultado = r; sesEqResultado();
+  }catch(e){
+    S.enviando = false; toast(sesEqErr(e), true);
+    if (btn){ btn.disabled = false; btn.textContent = 'Reintentar'; }
+  }
+}
+function sesEqResultado(){
+  const S = SESEQ, r = S.resultado || {}, om = r.omitidas || [];
+  const nombre = id => (S.miembros.find(m => m.id === id) || {}).nombre || 'Jugador';
+  sesEqBody(`
+    <div style="text-align:center; font-size:46px; margin-top:6px;">${r.creadas ? '✅' : 'ℹ️'}</div>
+    <h3 style="text-align:center;">${r.creadas ? 'Sesión finalizada' : 'No se cargó nada'}</h3>
+    <p class="se-sub" style="text-align:center;">${escaparHtml(S.equipoNombre)} · ${escaparHtml(fechaLegible(S.fecha))}</p>
+    <div class="se-g3"><div><b>${r.creadas || 0}</b><span>entrenamientos creados</span></div><div><b>${r.ausentes || 0}</b><span>ausentes con motivo</span></div><div><b>${om.length}</b><span>ya estaban cargados</span></div></div>
+    ${om.length ? `<div class="se-note">Ya tenían este entrenamiento ese día y no se tocaron: ${om.map(o => escaparHtml(nombre(o.alumno_id))).join(', ')}.</div>` : ''}
+    ${r.creadas ? '<div class="se-note">📲 A cada jugador le llegó un aviso para que ponga su RPE. En el panel ves quién ya respondió.</div>' : ''}
+    <div class="se-btns">
+      ${r.sesion_id ? `<button onclick="sesEqPanel('${r.sesion_id}')">📊 Ver el panel de la sesión</button><button class="ghost" style="color:var(--danger-text);" onclick="sesEqAnular('${r.sesion_id}')">↩ Deshacer esta sesión</button>` : ''}
+      <button class="ghost" onclick="sesEqCerrar()">Cerrar</button>
+    </div>`);
+}
+
+// ---------- Panel de una sesión ----------
+async function sesEqPanel(id){
+  document.getElementById('modalSesEq').classList.add('show');
+  sesEqBody('<h3>📊 Panel de la sesión</h3><p class="se-sub">Cargando…</p>');
+  try{
+    const [ses] = await sb(`sesiones_equipo?select=id,fecha,equipo_id,anulada_en,rutina_dias(nombre_dia),equipos(nombre)&id=eq.${id}`);
+    if (!ses){ sesEqBody('<h3>📊 Panel</h3><div class="se-note bad">No se encontró la sesión.</div>'); return; }
+    const [ejs, aus] = await Promise.all([
+      sb(`ejecuciones?select=id,alumno_id,rpe,fecha,finalizada_en,cargada_por_nombre,alumnos(nombre)&sesion_equipo_id=eq.${id}`),
+      sb(`sesiones_equipo_ausencias?select=alumno_id,motivo,alumnos(nombre)&sesion_id=eq.${id}`),
+    ]);
+    const ids = ejs.concat(aus).map(x => x.alumno_id);
+    const wel = ids.length ? await sb(`wellness_respuestas?select=alumno_id,total,semaforo&fecha=eq.${ses.fecha}&alumno_id=in.(${ids.join(',')})`) : [];
+    const wm = {}; wel.forEach(w => { wm[w.alumno_id] = w; });
+    const conRpe = ejs.filter(e => e.rpe != null), prom = conRpe.length ? (conRpe.reduce((a, e) => a + Number(e.rpe), 0) / conRpe.length) : null;
+    const pct = ejs.length ? Math.round(conRpe.length * 100 / ejs.length) : 0;
+    const e0 = ejs[0], min = e0 && e0.finalizada_en ? Math.round((new Date(e0.finalizada_en) - new Date(e0.fecha)) / 60000) : null;
+    const hh = x => new Date(x).toLocaleTimeString('es-AR', { timeZone: 'America/Argentina/Buenos_Aires', hour: '2-digit', minute: '2-digit', hour12: false });
+    const ord = (a, b) => String(a.alumnos?.nombre || '').localeCompare(String(b.alumnos?.nombre || ''));
+    sesEqBody(`
+      <h3>📊 ${escaparHtml(ses.equipos?.nombre || 'Equipo')} · ${escaparHtml(ses.rutina_dias?.nombre_dia || 'Entrenamiento')}</h3>
+      <p class="se-sub">${escaparHtml(fechaLegible(ses.fecha))}${min ? ' · ' + hh(e0.fecha) + ' a ' + hh(e0.finalizada_en) + ' (' + min + ' min)' : ''}${ses.anulada_en ? ' · <b style="color:var(--danger-text);">sesión deshecha</b>' : ''}</p>
+      <div class="se-g3"><div><b>${ejs.length}</b><span>entrenaron</span></div><div><b>${aus.length}</b><span>ausentes</span></div><div><b>${prom == null ? '–' : prom.toFixed(1)}</b><span>RPE medio</span></div></div>
+      ${min && prom != null ? `<div class="se-note">📈 Carga de la sesión: <b>${min} min × RPE medio ${prom.toFixed(1).replace('.', ',')} = ${Math.round(min * prom)} UA</b> por jugador (promedio). Ya cuenta en la carga aguda de cada uno.</div>` : (min ? '<div class="se-note">📈 Cuando cada jugador ponga su RPE, la sesión entra en su carga aguda (' + min + ' min × RPE).</div>' : '')}
+      <div class="se-f"><label>RPE de los jugadores · ${conRpe.length} de ${ejs.length}</label><div class="se-prog"><i style="width:${pct}%"></i></div></div>
+      <table class="se-tbl"><tr><th>Jugador</th><th>Estado</th><th>Wellness</th><th>RPE</th></tr>
+        ${ejs.slice().sort(ord).map(e => `<tr><td>${escaparHtml(e.alumnos?.nombre || '')}</td><td><span class="se-tag ok">entrenó</span></td><td>${sesEqWTxt(wm[e.alumno_id])}</td><td>${e.rpe != null ? '<b>' + e.rpe + '</b>' : '<span class="muted">pendiente</span>'}</td></tr>`).join('')}
+        ${aus.slice().sort(ord).map(a => `<tr><td>${escaparHtml(a.alumnos?.nombre || '')}</td><td><span class="se-tag no">${SESEQ_MOTIVOS[a.motivo] || a.motivo}</span></td><td>${sesEqWTxt(wm[a.alumno_id])}</td><td>–</td></tr>`).join('')}
+      </table>
+      <div class="se-btns">
+        ${!ses.anulada_en && conRpe.length < ejs.length ? `<button onclick="sesEqRecordar('${id}')">🔔 Recordar el RPE a los ${ejs.length - conRpe.length} que faltan</button>` : ''}
+        ${!ses.anulada_en ? `<button class="ghost" style="color:var(--danger-text);" onclick="sesEqAnular('${id}')">↩ Deshacer esta sesión</button>` : ''}
+        <button class="ghost" onclick="sesEqCerrar()">Cerrar</button>
+      </div>`);
+  }catch(e){ sesEqBody(`<h3>📊 Panel</h3><div class="se-note bad">${escaparHtml(sesEqErr(e))}</div><div class="se-btns"><button class="ghost" onclick="sesEqCerrar()">Cerrar</button></div>`); }
+}
+async function sesEqRecordar(id){
+  try{
+    const r = await sb('rpc/sesion_equipo_recordar', { method: 'POST', body: JSON.stringify({ p_sesion: id }) });
+    toast(`Aviso enviado a ${r && r.recordados != null ? r.recordados : 0} jugador(es) ✓`);
+  }catch(e){ toast(sesEqErr(e), true); }
+}
+async function sesEqAnular(id){
+  if (!confirm('¿Deshacer esta sesión? Se borran los entrenamientos que se cargaron a todos los jugadores y los avisos de RPE pendientes.')) return;
+  try{
+    let r = await sb('rpc/sesion_equipo_anular', { method: 'POST', body: JSON.stringify({ p_sesion: id, p_confirmar: false }) });
+    if (r && r.requiere_confirmacion){
+      if (!confirm(`${r.con_rpe} jugador(es) ya pusieron su RPE. Si deshacés la sesión, ese RPE se pierde. ¿Deshacer igual?`)) return;
+      r = await sb('rpc/sesion_equipo_anular', { method: 'POST', body: JSON.stringify({ p_sesion: id, p_confirmar: true }) });
+    }
+    toast('Sesión deshecha ✓');
+    sesEqBody(`<div style="text-align:center; font-size:46px; margin-top:6px;">↩</div><h3 style="text-align:center;">Sesión deshecha</h3><p class="se-sub" style="text-align:center;">Se borraron ${r && r.borradas != null ? r.borradas : 0} entrenamientos. Podés volver a cargarla cuando quieras.</p><div class="se-btns"><button onclick="sesEqCerrar(); sesEqAbrir();">Volver a cargar la sesión</button><button class="ghost" onclick="sesEqCerrar()">Cerrar</button></div>`);
+    SESEQ = null; sesEqRecientes();
+  }catch(e){ toast(sesEqErr(e), true); }
+}
+
+// ============================================================================
+// (v137) LADO ALUMNO — tarjeta "¿Cómo fue tu entrenamiento? Poné tu RPE"
+// Aparece en Inicio cuando el profe cargó un entrenamiento por él (sesión de equipo) y falta su RPE.
+// ============================================================================
+const RPE_TXT = ['', 'Muy suave', 'Suave', 'Liviano', 'Algo cansado', 'Moderado', 'Exigente', 'Duro', 'Muy duro', 'Casi al límite', 'Al máximo'];
+let RPE_PEND_SEL = {};
+let RPE_ALU_ID = null;
+async function rpeCardAluCargar(alumnoId){
+  const cont = document.getElementById('rpeCardAlu'); if (!cont || !alumnoId) return;
+  RPE_ALU_ID = alumnoId;
+  try{
+    const rows = await sb(`ejecuciones?select=id,fecha,rutina_dias(nombre_dia)&alumno_id=eq.${alumnoId}&rpe_pendiente=eq.true&rpe=is.null&estado=eq.finalizada&order=fecha.desc&limit=3`);
+    if (!rows.length){ cont.innerHTML = ''; return; }
+    cont.innerHTML = rows.map(r => {
+      const sel = RPE_PEND_SEL[r.id] || 0, f = (r.fecha || '').slice(0, 10);
+      return `<div class="card" style="border-color:var(--accent);">
+        <div style="font-weight:800;">¿Cómo fue "${escaparHtml(r.rutina_dias?.nombre_dia || 'tu entrenamiento')}"?</div>
+        <div class="muted" style="font-size:13px;">Tu profe lo cargó por vos${f ? ' (' + escaparHtml(formatearFechaCorta(new Date(r.fecha).toLocaleDateString('en-CA', { timeZone: 'America/Argentina/Buenos_Aires' }))) + ')' : ''}. Poné cuánto te costó, de 1 a 10.</div>
+        <div class="rpe-grid">${[1,2,3,4,5,6,7,8,9,10].map(n => `<button class="${sel === n ? 'on' : ''}" onclick="rpePendElegir('${r.id}',${n})">${n}</button>`).join('')}</div>
+        <div class="muted" style="font-size:12.5px; min-height:18px;">${sel ? '<b>' + sel + '</b> · ' + RPE_TXT[sel] : '1 = muy suave · 10 = al máximo'}</div>
+        <button style="margin-top:8px;" ${sel ? '' : 'disabled'} onclick="rpePendGuardar('${r.id}','${alumnoId}')">Guardar mi RPE</button>
+      </div>`;
+    }).join('');
+  }catch(e){ /* best-effort: nunca corta el Inicio */ }
+}
+function rpePendElegir(id, n){ RPE_PEND_SEL[id] = n; rpeCardAluCargar(RPE_ALU_ID); }
+async function rpePendGuardar(id, alumnoId){
+  const n = RPE_PEND_SEL[id]; if (!n) return;
+  try{
+    await sb(`ejecuciones?id=eq.${id}&alumno_id=eq.${alumnoId}`, { method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: JSON.stringify({ rpe: n }) });
+    sb(`notificaciones_alumno?ejecucion_id=eq.${id}&tipo=eq.pedir_rpe`, { method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: JSON.stringify({ leida: true }) }).catch(() => {});
+    delete RPE_PEND_SEL[id];
+    toast('¡Gracias! Tu profe ya ve tu RPE ✓');
+    rpeCardAluCargar(alumnoId);
+  }catch(e){ toast('No se pudo guardar: ' + (e.message || e), true); }
 }
 
 // ---------- Ficha / Reporte del alumno + export a PDF (pedido de Martin, 21/9)
@@ -20659,6 +21130,7 @@ function wellnessCardMostrar(v){
 async function revisarWellnessPendiente(alumnoId, forzar){
   try{
     WELLNESS_CTX.alumnoId = alumnoId;
+    rpeCardAluCargar(alumnoId);   // (v137) RPE pendiente de una sesión de equipo
     if (!WELLNESS_LISTENER_PUESTO){
       WELLNESS_LISTENER_PUESTO = true;
       const rechequear = (f) => { if ((f === true || document.visibilityState === 'visible') && WELLNESS_CTX.alumnoId) revisarWellnessPendiente(WELLNESS_CTX.alumnoId, f === true); };   // (v112) tocar el push llega con la página todavía "oculta": igual hay que abrirlo
@@ -21179,7 +21651,7 @@ async function revisarNotificacionesAlumno(alumnoId){
       }
     }
 
-    const pendientes = await sb(`notificaciones_alumno?alumno_id=eq.${alumnoId}&leida=eq.false&tipo=neq.wellness_pendiente&order=creado_en.asc`);
+    const pendientes = await sb(`notificaciones_alumno?alumno_id=eq.${alumnoId}&leida=eq.false&tipo=not.in.(wellness_pendiente,pedir_rpe)&order=creado_en.asc`);
     NOTIF_PAGOS_PENDIENTES_ALU = pendientes || [];
     NOTIF_PAGOS_PENDIENTES_ALU.forEach(n => {
       bloques.push(`<div class="warn-banner" style="background:rgba(61,220,132,.12); border-color:rgba(61,220,132,.4); color:var(--accent2-text);"><strong>${n.titulo}</strong><br>${n.mensaje}</div>`);
