@@ -47,7 +47,7 @@
     --warn:#ffd23d; --danger:#ff5d5d; --radius:18px;
     /* (v72) Tokens nuevos: superficies internas, texto de acento legible sobre cada fondo y "notas" naranjas. */
     --inset:#10131a; --panel3:#14171e; --hover:rgba(255,255,255,.06); --shadow-card:0 6px 18px rgba(0,0,0,.28);
-    --accent-text:var(--accent); --accent2-text:var(--accent2); --warn-text:var(--warn); --danger-text:var(--danger-text);
+    --accent-text:var(--accent); --accent2-text:var(--accent2); --warn-text:var(--warn); --danger-text:var(--danger);
     --note-bg:rgba(255,122,48,.1); --note-bd:rgba(255,122,48,.35); --note-text:#ffcba3;
     --glass:rgba(255,255,255,.06); --glass-bd:rgba(255,255,255,.14); --glass2:rgba(255,255,255,.055); --glass-bd2:rgba(255,255,255,.12);
     --lc-soft:#ffb98a; --lc-sub:#c7cad3;
@@ -665,6 +665,64 @@
   .rpe-grid{ display:grid; grid-template-columns:repeat(5,1fr); gap:6px; margin:10px 0 6px; }
   .rpe-grid button{ padding:11px 0; font-size:16px; font-weight:800; border-radius:12px; background:var(--panel2); color:var(--text); border:1px solid var(--border); }
   .rpe-grid button.on{ background:var(--accent); color:#1a1000; border-color:var(--accent); }
+
+  /* ---- (v138) Partidos y minutos jugados ---- */
+  .pa-seg{ display:flex; background:var(--inset); border:1.5px solid var(--border); border-radius:12px; overflow:hidden; margin:2px 11px 10px; }
+  .se-box .pa-seg button{ flex:1 !important; width:auto !important; padding:9px 2px !important; font-size:12.5px; font-weight:800; background:transparent !important; border:0 !important; border-radius:0 !important; color:var(--muted) !important; }
+  .se-box .pa-seg button.on{ background:rgba(255,122,48,.2) !important; color:var(--text) !important; }
+  .se-box .pa-seg button.on.t{ background:rgba(61,220,132,.2) !important; color:var(--accent2-text) !important; }
+  .se-box .pa-seg button.on.n{ background:rgba(255,93,93,.14) !important; color:var(--danger-text) !important; }
+  .pa-opt{ display:flex; gap:11px; align-items:flex-start; background:var(--panel2); border:1.5px solid var(--border); border-radius:14px; padding:12px; margin-top:8px; cursor:pointer; }
+  .pa-opt.on{ border-color:var(--accent); background:rgba(255,122,48,.1); } .pa-opt.dis{ opacity:.5; cursor:not-allowed; }
+  .pa-opt .ic{ font-size:22px; line-height:1; } .pa-opt small{ color:var(--muted); display:block; margin-top:2px; line-height:1.4; }
+  .pa-clk{ background:var(--inset); border:1px solid var(--border); border-radius:16px; padding:14px; text-align:center; margin:10px 0; }
+  .pa-clk .t{ font-size:56px; font-weight:900; letter-spacing:-2px; font-variant-numeric:tabular-nums; line-height:1; }
+  .pa-clk .s{ font-size:13px; color:var(--muted); margin:6px 0 12px; line-height:1.45; }
+  .pa-clk .w{ font-size:11.5px; color:var(--muted); margin-top:8px; }
+  .pa-liv{ color:var(--danger-text); font-weight:800; }
+  .se-box button.pa-b{ width:100% !important; flex:none !important; padding:13px !important; font-size:15px; font-weight:800; border-radius:12px !important; margin-top:8px; }
+  .se-box button.pa-b.pulse{ animation:paPl 1s infinite; } @keyframes paPl{ 50%{ box-shadow:0 0 0 6px rgba(255,122,48,.28); } }
+  .pa-r2{ display:flex; gap:8px; } .se-box .pa-r2 button.pa-b{ flex:1 !important; width:auto !important; }
+  .pa-dsc{ display:flex; gap:6px; align-items:center; } .pa-dsc small{ color:var(--muted); font-weight:700; font-size:11px; text-transform:uppercase; letter-spacing:.05em; white-space:nowrap; margin-right:2px; }
+  .se-box .pa-dsc button{ flex:1 !important; width:auto !important; padding:10px 0 !important; font-size:13px; border-radius:12px !important; background:var(--panel2) !important; border:1px solid var(--border) !important; color:var(--text) !important; font-weight:800; }
+  .pa-ev{ display:flex; align-items:center; gap:8px; padding:8px 11px; border:1px solid var(--border); border-radius:12px; background:var(--panel2); margin:6px 0; font-size:13.5px; }
+  .pa-ev b.m{ min-width:40px; font-weight:900; } .pa-ev .tx{ flex:1; min-width:0; }
+  .se-box .pa-ev button{ flex:none !important; width:30px !important; height:30px; padding:0 !important; border-radius:9px !important; background:transparent !important; border:1px solid var(--border) !important; color:var(--muted) !important; }
+  .pa-form{ background:var(--inset); border:1px solid var(--accent); border-radius:14px; padding:12px; margin:8px 0; }
+  .pa-mn{ font-weight:900; font-size:18px; min-width:52px; text-align:right; } .pa-mn small{ font-size:11px; color:var(--muted); font-weight:700; }
+  .pa-trk{ position:relative; height:9px; background:var(--inset); border:1px solid var(--border); border-radius:99px; overflow:hidden; margin:0 11px 10px; }
+  .pa-trk i{ position:absolute; top:0; bottom:0; background:linear-gradient(90deg,var(--accent),#ffb27a); border-radius:99px; }
+  .pa-rec .tg{ display:inline-block; font-size:11px; font-weight:800; padding:1px 8px; border-radius:99px; border:1px solid var(--border); margin-left:6px; vertical-align:middle; }
+  .pa-rec .tg.v{ color:var(--danger-text); border-color:rgba(255,93,93,.5); } .pa-rec .tg.b{ color:var(--warn-text); border-color:rgba(255,200,74,.5); }
+  /* gráfico de minutos */
+  .pg-chips{ display:flex; flex-wrap:wrap; gap:6px; max-height:150px; overflow:auto; margin-top:8px; padding-right:2px; }
+  .se-box .pg-chips button{ flex:none !important; width:auto !important; padding:7px 10px !important; border-radius:99px !important; font-size:12.5px; font-weight:700; background:var(--panel2) !important; border:1px solid var(--border) !important; color:var(--muted) !important; display:flex; align-items:center; gap:6px; }
+  .se-box .pg-chips button.on{ border-color:var(--accent) !important; color:var(--text) !important; background:rgba(255,122,48,.14) !important; }
+  .pg-chips i{ width:9px; height:9px; border-radius:3px; flex:none; }
+  .pg-f{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:10px; } .pg-f .full{ grid-column:1/-1; }
+  .pg-f label{ display:block; font-size:10.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); font-weight:700; margin-bottom:5px; }
+  .pg-f input[type=date]{ width:100%; }
+  .pg-seg{ display:flex; background:var(--inset); border:1.5px solid var(--border); border-radius:12px; overflow:hidden; }
+  .se-box .pg-seg button{ flex:1 !important; width:auto !important; padding:8px 2px !important; font-size:12px; font-weight:800; background:transparent !important; border:0 !important; border-radius:0 !important; color:var(--muted) !important; }
+  .se-box .pg-seg button.on{ background:rgba(255,122,48,.2) !important; color:var(--text) !important; } .se-box .pg-seg button.dis{ opacity:.35; }
+  .pg-k{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin:12px 0; } .pg-k > div{ background:var(--inset); border:1px solid var(--border); border-radius:14px; padding:9px 4px; text-align:center; font-size:11px; color:var(--muted); } .pg-k b{ display:block; font-size:20px; color:var(--text); }
+  .pg-sc{ overflow-x:auto; } #pgChart svg{ display:block; margin:0 auto; touch-action:pan-y; }
+  .pg-t{ fill:var(--muted); font-size:9.5px; } .pg-v{ fill:var(--text); font-size:10.5px; font-weight:800; } .pg-x{ fill:var(--muted); font-size:10px; font-weight:700; }
+  .pg-gl{ stroke:var(--border); stroke-width:1; stroke-dasharray:2 3; } .pg-gl.b{ stroke-dasharray:none; }
+  .pg-hl{ fill:transparent; } .pg-hl.on{ fill:rgba(128,128,128,.14); } .pg-hit{ fill:transparent; cursor:pointer; }
+  .pg-lg{ display:inline-flex; align-items:center; gap:6px; font-size:12.5px; font-weight:700; margin:0 12px 6px 0; } .pg-lg i{ width:10px; height:10px; border-radius:3px; flex:none; }
+  .pg-rd{ background:var(--inset); border:1px solid var(--border); border-radius:14px; padding:10px 12px; font-size:13.5px; margin-top:10px; max-height:260px; overflow:auto; }
+  .pg-rd .rr{ display:flex; align-items:center; gap:8px; padding:5px 0; border-top:1px solid var(--border); } .pg-rd .rr b{ margin-left:auto; white-space:nowrap; } .pg-rd small{ color:var(--muted); }
+  .pg-mx{ display:grid; gap:2px; align-items:center; min-width:100%; }
+  .pg-mx .h{ color:var(--muted); font-size:8.5px; letter-spacing:-.03em; white-space:nowrap; font-weight:700; text-align:center; padding-bottom:3px; } .pg-mx .nm{ font-size:12px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; padding-right:4px; }
+  .pg-c{ height:28px; border-radius:6px; display:grid; place-items:center; font-weight:800; font-size:11.5px; background:rgba(57,135,229,.18); }
+  .pg-c.nc{ background:transparent; color:var(--muted); font-weight:600; } .pg-c.z{ background:var(--inset); color:var(--muted); } .pg-c.ft{ background:transparent; color:var(--muted); font-weight:700; font-size:10.5px; }
+  .pg-mx .tt{ text-align:right; font-weight:900; font-size:12px; } .pg-mx .tt.ft{ color:var(--muted); font-size:10.5px; }
+  .pg-ml{ display:flex; align-items:center; gap:8px; font-size:11.5px; color:var(--muted); margin:10px 0 2px; } .pg-ml i{ flex:0 0 90px; height:10px; border-radius:99px; background:linear-gradient(90deg,rgba(57,135,229,.18),rgba(57,135,229,.68)); }
+  .pg-f label.pg-pl{ text-transform:none; letter-spacing:0; font-size:13.5px; color:var(--text); font-weight:500; margin:0; }
+  .pg-pl{ display:flex; align-items:center; gap:8px; padding:7px 2px; border-top:1px solid var(--border); font-size:13.5px; } .pg-pl input{ width:20px; height:20px; accent-color:var(--accent); flex:none; }
+  .pg-pl span{ flex:1; min-width:0; } .pg-pl small{ color:var(--muted); }
+  .pg-det summary{ cursor:pointer; font-size:13px; font-weight:700; padding:9px 12px; background:var(--panel2); border:1px solid var(--border); border-radius:12px; list-style:none; } .pg-det summary::-webkit-details-marker{ display:none; } .pg-det[open] summary{ margin-bottom:8px; }
 
   /* ---- Modal de confirmación (reserva de turno) ---- */
   .modal-overlay{
@@ -2822,6 +2880,20 @@
             </div>
             <div id="sesEqRecientes" style="margin-top:8px;"></div>
           </div>
+          <div class="card" id="partCard">
+            <!-- (v138) Partidos: cargar el partido (en vivo con cronómetro o después), minutos por jugador y gráfico -->
+            <div class="row" style="justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
+              <div style="flex:1; min-width:200px;">
+                <h3 style="margin:0;">🏟 Partidos</h3>
+                <div class="muted" style="font-size:13px; margin-top:2px;">Cargá el partido en vivo (con cronómetro) o después. Se calculan los minutos de cada jugador.</div>
+              </div>
+              <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                <button class="ghost" onclick="pgAbrir()" style="width:auto;">📊 Minutos</button>
+                <button onclick="paAbrir()" style="width:auto;">＋ Cargar partido</button>
+              </div>
+            </div>
+            <div id="partRecientes" style="margin-top:8px;"></div>
+          </div>
           <div class="card">
             <h3 style="margin-top:0;">Entrenamientos planificados esta semana</h3>
             <div id="equipoEntrenamientos" class="muted">Cargando...</div>
@@ -3936,6 +4008,14 @@
   </div>
 </div>
 
+<!-- (v138) Partidos y minutos jugados -->
+<div class="modal-overlay" id="modalPartido" onclick="if(event.target===this)paCerrar()">
+  <div class="modal-box se-box">
+    <div class="x-wrap"><button type="button" class="x-cerrar" aria-label="Cerrar" title="Cerrar" onclick="paCerrar()">✕</button></div>
+    <div id="paBody"></div>
+  </div>
+</div>
+
 <!-- RPE (percepción subjetiva de esfuerzo) al finalizar el entrenamiento del día —
      obligatorio: no se puede finalizar sin mover la barra al menos una vez. -->
 <div class="modal-overlay" id="modalRpe">
@@ -4993,11 +5073,11 @@ function atlIniciarAlu(){
   atlCargarVista('aluAtletismoContenido', id || '');
 }
 
-const APP_VERSION = 137;
+const APP_VERSION = 138;
 let ES_PERSONAL = false;   // (v132) cuenta personal (gimnasios.tipo = 'personal'); se calcula en perAplicar()
 // (v96) Fecha de la última actualización: se cambia junto con APP_VERSION en cada entrega. Se muestra en la
 // pantalla de inicio y en el menú de cuenta ("v94 · actualizada el 5/10/2026").
-const APP_FECHA = '2026-10-27';
+const APP_FECHA = '2026-10-28';
 function appVersionTxt(){ const [y, m, d] = APP_FECHA.split('-'); return `v${APP_VERSION} · actualizada el ${+d}/${+m}/${y}`; }
 (function(){ const el = document.getElementById('lcVersion'); if (el) el.textContent = 'M2F Solutions · ' + appVersionTxt(); })();
 
@@ -9438,6 +9518,7 @@ function rpxIrAplicar(r){
       else if (r === 'rpe'){ cambiarSubvistaAlu('inicio'); if (typeof WELLNESS_CTX !== 'undefined' && WELLNESS_CTX.alumnoId) rpeCardAluCargar(WELLNESS_CTX.alumnoId); }   // (v137) aviso de RPE → Inicio, donde está la tarjeta
       else if (r === 'wellness'){ if (typeof WELLNESS_CTX !== 'undefined' && WELLNESS_CTX.alumnoId) revisarWellnessPendiente(WELLNESS_CTX.alumnoId, true); }   // (v112) aviso de Wellness → abre el cuestionario
     } else if (r === 'clases') cambiarSubvista('clases');
+    else if (r === 'equipo') cambiarSubvista('equipo');   // (v138) aviso del reloj del partido → Equipo
   }catch(e){}
 }
 function rpxMsg(e){ return String((e && e.message) || e || ''); }
@@ -16185,6 +16266,12 @@ async function caCargar(alumnoId){
     if (!m){ sinDur++; return; }
     const s = sem[i]; s.ua += m.min * Number(r.rpe); s.ses++; s.min += m.min; if (m.est) s.est++;
   });
+  // (v138) los partidos también cargan al jugador: minutos jugados × RPE (solo los que pusieron su RPE)
+  let parTot = 0;
+  try{
+    const pr = await sb(`partidos_minutos_v?select=fecha,minutos,rpe&alumno_id=eq.${alumnoId}&estado=eq.finalizado&rpe=not.is.null&minutos=gt.0&fecha=gte.${desde}&limit=200`);
+    pr.forEach(p => { const i = idx[caLunesISO(p.fecha)]; if (i == null) return; const s = sem[i]; s.ua += p.minutos * Number(p.rpe); s.ses++; s.min += p.minutos; parTot++; });
+  }catch(e){ /* sin el SQL v138 */ }
   const primera = sem.findIndex(s => s.ses > 0), ult = semanas - 1;
   sem.forEach((s, i) => {
     s.lbl = formatearFechaCorta(s.k).slice(0, 5);
@@ -16198,7 +16285,7 @@ async function caCargar(alumnoId){
   return {
     sem: vis, act, acwr: act.acwr, zona: caZona(act.acwr), hay: primera >= 0,
     calibrando: primera >= 0 && !act.cal, faltan: primera >= 0 ? Math.max(0, 3 - (ult - primera)) : 3,
-    sesTot: vis.reduce((a, s) => a + s.ses, 0), estTot: vis.reduce((a, s) => a + s.est, 0), sinDur, w,
+    sesTot: vis.reduce((a, s) => a + s.ses, 0), estTot: vis.reduce((a, s) => a + s.est, 0), sinDur, w, parTot,
   };
 }
 function caCruce(D){
@@ -16260,7 +16347,7 @@ function caHtml(D){
     <div style="font-weight:700; margin:12px 0 2px;">Carga por semana</div>${caLeyenda([{ c:'var(--accent)', t:'Carga semanal (UA)' }, { c:'#5aa9ff', t:'Promedio de 4 semanas', l:1 }])}${caGrafCarga(D)}
     <div style="font-weight:700; margin:14px 0 2px;">ACWR por semana</div>${caLeyenda([{ c:'rgba(154,163,178,.4)', t:'Baja –0,8' }, { c:'rgba(61,220,132,.45)', t:'Óptima 0,8–1,3' }, { c:'rgba(255,210,61,.55)', t:'Precaución 1,3–1,5' }, { c:'rgba(255,93,93,.45)', t:'Riesgo +1,5' }])}${caGrafAcwr(D)}
     ${tabla}
-    <div class="x-sub" style="margin-top:10px;">UA = minutos × RPE. La semana en curso se va completando hasta el domingo.${D.estTot ? ` ${D.estTot} de ${D.sesTot} sesiones tienen la duración estimada por las series (tope 2 h).` : ''}${D.sinDur ? ` ${D.sinDur} sesión(es) sin datos de duración no cuentan.` : ''} Es una señal de alerta, no predice lesiones.</div>`;
+    <div class="x-sub" style="margin-top:10px;">UA = minutos × RPE. La semana en curso se va completando hasta el domingo.${D.parTot ? ' Incluye ' + D.parTot + (D.parTot === 1 ? ' partido' : ' partidos') + ' (minutos jugados × RPE).' : ''}${D.estTot ? ` ${D.estTot} de ${D.sesTot} sesiones tienen la duración estimada por las series (tope 2 h).` : ''}${D.sinDur ? ` ${D.sinDur} sesión(es) sin datos de duración no cuentan.` : ''} Es una señal de alerta, no predice lesiones.</div>`;
 }
 async function caPintar(contId, alumnoId, vigente){
   const el = document.getElementById(contId); if (!el) return;
@@ -19032,12 +19119,15 @@ async function cargarVistaEquipo(){
   const miembros = ALUMNOS_CACHE.filter(a => a.equipo_id === equipoId);
   const sesEqCardEl = document.getElementById('sesEqCard');   // (v137)
   if (sesEqCardEl) sesEqCardEl.style.display = miembros.length ? '' : 'none';
+  const partCardEl = document.getElementById('partCard');   // (v138)
+  if (partCardEl) partCardEl.style.display = miembros.length ? '' : 'none';
   if (!miembros.length){
     contEntrenamientos.innerHTML = '<div class="empty">Este equipo todavía no tiene jugadores asignados (asignalos desde "👤 Alumnos").</div>';
     contJugadores.innerHTML = '';
     return;
   }
   sesEqRecientes();   // (v137)
+  paRecientes();      // (v138)
   const idsAlumnos = miembros.map(m => m.id);
 
   try{
@@ -19496,8 +19586,9 @@ async function rpeCardAluCargar(alumnoId){
   RPE_ALU_ID = alumnoId;
   try{
     const rows = await sb(`ejecuciones?select=id,fecha,rutina_dias(nombre_dia)&alumno_id=eq.${alumnoId}&rpe_pendiente=eq.true&rpe=is.null&estado=eq.finalizada&order=fecha.desc&limit=3`);
-    if (!rows.length){ cont.innerHTML = ''; return; }
-    cont.innerHTML = rows.map(r => {
+    let par = []; try{ par = await paRpePendientes(alumnoId); }catch(e){ /* sin el SQL v138 */ }   // (v138) RPE de partidos
+    if (!rows.length && !par.length){ cont.innerHTML = ''; return; }
+    cont.innerHTML = par.map(paRpeCardHtml).join('') + rows.map(r => {
       const sel = RPE_PEND_SEL[r.id] || 0, f = (r.fecha || '').slice(0, 10);
       return `<div class="card" style="border-color:var(--accent);">
         <div style="font-weight:800;">¿Cómo fue "${escaparHtml(r.rutina_dias?.nombre_dia || 'tu entrenamiento')}"?</div>
@@ -19519,6 +19610,762 @@ async function rpePendGuardar(id, alumnoId){
     toast('¡Gracias! Tu profe ya ve tu RPE ✓');
     rpeCardAluCargar(alumnoId);
   }catch(e){ toast('No se pudo guardar: ' + (e.message || e), true); }
+}
+
+// ============================================================================
+// (v138) PARTIDOS Y MINUTOS JUGADOS
+// Pedido de Martin (Oct/2026): el profe físico carga el partido (en vivo con cronómetro, o después en cualquier fecha),
+// el servidor calcula los minutos de cada jugador, el RPE es opcional y hay un gráfico de minutos por jugador.
+// Todo se guarda con partido_guardar (o todo o nada). El reloj vive en el servidor (partido_cronometro): si se bloquea el
+// teléfono o se cierra la app, al volver se recalcula exacto; los avisos de fin de tiempo / entretiempo salen por push.
+// SQL: v138-partidos-minutos.sql
+// ============================================================================
+const PA_ERRORES = {
+  sin_permiso:'No tenés permiso para cargar partidos.', fecha_futura:'No se puede cargar un partido en una fecha futura.',
+  fecha_muy_vieja:'Solo se pueden cargar partidos de hasta 400 días hacia atrás.', rival_requerido:'Escribí el nombre del rival.',
+  tipo_invalido:'Elegí el tipo de partido.', duracion_invalida:'La duración tiene que estar entre 5 y 150 minutos.',
+  equipo_invalido:'Ese equipo no es de tu gimnasio.', partido_existente:'Ya hay un partido de este equipo contra ese rival en esa fecha. Buscalo en "Partidos recientes".',
+  partido_invalido:'No se encontró el partido.', jugador_invalido:'Hay un jugador que ya no pertenece al equipo. Cerrá y volvé a abrir la pantalla.',
+  jugador_repetido:'Hay un jugador repetido.', rol_invalido:'Rol de jugador inválido.',
+  minutos_invalidos:'Hay una entrada, salida, expulsión o ajuste de minutos fuera de la duración del partido. Revisá los minutos.',
+  sin_titulares:'Marcá al menos un titular para finalizar el partido.', ya_anulado:'Ese partido ya estaba deshecho.',
+  partido_sin_finalizar:'Primero hay que finalizar el partido.', partido_finalizado:'El partido ya está finalizado.',
+  cronometro_ya_iniciado:'El reloj ya estaba iniciado.', cronometro_solo_hoy:'El cronómetro solo se puede usar el mismo día del partido.',
+  cronometro_no_corre:'El reloj no está en marcha.', cronometro_no_pausado:'El reloj no está en pausa.', no_es_entretiempo:'No es el entretiempo.',
+  descuento_invalido:'El descuento tiene que ser de 1 a 15 minutos.', accion_invalida:'Acción inválida.',
+};
+const PA_TIPOS = { oficial:'Oficial', amistoso:'Amistoso', reserva:'Reserva' };
+let PA = null;
+function paErr(e){
+  const m = (typeof extraerMensajeError === 'function' ? extraerMensajeError(e) : String(e.message || e)).trim();
+  return PA_ERRORES[m] || m;
+}
+function paBody(html){ document.getElementById('paBody').innerHTML = html; const b = document.querySelector('#modalPartido .se-box'); if (b) b.scrollTop = 0; }
+function paAbierto(){ return document.getElementById('modalPartido').classList.contains('show'); }
+function paCerrar(){
+  document.getElementById('modalPartido').classList.remove('show');
+  paClkParar();                      // el reloj SIGUE en el servidor; acá solo se corta el dibujo y la pantalla encendida
+  PA = null; PG = null;
+  try{ if (document.getElementById('subvistaEquipo').style.display !== 'none') paRecientes(); }catch(e){}
+}
+function paCorto(n){ const w = String(n || '').trim().split(/\s+/); return w.length < 2 ? (n || '') : w[0][0] + '. ' + w.slice(1).join(' '); }
+function paSoloMiembros(equipoId){
+  return ALUMNOS_CACHE.filter(a => a.equipo_id === equipoId && a.activo !== false).slice().sort((a, b) => String(a.nombre).localeCompare(String(b.nombre), 'es'));
+}
+function paJ(id){ const S = PA; return (S.jug[id] = S.jug[id] || { rol: 'no_convocado', entra: null, sale: null, exp: null, man: null }); }
+// misma fórmula que partido_calc_minutos (servidor)
+function paMin(j, dur){
+  if (!j || j.rol === 'no_convocado') return 0;
+  if (j.man != null) return Math.max(0, Math.min(j.man, dur));
+  const ini = j.rol === 'titular' ? 0 : j.entra; if (ini == null) return 0;
+  let fin = dur; if (j.sale != null) fin = Math.min(fin, j.sale); if (j.exp != null) fin = Math.min(fin, j.exp);
+  return Math.max(fin - ini, 0);
+}
+function paNombre(id){ return (PA.miembros.find(m => m.id === id) || {}).nombre || 'Jugador'; }
+function paDurGuardar(){
+  const S = PA; let mx = 0;
+  Object.values(S.jug).forEach(j => { [j.entra, j.sale, j.exp].forEach(v => { if (v != null && v > mx) mx = v; }); });
+  return Math.max(5, Math.min(150, Math.max(S.dur, mx + 1)));
+}
+
+// ---------- Alta ----------
+function paAbrir(){
+  const eq = sesEqEquipoActual();
+  if (!eq.id){ toast('Elegí un equipo primero.', true); return; }
+  const miembros = paSoloMiembros(eq.id);
+  if (!miembros.length){ toast('Este equipo no tiene jugadores.', true); return; }
+  PA = { id: null, equipoId: eq.id, equipoNombre: eq.nombre, miembros, rival: '', local: true, tipo: 'oficial', fechaSel: '0', fecha: sesEqFechaIso(0), hora: '18:00',
+         dur: 90, modo: 'vivo', jug: {}, wel: {}, paso: 1, enviando: false, pedirRpe: true, edit: false, form: null };
+  paClkReset();
+  document.getElementById('modalPartido').classList.add('show');
+  paPaso1();
+}
+function paPaso1(){
+  const S = PA; S.paso = 1;
+  const chip = (cond, js, t) => `<button class="${cond ? 'on' : ''}" onclick="${js}">${t}</button>`;
+  const pasado = S.fecha !== sesEqFechaIso(0);
+  if (pasado && S.modo === 'vivo') S.modo = 'despues';
+  paBody(`
+    <h3>🏟 Cargar partido</h3>
+    <p class="se-sub">${escaparHtml(S.equipoNombre)} · ${S.miembros.length} jugadores</p>
+    <div class="se-f"><label>Rival</label><input id="paRival" type="text" maxlength="60" style="width:100%; box-sizing:border-box;" placeholder="Ej: Club Atlético Central" value="${escaparHtml(S.rival)}" oninput="PA.rival=this.value"></div>
+    <div class="se-f"><label>Condición</label><div class="se-chips">${chip(S.local, 'paSet(\'local\',true)', '🏠 Local')}${chip(!S.local, 'paSet(\'local\',false)', '✈️ Visitante')}</div></div>
+    <div class="se-f"><label>Tipo</label><div class="se-chips">${Object.keys(PA_TIPOS).map(k => chip(S.tipo === k, `paSet('tipo','${k}')`, PA_TIPOS[k])).join('')}</div></div>
+    <div class="se-f"><label>¿Cuándo se juega?</label>
+      <div class="se-chips">${chip(S.fechaSel === '0', "paFecha('0')", 'Hoy')}${chip(S.fechaSel === '1', "paFecha('1')", 'Ayer')}${chip(S.fechaSel === '2', "paFecha('2')", 'Hace 2 días')}${chip(S.fechaSel === 'x', "paFecha('x')", 'Otro día…')}</div>
+      <input type="date" id="paFechaIn" value="${S.fecha}" max="${sesEqFechaIso(0)}" style="margin-top:8px; display:${S.fechaSel === 'x' ? '' : 'none'};" onchange="paFechaManual(this.value)">
+      ${pasado ? '<div class="se-note">📅 <b>Cargando un partido pasado.</b> Se cargan los minutos a mano (el cronómetro es solo para el día del partido).</div>' : ''}</div>
+    <div class="se-f"><label>¿Cómo lo cargás?</label>
+      <div class="pa-opt ${S.modo === 'vivo' ? 'on' : ''} ${pasado ? 'dis' : ''}" onclick="paModo('vivo')"><span class="ic">⏱</span><div><b>En vivo, con cronómetro</b><small>El reloj se frena solo a los 45', cuenta el entretiempo (15 min), te avisa y el 2.º tiempo lo iniciás vos. Cada cambio toma el minuto del reloj.</small></div></div>
+      <div class="pa-opt ${S.modo === 'despues' ? 'on' : ''}" onclick="paModo('despues')"><span class="ic">📝</span><div><b>Después (a mano)</b><small>Cargás los cambios con su minuto cuando termina el partido, o de un partido de otro día.</small></div></div></div>
+    <div class="se-f"><label>Duración reglamentaria</label>
+      <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+        <div class="se-chips">${[90, 80, 70, 60, 40].map(n => chip(S.dur === n, `paDur0(${n})`, n + "'")).join('')}</div>
+        <div class="se-st"><button onclick="paDur0(PA.dur-5)">−</button><span style="min-width:62px;">${S.dur} min</span><button onclick="paDur0(PA.dur+5)">+</button></div></div>
+      <div class="se-note">${S.modo === 'vivo' ? 'En vivo, la duración final es la que marque el reloj (con el descuento).' : 'Si hubo descuento, sumalo acá (ej. 93).'}</div></div>
+    ${S.modo === 'despues' ? `<div class="se-f"><label>Hora de inicio (opcional)</label><input type="time" value="${S.hora}" onchange="PA.hora=this.value||'18:00'"></div>` : ''}
+    <div class="se-bar"><button class="se-go" onclick="paPaso2()">Siguiente: plantel →</button></div>
+  `);
+}
+function paSet(k, v){ PA[k] = v; paPaso1(); }
+function paDur0(n){ PA.dur = Math.max(20, Math.min(120, Number(n))); paPaso1(); }
+function paModo(m){ if (m === 'vivo' && PA.fecha !== sesEqFechaIso(0)){ toast('El cronómetro solo se usa el día del partido.', true); return; } PA.modo = m; paPaso1(); }
+function paFecha(v){ PA.fechaSel = v; if (v !== 'x') PA.fecha = sesEqFechaIso(Number(v)); if (PA.fecha !== sesEqFechaIso(0)) PA.modo = 'despues'; paPaso1(); }
+function paFechaManual(v){
+  if (!v) return; if (v > sesEqFechaIso(0)){ toast('No se puede cargar una fecha futura.', true); return; }
+  PA.fecha = v; if (v !== sesEqFechaIso(0)) PA.modo = 'despues'; paPaso1();
+}
+
+// ---------- Paso 2: plantel ----------
+async function paWellness(){
+  const S = PA, ids = S.miembros.map(m => m.id).join(',');
+  try{
+    const w = await sb(`wellness_respuestas?select=alumno_id,total,semaforo,nota&fecha=eq.${S.fecha}&alumno_id=in.(${ids})`);
+    S.wel = {}; w.forEach(x => { S.wel[x.alumno_id] = x; });
+  }catch(e){ S.wel = {}; }
+}
+async function paPaso2(){
+  const S = PA;
+  const riv = (S.rival || '').trim();
+  if (!riv){ toast('Escribí el nombre del rival.', true); const i = document.getElementById('paRival'); if (i) i.focus(); return; }
+  S.rival = riv; S.paso = 2;
+  paBody('<h3>Plantel del partido</h3><p class="se-sub">Cargando…</p>');
+  await paWellness();
+  paRender2();
+}
+function paRender2(){
+  const S = PA, M = S.miembros;
+  const tit = M.filter(m => paJ(m.id).rol === 'titular').length, sup = M.filter(m => paJ(m.id).rol === 'suplente').length;
+  const cnt = k => M.filter(m => paJ(m.id).rol !== 'no_convocado' && (S.wel[m.id]?.semaforo) === k).length;
+  paBody(`
+    <h3>Plantel del partido</h3>
+    <p class="se-sub">${escaparHtml(S.equipoNombre)} ${S.local ? 'vs' : 'en'} ${escaparHtml(S.rival)} · ${escaparHtml(formatearFechaCorta(S.fecha))}</p>
+    <div class="se-sem"><span style="color:var(--accent2-text)">🟢 ${cnt('verde')}</span><span style="color:var(--warn-text)">🟡 ${cnt('amarillo')}</span><span style="color:var(--danger-text)">🔴 ${cnt('rojo')}</span><span class="muted">Wellness de los convocados</span></div>
+    <div class="se-tb"><button class="ghost" onclick="paUltimoPlantel()">↻ Igual que el último partido</button><button class="ghost" onclick="paLimpiarPlantel()">✗ Limpiar</button></div>
+    <div id="paLista"></div>
+    <div class="se-bar">
+      <div class="se-cnt"><span style="color:var(--accent2-text)">⚽ ${tit} titulares</span><span>🪑 ${sup} suplentes</span></div>
+      <div style="display:flex; gap:8px;"><button class="ghost" style="width:auto;" onclick="paPaso1()">←</button><button class="se-go" ${tit ? '' : 'disabled'} onclick="paPaso3()">Siguiente: ${S.modo === 'vivo' ? 'reloj y cambios' : 'cambios'} →</button></div>
+    </div>`);
+  paRenderLista();
+}
+function paRenderLista(){
+  const S = PA, cont = document.getElementById('paLista'); if (!cont) return;
+  cont.innerHTML = S.miembros.map(m => {
+    const j = paJ(m.id), w = S.wel[m.id], wc = sesEqWClase(w), conv = j.rol !== 'no_convocado';
+    return `<div class="se-pl ${wc === 'rojo' && conv ? 'rojo' : ''} ${conv ? '' : 'aus'}">
+      <div class="se-r"><div class="se-n"><b>${escaparHtml(m.nombre)}</b><small>${escaparHtml(m.posicion || '')}</small></div><span class="se-wl ${wc}">${sesEqWTxt(w)}</span></div>
+      ${wc === 'rojo' && conv ? `<div class="se-x"><div class="se-alr">⚠ Wellness bajo ese día${w.nota ? ': ' + escaparHtml(w.nota) : ''}.</div></div>` : ''}
+      <div class="pa-seg"><button class="t ${j.rol === 'titular' ? 'on' : ''}" onclick="paRol('${m.id}','titular')">Titular</button><button class="${j.rol === 'suplente' ? 'on' : ''}" onclick="paRol('${m.id}','suplente')">Suplente</button><button class="n ${j.rol === 'no_convocado' ? 'on' : ''}" onclick="paRol('${m.id}','no_convocado')">No conv.</button></div>
+    </div>`;
+  }).join('');
+}
+function paRol(id, rol){
+  const j = paJ(id); if (j.rol === rol) return;
+  j.rol = rol;
+  if (rol === 'no_convocado'){ j.entra = null; j.sale = null; j.exp = null; j.man = null; }
+  if (rol === 'titular') j.entra = null;
+  paRender2();
+}
+function paLimpiarPlantel(){ PA.miembros.forEach(m => { PA.jug[m.id] = { rol: 'no_convocado', entra: null, sale: null, exp: null, man: null }; }); paRender2(); }
+async function paUltimoPlantel(){
+  const S = PA;
+  try{
+    const [p] = await sb(`partidos?select=id,rival,fecha&equipo_id=eq.${S.equipoId}&estado=eq.finalizado&anulado_en=is.null&order=fecha.desc,creado_en.desc&limit=1`);
+    if (!p){ toast('Todavía no hay partidos anteriores.', true); return; }
+    const rows = await sb(`partido_jugadores?select=alumno_id,rol&partido_id=eq.${p.id}`);
+    S.miembros.forEach(m => { const r = rows.find(x => x.alumno_id === m.id); S.jug[m.id] = { rol: r ? r.rol : 'no_convocado', entra: null, sale: null, exp: null, man: null }; });
+    paRender2(); toast('Plantel del partido vs ' + p.rival + ' ✓');
+  }catch(e){ toast(paErr(e), true); }
+}
+
+// ---------- Guardado (borrador / final) ----------
+function paJugadoresPayload(dur){
+  return PA.miembros.map(m => {
+    const j = paJ(m.id), conv = j.rol !== 'no_convocado';
+    const entra = j.rol === 'suplente' && j.entra != null ? Math.max(1, Math.min(j.entra, dur - 1)) : null;
+    return { alumno_id: m.id, rol: j.rol, entra, sale: conv && j.sale != null ? Math.min(j.sale, dur) : null,
+             expulsado: conv && j.exp != null ? Math.min(j.exp, dur) : null, minutos_manual: conv && j.man != null ? j.man : null };
+  });
+}
+async function paGuardar(fin){
+  const S = PA, dur = fin ? S.dur : paDurGuardar();
+  const r = await sb('rpc/partido_guardar', { method: 'POST', body: JSON.stringify({
+    p_partido: S.id, p_equipo: S.equipoId, p_fecha: S.fecha, p_hora: (!S.edit && S.modo === 'despues' && S.hora) ? S.hora + ':00' : null,
+    p_rival: S.rival, p_local: S.local, p_tipo: S.tipo, p_duracion_min: dur, p_jugadores: paJugadoresPayload(dur), p_finalizar: !!fin, p_pedir_rpe: !!(fin && S.pedirRpe && !S.edit) }) });
+  if (r && r.partido_id) S.id = r.partido_id;
+  return r;
+}
+let PA_AUTO_T = null;
+function paAutoGuardar(){   // borrador en vivo: cada cambio queda guardado por si se apaga el teléfono
+  if (!PA || !PA.id || PA.edit || PA.modo !== 'vivo') return;
+  clearTimeout(PA_AUTO_T);
+  PA_AUTO_T = setTimeout(async () => { try{ if (PA && PA.id) await paGuardar(false); }catch(e){ toast('No se pudo guardar el borrador: ' + paErr(e), true); } }, 600);
+}
+
+// ---------- Paso 3: reloj + cambios ----------
+async function paPaso3(){
+  const S = PA;
+  if (S.modo === 'vivo' && !S.edit){
+    paBody('<h3>Guardando…</h3><p class="se-sub">Guardando el partido en borrador.</p>');
+    try{ await paGuardar(false); }catch(e){ toast(paErr(e), true); paRender2(); return; }
+  }
+  S.paso = 3; S.form = null;
+  paRender3();
+  if (S.modo === 'vivo' && !S.edit){ await paClkIniciar(); }
+}
+function paOnField(){   // los que están en cancha (pueden salir o ser expulsados)
+  const S = PA;
+  return S.miembros.filter(m => { const j = paJ(m.id); return (j.rol === 'titular' || (j.rol === 'suplente' && j.entra != null)) && j.sale == null && j.exp == null; });
+}
+function paBanco(){ return PA.miembros.filter(m => { const j = paJ(m.id); return j.rol === 'suplente' && j.entra == null; }); }
+function paEventos(){
+  const ev = [];
+  PA.miembros.forEach(m => { const j = paJ(m.id);
+    if (j.rol === 'suplente' && j.entra != null) ev.push({ min: j.entra, t: 'entra', id: m.id });
+    if (j.rol !== 'no_convocado' && j.sale != null) ev.push({ min: j.sale, t: 'sale', id: m.id });
+    if (j.rol !== 'no_convocado' && j.exp != null) ev.push({ min: j.exp, t: 'exp', id: m.id }); });
+  const o = { sale: 0, entra: 1, exp: 2 };
+  return ev.sort((a, b) => a.min - b.min || o[a.t] - o[b.t]);
+}
+function paMinSugerido(){ return PA.modo === 'vivo' && !PA.edit && PAC.est !== 'sin' ? Math.max(1, paCMin()) : (PA.form && PA.form.min) || 60; }
+function paRender3(){
+  const S = PA, ev = paEventos(), vivo = S.modo === 'vivo' && !S.edit;
+  const ter = PAC.est === 'ter';
+  const puedeSeguir = !vivo || ter;
+  paBody(`
+    <h3>${vivo ? 'Reloj y cambios' : 'Cambios y expulsiones'}</h3>
+    <p class="se-sub">${escaparHtml(S.equipoNombre)} ${S.local ? 'vs' : 'en'} ${escaparHtml(S.rival)} · ${escaparHtml(formatearFechaCorta(S.fecha))}${S.edit ? ' · <b>editando</b>' : ''}</p>
+    ${vivo ? '<div id="paClkBox"></div>' : ''}
+    <div class="se-tb"><button onclick="paForm('cambio')">🔄 Registrar cambio</button><button class="ghost" onclick="paForm('exp')">🟥 Expulsión</button></div>
+    <div id="paFormBox"></div>
+    <div class="se-f"><label>Eventos del partido</label>
+      ${ev.length ? ev.map(e => `<div class="pa-ev"><b class="m">${e.min}'</b><span class="tx">${e.t === 'sale' ? '⬇ Sale' : e.t === 'entra' ? '⬆ Entra' : '🟥 Expulsado'} · <b>${escaparHtml(paNombre(e.id))}</b></span><button title="Quitar" onclick="paQuitar('${e.id}','${e.t}')">✕</button></div>`).join('')
+        : '<div class="se-sub" style="margin:2px 0;">Todavía no hay cambios ni expulsiones.</div>'}</div>
+    ${vivo && !ter ? '<div class="se-note">Cuando el partido termine, tocá <b>⏹ Terminar</b> en el reloj para pasar a los minutos.</div>' : ''}
+    ${vivo ? `<div class="se-note" style="margin-top:4px;">¿Se arruinó el reloj o preferís cargarlo a mano? <a href="#" onclick="paDejarReloj(); return false;">Dejar el reloj y cargar a mano</a>.</div>` : ''}
+    <div class="se-bar"><div style="display:flex; gap:8px;"><button class="ghost" style="width:auto;" onclick="${S.edit ? 'paPanel(PA.id)' : 'paRender2()'}">←</button><button class="se-go" ${puedeSeguir ? '' : 'disabled'} onclick="paPaso4()">Siguiente: minutos →</button></div></div>
+  `);
+  if (vivo) paClkDraw(true);
+  paRenderForm();
+}
+function paForm(t){ PA.form = { t, min: paMinSugerido(), out: '', in: '', id: '' }; paRenderForm(); }
+function paFormMin(d){ const f = PA.form; f.min = Math.max(1, Math.min(150, f.min + d)); paRenderForm(); }
+function paFormSet(k, v){ PA.form[k] = v; }
+function paRenderForm(){
+  const S = PA, f = S.form, box = document.getElementById('paFormBox'); if (!box) return;
+  if (!f){ box.innerHTML = ''; return; }
+  const campo = f.t === 'cambio'
+    ? `<div class="se-f" style="margin:0 0 8px;"><label>Sale</label><select onchange="paFormSet('out',this.value)"><option value="">Elegí…</option>${paOnField().map(m => `<option value="${m.id}" ${f.out === m.id ? 'selected' : ''}>${escaparHtml(m.nombre)}</option>`).join('')}</select></div>
+       <div class="se-f" style="margin:0 0 8px;"><label>Entra</label><select onchange="paFormSet('in',this.value)"><option value="">Elegí…</option>${paBanco().map(m => `<option value="${m.id}" ${f.in === m.id ? 'selected' : ''}>${escaparHtml(m.nombre)}</option>`).join('')}</select></div>`
+    : `<div class="se-f" style="margin:0 0 8px;"><label>Jugador expulsado</label><select onchange="paFormSet('id',this.value)"><option value="">Elegí…</option>${paOnField().map(m => `<option value="${m.id}" ${f.id === m.id ? 'selected' : ''}>${escaparHtml(m.nombre)}</option>`).join('')}</select></div>`;
+  box.innerHTML = `<div class="pa-form"><div style="font-weight:800; margin-bottom:8px;">${f.t === 'cambio' ? '🔄 Nuevo cambio' : '🟥 Expulsión'}</div>${campo}
+    <div class="se-f" style="margin:0 0 10px;"><label>Minuto</label><div class="se-st"><button onclick="paFormMin(-1)">−</button><span>${f.min}'</span><button onclick="paFormMin(1)">+</button></div></div>
+    <div style="display:flex; gap:8px;"><button class="ghost" style="width:auto;" onclick="PA.form=null; paRenderForm()">Cancelar</button><button style="flex:1;" onclick="paFormOk()">Confirmar</button></div></div>`;
+}
+function paFormOk(){
+  const S = PA, f = S.form; if (!f) return;
+  if (f.t === 'cambio'){
+    if (!f.out || !f.in){ toast('Elegí quién sale y quién entra.', true); return; }
+    const o = paJ(f.out), ini = o.rol === 'titular' ? 0 : o.entra;
+    if (f.min <= ini){ toast(`Ese jugador entró en el ${ini}': el cambio tiene que ser después.`, true); return; }
+    o.sale = f.min; paJ(f.in).entra = f.min;
+  } else {
+    if (!f.id){ toast('Elegí al jugador.', true); return; }
+    const o = paJ(f.id), ini = o.rol === 'titular' ? 0 : o.entra;
+    if (f.min <= ini){ toast(`Ese jugador entró en el ${ini}': la expulsión tiene que ser después.`, true); return; }
+    o.exp = f.min;
+  }
+  S.form = null; paRender3(); paAutoGuardar();
+}
+function paQuitar(id, t){
+  const j = paJ(id);
+  if (t === 'entra'){ j.entra = null; j.sale = null; j.exp = null; j.man = null; }   // sin entrada no puede tener salida/expulsión
+  else if (t === 'sale') j.sale = null; else j.exp = null;
+  paRender3(); paAutoGuardar();
+}
+async function paDejarReloj(){
+  if (!confirm('Se deja el reloj (si estaba en marcha se reinicia) y cargás los minutos a mano. ¿Seguir?')) return;
+  try{ if (PA.id && PAC.est !== 'sin') await sb('rpc/partido_cronometro', { method: 'POST', body: JSON.stringify({ p_partido: PA.id, p_accion: 'reiniciar', p_minutos: null }) }); }catch(e){ toast(paErr(e), true); return; }
+  paClkParar(); paClkReset(); PA.modo = 'despues'; paRender3();
+}
+
+// ---------- Paso 4: minutos ----------
+function paPaso4(){
+  const S = PA; S.paso = 4;
+  if (S.modo === 'vivo' && !S.edit && PAC.est === 'ter') S.dur = Math.max(5, S.dur);
+  paRender4();
+}
+function paRender4(){
+  const S = PA, dur = S.dur, vivo = S.modo === 'vivo' && !S.edit;
+  const conv = S.miembros.filter(m => paJ(m.id).rol !== 'no_convocado');
+  const jug = conv.filter(m => paMin(paJ(m.id), dur) > 0), nojug = conv.filter(m => paMin(paJ(m.id), dur) === 0);
+  const ent = conv.filter(m => paJ(m.id).rol === 'suplente' && paJ(m.id).entra != null).length, sal = conv.filter(m => paJ(m.id).sale != null).length;
+  const fila = m => {
+    const j = paJ(m.id), mn = paMin(j, dur), ini = j.rol === 'titular' ? 0 : j.entra, fin = j.man != null ? null : Math.min(dur, j.sale != null ? j.sale : dur, j.exp != null ? j.exp : dur);
+    const tramo = j.man != null ? 'ajustado a mano' : ((j.rol === 'titular' ? 'Titular' : 'Suplente') + (ini ? ` · entró ${ini}'` : '') + (j.sale != null ? ` · salió ${j.sale}'` : '') + (j.exp != null ? ' · 🟥 ' + j.exp + "'" : ''));
+    const w = ini == null ? 0 : (100 * ini / dur), a = ini == null ? 0 : (100 * (fin - ini) / dur);
+    return `<div class="se-pl"><div class="se-r"><div class="se-n"><b>${escaparHtml(m.nombre)}${j.man != null ? '<span class="se-bdg">✎ ajustado</span>' : ''}</b><small>${escaparHtml(tramo)}</small></div>
+      <div class="pa-mn">${mn}<small>'</small></div>
+      <div class="se-st"><button onclick="paMan('${m.id}',-1)">−</button><button onclick="paMan('${m.id}',1)">+</button></div></div>
+      ${ini == null || j.man != null ? '' : `<div class="pa-trk"><i style="left:${w}%; width:${Math.max(a, 0)}%;${j.exp != null ? ' background:linear-gradient(90deg,#ff5d5d,#ff9a9a);' : ''}"></i></div>`}
+      ${j.man != null ? `<div class="se-x"><button class="ghost" style="width:auto; padding:6px 12px; font-size:12.5px;" onclick="paManReset('${m.id}')">↺ Volver al cálculo automático</button></div>` : ''}</div>`;
+  };
+  paBody(`
+    <h3>Minutos jugados</h3>
+    <p class="se-sub">${escaparHtml(S.equipoNombre)} ${S.local ? 'vs' : 'en'} ${escaparHtml(S.rival)} · ${escaparHtml(formatearFechaCorta(S.fecha))}</p>
+    <div class="se-f"><label>Duración del partido</label>
+      ${vivo ? `<div class="se-note" style="margin:0;">⏱ <b>${dur}'</b> según el reloj (incluye el descuento).</div>`
+             : `<div class="se-st"><button onclick="paDurMin(-1)">−</button><span style="min-width:62px;">${dur} min</span><button onclick="paDurMin(1)">+</button></div>`}</div>
+    ${ent !== sal ? `<div class="se-note bad">⚠ Hay ${ent} entrada${ent === 1 ? '' : 's'} y ${sal} salida${sal === 1 ? '' : 's'} (sin contar expulsiones). Revisá los cambios si no es lo esperado.</div>` : ''}
+    <div class="se-f"><label>Jugaron · ${jug.length}</label>${jug.map(fila).join('') || '<div class="se-sub">Nadie sumó minutos.</div>'}</div>
+    ${nojug.length ? `<div class="se-f"><label>Convocados que no jugaron · ${nojug.length}</label><div class="se-plan">${nojug.map(m => `<div><span>${escaparHtml(m.nombre)}</span><b>0'</b></div>`).join('')}</div></div>` : ''}
+    <div class="se-bar"><div style="display:flex; gap:8px;"><button class="ghost" style="width:auto;" onclick="paRender3()">←</button><button class="se-go" onclick="paConfirmar()">${S.edit ? 'Guardar cambios' : 'Revisar y finalizar'}</button></div></div>`);
+}
+function paDurMin(d){ PA.dur = Math.max(5, Math.min(150, PA.dur + d)); paRender4(); }
+function paMan(id, d){ const j = paJ(id), act = paMin(j, PA.dur); j.man = Math.max(0, Math.min(PA.dur, act + d)); paRender4(); }
+function paManReset(id){ paJ(id).man = null; paRender4(); }
+
+// ---------- Paso 5: confirmar y finalizar ----------
+function paConfirmar(){
+  const S = PA; S.paso = 5;
+  if (S.edit){ paFinalizar(); return; }
+  const dur = S.dur, conv = S.miembros.filter(m => paJ(m.id).rol !== 'no_convocado');
+  const jug = conv.filter(m => paMin(paJ(m.id), dur) > 0).length, aj = conv.filter(m => paJ(m.id).man != null).length;
+  paBody(`
+    <h3>Confirmá el partido</h3>
+    <p class="se-sub">${escaparHtml(S.equipoNombre)} ${S.local ? 'vs' : 'en'} <b>${escaparHtml(S.rival)}</b> · ${PA_TIPOS[S.tipo]} · <b>${escaparHtml(fechaLegible(S.fecha))}</b> · ${dur}'</p>
+    <div class="se-g3"><div><b>${jug}</b><span>jugaron</span></div><div><b>${conv.length - jug}</b><span>no jugaron</span></div><div><b>${aj}</b><span>ajustados</span></div></div>
+    <label class="pa-opt ${S.pedirRpe ? 'on' : ''}" style="cursor:pointer;"><input type="checkbox" style="width:22px; height:22px; flex:none; accent-color:var(--accent);" ${S.pedirRpe ? 'checked' : ''} onchange="PA.pedirRpe=this.checked; paConfirmar()">
+      <div><b>📲 Pedir el RPE a los que jugaron</b><small>Les llega un aviso para que pongan cuánto les costó (1 a 10). Es <b>opcional</b> para ellos. Si ahora no, lo podés pedir después desde el panel del partido.</small></div></label>
+    <div class="se-note" style="margin-top:12px;">Con los minutos × el RPE de cada uno se suma a su <b>carga aguda</b>. Después podés editar los minutos o deshacer el partido.</div>
+    <div class="se-bar"><div style="display:flex; gap:8px;"><button class="ghost" style="width:auto;" onclick="paRender4()">←</button><button class="se-go" id="paBtnFin" onclick="paFinalizar()">Finalizar partido</button></div></div>`);
+}
+async function paFinalizar(){
+  const S = PA; if (!S || S.enviando) return; S.enviando = true;
+  const btn = document.getElementById('paBtnFin'); if (btn){ btn.disabled = true; btn.textContent = 'Guardando…'; }
+  try{
+    clearTimeout(PA_AUTO_T);
+    const r = await paGuardar(true);
+    S.enviando = false; S.resultado = r; paClkParar();
+    paResultado();
+  }catch(e){
+    S.enviando = false; toast(paErr(e), true);
+    if (btn){ btn.disabled = false; btn.textContent = 'Reintentar'; } else paRender4();
+  }
+}
+function paResultado(){
+  const S = PA, r = S.resultado || {};
+  paBody(`
+    <div style="text-align:center; font-size:46px; margin-top:6px;">✅</div>
+    <h3 style="text-align:center;">${S.edit ? 'Partido actualizado' : 'Partido finalizado'}</h3>
+    <p class="se-sub" style="text-align:center;">${escaparHtml(S.equipoNombre)} ${S.local ? 'vs' : 'en'} ${escaparHtml(S.rival)} · ${escaparHtml(fechaLegible(S.fecha))}</p>
+    <div class="se-g3"><div><b>${r.jugaron || 0}</b><span>jugaron</span></div><div><b>${r.sin_jugar || 0}</b><span>convocados sin jugar</span></div><div><b>${r.avisados || 0}</b><span>avisos de RPE enviados</span></div></div>
+    ${r.avisados ? '<div class="se-note">📲 A cada jugador le llegó el aviso para poner su RPE (opcional). En el panel ves quién respondió.</div>' : ''}
+    <div class="se-btns"><button onclick="paPanel('${r.partido_id}')">📊 Ver el panel del partido</button><button class="ghost" onclick="pgAbrir()">📈 Ver minutos por jugador</button><button class="ghost" onclick="paCerrar()">Cerrar</button></div>`);
+}
+
+// ---------- Cronómetro del partido (el reloj vive en el servidor; acá solo se dibuja y se manda la acción) ----------
+const PAC_EST = { sin_iniciar: 'sin', corriendo: 'cor', pausado: 'pau', tope: 'tope', entretiempo: 'et', terminado: 'ter' };
+const PAC = { est: 'sin', per: 1, seg0: 0, t0: 0, tope: 0, et0: 0, etMin: 15, d1: 0, d2: 0, avisos: {}, timer: null, wl: null, busy: false, ultSync: 0, nextSync: 0, key: '' };
+function paClkReset(){ Object.assign(PAC, { est: 'sin', per: 1, seg0: 0, t0: Date.now(), tope: 0, et0: 0, etMin: 15, d1: 0, d2: 0, avisos: {}, busy: false, ultSync: 0, nextSync: 0, key: '' }); }
+function paClkParar(){
+  if (PAC.timer){ clearInterval(PAC.timer); PAC.timer = null; }
+  try{ if (PAC.wl){ PAC.wl.release(); PAC.wl = null; } }catch(e){ PAC.wl = null; }
+}
+const paCSeg = () => Math.min(PAC.seg0 + (PAC.est === 'cor' ? (Date.now() - PAC.t0) / 1000 : 0), PAC.tope > 0 ? PAC.tope : 1e9);
+const paCEt = () => PAC.et0 + (PAC.est === 'et' ? (Date.now() - PAC.t0) / 1000 : 0);
+const paCMin = () => Math.max(1, Math.ceil(paCSeg() / 60));          // minuto del partido: redondeo hacia arriba (el que ve el hincha)
+const paCTxt = s => { s = Math.max(0, Math.floor(s)); return String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0'); };
+function paCronAplicar(r, silencioso){
+  PAC.est = PAC_EST[r.estado] || 'sin'; PAC.per = r.periodo || 1; PAC.seg0 = Number(r.segundos) || 0; PAC.t0 = Date.now();
+  PAC.tope = Number(r.tope_seg) || 0; PAC.et0 = Number(r.entretiempo_seg) || 0; PAC.etMin = r.entretiempo_min || 15;
+  PAC.d1 = Number(r.descuento1_seg) || 0; PAC.d2 = Number(r.descuento2_seg) || 0; PAC.ultSync = Date.now();
+  if (PAC.est === 'ter' && PA && r.duracion_min) PA.dur = r.duracion_min;
+  if (PAC.est === 'sin') PAC.avisos = {};
+  if (silencioso){   // lo que ya pasó mientras no mirabas no se avisa de nuevo (el push ya salió)
+    if (PAC.est === 'tope') PAC.avisos['tope' + PAC.per] = 1;
+    if (PAC.est === 'et'){ PAC.avisos.tope1 = 1; PAC.avisos.tope1d = 1; if (PAC.et0 >= Math.max(PAC.etMin - 3, 1) * 60) PAC.avisos.pre = 1; if (PAC.et0 >= PAC.etMin * 60) PAC.avisos.fin = 1; }
+    if (PAC.est === 'cor' && PAC.per === 2){ PAC.avisos.pre = 1; PAC.avisos.fin = 1; PAC.avisos.tope1 = 1; }
+  }
+}
+async function paCron(acc, min, silencioso){
+  if (!PA || !PA.id || PAC.busy) return;
+  PAC.busy = true;
+  try{
+    const r = await sb('rpc/partido_cronometro', { method: 'POST', body: JSON.stringify({ p_partido: PA.id, p_accion: acc, p_minutos: min == null ? null : min }) });
+    const antes = PAC.est;
+    paCronAplicar(r, silencioso);
+    if (acc === 'iniciar' || acc === 'reiniciar' || acc === 'segundo_tiempo'){ PAC.avisos = acc === 'segundo_tiempo' ? Object.assign({}, PAC.avisos, { pre: 1, fin: 1 }) : {}; }
+    if (acc === 'iniciar') toast('Reloj en marcha ⏱ · la pantalla se mantiene encendida');
+    if (acc === 'segundo_tiempo') toast('2.º tiempo en marcha ⏱');
+    if (acc === 'descuento') toast(`Descuento +${min}': el reloj sigue hasta ${paCTxt(PAC.tope)}`);
+    if (acc === 'terminar') toast(`Partido terminado: ${PA.dur}'`);
+    paWake();
+    if (PA && PA.paso === 3 && (acc === 'terminar' || acc === 'reiniciar' || (antes === 'ter') !== (PAC.est === 'ter'))) paRender3(); else paClkDraw(true);
+  }catch(e){ if (!silencioso || acc !== 'estado') toast(paErr(e), true); }
+  finally{ PAC.busy = false; }
+}
+function paCSync(silencioso){ return paCron('estado', null, silencioso); }
+async function paClkIniciar(){
+  paClkParar();
+  await paCSync(true);
+  if (!PA || PA.paso !== 3) return;
+  PAC.timer = setInterval(paCTick, 250);
+  paWake();
+}
+async function paWake(){
+  const act = ['cor', 'pau', 'tope', 'et'].includes(PAC.est);
+  try{
+    if (act && !PAC.wl && navigator.wakeLock && !document.hidden && PA && PA.paso === 3){
+      PAC.wl = await navigator.wakeLock.request('screen');
+      PAC.wl.addEventListener('release', () => { PAC.wl = null; if (PA && PA.paso === 3) paClkDraw(true); });
+      paClkDraw(true);
+    }
+    if (!act && PAC.wl){ await PAC.wl.release(); PAC.wl = null; }
+  }catch(e){ PAC.wl = null; }
+}
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden || !PA || PA.paso !== 3 || PA.modo !== 'vivo' || PA.edit || !paAbierto()) return;
+  paCSync(true); paWake();
+});
+function paBeep(){ try{ const a = new (window.AudioContext || window.webkitAudioContext)(), o = a.createOscillator(), g = a.createGain(); o.connect(g); g.connect(a.destination); o.frequency.value = 880; g.gain.value = .08; o.start(); setTimeout(() => { o.stop(); a.close(); }, 350); }catch(e){} }
+function paAlerta(k, t, m){
+  if (PAC.avisos[k]) return; PAC.avisos[k] = 1;
+  try{ if (navigator.vibrate) navigator.vibrate([250, 120, 250]); }catch(e){}
+  paBeep(); toast(t + ' — ' + m);
+}
+function paCTick(){
+  if (!PA || !paAbierto() || PA.paso !== 3 || PA.modo !== 'vivo' || PA.edit){ paClkParar(); return; }
+  const e = PAC.est;
+  if (e === 'cor' && PAC.tope > 0 && paCSeg() >= PAC.tope){
+    paAlerta('tope' + PAC.per + (PAC.per === 1 && PAC.d1 > 0 ? 'd' : ''), PAC.per === 1 ? (PAC.d1 > 0 ? '⏱ Entretiempo' : '⏱ Fin del 1.er tiempo') : '⏱ Fin del 2.º tiempo', `El reloj se frenó en ${paCTxt(PAC.tope)}.`);
+    if (Date.now() >= PAC.nextSync){ PAC.nextSync = Date.now() + 2500; paCSync(false); }   // trae el estado real (tope / entretiempo)
+  }
+  if (e === 'et'){
+    const t = paCEt(), L = PAC.etMin * 60;
+    if (t >= Math.max(PAC.etMin - 3, 1) * 60) paAlerta('pre', '⏳ Faltan 3 min', 'Preparate para iniciar el 2.º tiempo.');
+    if (t >= L) paAlerta('fin', '▶ Terminó el entretiempo', 'Iniciá el 2.º tiempo (no arranca solo).');
+  }
+  if (['cor', 'pau', 'tope', 'et'].includes(e) && Date.now() - PAC.ultSync > 25000 && Date.now() >= PAC.nextSync){ PAC.nextSync = Date.now() + 2500; paCSync(false); }
+  paClkDraw(false);
+}
+function paClkDraw(force){
+  const box = document.getElementById('paClkBox'); if (!box || !PA) return;
+  const e = PAC.est, per = PAC.per === 1 ? '1.er tiempo' : '2.º tiempo', act = ['cor', 'pau', 'tope', 'et'].includes(e);
+  const etPas = e === 'et' && paCEt() >= PAC.etMin * 60;
+  const key = [e, PAC.per, etPas ? 'x' : '', PAC.wl ? 'w' : '', PAC.busy ? 'b' : ''].join('|');
+  if (force || key !== PAC.key || !document.getElementById('paClkT')){
+    PAC.key = key;
+    const dsc = (e === 'cor' || e === 'tope' || e === 'pau') ? `<div class="pa-dsc"><small>＋ Descuento</small>${[1, 2, 3, 4, 5].map(n => `<button onclick="paCron('descuento',${n})">+${n}'</button>`).join('')}</div>` : '';
+    const b = PAC.busy ? 'disabled' : '';
+    const btns = e === 'sin' ? `<button class="pa-b" ${b} onclick="paCron('iniciar')">▶ Iniciar partido</button>` :
+      e === 'cor' ? `${dsc}<div class="pa-r2"><button class="pa-b ghost" ${b} onclick="paCron('pausar')">⏸ Pausar</button>${PAC.per === 1 ? `<button class="pa-b ghost" ${b} onclick="paCron('entretiempo')">🔔 Fin del 1.er tiempo</button>` : `<button class="pa-b ghost" ${b} onclick="paTerminar()">⏹ Terminar</button>`}</div>` :
+      e === 'pau' ? `${dsc}<button class="pa-b" ${b} onclick="paCron('reanudar')">▶ Reanudar</button>` :
+      e === 'tope' ? `${dsc}${PAC.per === 1 ? `<button class="pa-b" ${b} onclick="paCron('entretiempo')">🧃 Ir al entretiempo</button>` : `<button class="pa-b" ${b} onclick="paTerminar()">⏹ Terminar partido</button>`}` :
+      e === 'et' ? `<button class="pa-b ${etPas ? 'pulse' : ''}" ${b} onclick="paCron('segundo_tiempo')">▶ Iniciar 2.º tiempo</button><div class="se-note" style="margin:8px 0 0;">El 2.º tiempo <b>no arranca solo</b>: lo iniciás vos cuando salen los equipos.</div><button class="pa-b ghost" ${b} onclick="paTerminar()">⏹ Terminar el partido acá</button>` :
+      `<button class="pa-b ghost" ${b} onclick="paReiniciarReloj()">↺ Corregir (reiniciar reloj)</button>`;
+    box.innerHTML = `<div class="pa-clk"><div class="t" id="paClkT">00:00</div><div class="s" id="paClkS"></div>${btns}<div class="w" id="paClkW"></div></div>`;
+  }
+  const t = document.getElementById('paClkT'), s = document.getElementById('paClkS'), w = document.getElementById('paClkW');
+  if (e === 'et'){ const rest = PAC.etMin * 60 - paCEt(), over = rest < 0; t.textContent = (over ? '+' : '') + paCTxt(Math.abs(rest)); t.style.color = over ? 'var(--danger-text)' : ''; }
+  else { t.textContent = paCTxt(paCSeg()); t.style.color = e === 'tope' ? 'var(--warn-text)' : ''; }
+  s.innerHTML = e === 'sin' ? `Listo para empezar · 2 tiempos de ${Math.ceil(PA.dur / 2)}'` :
+    e === 'cor' ? `<span class="pa-liv">● EN VIVO</span> · ${per} · minuto <b>${paCMin()}'</b>` :
+    e === 'pau' ? `⏸ Pausa (lesión / demora) · reloj detenido en <b>${paCMin()}'</b>` :
+    e === 'tope' ? `⏱ <b>Fin del ${per}</b> · el reloj se frenó en ${paCTxt(PAC.tope)}${PAC.per === 1 ? '. ¿Hubo descuento? Sumalo o pasá al entretiempo.' : '. Sumá el descuento o terminá el partido.'}` :
+    e === 'et' ? `🧃 <b>Entretiempo</b> de ${PAC.etMin} min · ${etPas ? '<span style="color:var(--danger-text)">se pasó el tiempo: iniciá el 2.º tiempo</span>' : 'faltan para iniciar el 2.º tiempo'}` :
+    `⏹ Terminado · duración <b>${PA.dur}'</b>`;
+  w.innerHTML = act ? (PAC.wl ? '🔆 Pantalla encendida mientras el reloj corre. Si bloqueás el teléfono el reloj sigue y te avisamos con una notificación.' : 'ℹ Este navegador no puede mantener la pantalla encendida: dejá la app abierta. Si se bloquea, el reloj sigue y te avisamos con una notificación.') : '';
+}
+function paTerminar(){ if (confirm('¿Terminar el partido? El reloj se frena y la duración queda en lo que marca.')) paCron('terminar'); }
+function paReiniciarReloj(){ if (confirm('Se reinicia el reloj en 00:00 (los cambios cargados se mantienen). ¿Seguir?')) paCron('reiniciar'); }
+
+// ---------- Partidos recientes (tarjeta en ⚽ Equipo) ----------
+async function paRecientes(){
+  const cont = document.getElementById('partRecientes'), eq = sesEqEquipoActual();
+  if (!cont || !eq.id) return;
+  try{
+    const ps = await sb(`partidos?select=id,fecha,rival,local,tipo,estado,duracion_min,cron_estado&equipo_id=eq.${eq.id}&anulado_en=is.null&order=fecha.desc,creado_en.desc&limit=5`);
+    if (!ps.length){ cont.innerHTML = ''; return; }
+    cont.innerHTML = `<div class="muted" style="font-size:11.5px; font-weight:800; text-transform:uppercase; letter-spacing:.05em; margin:6px 0 2px;">Partidos recientes</div>` + ps.map(p => {
+      const vivo = p.estado === 'borrador' && ['corriendo', 'pausado', 'tope', 'entretiempo'].includes(p.cron_estado);
+      const tag = vivo ? '<span class="tg v">● En vivo</span>' : (p.estado === 'borrador' ? '<span class="tg b">borrador</span>' : '');
+      return `<div class="se-rec pa-rec"><div><b>${escaparHtml(formatearFechaCorta(p.fecha))}</b> · ${p.local ? 'vs' : 'en'} ${escaparHtml(p.rival)}${tag}<br><span class="muted" style="font-size:12px;">${PA_TIPOS[p.tipo] || p.tipo} · ${p.duracion_min}'</span></div>
+        <button class="ghost" onclick="${p.estado === 'borrador' ? `paContinuar('${p.id}')` : `paPanel('${p.id}')`}">${p.estado === 'borrador' ? (vivo ? 'Volver al reloj' : 'Continuar') : 'Panel'}</button></div>`;
+    }).join('');
+  }catch(e){ cont.innerHTML = ''; }
+}
+
+// Reabre un borrador (en vivo o a medio cargar) o edita un partido ya finalizado.
+async function paContinuar(id){
+  document.getElementById('modalPartido').classList.add('show');
+  paBody('<h3>🏟 Partido</h3><p class="se-sub">Abriendo…</p>');
+  try{
+    const [p] = await sb(`partidos?select=id,equipo_id,fecha,hora,rival,local,tipo,duracion_min,estado,cron_estado,equipos(nombre)&id=eq.${id}&anulado_en=is.null`);
+    if (!p){ paBody('<h3>🏟 Partido</h3><div class="se-note bad">No se encontró el partido.</div><div class="se-btns"><button class="ghost" onclick="paCerrar()">Cerrar</button></div>'); return; }
+    const jr = await sb(`partido_jugadores?select=alumno_id,rol,minuto_entrada,minuto_salida,minuto_expulsion,minutos_manual&partido_id=eq.${id}`);
+    const miembros = paSoloMiembros(p.equipo_id);
+    jr.forEach(r => { if (!miembros.find(m => m.id === r.alumno_id)){ const a = ALUMNOS_CACHE.find(x => x.id === r.alumno_id); if (a) miembros.push(a); } });
+    const edit = p.estado === 'finalizado', hoy = sesEqFechaIso(0);
+    PA = { id: p.id, equipoId: p.equipo_id, equipoNombre: p.equipos?.nombre || '', miembros, rival: p.rival, local: p.local, tipo: p.tipo, fechaSel: 'x', fecha: p.fecha,
+           hora: (p.hora || '18:00').slice(0, 5), dur: p.duracion_min, modo: (!edit && p.fecha === hoy && (p.cron_estado !== 'sin_iniciar' || p.fecha === hoy)) ? 'vivo' : 'despues',
+           jug: {}, wel: {}, paso: 3, enviando: false, pedirRpe: false, edit, form: null };
+    jr.forEach(r => { PA.jug[r.alumno_id] = { rol: r.rol, entra: r.minuto_entrada, sale: r.minuto_salida, exp: r.minuto_expulsion, man: r.minutos_manual }; });
+    paClkReset();
+    paRender3();
+    if (PA.modo === 'vivo') await paClkIniciar();
+  }catch(e){ paBody(`<h3>🏟 Partido</h3><div class="se-note bad">${escaparHtml(paErr(e))}</div><div class="se-btns"><button class="ghost" onclick="paCerrar()">Cerrar</button></div>`); }
+}
+
+// ---------- Panel de un partido ----------
+async function paPanel(id){
+  document.getElementById('modalPartido').classList.add('show');
+  paClkParar(); PA = null; PG = null;
+  paBody('<h3>📊 Panel del partido</h3><p class="se-sub">Cargando…</p>');
+  try{
+    const [p] = await sb(`partidos?select=id,equipo_id,fecha,hora,rival,local,tipo,duracion_min,estado,pidio_rpe,anulado_en,equipos(nombre)&id=eq.${id}`);
+    if (!p){ paBody('<h3>📊 Panel</h3><div class="se-note bad">No se encontró el partido.</div>'); return; }
+    const js = await sb(`partido_jugadores?select=alumno_id,rol,minutos,rpe,minuto_entrada,minuto_salida,minuto_expulsion,minutos_manual,alumnos(nombre)&partido_id=eq.${id}`);
+    const ord = (a, b) => (b.minutos - a.minutos) || String(a.alumnos?.nombre || '').localeCompare(String(b.alumnos?.nombre || ''), 'es');
+    const jugaron = js.filter(j => j.minutos > 0).sort(ord), sinJ = js.filter(j => j.rol !== 'no_convocado' && j.minutos === 0);
+    const conRpe = jugaron.filter(j => j.rpe != null), prom = conRpe.length ? conRpe.reduce((a, j) => a + j.rpe, 0) / conRpe.length : null;
+    const pct = jugaron.length ? Math.round(conRpe.length * 100 / jugaron.length) : 0, fin = p.estado === 'finalizado';
+    const tramo = j => { const t = []; if (j.rol === 'suplente' && j.minuto_entrada != null) t.push('entró ' + j.minuto_entrada + "'"); if (j.minuto_salida != null) t.push('salió ' + j.minuto_salida + "'"); if (j.minuto_expulsion != null) t.push('🟥 ' + j.minuto_expulsion + "'"); if (j.minutos_manual != null) t.push('ajustado'); return t.join(' · '); };
+    paBody(`
+      <h3>📊 ${escaparHtml(p.equipos?.nombre || 'Equipo')} ${p.local ? 'vs' : 'en'} ${escaparHtml(p.rival)}</h3>
+      <p class="se-sub">${escaparHtml(fechaLegible(p.fecha))} · ${PA_TIPOS[p.tipo] || p.tipo} · ${p.duracion_min}'${fin ? '' : ' · <b style="color:var(--warn-text);">borrador sin finalizar</b>'}</p>
+      <div class="se-g3"><div><b>${jugaron.length}</b><span>jugaron</span></div><div><b>${sinJ.length}</b><span>convocados sin jugar</span></div><div><b>${prom == null ? '–' : prom.toFixed(1).replace('.', ',')}</b><span>RPE medio</span></div></div>
+      ${fin ? `<div class="se-f"><label>RPE de los jugadores · ${conRpe.length} de ${jugaron.length}${p.pidio_rpe ? '' : ' · todavía no se pidió'}</label><div class="se-prog"><i style="width:${pct}%"></i></div></div>` : ''}
+      <table class="se-tbl"><tr><th>Jugador</th><th>Rol</th><th>Min</th><th>RPE</th></tr>
+        ${jugaron.map(j => `<tr><td>${escaparHtml(j.alumnos?.nombre || '')}${tramo(j) ? `<br><small class="muted">${escaparHtml(tramo(j))}</small>` : ''}</td><td>${j.rol === 'titular' ? 'Tit.' : 'Sup.'}</td><td><b>${j.minutos}'</b></td><td>${j.rpe != null ? '<b>' + j.rpe + '</b>' : '<span class="muted">' + (p.pidio_rpe ? 'pendiente' : '–') + '</span>'}</td></tr>`).join('')}
+        ${sinJ.map(j => `<tr><td>${escaparHtml(j.alumnos?.nombre || '')}</td><td>Sup.</td><td class="muted">0'</td><td>–</td></tr>`).join('')}
+      </table>
+      <div class="se-btns">
+        ${!fin ? `<button onclick="paContinuar('${id}')">▶ Continuar cargando el partido</button>` : ''}
+        ${fin && !p.anulado_en && jugaron.length && !p.pidio_rpe ? `<button onclick="paPedirRpe('${id}')">📲 Pedir el RPE a los ${jugaron.length} que jugaron</button>` : ''}
+        ${fin && !p.anulado_en && p.pidio_rpe && conRpe.length < jugaron.length ? `<button onclick="paPedirRpe('${id}')">🔔 Recordar el RPE a los ${jugaron.length - conRpe.length} que faltan</button>` : ''}
+        ${fin && !p.anulado_en ? `<button class="ghost" onclick="paContinuar('${id}')">✎ Editar minutos y cambios</button>` : ''}
+        <button class="ghost" onclick="pgAbrir('${p.equipo_id}')">📈 Ver minutos por jugador</button>
+        ${!p.anulado_en ? `<button class="ghost" style="color:var(--danger-text);" onclick="paAnular('${id}')">↩ Deshacer este partido</button>` : ''}
+        <button class="ghost" onclick="paCerrar()">Cerrar</button>
+      </div>`);
+  }catch(e){ paBody(`<h3>📊 Panel</h3><div class="se-note bad">${escaparHtml(paErr(e))}</div><div class="se-btns"><button class="ghost" onclick="paCerrar()">Cerrar</button></div>`); }
+}
+async function paPedirRpe(id){
+  try{
+    const r = await sb('rpc/partido_pedir_rpe', { method: 'POST', body: JSON.stringify({ p_partido: id }) });
+    toast(`Aviso enviado a ${r && r.avisados != null ? r.avisados : 0} jugador(es) ✓`);
+    paPanel(id);
+  }catch(e){ toast(paErr(e), true); }
+}
+async function paAnular(id){
+  if (!confirm('¿Deshacer este partido? Se borran los minutos de los jugadores y los avisos de RPE pendientes.')) return;
+  try{
+    let r = await sb('rpc/partido_anular', { method: 'POST', body: JSON.stringify({ p_partido: id, p_confirmar: false }) });
+    if (r && r.requiere_confirmacion){
+      if (!confirm(`${r.con_rpe} jugador(es) ya pusieron su RPE. Si deshacés el partido, ese RPE se pierde. ¿Deshacer igual?`)) return;
+      r = await sb('rpc/partido_anular', { method: 'POST', body: JSON.stringify({ p_partido: id, p_confirmar: true }) });
+    }
+    toast('Partido deshecho ✓');
+    paBody('<div style="text-align:center; font-size:46px; margin-top:6px;">↩</div><h3 style="text-align:center;">Partido deshecho</h3><p class="se-sub" style="text-align:center;">Podés volver a cargarlo cuando quieras.</p><div class="se-btns"><button class="ghost" onclick="paCerrar()">Cerrar</button></div>');
+  }catch(e){ toast(paErr(e), true); }
+}
+
+// ============================================================================
+// (v138) GRÁFICO DE MINUTOS POR JUGADOR — uno, varios o todos; por rango de fechas o por partidos elegidos. Sin exportar.
+// ============================================================================
+let PG = null;
+const PG_SER = ['#3987e5', '#d95926', '#199e70', '#c98500', '#d55181'];   // paleta validada (≤5 series; con más jugadores se pasa a matriz)
+const PG_TIPO_C = { oficial: 'Of.', amistoso: 'Am.', reserva: 'Res.' };
+function pgFmtF(f){ const [y, m, d] = String(f).split('-'); return +d + '/' + +m; }
+async function pgTraer(eqId){
+  let todo = [];
+  for (let off = 0; off < 5000; off += 1000){
+    const r = await sb(`partidos_minutos_v?select=partido_id,fecha,rival,local,tipo,duracion_min,alumno_id,rol,minutos,rpe,inicio_en&equipo_id=eq.${eqId}&estado=eq.finalizado&order=inicio_en.asc&limit=1000&offset=${off}`);
+    todo = todo.concat(r); if (r.length < 1000) break;
+  }
+  return todo;
+}
+async function pgAbrir(equipoId){
+  const eq = equipoId ? { id: equipoId, nombre: ((typeof EQUIPOS_CACHE !== 'undefined' ? EQUIPOS_CACHE : []).find(x => x.id === equipoId) || {}).nombre || '' }
+                      : (PA ? { id: PA.equipoId, nombre: PA.equipoNombre } : sesEqEquipoActual());
+  if (!eq.id){ toast('Elegí un equipo primero.', true); return; }
+  if (!eq.nombre) eq.nombre = sesEqEquipoActual().nombre;
+  paClkParar(); PA = null;
+  document.getElementById('modalPartido').classList.add('show');
+  paBody('<h3>📈 Minutos por jugador</h3><p class="se-sub">Cargando…</p>');
+  try{
+    const rows = await pgTraer(eq.id);
+    const pm = {}, cel = {};
+    rows.forEach(r => { if (!pm[r.partido_id]) pm[r.partido_id] = { id: r.partido_id, fecha: r.fecha, rival: r.rival, local: r.local, tipo: r.tipo, dur: r.duracion_min, orden: r.inicio_en }; (cel[r.partido_id] = cel[r.partido_id] || {})[r.alumno_id] = { rol: r.rol, min: r.minutos, rpe: r.rpe }; });
+    const partidos = Object.values(pm).sort((a, b) => String(a.orden).localeCompare(String(b.orden)));
+    if (!partidos.length){ paBody(`<h3>📈 Minutos por jugador</h3><div class="se-note">Todavía no hay partidos finalizados de ${escaparHtml(eq.nombre)}. Cargá el primero con <b>＋ Cargar partido</b>.</div><div class="se-btns"><button class="ghost" onclick="paCerrar()">Cerrar</button></div>`); return; }
+    const ids = new Set(); rows.forEach(r => { if (r.rol !== 'no_convocado') ids.add(r.alumno_id); });
+    const jug = paSoloMiembros(eq.id).slice(); ids.forEach(i => { if (!jug.find(j => j.id === i)){ const a = ALUMNOS_CACHE.find(x => x.id === i); if (a) jug.push(a); } });
+    jug.sort((a, b) => String(a.nombre).localeCompare(String(b.nombre), 'es'));
+    const hoy = sesEqFechaIso(0), d90 = (() => { const d = new Date(); d.setDate(d.getDate() - 90); return fechaLocalISO(d); })();
+    PG = { equipoId: eq.id, equipoNombre: eq.nombre, partidos, cel, jug, sel: jug.map(j => j.id), slot: {}, modo: 'p', desde: d90, hasta: hoy,
+           selP: new Set(partidos.slice(-8).map(p => p.id)), tipo: 'all', vista: 'g', act: null, ord: 'plantel' };
+    pgRender();
+  }catch(e){ paBody(`<h3>📈 Minutos por jugador</h3><div class="se-note bad">No se pudo cargar: ${escaparHtml(paErr(e))}</div><div class="se-btns"><button class="ghost" onclick="paCerrar()">Cerrar</button></div>`); }
+}
+function pgCols(){
+  const G = PG; let c = G.partidos;
+  if (G.tipo !== 'all') c = c.filter(p => p.tipo === G.tipo);
+  c = G.modo === 'p' ? c.filter(p => G.selP.has(p.id)) : c.filter(p => (!G.desde || p.fecha >= G.desde) && (!G.hasta || p.fecha <= G.hasta));
+  return c;
+}
+function pgMin(aid, pid){ const x = (PG.cel[pid] || {})[aid]; return (!x || x.rol === 'no_convocado') ? null : x.min; }
+function pgAssign(){
+  const G = PG; Object.keys(G.slot).forEach(k => { if (!G.sel.includes(k)) delete G.slot[k]; });
+  if (G.sel.length > 5) return;
+  G.sel.forEach(id => { if (G.slot[id] == null){ const used = Object.values(G.slot); let s = 0; while (used.includes(s)) s++; G.slot[id] = s; } });
+}
+function pgSet(k, v){ PG[k] = v; PG.act = null; pgRender(); }
+function pgTog(id){ const G = PG; G.sel = G.sel.includes(id) ? G.sel.filter(x => x !== id) : G.sel.concat(id); G.act = null; pgRender(); }
+function pgQuick(q){ PG.sel = q === 'all' ? PG.jug.map(j => j.id) : []; PG.act = null; pgRender(); }
+function pgTogP(id){ const s = PG.selP; if (s.has(id)) s.delete(id); else s.add(id); PG.act = null; pgRender(); }
+function pgQuickP(q){
+  const G = PG; if (q === 'all') G.selP = new Set(G.partidos.map(p => p.id)); else if (q === 'none') G.selP = new Set(); else G.selP = new Set(G.partidos.slice(-Number(q)).map(p => p.id));
+  G.act = null; pgRender();
+}
+function pgRango(dias){
+  const G = PG; if (dias === 0){ G.desde = ''; G.hasta = ''; } else { const d = new Date(); d.setDate(d.getDate() - dias); G.desde = fechaLocalISO(d); G.hasta = sesEqFechaIso(0); }
+  G.act = null; pgRender();
+}
+function pgRender(){
+  const G = PG; if (!G) return;
+  const box = document.querySelector('#modalPartido .se-box'), sc = box ? box.scrollTop : 0, chipsEl = document.getElementById('pgChips'), sc2 = chipsEl ? chipsEl.scrollTop : 0;
+  pgAssign();
+  const cols = pgCols(), sel = G.sel.map(id => G.jug.find(j => j.id === id)).filter(Boolean), k = sel.length, many = k > 5, vista = many ? 'm' : G.vista;
+  const seg = (items, cur, js) => `<div class="pg-seg">${items.map(([v, t, dis]) => `<button class="${String(cur) === String(v) ? 'on' : ''} ${dis ? 'dis' : ''}" ${dis ? 'disabled' : `onclick="${js}('${v}')"`}>${t}</button>`).join('')}</div>`;
+  const rangoCh = [[30, '30 días'], [90, '90 días'], [180, '6 meses'], [0, 'Todo']].map(([d, t]) => `<button class="ghost" style="width:auto; padding:6px 12px; font-size:12.5px;" onclick="pgRango(${d})">${t}</button>`).join(' ');
+  const filtroP = G.modo === 'p'
+    ? `<div class="full"><details class="pg-det" ${G.openP ? 'open' : ''} ontoggle="PG.openP = this.open"><summary>⚽ Partidos elegidos: ${G.selP.size} de ${G.partidos.length} · tocá para cambiar</summary>
+         <div class="se-tb" style="margin:0 0 4px;"><button class="ghost" onclick="pgQuickP('5')">Últimos 5</button><button class="ghost" onclick="pgQuickP('10')">Últimos 10</button><button class="ghost" onclick="pgQuickP('all')">Todos</button><button class="ghost" onclick="pgQuickP('none')">Ninguno</button></div>
+         <div style="max-height:170px; overflow:auto;">${G.partidos.slice().reverse().map(p => `<label class="pg-pl"><input type="checkbox" ${G.selP.has(p.id) ? 'checked' : ''} onchange="pgTogP('${p.id}')"><span><b>${pgFmtF(p.fecha)}</b> ${p.local ? 'vs' : 'en'} ${escaparHtml(p.rival)} <small>${PG_TIPO_C[p.tipo] || ''} · ${p.dur}'</small></span></label>`).join('')}</div></details></div>`
+    : `<div><label>Desde</label><input type="date" value="${G.desde}" onchange="pgSet('desde',this.value)"></div><div><label>Hasta</label><input type="date" value="${G.hasta}" onchange="pgSet('hasta',this.value)"></div><div class="full se-tb" style="margin:0;">${rangoCh}</div>`;
+  let cuerpo = '';
+  if (!k) cuerpo = '<div class="se-note">Tocá un nombre de arriba, o <b>Todos</b>.</div>';
+  else if (!cols.length) cuerpo = '<div class="se-note">No hay partidos en ese período o de ese tipo. Cambiá las fechas o los partidos elegidos.</div>';
+  else {
+    let tot = 0, pj = 0, pos = 0;
+    sel.forEach(p => cols.forEach(c => { const v = pgMin(p.id, c.id); if (v != null){ tot += v; if (v > 0) pj++; } pos += c.dur; }));
+    const fm = n => String(n).replace('.', ',');
+    cuerpo += `<div class="pg-k"><div><b>${tot}'</b>minutos</div><div><b>${k === 1 ? pj : fm((pj / k).toFixed(1))}</b>partidos jugados${k === 1 ? ' de ' + cols.length : ' (prom.)'}</div><div><b>${pos ? Math.round(tot / pos * 100) : 0}%</b>del total posible</div></div>`;
+    if (k === 1){
+      const p = sel[0], hoy = new Date(); hoy.setHours(12, 0, 0, 0);
+      let m7 = 0, p8 = 0, m28 = 0;
+      G.partidos.forEach(c => { const dd = Math.round((hoy - new Date(c.fecha + 'T12:00:00')) / 86400000), v = pgMin(p.id, c.id) || 0; if (dd <= 6) m7 += v; if (dd <= 7 && v > 0) p8++; if (dd <= 27) m28 += v; });
+      const prom = pj ? Math.round(tot / pj) : 0, al = p8 >= 3 || m7 >= 270;
+      cuerpo += `<div class="se-note" style="margin-top:0;"><b>${escaparHtml(p.nombre)}</b> · promedio <b>${prom}'</b> por partido jugado<br>Últimos 28 días: <b>${m28}'</b> · últimos 8 días: <b>${p8} partido${p8 === 1 ? '' : 's'}</b> (${m7}' en 7 días) ${al ? '<b style="color:var(--warn-text);">⚠ congestión</b>' : '<b style="color:var(--accent2-text);">✓ normal</b>'}</div>`;
+    } else cuerpo += `<div class="se-sub" style="margin:0 0 6px;">${vista === 'm' ? 'Cada fila es un jugador y cada columna un partido. Más intenso = más minutos.' : 'Minutos por partido, jugador contra jugador.'}</div>`;
+    if (vista === 'g'){
+      if (k > 1) cuerpo += `<div>${sel.map(p => `<span class="pg-lg"><i style="background:${PG_SER[G.slot[p.id]]}"></i>${escaparHtml(paCorto(p.nombre))}</span>`).join('')}</div>`;
+      cuerpo += `<div class="pg-sc" id="pgChart">${pgBars(sel, cols)}</div><div id="pgRead"></div>`;
+    } else cuerpo += `<div class="pg-sc" id="pgChart">${pgMat(sel, cols)}</div>`;
+  }
+  paBody(`
+    <h3>📈 Minutos por jugador</h3>
+    <p class="se-sub">${escaparHtml(G.equipoNombre)} · ${G.partidos.length} partido${G.partidos.length === 1 ? '' : 's'} finalizado${G.partidos.length === 1 ? '' : 's'}</p>
+    <div class="se-f" style="margin-top:0;"><label>Jugadores · ${k} de ${G.jug.length}</label>
+      <div class="se-tb" style="margin:0;"><button class="ghost" onclick="pgQuick('all')">Todos</button><button class="ghost" onclick="pgQuick('none')">Ninguno</button></div>
+      <div class="pg-chips" id="pgChips">${G.jug.map(j => { const on = G.sel.includes(j.id), dot = on && vista === 'g' && G.slot[j.id] != null ? `<i style="background:${PG_SER[G.slot[j.id]]}"></i>` : ''; return `<button class="${on ? 'on' : ''}" onclick="pgTog('${j.id}')">${dot}${escaparHtml(paCorto(j.nombre))}</button>`; }).join('')}</div></div>
+    <div class="pg-f">
+      <div class="full"><label>Filtrar por</label>${seg([['f', '📅 Fechas'], ['p', '⚽ Partidos elegidos']], G.modo, 'pgSetModo')}</div>
+      ${filtroP}
+      <div><label>Tipo de partido</label>${seg([['all', 'Todos'], ['oficial', 'Of.'], ['amistoso', 'Am.'], ['reserva', 'Res.']], G.tipo, "pgSetTipo")}</div>
+      <div><label>Vista</label>${seg([['g', '📊 Barras', many], ['m', '🟦 Matriz']], vista, 'pgSetVista')}</div>
+    </div>
+    ${many ? '<div class="se-note">Con más de 5 jugadores se muestra la matriz (más legible que muchas barras). Elegí 5 o menos para ver barras.</div>' : ''}
+    <div style="margin-top:12px;">${cuerpo}</div>
+    <div class="se-btns" style="padding-bottom:6px;"><button class="ghost" onclick="paCerrar()">Cerrar</button></div>`);
+  const b2 = document.querySelector('#modalPartido .se-box'); if (b2) b2.scrollTop = sc;
+  const c2 = document.getElementById('pgChips'); if (c2) c2.scrollTop = sc2;
+  if (k && cols.length && vista === 'g'){
+    document.querySelectorAll('#pgChart [data-c]').forEach(r => { r.onpointerenter = r.onpointerdown = () => pgAct(+r.dataset.c); });
+    pgAct(G.act != null && G.act < cols.length ? G.act : cols.length - 1);
+  }
+}
+function pgSetModo(v){ PG.modo = v; PG.act = null; pgRender(); }
+function pgSetTipo(v){ PG.tipo = v; PG.act = null; pgRender(); }
+function pgSetVista(v){ PG.vista = v; PG.act = null; pgRender(); }
+function pgBars(sel, cols){
+  const G = PG, k = sel.length, n = cols.length, l = 30, r = 6, t = 14, b = 40, H = 232, ih = H - t - b;
+  const band = Math.max((360 - l - r) / n, k * 7 + 12), W = l + r + band * n, iw = W - l - r;
+  const ytop = Math.ceil(Math.max(90, ...cols.map(c => c.dur)) / 30) * 30, y = v => t + ih - v / ytop * ih;
+  const gap = 2, bw = Math.min(34, Math.max(5, (band * .8 - gap * (k - 1)) / k)), gw = bw * k + gap * (k - 1);
+  let g = '';
+  for (let v = 0; v <= ytop; v += 30) g += `<line x1="${l}" x2="${W - r}" y1="${y(v)}" y2="${y(v)}" class="pg-gl${v === 0 ? ' b' : ''}"/><text x="${l - 5}" y="${y(v) + 3.5}" text-anchor="end" class="pg-t">${v}</text>`;
+  cols.forEach((c, ci) => {
+    const cx = l + band * (ci + .5), x0 = cx - gw / 2;
+    g += `<rect class="pg-hl" id="pgh${ci}" x="${l + band * ci}" y="${t - 6}" width="${band}" height="${ih + 6}"/>`;
+    sel.forEach((p, si) => {
+      const v = pgMin(p.id, c.id), x = x0 + si * (bw + gap), col = PG_SER[G.slot[p.id]];
+      if (v == null){ g += `<text x="${x + bw / 2}" y="${y(0) - 4}" text-anchor="middle" class="pg-t">–</text>`; return; }
+      if (v === 0){ g += `<rect x="${x}" y="${y(0) - 2}" width="${bw}" height="2" fill="${col}" opacity=".6"/>`; if (k === 1) g += `<text x="${x + bw / 2}" y="${y(0) - 7}" text-anchor="middle" class="pg-v">0'</text>`; return; }
+      const h = ih * v / ytop, rr = Math.min(4, bw / 2, h);
+      g += `<path d="M${x},${y(0)} v${-(h - rr)} q0,${-rr} ${rr},${-rr} h${bw - 2 * rr} q${rr},0 ${rr},${rr} v${h - rr} z" fill="${col}"/>`;
+      if (k === 1) g += `<text x="${x + bw / 2}" y="${y(v) - 5}" text-anchor="middle" class="pg-v">${v}'</text>`;
+    });
+    g += `<text x="${cx}" y="${H - b + 15}" text-anchor="middle" class="pg-x">${pgFmtF(c.fecha)}</text><text x="${cx}" y="${H - b + 27}" text-anchor="middle" class="pg-t">${PG_TIPO_C[c.tipo] || ''}</text>`;
+    g += `<rect class="pg-hit" data-c="${ci}" x="${l + band * ci}" y="${t - 6}" width="${band}" height="${ih + b + 6}"/>`;
+  });
+  return `<svg viewBox="0 0 ${W} ${H}" style="width:${W > 366 ? W + 'px' : '100%'}; max-width:${W > 366 ? 'none' : '560px'};" role="img" aria-label="Minutos jugados por partido">${g}</svg>`;
+}
+function pgAct(ci){
+  const G = PG, c = pgCols()[ci]; if (!c) return; G.act = ci;
+  document.querySelectorAll('#pgChart .pg-hl').forEach((e, i) => e.classList.toggle('on', i === ci));
+  const sel = G.sel.map(id => G.jug.find(j => j.id === id)).filter(Boolean), one = sel.length === 1, rd = document.getElementById('pgRead'); if (!rd) return;
+  rd.innerHTML = `<div class="pg-rd"><div style="margin-bottom:6px;"><b>${c.local ? 'vs' : 'en'} ${escaparHtml(c.rival)}</b><br><small>${pgFmtF(c.fecha)} · ${PA_TIPOS[c.tipo] || ''} · ${c.dur}'</small></div>` + sel.map(p => {
+    const x = (G.cel[c.id] || {})[p.id], v = pgMin(p.id, c.id);
+    const val = v == null ? '<span style="color:var(--muted)">no convocado</span>' : v === 0 ? '<span style="color:var(--muted)">convocado, no jugó</span>' : v + "'";
+    return `<div class="rr">${one ? '' : `<i style="width:10px; height:10px; border-radius:3px; flex:none; background:${PG_SER[G.slot[p.id]]}"></i>`}<span>${escaparHtml(paCorto(p.nombre))}${x && x.rpe ? `<br><small>RPE ${x.rpe}</small>` : ''}</span><b>${val}</b></div>`;
+  }).join('') + '</div>';
+}
+function pgMat(sel, cols){
+  const G = PG, tot = p => cols.reduce((a, c) => a + (pgMin(p.id, c.id) || 0), 0);
+  const rows = sel.slice(); if (G.ord === 'min') rows.sort((a, b) => tot(b) - tot(a));
+  const gt = `grid-template-columns:minmax(74px,1.6fr) repeat(${cols.length},minmax(24px,1fr)) 40px; min-width:${74 + cols.length * 26 + 40}px;`;
+  let h = `<div class="pg-mx" style="${gt}"><div class="h" style="text-align:left">Jugador</div>${cols.map(c => `<div class="h" title="${escaparHtml(c.rival)}">${pgFmtF(c.fecha)}</div>`).join('')}<div class="h" style="text-align:right">Total</div>`;
+  rows.forEach(p => {
+    h += `<div class="nm">${escaparHtml(paCorto(p.nombre))}</div>` + cols.map(c => {
+      const v = pgMin(p.id, c.id), tt = `${escaparHtml(p.nombre)} · ${escaparHtml(c.rival)} · ${v == null ? 'no convocado' : v + "'"}`;
+      return v == null ? `<div class="pg-c nc" title="${tt}">–</div>` : v === 0 ? `<div class="pg-c z" title="${tt}">0</div>` : `<div class="pg-c" title="${tt}" style="background:rgba(57,135,229,${(.18 + .5 * Math.min(1, v / c.dur)).toFixed(2)})">${v}</div>`;
+    }).join('') + `<div class="tt">${tot(p)}'</div>`;
+  });
+  if (rows.length > 1) h += `<div class="h" style="text-align:left; padding-top:6px">En cancha</div>` + cols.map(c => `<div class="pg-c ft">${rows.reduce((a, p) => a + (pgMin(p.id, c.id) || 0), 0)}</div>`).join('') + `<div class="tt ft">${rows.reduce((a, p) => a + tot(p), 0)}'</div>`;
+  return h + `</div><div class="pg-ml"><span>0'</span><i></i><span>partido completo</span><span style="margin-left:auto">– no convocado</span></div>`;
+}
+
+// ============================================================================
+// (v138) LADO ALUMNO — tarjeta "¿Cómo fue el partido? Poné tu RPE" (opcional). Aparece en Inicio junto a la de v137.
+// ============================================================================
+let PA_RPE_SEL = {};
+async function paRpePendientes(alumnoId){
+  const r = await sb(`partido_jugadores?select=partido_id,minutos,partidos!inner(fecha,rival,local,estado,anulado_en)&alumno_id=eq.${alumnoId}&rpe=is.null&rpe_pedido_en=not.is.null&minutos=gt.0&partidos.estado=eq.finalizado&partidos.anulado_en=is.null&limit=10`);
+  return r.sort((a, b) => String(b.partidos.fecha).localeCompare(String(a.partidos.fecha))).slice(0, 3);
+}
+function paRpeCardHtml(x){
+  const sel = PA_RPE_SEL[x.partido_id] || 0, p = x.partidos;
+  return `<div class="card" style="border-color:var(--accent);">
+    <div style="font-weight:800;">⚽ ¿Cómo fue el partido ${p.local ? 'vs' : 'en'} ${escaparHtml(p.rival)}?</div>
+    <div class="muted" style="font-size:13px;">Jugaste ${x.minutos}' el ${escaparHtml(formatearFechaCorta(p.fecha))}. Poné cuánto te costó, de 1 a 10 (es opcional, pero ayuda a cuidar tu carga).</div>
+    <div class="rpe-grid">${[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(n => `<button class="${sel === n ? 'on' : ''}" onclick="paRpeElegir('${x.partido_id}',${n})">${n}</button>`).join('')}</div>
+    <div class="muted" style="font-size:12.5px; min-height:18px;">${sel ? '<b>' + sel + '</b> · ' + RPE_TXT[sel] : '1 = muy suave · 10 = al máximo'}</div>
+    <button style="margin-top:8px;" ${sel ? '' : 'disabled'} onclick="paRpeGuardar('${x.partido_id}')">Guardar mi RPE</button>
+  </div>`;
+}
+function paRpeElegir(pid, n){ PA_RPE_SEL[pid] = n; rpeCardAluCargar(RPE_ALU_ID); }
+async function paRpeGuardar(pid){
+  const n = PA_RPE_SEL[pid]; if (!n) return;
+  try{
+    await sb('rpc/partido_rpe_guardar', { method: 'POST', body: JSON.stringify({ p_partido: pid, p_rpe: n }) });
+    delete PA_RPE_SEL[pid];
+    toast('¡Gracias! Tu profe ya ve tu RPE ✓');
+    rpeCardAluCargar(RPE_ALU_ID);
+  }catch(e){ toast('No se pudo guardar: ' + paErr(e), true); }
 }
 
 // ---------- Ficha / Reporte del alumno + export a PDF (pedido de Martin, 21/9)
@@ -21689,7 +22536,7 @@ async function revisarNotificacionesStaff(){
     if (!gimId) return;
     const pendientes = await sb(`notificaciones_staff?gimnasio_id=eq.${gimId}&leida=eq.false&order=creado_en.asc`);
     const cumHoyK = 'cumple_' + fechaLocalISO().replace(/-/g, '');   // (v101)
-    const cumViejas = (pendientes || []).filter(n => /^cumple_/.test(n.tipo || '') && n.tipo !== cumHoyK);
+    const cumViejas = (pendientes || []).filter(n => (/^cumple_/.test(n.tipo || '') && n.tipo !== cumHoyK) || n.tipo === 'partido_reloj');   // (v138) los avisos del reloj del partido solo son push: no se muestran como cartel al entrar
     if (cumViejas.length) sb(`notificaciones_staff?id=in.(${cumViejas.map(n => n.id).join(',')})`, { method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: JSON.stringify({ leida: true }) }).catch(() => {});
     NOTIF_STAFF_PENDIENTES = (pendientes || []).filter(n => !cumViejas.includes(n));
     if (!NOTIF_STAFF_PENDIENTES.length) return; // nada para avisar, no molestamos al admin
