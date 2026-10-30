@@ -1464,6 +1464,26 @@
   .qp-ps{font-size:10.5pt; color:#555b66; margin-top:1mm; line-height:1.3;}
   .qp-pie{margin-top:8mm; font-size:10.5pt; color:#70757f; line-height:1.4;}
   .qp-m{margin-top:3mm; font-size:9pt; color:#b0b5be; font-weight:700; letter-spacing:.08em;}
+  /* (v139) QR del escritorio */
+  .qb-grid{display:flex; gap:16px; align-items:flex-start; flex-wrap:wrap;}
+  .qb-qr{width:150px; flex:none; background:#fff; padding:8px; border-radius:12px; border:1px solid var(--border);}
+  .qb-qr svg{display:block; width:100%; height:auto;}
+  .qb-der{flex:1; min-width:230px;}
+  .qb-modos{display:flex; flex-direction:column; gap:8px; margin-top:6px;}
+  .qb-op{display:flex; gap:10px; align-items:flex-start; padding:10px 12px; border:1px solid var(--border); border-radius:12px; cursor:pointer; background:var(--panel2); text-transform:none; letter-spacing:0; font-weight:400; font-size:14px;}
+  .qb-op b{text-transform:none; letter-spacing:0; font-weight:800; font-size:14.5px;}
+  .qb-op.on{border-color:var(--accent, #6c8cff); box-shadow:0 0 0 1px var(--accent, #6c8cff) inset;}
+  .qb-op.off{opacity:.55; cursor:not-allowed;}
+  .qb-op input{margin-top:3px; flex:none;}
+  .qb-op span{display:flex; flex-direction:column; gap:2px;}
+  .qb-op small{text-transform:none; letter-spacing:0; font-weight:400; font-size:12.5px; opacity:.75; line-height:1.35;}
+  .qb-url{margin-top:12px; word-break:break-all; font-size:12.5px; opacity:.8;}
+  .qb-nv{margin-top:16px; padding-top:12px; border-top:1px solid var(--border);}
+  .qb-nv-t{font-weight:800; margin-bottom:8px;}
+  .qb-fila{padding:8px 0; border-bottom:1px solid var(--border);}
+  .qb-fila .acc{display:flex; gap:6px; flex-wrap:wrap; margin-top:6px;}
+  .qb-fila .acc a.wa{background:#25d366; color:#06210f; font-weight:700; padding:7px 12px; border-radius:10px; text-decoration:none; font-size:13.5px;}
+  .qb-fila .acc button{font-size:13.5px; padding:7px 12px;}
   /* (v111) Link público de reservas (?r=): página, config en Mi gimnasio, tarjeta "Nuevos desde el link", suspensión de clases */
   #pubReservas{position:fixed; inset:0; z-index:600; background:var(--bg); color:var(--text); overflow-y:auto; -webkit-overflow-scrolling:touch;}
   .pb-wrap{max-width:480px; margin:0 auto; padding:14px 16px calc(28px + env(safe-area-inset-bottom)); min-height:100%; box-sizing:border-box; display:flex; flex-direction:column;}
@@ -3635,6 +3655,8 @@
         </div></details>
         <!-- (v111) Link público de reservas (Instagram) -->
         <details class="plegable card" data-k="gim-link" id="gimLinkBox" style="display:none;"><summary>🔗 Link de reservas (Instagram)</summary><div class="plg-body" id="gimLinkBody"><div class="muted">Cargando…</div></div></details>
+        <!-- (v139) QR del escritorio -->
+        <details class="plegable card" data-k="gim-qr" id="gimQrBox" style="display:none;"><summary>🔳 QR para el escritorio (registro y entrada a la app)</summary><div class="plg-body" id="gimQrBody"><div class="muted">Cargando…</div></div></details>
       </div>
 
     </div>
@@ -5073,11 +5095,11 @@ function atlIniciarAlu(){
   atlCargarVista('aluAtletismoContenido', id || '');
 }
 
-const APP_VERSION = 138;
+const APP_VERSION = 139;
 let ES_PERSONAL = false;   // (v132) cuenta personal (gimnasios.tipo = 'personal'); se calcula en perAplicar()
 // (v96) Fecha de la última actualización: se cambia junto con APP_VERSION en cada entrega. Se muestra en la
 // pantalla de inicio y en el menú de cuenta ("v94 · actualizada el 5/10/2026").
-const APP_FECHA = '2026-10-28';
+const APP_FECHA = '2026-10-30';
 function appVersionTxt(){ const [y, m, d] = APP_FECHA.split('-'); return `v${APP_VERSION} · actualizada el ${+d}/${+m}/${y}`; }
 (function(){ const el = document.getElementById('lcVersion'); if (el) el.textContent = 'M2F Solutions · ' + appVersionTxt(); })();
 
@@ -9198,6 +9220,14 @@ function qrResultado(r){
 // SQL: reservas-publicas.sql. Cada gimnasio (o entrenador independiente) lo activa en Mi gimnasio → "Link de reservas" y lo pega
 // en su Instagram. La persona entra sin usuario: pone su DNI (si no está, nombre, apellido y WhatsApp), ve las clases con su cupo y
 // reserva. Todo pasa por funciones publico_* de la base (SECURITY DEFINER, con límite de intentos): la página no lee tablas.
+// (v139) ?ingresar=alumno|independiente|personal|gimnasio|login: abre directo esa pantalla de ingreso (QR de la tarjeta de profes, QR del escritorio)
+const ING = { t: null };
+(function ingCapturar(){
+  try{
+    const v = (new URLSearchParams(location.search).get('ingresar') || '').trim().toLowerCase();
+    if (['alumno', 'independiente', 'personal', 'gimnasio', 'login'].includes(v)) ING.t = v;
+  }catch(e){}
+})();
 const PUB = { slug: null, g: null, cl: null, t0: 0, dni: '', nombre: '', prueba: false, pant: 'cargando', modo: 'reservar', dia: 0, sel: null, mi: null, res: null, busy: false, err: '', msg: '', f: { dni: '', nombre: '', apellido: '', tel: '', ok: false }, canc: null };
 (function pubCapturarLink(){
   try{
@@ -9260,10 +9290,10 @@ async function pubIniciar(){
   try{
     const g = await pubRpc('publico_gimnasio', { p_slug: PUB.slug });
     PUB.g = g;
-    if (g && g.disponible){ aplicarTemaGimnasio(g); document.title = (g.nombre || 'Reservas') + ' · Reservas'; }
+    if (g && g.disponible){ aplicarTemaGimnasio(g); document.title = (g.nombre || 'Reservas') + (g.entrada === 'registro' ? ' · Bienvenida' : ' · Reservas'); }
     if (!g || !g.disponible){ PUB.pant = 'cerrado'; pubRender(); return; }
     const gd = pubGuardado(); if (gd){ PUB.dni = gd.dni; PUB.nombre = gd.nombre || ''; }
-    pubCargarClases().catch(() => {});
+    if (g.entrada !== 'registro') pubCargarClases().catch(() => {});   // (v139) en modo registro no hace falta el módulo Clases
     PUB.pant = 'inicio';
   }catch(e){ PUB.err = e.message; PUB.pant = 'cerrado'; }
   pubRender();
@@ -9278,6 +9308,7 @@ async function pubCargarClases(){
 // ----- acciones -----
 function pubEmpezar(modo){
   PUB.modo = modo; pubLimpiaMsg();
+  if (modo === 'registro'){ if (PUB.dni){ PUB.ya = true; pubIr('registrado'); } else pubIr('dni'); return; }   // (v139)
   if (PUB.dni){ if (modo === 'semana') pubVerSemana(); else pubVerClases(); return; }
   pubIr('dni');
 }
@@ -9292,7 +9323,7 @@ async function pubContinuarDni(){
     PUB.busy = false;
     if (r && r.otro_lugar){ PUB.err = 'Ese DNI ya está registrado en otro lugar. Escribinos por WhatsApp y lo resolvemos.'; pubRender(true); return; }
     if (r && r.baja){ PUB.err = 'Tu cuenta está dada de baja. Escribile al gimnasio por WhatsApp.'; pubRender(true); return; }
-    if (r && r.existe){ PUB.dni = d; PUB.nombre = r.nombre || ''; pubGuardar(); if (PUB.modo === 'semana') pubVerSemana(); else pubVerClases(); return; }
+    if (r && r.existe){ PUB.dni = d; PUB.nombre = r.nombre || ''; pubGuardar(); if (PUB.modo === 'registro'){ PUB.ya = true; pubIr('registrado'); } else if (PUB.modo === 'semana') pubVerSemana(); else pubVerClases(); return; }
     PUB.dni = ''; PUB.f.dni = d;
     pubIr('registro');
     if (PUB.modo === 'semana'){ PUB.msg = 'No encontramos ese DNI. Si es tu primera vez, completá tus datos y reservá tu entrenamiento.'; pubRender(true); }
@@ -9309,7 +9340,7 @@ async function pubRegistrar(){
   try{
     const r = await pubRpc('publico_registrar', { p_slug: PUB.slug, p_dni: f.dni, p_nombre: n, p_apellido: a, p_telefono: t });
     PUB.busy = false; PUB.dni = String(f.dni).replace(/\D/g, ''); PUB.nombre = (r && r.nombre) || n; pubGuardar();
-    pubVerClases();
+    if (PUB.modo === 'registro'){ PUB.ya = !!(r && r.ya_existia); pubIr('registrado'); } else pubVerClases();
   }catch(e){ PUB.busy = false; PUB.err = e.message; pubRender(true); }
 }
 async function pubVerClases(){
@@ -9410,6 +9441,7 @@ function pubHoja(){
 }
 function pubPantInicio(){
   const g = PUB.g || {};
+  if (g.entrada === 'registro' || g.entrada === 'ambos') return pubPantInicioQr(g.entrada);   // (v139)
   let hoyHtml = '';
   if (PUB.cl){
     const d0 = pubDias()[0], lista = pubClasesDia(d0).filter(c => pubSusp(c.id, d0.iso) === null).slice(0, 4);
@@ -9418,21 +9450,37 @@ function pubPantInicio(){
   return `${pubTop()}${pubMarca(true)}<div class="pb-acc"><button type="button" onclick="pubEmpezar('reservar')">🏋️ Reservar entrenamiento</button><button type="button" class="secondary" onclick="pubEmpezar('semana')">📅 Ver mi semana · ingresar con mi DNI</button>${pubWaBtn('Consultas por WhatsApp')}</div>
     ${g.prueba ? `<div class="pb-info" style="text-align:center;">🎁 Tu primer entrenamiento es de prueba.</div>` : ''}${hoyHtml}${pubPie()}`;
 }
+function pubEntrarApp(){ location.href = location.pathname + '?ingresar=alumno'; }
+function pubPantInicioQr(ent){
+  const g = PUB.g || {};
+  const reg = `<button type="button" onclick="pubEmpezar('registro')">🙋 Soy nuevo · dejar mis datos</button>`;
+  const ent_ = `<button type="button" class="secondary" onclick="pubEntrarApp()">📲 Ya soy socio · entrar a la app</button>`;
+  if (ent === 'registro')
+    return `${pubTop()}${pubMarca(true)}<div class="pb-acc">${reg}${ent_}${pubWaBtn('Consultas por WhatsApp')}</div>${pubPie()}`;
+  return `${pubTop()}${pubMarca(true)}<div class="pb-acc">${reg}${ent_}<button type="button" class="secondary" onclick="pubEmpezar('reservar')">🏋️ Reservar entrenamiento</button><button type="button" class="secondary" onclick="pubEmpezar('semana')">📅 Ver mi semana</button>${pubWaBtn('Consultas por WhatsApp')}</div>
+    ${g.prueba ? `<div class="pb-info" style="text-align:center;">🎁 Tu primer entrenamiento es de prueba.</div>` : ''}${pubPie()}`;
+}
+function pubPantRegistrado(){
+  const g = PUB.g || {}, ya = !!PUB.ya, nm = PUB.nombre ? ', ' + PUB.nombre : '';
+  return `${pubTop()}${pubMarca(false)}<div class="pb-center"><div class="pb-big">✅</div><div class="pb-h" style="margin-top:0;">${ya ? 'Ya estás registrado/a' + ejEsc(nm) : '¡Listo' + ejEsc(nm) + '!'}</div>
+    <p class="pb-p">${ya ? 'Si ya tenés tu usuario y contraseña, entrá a la app. Si todavía no, escribile al gimnasio y te lo pasan.' : ejEsc(g.nombre || 'El gimnasio') + ' recibió tus datos. En breve te escribimos por WhatsApp con tu usuario para entrar a la app.'}</p></div>
+    <div class="pb-acc"><button type="button" ${ya ? '' : 'class="secondary"'} onclick="pubEntrarApp()">📲 ${ya ? 'Entrar a la app' : 'Ya tengo mi usuario · entrar'}</button>${g.entrada === 'ambos' ? `<button type="button" class="secondary" onclick="pubEmpezar('reservar')">🏋️ Reservar entrenamiento</button>` : ''}${pubWaBtn('Escribir al gimnasio')}</div>${pubPie()}`;
+}
 function pubPantDni(){
   return `${pubTop()}${pubMarca(false)}<button type="button" class="pb-back" onclick="pubIr('inicio')">‹ Volver</button>
-    <div class="pb-h">${PUB.modo === 'semana' ? 'Ver mi semana' : 'Reservar entrenamiento'}</div><p class="pb-p">Ingresá tu DNI. Si ya estás registrado/a entrás directo; si es tu primera vez te pedimos unos datos.</p>
+    <div class="pb-h">${PUB.modo === 'semana' ? 'Ver mi semana' : PUB.modo === 'registro' ? 'Registrarme' : 'Reservar entrenamiento'}</div><p class="pb-p">Ingresá tu DNI. Si ya estás registrado/a entrás directo; si es tu primera vez te pedimos unos datos.</p>
     <div class="pb-f"><label for="pbDni">Tu DNI (solo números)</label><input id="pbDni" inputmode="numeric" autocomplete="off" maxlength="12" placeholder="Ej: 30123456" value="${ejEsc(PUB.f.dni)}" oninput="pubCampo('dni',this.value); this.value=PUB.f.dni;" onkeydown="if(event.key==='Enter')pubContinuarDni()"></div>
     ${pubErr()}<div class="pb-acc" style="margin-top:16px;"><button type="button" onclick="pubContinuarDni()" ${PUB.busy ? 'disabled' : ''}>${PUB.busy ? 'Buscando…' : 'Continuar'}</button></div>${pubPie()}`;
 }
 function pubPantRegistro(){
   const f = PUB.f, g = PUB.g || {};
   return `${pubTop()}${pubMarca(false)}<button type="button" class="pb-back" onclick="pubIr('dni')">‹ Volver</button>
-    <div class="pb-h">Es tu primera vez</div><p class="pb-p">Completá tus datos para reservar${g.prueba ? '. Tu primer entrenamiento es de prueba' : ''}.</p>
+    <div class="pb-h">Es tu primera vez</div><p class="pb-p">${PUB.modo === 'registro' ? 'Completá tus datos y el gimnasio te da tu acceso a la app.' : 'Completá tus datos para reservar' + (g.prueba ? '. Tu primer entrenamiento es de prueba' : '') + '.'}</p>
     <div class="pb-f"><label>DNI</label><input value="${ejEsc(f.dni)}" readonly></div>
     <div class="pb-f"><label for="pbNom">Nombre</label><input id="pbNom" autocomplete="given-name" maxlength="40" value="${ejEsc(f.nombre)}" oninput="pubCampo('nombre',this.value)"></div>
     <div class="pb-f"><label for="pbApe">Apellido</label><input id="pbApe" autocomplete="family-name" maxlength="40" value="${ejEsc(f.apellido)}" oninput="pubCampo('apellido',this.value)"></div>
     <div class="pb-f"><label for="pbTel">WhatsApp (con código de área)</label><input id="pbTel" type="tel" inputmode="tel" autocomplete="tel" maxlength="20" placeholder="Ej: 11 5555 1234" value="${ejEsc(f.tel)}" oninput="pubCampo('tel',this.value)"></div>
-    <label class="pb-chk"><input type="checkbox" ${f.ok ? 'checked' : ''} onchange="pubCampo('ok',this.checked)"><span>Acepto que ${ejEsc(g.nombre || 'el gimnasio')} use mis datos para contactarme por WhatsApp sobre mi reserva.</span></label>
+    <label class="pb-chk"><input type="checkbox" ${f.ok ? 'checked' : ''} onchange="pubCampo('ok',this.checked)"><span>Acepto que ${ejEsc(g.nombre || 'el gimnasio')} use mis datos para contactarme por WhatsApp ${PUB.modo === 'registro' ? 'y darme acceso a la app' : 'sobre mi reserva'}.</span></label>
     ${pubErr()}<div class="pb-acc" style="margin-top:16px;"><button type="button" onclick="pubRegistrar()" ${PUB.busy ? 'disabled' : ''}>${PUB.busy ? 'Registrando…' : 'Continuar'}</button></div>${pubPie()}`;
 }
 function pubPantClases(){
@@ -9490,7 +9538,7 @@ function pubRender(conservarFoco){
   const root = document.getElementById('pubReservas'); if (!root) return;
   const foco = conservarFoco && document.activeElement && document.activeElement.id, pos = foco ? document.activeElement.selectionStart : null;
   const y = root.scrollTop;
-  const mapa = { cargando: () => `${pubTop()}<div class="pb-cargando">Cargando…</div>`, inicio: pubPantInicio, dni: pubPantDni, registro: pubPantRegistro, clases: pubPantClases, semana: pubPantSemana, listo: pubPantListo, cerrado: pubPantCerrado };
+  const mapa = { cargando: () => `${pubTop()}<div class="pb-cargando">Cargando…</div>`, inicio: pubPantInicio, dni: pubPantDni, registro: pubPantRegistro, clases: pubPantClases, semana: pubPantSemana, listo: pubPantListo, registrado: pubPantRegistrado, cerrado: pubPantCerrado };
   root.innerHTML = `<div class="pb-wrap">${(mapa[PUB.pant] || mapa.cerrado)()}</div>`;
   root.scrollTop = y;
   if (foco){ const e = document.getElementById(foco); if (e && e.focus){ e.focus(); try{ if (pos != null) e.setSelectionRange(pos, pos); }catch(x){} } }
@@ -9535,9 +9583,12 @@ async function rpxCfgCargar(){
     const r = await sb(`gimnasios?select=reservas_publicas,reservas_slug,reservas_prueba,reservas_aprobacion,reservas_bienvenida&id=eq.${gid}`);
     RPX.cfg = (r && r[0]) || null; RPX.ok = !!RPX.cfg;
   }catch(e){ RPX.ok = /42703|does not exist|reservas_/i.test(rpxMsg(e)) ? false : null; }
+  // (v139) columna aparte para no romper nada si todavía no se corrió v139-qr-escritorio.sql
+  if (RPX.cfg){ try{ const q = await sb(`gimnasios?select=reservas_entrada&id=eq.${gid}`); RPX.cfg.reservas_entrada = (q && q[0] && q[0].reservas_entrada) || 'reservas'; RPX.entOk = true; }catch(e){ RPX.entOk = false; } }
   rpxCfgPintar();
 }
 function rpxCfgPintar(){
+  try{ qbPintar(); }catch(e){}   // (v139)
   const box = document.getElementById('gimLinkBox'); if (!box) return;
   const ver = !!(PERFIL_ACTUAL && PERFIL_ACTUAL.rol === 'admin' && modOn('clases'));
   box.style.display = ver ? '' : 'none';
@@ -9608,6 +9659,163 @@ function rpxQrAbrir(){
     <div class="muted" style="font-size:12.5px; margin-top:8px;">Para poner en un cartel, un flyer o una historia: quien lo escanea cae directo en tu página de reservas.</div>
     <div class="row" style="gap:8px; margin-top:12px;"><button type="button" class="secondary" onclick="rpxCopiar()">📋 Copiar link</button><button type="button" class="ghost" style="margin-left:auto;" onclick="cerrarOverlayGenerico('rpxQrOv')">Cerrar</button></div>`;
   ov.classList.add('show');
+}
+
+// ===== (v139) QR DEL ESCRITORIO: un QR para pegar en el mostrador. Mismo link ?r=slug; lo que hace al escanear lo elige el gimnasio =====
+// SQL: v139-qr-escritorio.sql (columna reservas_entrada). Sin el SQL el QR funciona como siempre (lleva a las reservas).
+const QB = { busy: false, lista: null, listaOk: null };
+const QB_MODOS = [
+  ['registro', '🙋 Que se registre y entre a la app', 'Deja nombre, DNI y WhatsApp, y vos le das el acceso. No necesita el módulo Clases.'],
+  ['reservas', '🏋️ Que reserve una clase', 'Ve las clases con lugar libre y reserva. Quien es nuevo se registra al reservar.'],
+  ['ambos', '✨ Las dos cosas', 'Elige: registrarse, entrar a la app o reservar una clase.'],
+];
+function qbModo(){ const e = RPX.cfg && RPX.cfg.reservas_entrada; return (e === 'registro' || e === 'ambos' || e === 'reservas') ? e : 'reservas'; }
+function qbActivo(){ const c = RPX.cfg || {}; return !!(c.reservas_publicas && c.reservas_slug && rpxSlugOk(c.reservas_slug)); }
+function qbUrl(){ return rpxUrl((RPX.cfg || {}).reservas_slug || ''); }
+function qbPintar(){
+  const box = document.getElementById('gimQrBox'); if (!box) return;
+  const ver = !!(PERFIL_ACTUAL && PERFIL_ACTUAL.rol === 'admin');
+  box.style.display = ver ? '' : 'none';
+  const body = document.getElementById('gimQrBody'); if (!ver || !body) return;
+  if (RPX.ok === false){ body.innerHTML = '<div class="rpx-ban">⚠️ Falta activar esta función en la base de datos. Corré <b>reservas-publicas.sql</b> y después <b>v139-qr-escritorio.sql</b> en Supabase (SQL Editor) y recargá la app.</div>'; return; }
+  if (RPX.ok !== true){ body.innerHTML = '<div class="muted">Cargando…</div>'; return; }
+  if (body.contains(document.activeElement) && /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName)) return;
+  const entOk = RPX.entOk !== false, clases = modOn('clases'), activo = qbActivo(), modo = qbModo();
+  const aviso = !entOk ? '<div class="rpx-ban">⚠️ Falta correr <b>v139-qr-escritorio.sql</b> en Supabase para poder elegir qué hace el QR. Mientras tanto lleva a las reservas de clases.</div>' : '';
+  if (!activo){
+    body.innerHTML = `${aviso}<div class="muted" style="margin-bottom:12px;">Creá un QR para poner en el mostrador o en la puerta. Quien lo escanea con el celular cae en una página con el nombre y el logo de tu gimnasio: se registra dejando sus datos, entra a la app o reserva una clase. <b>Vos elegís qué hace</b>, y si lo cambiás después el mismo QR impreso sigue sirviendo.</div>
+      <div class="row"><button type="button" id="qbActivarBtn" onclick="qbActivar()">🔳 Crear mi QR</button></div>`;
+    return;
+  }
+  const u = qbUrl();
+  const opts = QB_MODOS.map(([k, t, d]) => {
+    const off = !entOk || (k !== 'registro' && !clases);
+    return `<label class="qb-op ${modo === k ? 'on' : ''} ${off ? 'off' : ''}"><input type="radio" name="qbModo" value="${k}" ${modo === k ? 'checked' : ''} ${off ? 'disabled' : ''} onchange="qbElegir('${k}')"><span><b>${t}</b><small>${d}${off && entOk ? ' (necesita el módulo Clases)' : ''}</small></span></label>`;
+  }).join('');
+  body.innerHTML = `${aviso}
+    <div class="qb-grid">
+      <div class="qb-qr" id="qbQr">${QRGEN.svg(u, { nivel: 'Q' })}</div>
+      <div class="qb-der">
+        <div class="muted" style="font-size:13px;">Al escanearlo:</div>
+        <div class="qb-modos">${opts}</div>
+      </div>
+    </div>
+    <div class="qb-url"><code>${ejEsc(u)}</code></div>
+    <div class="row" style="gap:8px; margin-top:12px;">
+      <button type="button" onclick="qbImprimir()">🖨️ Imprimir cartel A4</button>
+      <button type="button" class="secondary" onclick="qbPng()">⬇️ Descargar QR (PNG)</button>
+      <button type="button" class="secondary" onclick="rpxCopiarUrl(qbUrl())">📋 Copiar link</button>
+      <button type="button" class="secondary" onclick="window.open(qbUrl(), '_blank', 'noopener')">👁 Ver cómo se ve</button>
+    </div>
+    <div class="muted" style="margin-top:10px; font-size:12.5px;">Imprimilo y pegalo en el escritorio. El QR es siempre el mismo aunque cambies la opción de arriba. Si apagás el “Link de reservas” de más abajo, el QR deja de funcionar.</div>
+    <div id="qbLista"></div>`;
+  qbListaPintar();
+  if (QB.listaOk === null) qbListaCargar();
+}
+async function qbListaCargar(){
+  QB.listaOk = 'cargando';
+  try{ QB.lista = (await sb('rpc/link_nuevos', { method: 'POST', body: '{}' })) || []; QB.listaOk = true; }
+  catch(e){ QB.lista = []; QB.listaOk = false; }
+  qbListaPintar();
+}
+function qbWa(n){
+  const gim = (GIMNASIO_ACTUAL && GIMNASIO_ACTUAL.nombre) || '', pn = String(n.nombre || '').split(' ')[0];
+  return pubWa(n.telefono, `Hola ${pn}! Te escribo de ${gim}. Vi que te registraste con nuestro QR. ¿Te armo tu acceso a la app? 💪`);
+}
+function qbListaPintar(){
+  const box = document.getElementById('qbLista'); if (!box) return;
+  const L = (QB.listaOk === true ? QB.lista : []) || [];
+  if (!L.length){ box.innerHTML = ''; return; }
+  const sin = L.filter(n => !n.contactado).length;
+  box.innerHTML = `<div class="qb-nv"><div class="qb-nv-t">🆕 Últimos registrados desde el QR o el link <span class="rpx-n">${sin}</span></div>${L.slice(0, 5).map(n => {
+    const wa = qbWa(n);
+    return `<div class="qb-fila" ${n.contactado ? 'style="opacity:.7;"' : ''}><div class="mid"><b>${ejEsc(n.nombre)}</b> <span class="muted" style="font-size:12.5px;">· DNI ${ejEsc(n.dni || '—')} · ${ejEsc(rpxHace(n.creado_en))}</span></div>
+      <div class="acc">${wa ? `<a class="wa" href="${ejEsc(wa)}" target="_blank" rel="noopener">💬 WhatsApp</a>` : ''}<button type="button" class="secondary" onclick="abrirFichaAlumno('${n.id}','dat')">Ficha · plan y acceso</button>
+      <button type="button" class="${n.contactado ? 'secondary' : 'ghost'}" onclick="qbContactado('${n.id}', ${n.contactado ? 'false' : 'true'})">${n.contactado ? '✓ Contactado' : 'Marcar contactado'}</button></div></div>`;
+  }).join('')}${L.length > 5 ? `<div class="muted" style="font-size:12.5px; margin-top:6px;">Son ${L.length} en total: el resto está en Clases → Nuevos desde el link.</div>` : ''}</div>`;
+}
+async function qbContactado(id, v){
+  try{ await sb('rpc/link_contactado', { method: 'POST', body: JSON.stringify({ p_alumno_id: id, p_valor: v }) }); await qbListaCargar(); }
+  catch(e){ toast(extraerMensajeError(e), true); }
+}
+async function qbGuardar(body, okMsg){
+  if (QB.busy) return false; QB.busy = true;
+  try{
+    await sb(`gimnasios?id=eq.${PERFIL_ACTUAL.gimnasio_id}`, { method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: JSON.stringify(body) });
+    RPX.cfg = Object.assign(RPX.cfg || {}, body);
+    if (okMsg) toast(okMsg);
+    QB.busy = false; rpxCfgPintar(); qbPintar(); return true;
+  }catch(e){
+    QB.busy = false;
+    const m = rpxMsg(e);
+    toast(/23505|duplicate|unique|reservas_slug/i.test(m) && !/gimnasios_reservas_ok/.test(m) ? 'Ese nombre de link ya lo usa otro gimnasio. Cambialo en “Link de reservas” y probá de nuevo.' : /reservas_entrada|gimnasios_entrada_ok/i.test(m) ? 'Falta correr v139-qr-escritorio.sql en Supabase.' : 'No se pudo guardar: ' + extraerMensajeError(e), true);
+    return false;
+  }
+}
+async function qbActivar(){
+  if (!PERFIL_ACTUAL || PERFIL_ACTUAL.rol !== 'admin' || !RPX.cfg) return;
+  let slug = RPX.cfg.reservas_slug; if (!slug || !rpxSlugOk(slug)) slug = rpxSlugAuto(GIMNASIO_ACTUAL && GIMNASIO_ACTUAL.nombre) || ('gimnasio-' + String(PERFIL_ACTUAL.gimnasio_id).replace(/-/g, '').slice(0, 6));
+  const body = { reservas_publicas: true, reservas_slug: slug };
+  if (RPX.entOk !== false) body.reservas_entrada = modOn('clases') ? 'ambos' : 'registro';
+  const b = document.getElementById('qbActivarBtn'); if (b) b.disabled = true;
+  const ok = await qbGuardar(body, 'QR creado ✓ Imprimí el cartel y pegalo en el escritorio.');
+  if (!ok && b) b.disabled = false;
+}
+function qbElegir(m){ qbGuardar({ reservas_entrada: m }, 'Listo ✓ El mismo QR ya funciona así. No hace falta reimprimir.'); }
+function qbCartelHtml(){
+  const g = GIMNASIO_ACTUAL || {}, modo = qbModo(), u = qbUrl();
+  const paso = (n, t, s) => `<div class="qp-paso"><div class="qp-n">${n}</div><div class="qp-pt">${t}</div><div class="qp-ps">${s}</div></div>`;
+  const C = {
+    registro: ['Sumate y<br>entrá a la app', 'Escaneá el código con la cámara de tu celular', [['Abrí la cámara', 'y apuntá al código'], ['Dejá tus datos', 'nombre, DNI y WhatsApp'], ['Entrá a la app', 'te pasamos tu acceso']]],
+    reservas: ['Reservá tu<br>entrenamiento', 'Escaneá el código con la cámara de tu celular', [['Abrí la cámara', 'y apuntá al código'], ['Elegí tu clase', 'ves los lugares libres'], ['¡Listo!', 'te esperamos']]],
+    ambos: ['Escaneá<br>y empezá', 'Con la cámara de tu celular', [['Abrí la cámara', 'y apuntá al código'], ['Registrate o ingresá', 'con tu DNI'], ['Entrá o reservá', 'tu clase en un toque']]],
+  }[modo];
+  return `<div class="qp">
+    <div class="qp-gym">${g.logo_url ? `<img src="${escaparHtml(g.logo_url)}" alt="">` : ''}<span>${escaparHtml(g.nombre || '')}</span></div>
+    <div class="qp-t">${C[0]}</div>
+    <div class="qp-s">${C[1]}</div>
+    <div class="qp-qr">${QRGEN.svg(u, { nivel: 'Q' })}</div>
+    <div class="qp-pasos" style="margin-top:11mm;">${C[2].map((p, i) => paso(i + 1, p[0], p[1])).join('')}</div>
+    <div class="qp-pie">¿No te lo lee? Escribí este link en tu navegador:<br><b>${escaparHtml(u.replace(/^https?:\/\//, ''))}</b></div>
+    <div class="qp-m">M2F SOLUTIONS</div>
+  </div>`;
+}
+function qbImprimir(){
+  if (!qbActivo()){ toast('Primero creá el QR.', true); return; }
+  let p = document.getElementById('qrPrint');
+  if (!p){ p = document.createElement('div'); p.id = 'qrPrint'; document.body.appendChild(p); }
+  p.innerHTML = qbCartelHtml();
+  document.body.classList.add('qr-imprimiendo');
+  const fin = () => { document.body.classList.remove('qr-imprimiendo'); window.removeEventListener('afterprint', fin); };
+  window.addEventListener('afterprint', fin);
+  setTimeout(fin, 120000);
+  setTimeout(() => { try{ window.print(); }catch(e){ fin(); toast('No se pudo abrir la impresión en este dispositivo. Probá desde una PC o descargá el PNG.', true); } }, 80);
+}
+function qbPng(){
+  if (!qbActivo()){ toast('Primero creá el QR.', true); return; }
+  try{
+    let svg = QRGEN.svg(qbUrl(), { nivel: 'Q' });
+    const n = +((/viewBox="0 0 (\d+) /.exec(svg) || [])[1] || 0); if (!n) throw new Error('qr');
+    const k = Math.max(4, Math.floor(1200 / n)), N = n * k, pad = k * 4;
+    svg = svg.replace('<svg ', `<svg width="${N}" height="${N}" `);
+    const url = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' })), img = new Image();
+    img.onload = () => {
+      const c = document.createElement('canvas'); c.width = c.height = N + pad * 2;
+      const x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, c.width, c.height); x.imageSmoothingEnabled = false; x.drawImage(img, pad, pad, N, N);
+      URL.revokeObjectURL(url);
+      c.toBlob(b => {
+        if (!b){ toast('No se pudo generar la imagen.', true); return; }
+        const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = 'qr-' + ((RPX.cfg || {}).reservas_slug || 'gimnasio') + '.png';
+        document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+      }, 'image/png');
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); toast('No se pudo generar la imagen. Probá con “Imprimir cartel”.', true); };
+    img.src = url;
+  }catch(e){ toast('No se pudo generar la imagen.', true); }
+}
+async function rpxCopiarUrl(u){
+  try{ await navigator.clipboard.writeText(u); toast('Link copiado ✓'); }
+  catch(e){ const t = document.createElement('textarea'); t.value = u; document.body.appendChild(t); t.select(); try{ document.execCommand('copy'); toast('Link copiado ✓'); }catch(x){ toast(u); } t.remove(); }
 }
 
 // ----- Clases → "Nuevos desde el link" -----
@@ -25071,6 +25279,7 @@ function perCargaAguda(alumnoId){
       let tipoGuardado = null;
       try{ tipoGuardado = localStorage.getItem('m2f_tipo'); }catch(e){}
       if (tipoGuardado === 'alumno' || (!tipoGuardado && qrLinkPendiente())) elegirTipoIngreso('alumno');   // (v110) escaneó el cartel sin sesión: va al ingreso de alumno
+      if (ING.t){ elegirTipoIngreso(ING.t); try{ history.replaceState(null, '', location.pathname); }catch(e){} }   // (v139) ?ingresar=
       qrLinkAvisoIngreso();
       // si no, se queda mostrando el landing ("¿Qué sos?") tal como arranca por defecto.
       sincronizarTabsRol();
