@@ -9,6 +9,14 @@
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png" />
 <link rel="apple-touch-icon" href="icon-180.png" />
 <link rel="manifest" href="manifest.json" />
+<script>
+/* (v141) Instalar app: el navegador dispara "beforeinstallprompt" una sola vez y muy temprano. Lo guardamos acá,
+   antes de cargar el resto de la página, para que ningún error posterior nos haga perder el evento. */
+window.__m2fBIP = null;
+window.addEventListener('beforeinstallprompt', function(e){ e.preventDefault(); window.__m2fBIP = e; });
+window.addEventListener('appinstalled', function(){ window.__m2fBIP = null; });
+if ('serviceWorker' in navigator) window.addEventListener('load', function(){ try{ navigator.serviceWorker.register('sw.js').catch(function(){}); }catch(e){} });
+</script>
 <meta name="theme-color" content="#0f1115" />
 <script>
 /* (v72, 30/9) Tema claro/oscuro/automático. Se aplica acá, antes de pintar, para que no haya destello.
@@ -145,6 +153,17 @@
     font-weight:800; font-size:12.5px; padding:7px 14px; border-radius:999px; cursor:pointer;
   }
   .btn-instalar-app:hover, .btn-soporte-top:hover{background:rgba(255,122,48,.22);}
+  /* (v141) dentro de la app ya instalada el botón no tiene sentido */
+  @media (display-mode: standalone){ .btn-instalar-app{ display:none !important; } }
+  .modal-box.inst-box{ max-width:400px; text-align:left; }
+  .modal-box.inst-box h3{ text-align:center; margin-bottom:12px; }
+  .inst-box .inst-ok{ background:var(--accent); color:#1a0f08; border:none; }
+  .inst-box ol{ margin:0 0 12px; padding-left:20px; color:var(--text); font-size:13.5px; line-height:1.55; }
+  .inst-box ol li{ margin-bottom:5px; }
+  .inst-box .inst-nota{ background:var(--panel2); border:1px solid var(--border); border-radius:10px; padding:9px 11px; font-size:12.5px; color:var(--muted); line-height:1.5; margin:0 0 12px; }
+  .inst-box details{ font-size:11.5px; color:var(--muted); margin:0 0 12px; }
+  .inst-box .row{ margin-top:4px; }
+
   .card{
     background:var(--panel); border:1px solid var(--border); border-radius:var(--radius);
     padding:18px; margin-bottom:16px; box-shadow:var(--shadow-card);
@@ -5119,11 +5138,11 @@ function atlIniciarAlu(){
   atlCargarVista('aluAtletismoContenido', id || '');
 }
 
-const APP_VERSION = 140;
+const APP_VERSION = 141;
 let ES_PERSONAL = false;   // (v132) cuenta personal (gimnasios.tipo = 'personal'); se calcula en perAplicar()
 // (v96) Fecha de la última actualización: se cambia junto con APP_VERSION en cada entrega. Se muestra en la
 // pantalla de inicio y en el menú de cuenta ("v94 · actualizada el 5/10/2026").
-const APP_FECHA = '2026-10-30';
+const APP_FECHA = '2026-11-01';
 function appVersionTxt(){ const [y, m, d] = APP_FECHA.split('-'); return `v${APP_VERSION} · actualizada el ${+d}/${+m}/${y}`; }
 (function(){ const el = document.getElementById('lcVersion'); if (el) el.textContent = 'M2F Solutions · ' + appVersionTxt(); })();
 
@@ -6006,19 +6025,86 @@ async function generarCodigoActivacionUI(){
   }
 }
 
+// (v141) Instalar la app: usa el evento guardado lo antes posible (ver <head>); si el navegador no lo ofrece,
+// explica el motivo y los pasos exactos según navegador/dispositivo en vez de un cartel genérico.
+function instInstalada(){ try{ return !!(window.matchMedia('(display-mode: standalone)').matches || navigator.standalone); }catch(e){ return false; } }
+function instDetectar(){
+  const ua = navigator.userAgent || '';
+  const ios = /iphone|ipad|ipod/i.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const android = /android/i.test(ua);
+  const enApp = /FBAN|FBAV|FB_IAB|Instagram|Line\/|MicroMessenger|Snapchat|TikTok|WhatsApp|; wv\)/i.test(ua);
+  const edge = /Edg\//.test(ua), opera = /OPR\//.test(ua), firefox = /Firefox|FxiOS/i.test(ua);
+  const chrome = /Chrome|CriOS/.test(ua) && !edge && !opera && !firefox;
+  const safari = /Safari/.test(ua) && !chrome && !edge && !firefox && !opera;
+  return { ios, android, enApp, edge, opera, firefox, chrome, safari, movil: ios || android };
+}
+function instPasos(d, motivo){
+  let titulo = 'Instalar la app', pasos = [], nota = '';
+  if (d.enApp){
+    titulo = 'Abrila en tu navegador';
+    pasos = ['Estás dentro de otra app (Instagram, WhatsApp, etc.), que no permite instalar.', 'Tocá los 3 puntitos o el ícono de compartir y elegí <b>Abrir en Chrome</b> (o en Safari).', 'Ahí tocá de nuevo <b>📲 Instalar app</b>.'];
+  } else if (d.ios){
+    pasos = ['Abrí esta página en <b>Safari</b> (o Chrome) del iPhone/iPad.', 'Tocá el ícono <b>Compartir</b> (cuadrado con flecha hacia arriba).', 'Elegí <b>Agregar a pantalla de inicio</b> y confirmá.'];
+  } else if (d.android){
+    pasos = ['Tocá los <b>⋮ tres puntitos</b> de Chrome (arriba a la derecha).', 'Elegí <b>Instalar app</b> (o <i>Agregar a la pantalla principal</i>).', 'Confirmá. El ícono queda en tu pantalla de inicio.'];
+    nota = 'Si no aparece esa opción, es porque ya está instalada: buscá el ícono M2F en tu pantalla de inicio.';
+  } else if (d.firefox){
+    titulo = 'Firefox no instala apps en la compu';
+    pasos = ['Abrí este mismo link con <b>Chrome</b> o <b>Edge</b>.', 'Tocá <b>📲 Instalar app</b> y confirmá.'];
+  } else if (d.edge){
+    pasos = ['Tocá los <b>⋯ tres puntitos</b> de Edge (arriba a la derecha).', 'Elegí <b>Aplicaciones → Instalar este sitio como una aplicación</b>.', 'Confirmá con <b>Instalar</b>. Se crea el ícono (inicio y, si lo dejás tildado, escritorio).'];
+    nota = 'Si ya la instalaste antes, Edge no la ofrece de nuevo: abrí <b>edge://apps</b>, quitá M2F Solutions, recargá esta página y volvé a tocar Instalar.';
+  } else if (d.safari){
+    pasos = ['En Safari (macOS 14 o más nuevo) abrí el menú <b>Archivo</b>.', 'Elegí <b>Agregar al Dock…</b> y confirmá.'];
+    nota = 'Si no ves esa opción, abrí el link con Chrome o Edge y usá Instalar app.';
+  } else {
+    pasos = ['Mirá en la <b>barra de direcciones</b> (a la derecha): aparece un ícono de pantalla con una flecha ⤓. Tocalo y elegí <b>Instalar</b>.', 'Si no lo ves: menú <b>⋮ → Guardar y compartir → Instalar M2F Solutions…</b> (en versiones anteriores: <i>Instalar M2F Solutions…</i>).', 'Para dejar un ícono en el escritorio sin instalar: <b>⋮ → Guardar y compartir → Crear acceso directo…</b> y tildá <i>Abrir como ventana</i>.'];
+    nota = 'Si ya la instalaste antes, Chrome no la ofrece de nuevo: abrí <b>chrome://apps</b>, clic derecho en M2F Solutions → <i>Quitar de Chrome</i>, recargá esta página y volvé a tocar Instalar. En ventana de <b>incógnito</b> no se puede instalar.';
+  }
+  if (motivo === 'cancelada') nota = 'Cancelaste la instalación. Recargá la página (F5) y tocá <b>Instalar app</b> otra vez. ' + nota;
+  return { titulo, pasos, nota };
+}
+async function instDiagnostico(){
+  const L = [];
+  try{ L.push('Conexión segura (https): ' + (window.isSecureContext ? 'sí' : 'NO')); }catch(e){}
+  try{
+    const regs = 'serviceWorker' in navigator ? await navigator.serviceWorker.getRegistrations() : [];
+    L.push('Service worker: ' + (regs.length ? 'registrado' : 'no registrado'));
+  }catch(e){ L.push('Service worker: error'); }
+  L.push('Evento de instalación del navegador: ' + ((deferredInstallPrompt || window.__m2fBIP) ? 'disponible' : 'no recibido'));
+  L.push('Navegador: ' + (navigator.userAgent || '').slice(0, 110));
+  return L.join('<br>');
+}
+async function instMostrarGuia(motivo){
+  const d = instDetectar(), p = instPasos(d, motivo);
+  let ov = document.getElementById('modalInstalarApp');
+  if (!ov){
+    ov = document.createElement('div');
+    ov.className = 'modal-overlay'; ov.id = 'modalInstalarApp';
+    ov.onclick = (ev) => { if (ev.target === ov) ov.classList.remove('show'); };
+    document.body.appendChild(ov);
+  }
+  ov.innerHTML = '<div class="modal-box inst-box"><h3>📲 ' + p.titulo + '</h3><ol>' + p.pasos.map(s => '<li>' + s + '</li>').join('') + '</ol>'
+    + (p.nota ? '<div class="inst-nota">' + p.nota + '</div>' : '')
+    + '<details><summary>Detalle técnico</summary><div id="instDiag">…</div></details>'
+    + '<div class="row"><button class="inst-ok" onclick="document.getElementById(\'modalInstalarApp\').classList.remove(\'show\')">Entendido</button></div></div>';
+  ov.classList.add('show');
+  instDiagnostico().then(h => { const el = document.getElementById('instDiag'); if (el) el.innerHTML = h; });
+}
 async function instalarApp(){
-  if (deferredInstallPrompt){
-    deferredInstallPrompt.prompt();
-    await deferredInstallPrompt.userChoice;
-    deferredInstallPrompt = null;
+  if (instInstalada()){ toast('Ya estás usando la app instalada ✓'); return; }
+  const dp = deferredInstallPrompt || window.__m2fBIP;
+  if (dp){
+    deferredInstallPrompt = null; window.__m2fBIP = null;
+    try{
+      dp.prompt();
+      const r = await dp.userChoice;
+      if (r && r.outcome === 'accepted') toast('Instalando… buscá el ícono de M2F Solutions en tu escritorio o menú de inicio');
+      else instMostrarGuia('cancelada');
+    }catch(e){ instMostrarGuia('error'); }
     return;
   }
-  const esIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
-  if (esIOS){
-    alert('Para instalarla en iPhone/iPad:\n\n1. Tocá el ícono de Compartir (el cuadrado con la flecha hacia arriba).\n2. Elegí "Agregar a pantalla de inicio".\n\nQueda como un ícono más, sin barra del navegador.');
-  } else {
-    alert('Para instalarla:\n\n• En Chrome/Edge (compu o Android): abrí el menú ⋮ (arriba a la derecha) y elegí "Instalar M2F Solutions..." (o buscá el ícono de instalar en la barra de direcciones).\n\nQueda como una app aparte, con su propio ícono, sin pestañas del navegador.');
-  }
+  instMostrarGuia('sinprompt');
 }
 
 function imgUrl(providerRefId){
