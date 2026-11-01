@@ -219,6 +219,16 @@ if ('serviceWorker' in navigator) window.addEventListener('load', function(){ tr
   .suc-chips::-webkit-scrollbar{ display:none; }
   .suc-chip{ font-family:inherit; font-size:13.5px; font-weight:700; padding:8px 16px; border-radius:999px; background:var(--panel2); color:var(--muted); border:1px solid var(--border); cursor:pointer; white-space:nowrap; }
   .suc-chip.on{ background:var(--accent); color:#fff; border-color:var(--accent); }
+  /* (v145) admin por sede */
+  .suc-fija{ display:inline-flex; align-items:center; gap:8px; font-weight:700; }
+  .suc-fija small{ font-weight:500; color:var(--muted); font-size:12px; }
+  .adm-fila{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; padding:10px 0; border-bottom:1px solid var(--border); }
+  .adm-fila .adm-n{ flex:1; min-width:160px; }
+  .adm-fila .adm-n b{ display:block; }
+  .adm-fila .adm-n span{ font-size:12px; color:var(--muted); }
+  .adm-fila select{ width:auto; min-width:170px; }
+  .adm-nuevo{ border:1px dashed var(--accent); border-radius:var(--radius); padding:14px; margin-top:14px; background:var(--panel2); }
+  .adm-nuevo .row{ gap:8px; align-items:flex-end; flex-wrap:wrap; }
   /* (v144) cajas por sede */
   .caj2-sede{ display:flex; justify-content:space-between; align-items:baseline; gap:8px; margin:18px 0 8px; font-weight:800; flex-wrap:wrap; }
   .caj2-sede small{ font-weight:700; color:var(--muted); font-size:12.5px; }
@@ -3709,6 +3719,8 @@ if ('serviceWorker' in navigator) window.addEventListener('load', function(){ tr
         </div></details>
         <!-- (v140) Sucursales -->
         <details class="plegable card" data-k="gim-suc" id="gimSucBox" style="display:none;"><summary>📍 Sucursales (sedes, dirección y mapa)</summary><div class="plg-body" id="gimSucBody"><div class="muted">Cargando…</div></div></details>
+        <!-- (v145) Administradores por sede -->
+        <details class="plegable card" data-k="gim-adm" id="gimAdmBox" style="display:none;"><summary>👥 Administradores por sede</summary><div class="plg-body" id="gimAdmBody"><div class="muted">Cargando…</div></div></details>
         <!-- (v103) Reglas de reservas de clases -->
         <details class="plegable card" data-k="gim-clases" id="gimClasesBox" style="display:none;"><summary>Clases y reservas</summary><div class="plg-body">
           <div class="muted" style="margin-bottom:10px;">Reglas para cuando el alumno reserva desde su app. El staff y Recepción pueden anotar, sacar turnos o quitar alumnos a mano sin estas restricciones (salvo el cupo).</div>
@@ -4658,6 +4670,7 @@ function modAplicarMenu(){
       else if (!roles.has(id)) e.style.display = '';
     });
   });
+  try{ sedeAdminOcultar(); }catch(e){}   // (v145)
 }
 async function modulosCargar(){
   try{
@@ -5170,7 +5183,7 @@ function atlIniciarAlu(){
   atlCargarVista('aluAtletismoContenido', id || '');
 }
 
-const APP_VERSION = 144;
+const APP_VERSION = 145;
 let ES_PERSONAL = false;   // (v132) cuenta personal (gimnasios.tipo = 'personal'); se calcula en perAplicar()
 // (v96) Fecha de la última actualización: se cambia junto con APP_VERSION en cada entrega. Se muestra en la
 // pantalla de inicio y en el menú de cuenta ("v94 · actualizada el 5/10/2026").
@@ -6483,6 +6496,7 @@ async function cargarPerfilDeSesion(){
   if (!SESION_ACTUAL){ PERFIL_ACTUAL = null; return; }
   const perfiles = await sb(`perfiles?select=id,gimnasio_id,rol,nombre,email,debe_cambiar_password,creado_en&id=eq.${SESION_ACTUAL.user.id}`);
   PERFIL_ACTUAL = (perfiles && perfiles[0]) || null;
+  try{ await sucCargarSedeDelPerfil(); }catch(e){}   // (v145)
 }
 
 // Punto único que muestra la app del profesor una vez que hay sesión + perfil válidos.
@@ -9815,12 +9829,34 @@ function sucMulti(){ return sucOn() && SUC.ok === true && sucActivas().length >=
 function sucPrincipal(){ return (SUC.lista || []).find(s => s.es_principal) || sucActivas()[0] || null; }
 function sucPorId(id){ return (SUC.lista || []).find(s => s.id === id) || null; }
 function sucNombre(id){ const s = sucPorId(id); return s ? s.nombre : ''; }
-function sucSel(){ return (sucMulti() && SUC.sel && sucActivas().some(s => s.id === SUC.sel)) ? SUC.sel : null; }
+function sucSel(){ const fija = sucAdminSede(); if (fija && sucMulti() && sucActivas().some(s => s.id === fija)) return fija;   // (v145) admin de sede: siempre la suya
+  return (sucMulti() && SUC.sel && sucActivas().some(s => s.id === SUC.sel)) ? SUC.sel : null; }
+// ---------- (v145) ADMIN POR SEDE ----------
+// SQL: v145-admin-por-sede.sql. perfiles.sucursal_id: vacío = administrador general (ve todo, como siempre); con sede = administrador de esa sede.
+// El permiso real lo pone la base (RLS): acá solo se ordena la pantalla para que el admin de sede vea y elija únicamente su sede.
+function sucAdminSede(){ const p = PERFIL_ACTUAL; return (p && p.rol === 'admin' && p.sucursal_id) ? p.sucursal_id : null; }
+function sucEsAdminGlobal(){ return !!(PERFIL_ACTUAL && PERFIL_ACTUAL.rol === 'admin' && !PERFIL_ACTUAL.sucursal_id); }
+function sucElegibles(){ const a = sucAdminSede(); return a ? sucActivas().filter(s => s.id === a) : sucActivas(); }
+const SEDE_ADMIN_OCULTO = ['menuPlanes', 'ttPlanes', 'menuGimnasio', 'ttGimnasio', 'menuAlertas', 'ttAlertas', 'menuSeguimiento', 'ttSeguimiento'];
+const SEDE_ADMIN_VISTAS_NO = ['planes', 'gimnasio', 'alertas', 'seguimiento'];
+function sedeAdminOcultar(){   // el admin de sede no ve las secciones generales del negocio
+  if (!sucAdminSede()) return;
+  SEDE_ADMIN_OCULTO.forEach(id => { const e = document.getElementById(id); if (e) e.style.display = 'none'; });
+}
+async function sucCargarSedeDelPerfil(){   // sucursal_id del perfil (si la columna todavía no existe, queda como administrador general)
+  if (!PERFIL_ACTUAL) return;
+  PERFIL_ACTUAL.sucursal_id = null;
+  if (PERFIL_ACTUAL.rol !== 'admin') return;
+  try{
+    const r = await sb(`perfiles?select=sucursal_id&id=eq.${PERFIL_ACTUAL.id}`);
+    PERFIL_ACTUAL.sucursal_id = (r && r[0] && r[0].sucursal_id) || null;
+  }catch(e){ PERFIL_ACTUAL.sucursal_id = null; }
+}
 function sucLsKey(){ return 'm2f_suc_' + ((PERFIL_ACTUAL && PERFIL_ACTUAL.gimnasio_id) || ''); }
 function sucDefault(){ return sucSel() || (sucPrincipal() && sucPrincipal().id) || null; }
 function sucOpts(sel){
-  const act = sucActivas(); const val = sel || sucDefault();
-  const extra = (sel && !act.some(s => s.id === sel) && sucPorId(sel)) ? [sucPorId(sel)] : [];
+  const act = sucElegibles(); const val = sel || sucDefault();
+  const extra = (sel && !act.some(s => s.id === sel) && sucPorId(sel) && (!sucAdminSede() || sel === sucAdminSede())) ? [sucPorId(sel)] : [];
   return act.concat(extra).map(s => `<option value="${s.id}" ${s.id === val ? 'selected' : ''}>${xe(s.nombre)}</option>`).join('');
 }
 // Valor de sede de una fila del editor de horarios ({} si no hay selector → no toca la base como antes)
@@ -9857,6 +9893,7 @@ async function sucCargar(){
     if (SUC.sel && !sucActivas().some(s => s.id === SUC.sel)) SUC.sel = null;
   }else SUC.sel = null;
   if (PERFIL_ACTUAL && PERFIL_ACTUAL.rol === 'admin'){ try{ await caj2Cargar(); }catch(e){} }   // (v144) cajas por sede
+  try{ await sucAdmCargar(); }catch(e){}   // (v145)
   sucAplicar();
 }
 async function sucRecargarProfSedes(){   // qué profesores trabajan en qué sede (según sus horarios)
@@ -9870,6 +9907,8 @@ async function sucRecargarProfSedes(){   // qué profesores trabajan en qué sed
 function sucAplicar(){
   try{ sucBarraPintar(); }catch(e){}
   try{ sucPintar(); }catch(e){}
+  try{ sucAdmPintar(); }catch(e){}   // (v145)
+  try{ sedeAdminOcultar(); }catch(e){}
 }
 // ----- Barra de sedes (arriba de todo, para admin y profesores) -----
 function sucBarraPintar(){
@@ -9878,11 +9917,16 @@ function sucBarraPintar(){
   bar.style.display = ver ? '' : 'none';
   if (!ver) return;
   const sel = sucSel();
+  if (sucAdminSede()){   // (v145) admin de sede: sede fija, sin "Todas" ni otras sedes
+    bar.querySelector('.suc-chips').innerHTML = `<span class="suc-fija">${xe(sucNombre(sucAdminSede()))} <small>· administrás esta sede</small></span>`;
+    return;
+  }
   bar.querySelector('.suc-chips').innerHTML =
     `<button type="button" class="suc-chip ${!sel ? 'on' : ''}" onclick="sucCambiar(null)">Todas</button>` +
     sucActivas().map(s => `<button type="button" class="suc-chip ${sel === s.id ? 'on' : ''}" onclick="sucCambiar('${s.id}')">${xe(s.nombre)}</button>`).join('');
 }
 async function sucCambiar(id){
+  if (sucAdminSede()) return;   // (v145) el admin de sede no cambia de sede
   SUC.sel = id || null;
   try{ if (SUC.sel) localStorage.setItem(sucLsKey(), SUC.sel); else localStorage.removeItem(sucLsKey()); }catch(e){}
   sucBarraPintar();
@@ -9939,8 +9983,8 @@ function sucAluBarraHtml(alumnoId){
     + `</div>`;
 }
 function sucOptsExacto(sel){   // como sucOpts pero sin forzar una sede por defecto ("sin sede" queda en blanco)
-  const act = sucActivas();
-  const extra = (sel && !act.some(s => s.id === sel) && sucPorId(sel)) ? [sucPorId(sel)] : [];
+  const act = sucElegibles();
+  const extra = (sel && !act.some(s => s.id === sel) && sucPorId(sel) && (!sucAdminSede() || sel === sucAdminSede())) ? [sucPorId(sel)] : [];
   return act.concat(extra).map(s => `<option value="${s.id}" ${s.id === sel ? 'selected' : ''}>${xe(s.nombre)}${s.activo ? '' : ' (inactiva)'}</option>`).join('');
 }
 function sucAltaAlumnoPintar(){
@@ -11004,6 +11048,7 @@ function guiaPintarBotonCorreo(email){
 }
 
 function cambiarSubvista(v){
+  if (sucAdminSede() && SEDE_ADMIN_VISTAS_NO.includes(v)){ toast('Esta sección la maneja el administrador general.', true); return; }   // (v145)
   if (!modVistaOk('staff', v)){ modAvisoBloqueada(); return; }   // (v99) sección no incluida en el plan del gimnasio
   medOk();
   try{ clCerrar(); }catch(e){}
@@ -11160,6 +11205,7 @@ function initPlegables(){
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initPlegables); else initPlegables();
 
 async function cargarDashboardAdmin(){
+  if (sucAdminSede()) return sedeDashboard();   // (v145) admin de sede: su sede, no el negocio entero
   const estado = document.getElementById('dashboardEstado');
   const kpis = document.getElementById('dashboardKpis');
   const gimId = GIMNASIO_ACTUAL?.id;
@@ -11258,8 +11304,9 @@ async function cajasCargar(){
   document.getElementById('cajasMesLabel').textContent = `${CAJAS_MESES[(CAJAS_MES||{m:new Date().getMonth()}).m]} ${(CAJAS_MES||{y:new Date().getFullYear()}).y}`;
   // (v144) cajas por sede activadas → pantalla nueva; si no, la de siempre
   try{ if (caj2Posible()) await caj2Cargar(); }catch(e){}
-  const v2 = caj2On(); document.getElementById('cajasV2').style.display = v2 ? '' : 'none'; document.getElementById('cajasLegacy').style.display = v2 ? 'none' : '';
+  const v2 = caj2On(); document.getElementById('cajasV2').style.display = (v2 || sucAdminSede()) ? '' : 'none'; document.getElementById('cajasLegacy').style.display = (v2 || sucAdminSede()) ? 'none' : '';
   if (v2){ cajasMesIso(); return caj2Render(); }
+  if (sucAdminSede()){ document.getElementById('cajasV2').innerHTML = '<div class="card muted">Las cajas de tu sede las activa el administrador general (Finanzas → Cajas → Activar cajas por sede).</div>'; return; }   // (v145)
   try{
     const mesIso = cajasMesIso();
     document.getElementById('cajasMesLabel').textContent = `${CAJAS_MESES[CAJAS_MES.m]} ${CAJAS_MES.y}`;
@@ -11377,6 +11424,7 @@ async function cargarCajasDashboard(gimId){
   try{
     try{ if (caj2Posible()) await caj2Cargar(); }catch(e){}
     if (caj2On()){ await caj2Dashboard(gimId, cont); return; }   // (v144)
+    if (sucAdminSede()){ cont.innerHTML = '<div class="muted">Las cajas de tu sede las activa el administrador general.</div>'; return; }   // (v145)
     const d = await sb('rpc/obtener_cajas', { method:'POST', body: JSON.stringify({ p_gimnasio_id: gimId }) });
     if (!d.configurada){
       cont.innerHTML = `<div class="muted">Todavía no configuraste el saldo inicial de tus cajas (Efectivo y Banco). Cargalo en Finanzas → Cajas para ver cuánta plata hay en cada una.</div>`;
@@ -11386,6 +11434,107 @@ async function cargarCajasDashboard(gimId){
     cont.innerHTML = cajasTarjetaSaldo('💵 Efectivo', ef) + cajasTarjetaSaldo('🏦 Banco', bn) + cajasTarjetaSaldo('Total en cajas', ef + bn)
       + (d.egresos_sin_caja && d.egresos_sin_caja.cantidad > 0 ? `<div class="muted" style="flex-basis:100%; font-size:12px; color:var(--warn-text);">⚠️ ${d.egresos_sin_caja.cantidad} gasto(s) sin caja asignada no están restando de ningún saldo.</div>` : '');
   }catch(e){ cont.innerHTML = '<div class="muted">No se pudieron cargar las cajas.</div>'; }
+}
+
+// ----- Administradores por sede (solo administrador general) -----
+async function sucAdmCargar(){
+  SUC.adm = null; SUC.admOk = null;
+  if (!(sucEsAdminGlobal() && sucMulti())) return;
+  try{
+    SUC.adm = await sb(`perfiles?select=id,nombre,email,rol,sucursal_id&rol=eq.admin&gimnasio_id=eq.${PERFIL_ACTUAL.gimnasio_id}&order=nombre.asc`);
+    SUC.admOk = true;
+  }catch(e){ SUC.adm = null; SUC.admOk = false; }
+}
+function sucAdmSedeDe(perfilId){ const a = (SUC.adm || []).find(x => x.id === perfilId); return a ? (a.sucursal_id || null) : null; }
+function sucAdmOpts(sel){
+  return `<option value="">🌐 General (ve todas las sedes)</option>` + sucActivas().map(s => `<option value="${s.id}" ${s.id === sel ? 'selected' : ''}>📍 Solo ${xe(s.nombre)}</option>`).join('');
+}
+function sucAdmPintar(){
+  const box = document.getElementById('gimAdmBox'); if (!box) return;
+  const ver = !!(sucEsAdminGlobal() && sucMulti());
+  box.style.display = ver ? '' : 'none';
+  const body = document.getElementById('gimAdmBody'); if (!ver || !body) return;
+  if (body.contains(document.activeElement) && /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName)) return;
+  if (SUC.admOk === false){ body.innerHTML = '<div class="rpx-ban">⚠️ Falta activar esta función en la base de datos. Corré <b>v145-admin-por-sede.sql</b> en Supabase (SQL Editor) y recargá la app.</div>'; return; }
+  if (SUC.admOk !== true){ body.innerHTML = '<div class="muted">Cargando…</div>'; return; }
+  const yo = PERFIL_ACTUAL.id;
+  const filas = (SUC.adm || []).map(a => `<div class="adm-fila">
+      <div class="adm-n"><b>${xe(a.nombre || a.email || 'Administrador')}${a.id === yo ? ' <span class="pill">Vos</span>' : ''}</b><span>${xe(a.email || '')}</span></div>
+      ${a.id === yo ? '<span class="pill ok">🌐 General</span>' : `<select aria-label="Sede de ${xe(a.nombre || '')}" onchange="sucAdmAsignar('${a.id}', this.value)">${sucAdmOpts(a.sucursal_id)}</select>`}
+    </div>`).join('') || '<div class="muted">No hay administradores.</div>';
+  const cand = (PROFESORES_CACHE || []).filter(p => p.perfil_id && p.perfiles && p.perfiles.rol === 'profesor');
+  const nuevo = `<div class="adm-nuevo"><b>＋ Nuevo administrador de sede</b>
+      <div class="muted" style="font-size:12.5px; margin:4px 0 10px;">Elegí a alguien de tu equipo que ya tenga acceso a la app y la sede que va a administrar. Solo va a ver y tocar lo de esa sede.</div>
+      ${cand.length ? `<div class="row"><div class="field" style="flex:1; min-width:180px; margin:0;"><label>Persona</label><select id="admNuevoPersona">${cand.map(p => `<option value="${p.perfil_id}">${xe(p.nombre)}</option>`).join('')}</select></div>
+        <div class="field" style="flex:1; min-width:180px; margin:0;"><label>Sede</label><select id="admNuevoSede">${sucActivas().map(s => `<option value="${s.id}">📍 ${xe(s.nombre)}</option>`).join('')}</select></div>
+        <button type="button" id="admNuevoBtn" onclick="sucAdmPromover()">Hacer administrador</button></div>`
+        : '<div class="muted">No hay profesores con acceso para promover. Primero dale acceso desde <b>Profesores</b>.</div>'}</div>`;
+  body.innerHTML = `<div class="muted" style="margin-bottom:8px;">Cada administrador puede ser <b>general</b> (ve y maneja todas las sedes) o de <b>una sede</b> (solo sus alumnos, turnos, cobros y cajas). Siempre tiene que quedar al menos un administrador general.</div>${filas}${nuevo}`;
+}
+async function sucAdmAsignar(perfilId, sedeId){
+  if (SUC.busy) return; SUC.busy = true;
+  try{
+    await sb('rpc/perfil_asignar_sede', { method:'POST', body: JSON.stringify({ p_perfil_id: perfilId, p_sucursal_id: sedeId || null }) });
+    toast(sedeId ? 'Listo: administra solo ' + sucNombre(sedeId) + ' ✓' : 'Listo: ahora es administrador general ✓');
+  }catch(e){ toast(extraerMensajeError(e), true); }
+  SUC.busy = false;
+  await sucAdmCargar(); sucAdmPintar();
+  try{ if (typeof renderListaProfesores === 'function') renderListaProfesores(); }catch(e){}
+}
+async function sucAdmPromover(){
+  if (SUC.busy) return;
+  const perfilId = (document.getElementById('admNuevoPersona') || {}).value, sedeId = (document.getElementById('admNuevoSede') || {}).value;
+  if (!perfilId || !sedeId){ toast('Elegí la persona y la sede.', true); return; }
+  const p = (PROFESORES_CACHE || []).find(x => x.perfil_id === perfilId);
+  if (!confirm(`¿Hacer a ${p ? p.nombre : 'esta persona'} administrador de ${sucNombre(sedeId)}? Va a poder manejar alumnos, cobros y cajas de esa sede (y solo de esa).`)) return;
+  SUC.busy = true; const b = document.getElementById('admNuevoBtn'); if (b) b.disabled = true;
+  try{
+    await sb(`perfiles?id=eq.${perfilId}`, { method:'PATCH', headers:{Prefer:'return=minimal'}, body: JSON.stringify({ rol: 'admin' }) });
+    try{
+      await sb('rpc/perfil_asignar_sede', { method:'POST', body: JSON.stringify({ p_perfil_id: perfilId, p_sucursal_id: sedeId }) });
+    }catch(e2){   // si no se pudo acotar a la sede, no lo dejamos como administrador general
+      try{ await sb(`perfiles?id=eq.${perfilId}`, { method:'PATCH', headers:{Prefer:'return=minimal'}, body: JSON.stringify({ rol: 'profesor' }) }); }catch(e3){}
+      throw e2;
+    }
+    if (p) p.perfiles = { rol: 'admin' };
+    toast('Listo: ' + (p ? p.nombre : 'la persona') + ' administra ' + sucNombre(sedeId) + ' ✓');
+  }catch(e){ toast(extraerMensajeError(e), true); }
+  SUC.busy = false;
+  await sucAdmCargar(); sucAdmPintar();
+  try{ renderListaProfesores(); }catch(e){}
+}
+async function fichaAdmSede(perfilId, sedeId){ await sucAdmAsignar(perfilId, sedeId); try{ pintarFichaProfesor(); }catch(e){} }
+
+// ----- Pantalla de inicio del administrador de sede (en vez del dashboard general) -----
+async function sedeDashboard(){
+  const estado = document.getElementById('dashboardEstado'), kpis = document.getElementById('dashboardKpis');
+  const gimId = GIMNASIO_ACTUAL?.id, sede = sucAdminSede();
+  estado.textContent = 'Cargando…'; estado.style.display = ''; kpis.style.display = 'none';
+  try{
+    const hoy = new Date(), mesIni = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-01`;
+    const [als, pagos] = await Promise.all([
+      sb(`alumnos?select=id,activo,creado_en&sucursal_id=eq.${sede}&limit=5000`),
+      sb(`pagos?select=monto,metodo_pago,creado_en,alumnos!inner(sucursal_id)&alumnos.sucursal_id=eq.${sede}&creado_en=gte.${mesIni}&limit=5000`)
+        .catch(() => sb(`pagos?select=monto,metodo_pago,creado_en&creado_en=gte.${mesIni}&limit=5000`)).catch(() => []),
+    ]);
+    const act = als.filter(a => a.activo !== false).length;
+    document.getElementById('kpiActivos').textContent = act;
+    document.getElementById('kpiInactivos').textContent = als.length - act;
+    document.getElementById('kpiNuevos').textContent = als.filter(a => (a.creado_en || '') >= mesIni).length;
+    const tot = (pagos || []).reduce((s, p) => s + Number(p.monto || 0), 0), por = {};
+    (pagos || []).forEach(p => { por[p.metodo_pago] = (por[p.metodo_pago] || 0) + Number(p.monto || 0); });
+    const nom = { efectivo: 'Efectivo', transferencia: 'Transferencia', mercado_pago: 'Mercado Pago', tarjeta_credito: 'Tarjeta de crédito', tarjeta_debito: 'Tarjeta de débito' };
+    document.getElementById('kpiFacturado').textContent = formatearMonto(tot);
+    document.getElementById('kpiFacturadoDesglose').textContent = Object.keys(por).map(k => `${nom[k] || k}: ${formatearMonto(por[k])}`).join(' · ') || ('Sede ' + sucNombre(sede));
+    estado.style.display = 'none'; kpis.style.display = '';
+    // lo que es del negocio entero no se muestra
+    ['kpiPendiente', 'kpiPorVencer'].forEach(id => { const e = document.getElementById(id); if (e && e.parentElement) e.parentElement.style.display = 'none'; });
+    document.querySelectorAll('#dashboardKpis details[data-k="dash-ganancias"], #dashboardKpis details[data-k="dash-membresia"]').forEach(d => d.style.display = 'none');
+    const ps = document.getElementById('proyeccionSeccion'); if (ps) ps.style.display = 'none';
+    const tn = document.querySelector('#dashboardKpis > .muted'); if (tn) tn.style.display = 'none';
+    cargarOcupacionSemanalDashboard(gimId);
+    cargarCajasDashboard(gimId);
+  }catch(e){ estado.textContent = 'Error cargando tu sede: ' + extraerMensajeError(e); estado.style.display = ''; kpis.style.display = 'none'; }
 }
 
 // ---------- (v144) CAJAS POR SEDE: cada sede con sus cajas (Efectivo, Banco, Tarjetas, Mercado Pago + las que agregue el admin) ----------
@@ -11413,7 +11562,7 @@ async function caj2Cargar(){
 // <option>s de cajas activas agrupadas por sede (si hay más de una)
 function caj2Opts(sel, vacio){
   const act = caj2Todas().filter(c => c.activa || c.id === sel);
-  const sedes = sucActivas().filter(s => act.some(c => c.sucursal_id === s.id));
+  const sedes = sucElegibles().filter(s => act.some(c => c.sucursal_id === s.id));
   const opt = c => `<option value="${c.id}" ${c.id === sel ? 'selected' : ''}>${caj2Ico(c.tipo)} ${xe(c.nombre)}${c.activa ? '' : ' (inactiva)'}</option>`;
   const cuerpo = sedes.length > 1
     ? sedes.map(s => `<optgroup label="📍 ${xe(s.nombre)}">${act.filter(c => c.sucursal_id === s.id).map(opt).join('')}</optgroup>`).join('')
@@ -11428,6 +11577,7 @@ function caj2PintarSelects(){
   else if (g.dataset.v2){ g.innerHTML = g.dataset.orig; delete g.dataset.v2; }
 }
 function caj2SedeActual(){
+  if (sucAdminSede()) return sucAdminSede();   // (v145)
   if (CAJ2.sede === undefined) CAJ2.sede = sucSel() || '';
   if (CAJ2.sede && !sucActivas().some(s => s.id === CAJ2.sede)) CAJ2.sede = '';
   return CAJ2.sede;
@@ -11435,7 +11585,7 @@ function caj2SedeActual(){
 function caj2ElegirSede(id){ CAJ2.sede = id || ''; cajasCargar(); }
 // Tarjeta "Activar cajas por sede" (se ve en Finanzas → Cajas mientras no estén activadas y haya 2+ sedes)
 function caj2ActivarHtml(){
-  if (!caj2Posible() || caj2Todas().length || !sucMulti()) return '';
+  if (!caj2Posible() || caj2Todas().length || !sucMulti() || sucAdminSede()) return '';
   const p = sucPrincipal();
   return `<div class="caj2-act"><b>🏢 Cajas por sede</b>
     <div class="muted" style="font-size:13px;">Cada sede tiene sus propias cajas: Efectivo, Banco, Tarjeta de crédito, Tarjeta de débito y Mercado Pago (y las que quieras agregar). Cada cobro entra solo a la caja de la sede del alumno. Tus saldos y movimientos de hoy pasan a la sede principal${p ? ' (' + xe(p.nombre) + ')' : ''} y el total no cambia.</div>
@@ -11474,7 +11624,7 @@ function caj2Html(d, movs, sede){
   const mes = `${CAJAS_MESES[CAJAS_MES.m]} ${CAJAS_MES.y}`, multi = sucMulti();
   const cajas = d.cajas || [], tot = d.totales || {}, si = d.sin_caja || {};
   const ing = si.ingresos || { cantidad: 0, monto: 0 }, egr = si.egresos || { cantidad: 0, monto: 0 };
-  const chips = multi ? `<div class="suc-chips" style="margin-top:12px; flex-wrap:wrap;"><button type="button" class="suc-chip ${!sede ? 'on' : ''}" onclick="caj2ElegirSede('')">Todas las sedes</button>`
+  const chips = (multi && !sucAdminSede()) ? `<div class="suc-chips" style="margin-top:12px; flex-wrap:wrap;"><button type="button" class="suc-chip ${!sede ? 'on' : ''}" onclick="caj2ElegirSede('')">Todas las sedes</button>`
     + sucActivas().map(s => `<button type="button" class="suc-chip ${sede === s.id ? 'on' : ''}" onclick="caj2ElegirSede('${s.id}')">${xe(s.nombre)}</button>`).join('') + `</div>` : '';
   let avisos = '';
   if (egr.cantidad > 0) avisos += `<div class="caj2-warn">⚠️ ${egr.cantidad} gasto(s) o pago(s) a profesores de este mes (${caj2M(egr.monto)}) no tienen caja asignada y no restan de ninguna. Asignales una en la pestaña Gastos.</div>`;
@@ -11592,7 +11742,7 @@ async function caj2Crear(){
   const tipo = document.getElementById('c2NuevaTipo').value;
   const saldo = Number(document.getElementById('c2NuevaSaldo').value || 0);
   const se = document.getElementById('c2NuevaSede');
-  const sucursal_id = (se && se.value) || (sucPrincipal() && sucPrincipal().id);
+  const sucursal_id = (se && se.value) || sucDefault();
   if (nombre.length < 2){ toast('Poné un nombre para la caja (al menos 2 letras).', true); return; }
   if (!sucursal_id){ toast('Elegí la sede.', true); return; }
   const orden = caj2Todas().filter(c => c.sucursal_id === sucursal_id).reduce((m, c) => Math.max(m, Number(c.orden) || 0), 0) + 1;
@@ -12636,6 +12786,7 @@ function aplicarPermisosPorRol(){
     if (el) el.style.display = esRecep ? 'none' : '';
   });
   modAplicarMenu();   // (v99) oculta lo que el plan del gimnasio no incluye
+  try{ sedeAdminOcultar(); }catch(e){}   // (v145)
 }
 function idAleatorio(){
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
@@ -13211,8 +13362,8 @@ function renderListaProfesores(){
   if (!PROFESORES_CACHE.length){ cont.innerHTML = '<div class="empty">Todavía no cargaste ningún profesor.</div>'; return; }
   const st = id => (PROF_STATS && PROF_STATS[id]) || { hoy: 0, sem: 0 };
   const cargado = PROF_STATS !== null;
-  const rolPill = p => p.perfil_id ? `<span class="pill ${p.perfiles?.rol === 'admin' ? 'warn' : ''}">${p.perfiles?.rol === 'admin' ? 'Administrador' : 'Profesor'}</span>` : '<span class="pill">Sin cuenta</span>';
-  const puedeBaja = p => !(PERFIL_ACTUAL && p.perfil_id && p.perfil_id === PERFIL_ACTUAL.id);   // (v124) uno no se da de baja a sí mismo
+  const rolPill = p => p.perfil_id ? `<span class="pill ${p.perfiles?.rol === 'admin' ? 'warn' : ''}">${p.perfiles?.rol === 'admin' ? 'Administrador' + (sucAdmSedeDe(p.perfil_id) ? ' · 📍 ' + xe(sucNombre(sucAdmSedeDe(p.perfil_id))) : '') : 'Profesor'}</span>` : '<span class="pill">Sin cuenta</span>';
+  const puedeBaja = p => !sucAdminSede() && !(PERFIL_ACTUAL && p.perfil_id && p.perfil_id === PERFIL_ACTUAL.id);   // (v124) uno no se da de baja a sí mismo
   const btnBaja = (p, cls) => puedeBaja(p) ? `<button type="button" class="ghost ${cls}" style="color:var(--danger-text);" onclick="event.stopPropagation();abrirModalBajaProfesor('${p.id}','${(p.nombre || '').replace(/'/g, '&apos;')}')">Dar de baja</button>` : '';
   const rows = sucProfLista().map(p => `<tr onclick="abrirFichaProfesor('${p.id}')">
       <td>${xQuien(p.nombre, (p.dni ? 'DNI ' + p.dni : 'Sin DNI') + sucProfTxt(p.id))}</td><td>${rolPill(p)}</td>
@@ -13272,8 +13423,9 @@ function pintarFichaProfesor(){
         <label class="x-sub" style="display:flex; align-items:center; gap:6px;">Impuesto/carga %<input inputmode="decimal" type="number" step="0.1" min="0" value="${p.impuesto_pct ?? 0}" style="width:80px;" onchange="actualizarTarifaProfesor('${p.id}','impuesto_pct',this.value)"></label>
       </div>
       <div class="x-sec">Rol</div>
-      ${p.perfil_id ? `<select onchange="cambiarRolProfesor('${p.perfil_id}','${(p.nombre || '').replace(/'/g, '&apos;')}',this.value)" style="width:auto;"><option value="profesor" ${rol === 'profesor' ? 'selected' : ''}>Profesor</option><option value="admin" ${rol === 'admin' ? 'selected' : ''}>Administrador</option></select>` : '<span class="pill">sin cuenta (cargado antes del login)</span>'}
-      ${(PERFIL_ACTUAL && p.perfil_id === PERFIL_ACTUAL.id) ? '' : `<div class="x-sec">Baja</div>
+      ${sucAdminSede() ? `<span class="pill">${rol === 'admin' ? 'Administrador' : 'Profesor'}</span>` : p.perfil_id ? `<select onchange="cambiarRolProfesor('${p.perfil_id}','${(p.nombre || '').replace(/'/g, '&apos;')}',this.value)" style="width:auto;"><option value="profesor" ${rol === 'profesor' ? 'selected' : ''}>Profesor</option><option value="admin" ${rol === 'admin' ? 'selected' : ''}>Administrador</option></select>` : '<span class="pill">sin cuenta (cargado antes del login)</span>'}
+      ${(sucEsAdminGlobal() && sucMulti() && rol === 'admin' && p.perfil_id && p.perfil_id !== PERFIL_ACTUAL.id && SUC.admOk) ? `<div class="x-sec">Sede del administrador</div><select onchange="fichaAdmSede('${p.perfil_id}', this.value)" style="width:auto;">${sucAdmOpts(sucAdmSedeDe(p.perfil_id))}</select><div class="x-sub" style="margin-top:6px;">General ve todas las sedes. Con una sede, solo ve y maneja esa.</div>` : ''}
+      ${(sucAdminSede() || (PERFIL_ACTUAL && p.perfil_id === PERFIL_ACTUAL.id)) ? '' : `<div class="x-sec">Baja</div>
       <button class="ghost" style="color:var(--danger-text);" onclick="cerrarFicha();abrirModalBajaProfesor('${p.id}','${(p.nombre || '').replace(/'/g, '&apos;')}')">Dar de baja</button>
       <div class="x-sub" style="margin-top:8px;">Si tiene turnos pendientes, elegís si lo reemplazás con otro profesor o no.</div>`}`;
   } else if (F.tab === 'age'){
@@ -13339,6 +13491,7 @@ async function reactivarProfesor(profesorId){
 // saltea este paso.
 let BAJA_PROFESOR_CTX = null; // {profesorId, nombre, pendientes: [...]}
 async function abrirModalBajaProfesor(profesorId, nombre){
+  if (sucAdminSede()){ toast('Las bajas de profesores las hace el administrador general.', true); return; }   // (v145)
   BAJA_PROFESOR_CTX = { profesorId, nombre, pendientes: [], listo: false };
   document.getElementById('bajaProfesorNombre').textContent = nombre;
   document.getElementById('bajaProfesorCargando').style.display = '';
@@ -13446,6 +13599,7 @@ async function actualizarTarifaProfesor(profesorId, campo, valor){
 // admin puede tocar esto (esta pantalla ya es admin-only). El PATCH pega
 // directo sobre `perfiles.rol` — RLS `perfiles_admin_update` habilita esto.
 async function cambiarRolProfesor(perfilId, nombre, nuevoRol){
+  if (sucAdminSede()){ toast('Los roles los cambia el administrador general.', true); cargarListaProfesores(); return; }   // (v145)
   const etiqueta = nuevoRol === 'admin' ? 'Administrador' : 'Profesor';
   const advertencia = nuevoRol === 'admin'
     ? ' Va a tener acceso total a la gestión del gimnasio (finanzas, alumnos, configuración, etc.).'
@@ -13455,8 +13609,10 @@ async function cambiarRolProfesor(perfilId, nombre, nuevoRol){
     return;
   }
   try{
+    if (nuevoRol !== 'admin' && sucAdmSedeDe(perfilId)){ try{ await sb('rpc/perfil_asignar_sede', { method:'POST', body: JSON.stringify({ p_perfil_id: perfilId, p_sucursal_id: null }) }); }catch(e0){} }   // (v145)
     await sb(`perfiles?id=eq.${perfilId}`, { method:'PATCH', headers:{Prefer:'return=minimal'}, body: JSON.stringify({ rol: nuevoRol }) });
     toast(`${nombre} ahora es ${etiqueta} ✓`);
+    try{ await sucAdmCargar(); sucAdmPintar(); }catch(e0){}
     const p = PROFESORES_CACHE.find(pr => pr.perfil_id === perfilId);
     if (p) p.perfiles = { rol: nuevoRol };
     // Si te cambiaste el rol a vos mismo, se refleja al toque en tu propio menú.
