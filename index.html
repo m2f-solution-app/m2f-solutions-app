@@ -219,6 +219,25 @@ if ('serviceWorker' in navigator) window.addEventListener('load', function(){ tr
   .suc-chips::-webkit-scrollbar{ display:none; }
   .suc-chip{ font-family:inherit; font-size:13.5px; font-weight:700; padding:8px 16px; border-radius:999px; background:var(--panel2); color:var(--muted); border:1px solid var(--border); cursor:pointer; white-space:nowrap; }
   .suc-chip.on{ background:var(--accent); color:#fff; border-color:var(--accent); }
+  /* (v144) cajas por sede */
+  .caj2-sede{ display:flex; justify-content:space-between; align-items:baseline; gap:8px; margin:18px 0 8px; font-weight:800; flex-wrap:wrap; }
+  .caj2-sede small{ font-weight:700; color:var(--muted); font-size:12.5px; }
+  .caj2-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:10px; }
+  .caj2-c{ background:var(--panel); border:1px solid var(--border); border-radius:var(--radius); padding:12px; cursor:pointer; text-align:left; font-family:inherit; color:var(--text); }
+  .caj2-c:hover{ border-color:var(--accent); }
+  .caj2-c.off{ opacity:.55; }
+  .caj2-n{ font-size:13px; font-weight:700; }
+  .caj2-s{ font-size:20px; font-weight:800; margin:4px 0; }
+  .caj2-m{ font-size:11.5px; color:var(--muted); line-height:1.35; }
+  .caj2-warn{ background:rgba(255,210,61,.12); border:1px solid rgba(255,210,61,.4); color:var(--warn-text); border-radius:8px; padding:10px 12px; font-size:13px; margin-top:10px; }
+  .caj2-act{ border:1px dashed var(--accent); border-radius:var(--radius); padding:14px; margin-top:12px; background:var(--panel2); }
+  .caj2-act b{ display:block; margin-bottom:4px; }
+  .caj2-act .btn-act{ margin-top:10px; }
+  .caj2-tab{ width:100%; border-collapse:collapse; font-size:13px; min-width:460px; }
+  .caj2-tab th{ text-align:right; color:var(--muted); font-weight:600; padding:4px; }
+  .caj2-tab th:first-child{ text-align:left; }
+  .caj2-tab td{ padding:6px 4px; border-bottom:1px solid var(--border); text-align:right; }
+  .caj2-tab td:first-child{ text-align:left; }
   /* (v143) el alumno elige sede al reservar */
   .suc-alu{ margin:0 0 14px; padding:12px; border:1px solid var(--border); border-radius:14px; background:var(--panel2); }
   .suc-alu-t{ font-size:12.5px; font-weight:800; color:var(--muted); margin-bottom:8px; }
@@ -3383,6 +3402,8 @@ if ('serviceWorker' in navigator) window.addEventListener('load', function(){ tr
         </div>
 
         <div id="cobTabCajas" style="display:none;">
+          <div id="cajasV2" style="display:none;"></div>
+          <div id="cajasLegacy">
           <div class="card">
             <div class="row" style="justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
               <h2 style="margin:0;">🏦 Cajas</h2>
@@ -3445,6 +3466,7 @@ if ('serviceWorker' in navigator) window.addEventListener('load', function(){ tr
               <button onclick="guardarCajaConfig()" id="btnCajaCfg" style="align-self:end;">Guardar</button>
             </div>
           </div></details>
+          </div>
         </div>
       </div>
 
@@ -5148,7 +5170,7 @@ function atlIniciarAlu(){
   atlCargarVista('aluAtletismoContenido', id || '');
 }
 
-const APP_VERSION = 143;
+const APP_VERSION = 144;
 let ES_PERSONAL = false;   // (v132) cuenta personal (gimnasios.tipo = 'personal'); se calcula en perAplicar()
 // (v96) Fecha de la última actualización: se cambia junto con APP_VERSION en cada entrega. Se muestra en la
 // pantalla de inicio y en el menú de cuenta ("v94 · actualizada el 5/10/2026").
@@ -9834,6 +9856,7 @@ async function sucCargar(){
     try{ SUC.sel = localStorage.getItem(sucLsKey()) || null; }catch(e){ SUC.sel = null; }
     if (SUC.sel && !sucActivas().some(s => s.id === SUC.sel)) SUC.sel = null;
   }else SUC.sel = null;
+  if (PERFIL_ACTUAL && PERFIL_ACTUAL.rol === 'admin'){ try{ await caj2Cargar(); }catch(e){} }   // (v144) cajas por sede
   sucAplicar();
 }
 async function sucRecargarProfSedes(){   // qué profesores trabajan en qué sede (según sus horarios)
@@ -11203,7 +11226,7 @@ async function cargarGananciasDashboard(gimId, facturadoMes){
 // Todo el cálculo lo hace el servidor (obtener_cajas), solo admin.
 const CAJA_ETIQ = { efectivo:'💵 Efectivo', banco:'🏦 Banco' };
 const CAJAS_MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-const METODO_ETIQ_CAJAS = { efectivo:'Efectivo', transferencia:'Transferencia', mercado_pago:'Mercado Pago', otro:'Otro' };
+const METODO_ETIQ_CAJAS = { efectivo:'Efectivo', transferencia:'Transferencia', mercado_pago:'Mercado Pago', tarjeta_credito:'Tarjeta de crédito', tarjeta_debito:'Tarjeta de débito', otro:'Otro' };
 let CAJAS_MES = null; // {y, m} (m: 0-11)
 let CAJAS_DATA = null;
 
@@ -11233,6 +11256,10 @@ async function cajasCargar(){
   const gimId = GIMNASIO_ACTUAL?.id;
   if (!gimId) return;
   document.getElementById('cajasMesLabel').textContent = `${CAJAS_MESES[(CAJAS_MES||{m:new Date().getMonth()}).m]} ${(CAJAS_MES||{y:new Date().getFullYear()}).y}`;
+  // (v144) cajas por sede activadas → pantalla nueva; si no, la de siempre
+  try{ if (caj2Posible()) await caj2Cargar(); }catch(e){}
+  const v2 = caj2On(); document.getElementById('cajasV2').style.display = v2 ? '' : 'none'; document.getElementById('cajasLegacy').style.display = v2 ? 'none' : '';
+  if (v2){ cajasMesIso(); return caj2Render(); }
   try{
     const mesIso = cajasMesIso();
     document.getElementById('cajasMesLabel').textContent = `${CAJAS_MESES[CAJAS_MES.m]} ${CAJAS_MES.y}`;
@@ -11248,7 +11275,7 @@ async function cajasCargar(){
     } else if (d.egresos_sin_caja && d.egresos_sin_caja.cantidad > 0){
       avisoHtml = `<div style="background:rgba(255,210,61,.12); border:1px solid rgba(255,210,61,.4); color:var(--warn-text); border-radius:8px; padding:10px 12px; font-size:13px;">⚠️ ${d.egresos_sin_caja.cantidad} gasto(s) por ${formatearMonto(d.egresos_sin_caja.monto)} desde la fecha de corte no tienen caja asignada, así que no restan de ningún saldo. Asignales una en la pestaña Gastos.</div>`;
     }
-    aviso.innerHTML = avisoHtml;
+    aviso.innerHTML = avisoHtml + caj2ActivarHtml();
     if (!d.configurada){ const sd = document.querySelector('details[data-k="fin-saldo-inicial"]'); if (sd) sd.open = true; } // sin saldo inicial, el formulario tiene que verse
     const cont = document.getElementById('cajasSaldos');
     if (d.configurada){
@@ -11339,7 +11366,7 @@ async function asignarCajaEgreso(tipo, id, caja){
   if (!caja) return;
   try{
     const tabla = tipo === 'gasto' ? 'gastos_gimnasio' : 'liquidaciones_profesor';
-    await sb(`${tabla}?id=eq.${id}`, { method:'PATCH', headers:{Prefer:'return=minimal'}, body: JSON.stringify({ caja }) });
+    await sb(`${tabla}?id=eq.${id}`, { method:'PATCH', headers:{Prefer:'return=minimal'}, body: JSON.stringify(caj2On() ? { caja_id: caja, caja: caj2Legacy(caj2PorId(caja)) } : { caja }) });
     toast('Caja asignada ✓');
     cargarGastos();
   }catch(e){ toast('Error asignando la caja: ' + extraerMensajeError(e), true); }
@@ -11348,6 +11375,8 @@ async function cargarCajasDashboard(gimId){
   const cont = document.getElementById('dashCajas');
   if (!cont) return;
   try{
+    try{ if (caj2Posible()) await caj2Cargar(); }catch(e){}
+    if (caj2On()){ await caj2Dashboard(gimId, cont); return; }   // (v144)
     const d = await sb('rpc/obtener_cajas', { method:'POST', body: JSON.stringify({ p_gimnasio_id: gimId }) });
     if (!d.configurada){
       cont.innerHTML = `<div class="muted">Todavía no configuraste el saldo inicial de tus cajas (Efectivo y Banco). Cargalo en Finanzas → Cajas para ver cuánta plata hay en cada una.</div>`;
@@ -11357,6 +11386,256 @@ async function cargarCajasDashboard(gimId){
     cont.innerHTML = cajasTarjetaSaldo('💵 Efectivo', ef) + cajasTarjetaSaldo('🏦 Banco', bn) + cajasTarjetaSaldo('Total en cajas', ef + bn)
       + (d.egresos_sin_caja && d.egresos_sin_caja.cantidad > 0 ? `<div class="muted" style="flex-basis:100%; font-size:12px; color:var(--warn-text);">⚠️ ${d.egresos_sin_caja.cantidad} gasto(s) sin caja asignada no están restando de ningún saldo.</div>` : '');
   }catch(e){ cont.innerHTML = '<div class="muted">No se pudieron cargar las cajas.</div>'; }
+}
+
+// ---------- (v144) CAJAS POR SEDE: cada sede con sus cajas (Efectivo, Banco, Tarjetas, Mercado Pago + las que agregue el admin) ----------
+// SQL: v144-cajas.sql. Solo admin, con el módulo Sucursales prendido y las cajas activadas ("Activar cajas por sede").
+// Sin activar, Finanzas se ve y anda EXACTAMENTE igual que antes (2 cajas: Efectivo y Banco).
+// El cobro entra solo a la caja del mismo método en la sede del alumno (lo hace la base). Gastos y pagos a profesores llevan la caja de la que salieron.
+const CAJ2 = { lista: null, ok: null, sede: undefined, data: null, movs: [], edit: null, busy: false };
+const CAJ2_TIPOS = { efectivo:['💵','Efectivo'], banco:['🏦','Banco'], tarjeta_credito:['💳','Tarjeta de crédito'], tarjeta_debito:['💳','Tarjeta de débito'], mercado_pago:['📲','Mercado Pago'], otra:['🗂️','Otra caja'] };
+function caj2Posible(){ return !!(PERFIL_ACTUAL && PERFIL_ACTUAL.rol === 'admin' && sucOn() && SUC.ok === true && sucPrincipal()); }
+function caj2Todas(){ return CAJ2.lista || []; }
+function caj2On(){ return caj2Posible() && caj2Todas().length > 0; }
+function caj2Ico(t){ return (CAJ2_TIPOS[t] || CAJ2_TIPOS.otra)[0]; }
+function caj2PorId(id){ return caj2Todas().find(c => c.id === id) || null; }
+function caj2Legacy(c){ return (c && c.tipo === 'efectivo') ? 'efectivo' : 'banco'; }   // las 2 cajas de siempre (gastos.caja / liquidaciones.caja siguen llevando esto)
+function caj2Nombre(id, conSede){ const c = caj2PorId(id); if (!c) return ''; return caj2Ico(c.tipo) + ' ' + c.nombre + ((conSede && sucMulti()) ? ' · ' + sucNombre(c.sucursal_id) : ''); }
+function caj2M(n){ return formatearMonto(Number(n) || 0); }
+async function caj2Cargar(){
+  CAJ2.lista = [];
+  if (caj2Posible()){
+    try{ CAJ2.lista = await sb('cajas?select=*&order=orden.asc,nombre.asc'); CAJ2.ok = true; }
+    catch(e){ CAJ2.lista = []; CAJ2.ok = false; }
+  }
+  try{ caj2PintarSelects(); }catch(e){}
+}
+// <option>s de cajas activas agrupadas por sede (si hay más de una)
+function caj2Opts(sel, vacio){
+  const act = caj2Todas().filter(c => c.activa || c.id === sel);
+  const sedes = sucActivas().filter(s => act.some(c => c.sucursal_id === s.id));
+  const opt = c => `<option value="${c.id}" ${c.id === sel ? 'selected' : ''}>${caj2Ico(c.tipo)} ${xe(c.nombre)}${c.activa ? '' : ' (inactiva)'}</option>`;
+  const cuerpo = sedes.length > 1
+    ? sedes.map(s => `<optgroup label="📍 ${xe(s.nombre)}">${act.filter(c => c.sucursal_id === s.id).map(opt).join('')}</optgroup>`).join('')
+    : act.map(opt).join('');
+  return (vacio ? `<option value="">${vacio}</option>` : '') + cuerpo;
+}
+// El selector "Pagado desde" de Gastos pasa a mostrar las cajas por sede (y vuelve a Efectivo/Banco si no están activadas)
+function caj2PintarSelects(){
+  const g = document.getElementById('gastoCaja'); if (!g) return;
+  if (!g.dataset.orig) g.dataset.orig = g.innerHTML;
+  if (caj2On()){ g.innerHTML = caj2Opts('', '-- elegí la caja --'); g.dataset.v2 = '1'; }
+  else if (g.dataset.v2){ g.innerHTML = g.dataset.orig; delete g.dataset.v2; }
+}
+function caj2SedeActual(){
+  if (CAJ2.sede === undefined) CAJ2.sede = sucSel() || '';
+  if (CAJ2.sede && !sucActivas().some(s => s.id === CAJ2.sede)) CAJ2.sede = '';
+  return CAJ2.sede;
+}
+function caj2ElegirSede(id){ CAJ2.sede = id || ''; cajasCargar(); }
+// Tarjeta "Activar cajas por sede" (se ve en Finanzas → Cajas mientras no estén activadas y haya 2+ sedes)
+function caj2ActivarHtml(){
+  if (!caj2Posible() || caj2Todas().length || !sucMulti()) return '';
+  const p = sucPrincipal();
+  return `<div class="caj2-act"><b>🏢 Cajas por sede</b>
+    <div class="muted" style="font-size:13px;">Cada sede tiene sus propias cajas: Efectivo, Banco, Tarjeta de crédito, Tarjeta de débito y Mercado Pago (y las que quieras agregar). Cada cobro entra solo a la caja de la sede del alumno. Tus saldos y movimientos de hoy pasan a la sede principal${p ? ' (' + xe(p.nombre) + ')' : ''} y el total no cambia.</div>
+    <button class="btn-act" onclick="caj2Activar()" id="btnCaj2Activar">Activar cajas por sede</button></div>`;
+}
+async function caj2Activar(){
+  if (CAJ2.busy) return;
+  const p = sucPrincipal();
+  if (!confirm('Se crean las cajas de cada sede (Efectivo, Banco, Tarjeta de crédito, Tarjeta de débito y Mercado Pago). Tus saldos, cobros, gastos y movimientos de hoy pasan a la sede principal' + (p ? ' (' + p.nombre + ')' : '') + '. El total no cambia. ¿Activar?')) return;
+  CAJ2.busy = true;
+  const b = document.getElementById('btnCaj2Activar'); if (b) b.disabled = true;
+  try{
+    await sb('rpc/cajas_activar', { method:'POST', body: '{}' });
+    toast('Cajas por sede activadas ✓');
+    await caj2Cargar();
+    cajasCargar();
+  }catch(e){ toast('No se pudieron activar las cajas: ' + extraerMensajeError(e), true); if (b) b.disabled = false; }
+  finally{ CAJ2.busy = false; }
+}
+async function caj2Render(){
+  const cont = document.getElementById('cajasV2'); if (!cont) return;
+  const gimId = GIMNASIO_ACTUAL.id, sede = caj2SedeActual(), mesIso = cajasMesIso();
+  const fin = CAJAS_MES.m === 11 ? (CAJAS_MES.y + 1) + '-01-01' : CAJAS_MES.y + '-' + String(CAJAS_MES.m + 2).padStart(2, '0') + '-01';
+  if (!cont.innerHTML.trim()) cont.innerHTML = '<div class="card muted">Cargando…</div>';
+  try{
+    const [d, movs] = await Promise.all([
+      sb('rpc/obtener_cajas_v2', { method:'POST', body: JSON.stringify({ p_gimnasio_id: gimId, p_mes: mesIso, p_sucursal_id: sede || null }) }),
+      sb(`caja_movimientos?select=id,fecha,caja_origen_id,caja_destino_id,monto,nota&gimnasio_id=eq.${gimId}&fecha=gte.${mesIso}&fecha=lt.${fin}&order=fecha.desc,creado_en.desc`),
+    ]);
+    CAJ2.data = d; CAJ2.movs = movs || [];
+    cont.innerHTML = caj2Html(d, CAJ2.movs, sede);
+    const f = document.getElementById('c2MovFecha'); if (f && !f.value) f.value = dateAIso(new Date());
+  }catch(e){ cont.innerHTML = `<div class="card muted">Error cargando las cajas: ${xe(e.message)}</div>`; }
+}
+function caj2Html(d, movs, sede){
+  const mes = `${CAJAS_MESES[CAJAS_MES.m]} ${CAJAS_MES.y}`, multi = sucMulti();
+  const cajas = d.cajas || [], tot = d.totales || {}, si = d.sin_caja || {};
+  const ing = si.ingresos || { cantidad: 0, monto: 0 }, egr = si.egresos || { cantidad: 0, monto: 0 };
+  const chips = multi ? `<div class="suc-chips" style="margin-top:12px; flex-wrap:wrap;"><button type="button" class="suc-chip ${!sede ? 'on' : ''}" onclick="caj2ElegirSede('')">Todas las sedes</button>`
+    + sucActivas().map(s => `<button type="button" class="suc-chip ${sede === s.id ? 'on' : ''}" onclick="caj2ElegirSede('${s.id}')">${xe(s.nombre)}</button>`).join('') + `</div>` : '';
+  let avisos = '';
+  if (egr.cantidad > 0) avisos += `<div class="caj2-warn">⚠️ ${egr.cantidad} gasto(s) o pago(s) a profesores de este mes (${caj2M(egr.monto)}) no tienen caja asignada y no restan de ninguna. Asignales una en la pestaña Gastos.</div>`;
+  if (ing.cantidad > 0) avisos += `<div class="caj2-warn">⚠️ ${ing.cantidad} cobro(s) de este mes (${caj2M(ing.monto)}) no entraron a ninguna caja (no había una caja activa de ese método en la sede del alumno).</div>`;
+  const kpi = (k, v, extra) => `<div class="x-kpi"><div class="k">${k}</div><div class="v" style="${extra || ''}">${xe(v)}</div></div>`;
+  const colSaldo = n => Number(n) < 0 ? 'color:var(--danger-text);' : '';
+  const tipos = (d.por_tipo || []).filter(t => Number(t.saldo) !== 0 || Number(t.ingresos_mes) !== 0 || Number(t.egresos_mes) !== 0 || t.tipo === 'efectivo' || t.tipo === 'banco');
+  const kpiTipos = tipos.map(t => kpi(caj2Ico(t.tipo) + ' ' + (CAJ2_TIPOS[t.tipo] || CAJ2_TIPOS.otra)[1], caj2M(t.saldo), colSaldo(t.saldo))).join('');
+  // cajas agrupadas por sede
+  const grupos = []; cajas.forEach(c => { let g = grupos.find(x => x.id === c.sucursal_id); if (!g){ g = { id: c.sucursal_id, nombre: c.sucursal_nombre, cajas: [] }; grupos.push(g); } g.cajas.push(c); });
+  const tarjeta = c => {
+    const m = c.mes || {}, mov = Number(m.mov_entrada || 0) - Number(m.mov_salida || 0);
+    return `<button type="button" class="caj2-c ${c.activa ? '' : 'off'}" onclick="caj2Editar('${c.id}')" title="Editar caja">
+      <div class="caj2-n">${caj2Ico(c.tipo)} ${xe(c.nombre)}${c.activa ? '' : ' · inactiva'}</div>
+      <div class="caj2-s" style="${colSaldo(c.saldo)}">${xe(caj2M(c.saldo))}</div>
+      <div class="caj2-m">${xe(mes)}: +${xe(caj2M(m.ingresos))} −${xe(caj2M(m.egresos))}${mov ? ' · ⇄ ' + (mov > 0 ? '+' : '−') + xe(caj2M(Math.abs(mov))) : ''}</div></button>`;
+  };
+  const seccionSedes = grupos.map(g => {
+    const sub = g.cajas.reduce((s, c) => s + Number(c.saldo || 0), 0);
+    return `<div class="caj2-sede"><span>${multi ? '📍 ' + xe(g.nombre) : 'Cajas'}</span><small>Total ${xe(caj2M(sub))}</small></div><div class="caj2-grid">${g.cajas.map(tarjeta).join('')}</div>`;
+  }).join('');
+  // resumen del mes
+  const filaRes = c => { const m = c.mes || {}; const neto = Number(m.ingresos) - Number(m.egresos) + Number(m.mov_entrada) - Number(m.mov_salida);
+    return `<tr><td>${caj2Ico(c.tipo)} ${xe(c.nombre)}${(multi && !sede) ? ' <span class="muted">· ' + xe(c.sucursal_nombre) + '</span>' : ''}</td><td>${xe(caj2M(m.ingresos))}</td><td style="color:var(--danger-text);">${xe(caj2M(m.egresos))}</td><td>${xe(caj2M(m.mov_entrada))}</td><td>${xe(caj2M(m.mov_salida))}</td><td style="font-weight:700;${colSaldo(neto)}">${xe(caj2M(neto))}</td></tr>`; };
+  const resumen = `<div style="overflow-x:auto;"><table class="caj2-tab"><tr><th>Caja</th><th>Cobros</th><th>Gastos</th><th>Entra (mov.)</th><th>Sale (mov.)</th><th>Variación</th></tr>${cajas.filter(c => { const m = c.mes || {}; return Number(c.saldo) !== 0 || Number(m.ingresos) || Number(m.egresos) || Number(m.mov_entrada) || Number(m.mov_salida); }).map(filaRes).join('')}</table></div>
+    <div class="muted" style="font-size:12px; margin-top:6px;">Gastos incluye los pagos a profesores. Un movimiento suma en una caja y resta en la otra: el total no cambia.</div>`;
+  // movimientos del mes (de las cajas a la vista)
+  const ids = new Set(cajas.map(c => c.id));
+  const lista = movs.filter(x => !sede || ids.has(x.caja_origen_id) || ids.has(x.caja_destino_id));
+  const listaMov = lista.length ? lista.map(x => `<div class="row" style="justify-content:space-between; padding:6px 0; border-bottom:1px solid var(--border); gap:8px;">
+      <div><div style="font-weight:600;">${xe(caj2Nombre(x.caja_origen_id, true))} → ${xe(caj2Nombre(x.caja_destino_id, true))}</div>
+        <div class="muted" style="font-size:12px;">${xe(formatearFechaCorta(x.fecha))}${x.nota ? ' · ' + xe(x.nota) : ''}</div></div>
+      <div class="row" style="gap:8px; align-items:center;"><div style="font-weight:700;">${xe(caj2M(x.monto))}</div>
+        <button class="ghost" style="color:var(--danger-text); padding:4px 8px;" onclick="caj2EliminarMov('${x.id}')" aria-label="Eliminar">🗑️</button></div></div>`).join('') : '<div class="empty">No hay movimientos entre cajas este mes.</div>';
+  // formularios
+  const act = caj2Todas().filter(c => c.activa);
+  const defSede = sede || sucDefault();
+  const ef = act.find(c => c.sucursal_id === defSede && c.tipo === 'efectivo'), bn = act.find(c => c.sucursal_id === defSede && c.tipo === 'banco');
+  const tiposOpts = Object.keys(CAJ2_TIPOS).map(k => `<option value="${k}" ${k === 'otra' ? 'selected' : ''}>${CAJ2_TIPOS[k][0]} ${CAJ2_TIPOS[k][1]}</option>`).join('');
+  return `<div class="card">
+      <div class="row" style="justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+        <h2 style="margin:0;">🏦 Cajas${multi ? ' por sede' : ''}</h2>
+        <div class="row" style="gap:6px; align-items:center;">
+          <button class="ghost" onclick="cajasCambiarMes(-1)">◀</button>
+          <strong style="min-width:120px; text-align:center;">${xe(mes)}</strong>
+          <button class="ghost" onclick="cajasCambiarMes(1)">▶</button>
+        </div>
+      </div>
+      ${chips}${avisos}
+      <div class="x-kpis" style="margin:12px 0 0;">${kpi('Total en cajas' + (sede ? ' · ' + xe(sucNombre(sede)) : ''), caj2M(tot.saldo), colSaldo(tot.saldo))}${kpi('Cobrado en ' + xe(mes), caj2M(tot.ingresos_mes))}${kpi('Gastado en ' + xe(mes), caj2M(tot.egresos_mes))}</div>
+      <div class="muted" style="font-size:12.5px; margin:12px 0 6px;">Por tipo de caja${sede ? '' : (multi ? ' (todas las sedes)' : '')}</div>
+      <div class="x-kpis" style="margin:0;">${kpiTipos}</div>
+      ${seccionSedes}
+      <div class="muted" style="font-size:12px; margin-top:12px;">Tocá una caja para cambiar su nombre, su saldo inicial o desactivarla. Saldo = saldo inicial + cobros − gastos ± movimientos, desde la fecha de corte de cada caja. Cada cobro entra solo a la caja del mismo método en la sede del alumno (si no tiene sede, en la principal).</div>
+    </div>
+    <div class="card"><h2 style="margin-top:0;">Resumen del mes por caja</h2>${resumen}</div>
+    <details class="plegable card"><summary>＋ Agregar caja</summary><div class="plg-body">
+      <div class="row">
+        ${multi ? `<div class="field" style="min-width:150px;"><label>📍 Sede</label><select id="c2NuevaSede">${sucOpts(defSede)}</select></div>` : ''}
+        <div class="field" style="flex:1; min-width:160px;"><label>Nombre</label><input id="c2NuevaNombre" maxlength="40" placeholder="Ej: Caja chica, Cuenta Galicia"></div>
+        <div class="field" style="min-width:160px;"><label>Tipo</label><select id="c2NuevaTipo">${tiposOpts}</select></div>
+        <div class="field" style="min-width:130px;"><label>Saldo inicial</label><input inputmode="decimal" type="number" step="0.01" id="c2NuevaSaldo" placeholder="0"></div>
+        <button onclick="caj2Crear()" id="btnC2Crear" style="align-self:end;">Agregar</button>
+      </div>
+      <div class="muted" style="font-size:12px; margin-top:8px;">El saldo inicial cuenta desde hoy. Las cajas no se borran: si ya no la usás, desactivala.</div>
+    </div></details>
+    <details class="plegable card"><summary>Mover plata entre cajas</summary><div class="plg-body">
+      <div class="row">
+        <div class="field" style="min-width:200px; flex:1;"><label>Desde</label><select id="c2MovOrigen">${caj2Opts(ef ? ef.id : '')}</select></div>
+        <div class="field" style="min-width:200px; flex:1;"><label>Hacia</label><select id="c2MovDestino">${caj2Opts(bn ? bn.id : '')}</select></div>
+        <div class="field" style="min-width:120px;"><label>Monto</label><input inputmode="decimal" type="number" min="0" step="0.01" id="c2MovMonto"></div>
+        <div class="field" style="min-width:150px;"><label>Fecha</label><input type="date" id="c2MovFecha"></div>
+        <div class="field" style="flex:1; min-width:160px;"><label>Nota (opcional)</label><input id="c2MovNota" placeholder="Ej: depósito de la semana"></div>
+        <button onclick="caj2Mover()" id="btnC2Mover" style="align-self:end;">Registrar</button>
+      </div>
+      <div style="margin-top:12px;">${listaMov}</div>
+    </div></details>`;
+}
+function caj2Editar(id){
+  const c = caj2PorId(id); if (!c) return;
+  CAJ2.edit = id;
+  document.getElementById('cajaEdTit').textContent = caj2Ico(c.tipo) + ' ' + c.nombre + (sucMulti() ? ' · ' + sucNombre(c.sucursal_id) : '');
+  document.getElementById('cajaEdNombre').value = c.nombre;
+  document.getElementById('cajaEdSaldo').value = c.saldo_inicial;
+  document.getElementById('cajaEdCorte').value = c.fecha_corte;
+  document.getElementById('cajaEdActiva').checked = !!c.activa;
+  document.getElementById('modalCaja').classList.add('show');
+}
+function caj2Cerrar(){ document.getElementById('modalCaja').classList.remove('show'); CAJ2.edit = null; }
+function caj2Err(e){
+  const m = extraerMensajeError(e);
+  return /23505|duplicate key|cajas_nombre_uk/i.test((e && e.message) || '') ? 'Ya existe una caja con ese nombre en esa sede.' : m;
+}
+async function caj2Guardar(){
+  const id = CAJ2.edit, c = caj2PorId(id); if (!c) return;
+  const nombre = document.getElementById('cajaEdNombre').value.trim();
+  const saldo = Number(document.getElementById('cajaEdSaldo').value || 0);
+  const corte = document.getElementById('cajaEdCorte').value;
+  const activa = document.getElementById('cajaEdActiva').checked;
+  if (nombre.length < 2){ toast('Poné un nombre de al menos 2 letras.', true); return; }
+  if (!corte){ toast('Elegí la fecha de corte.', true); return; }
+  if (c.activa && !activa && !confirm('Si la desactivás, los cobros nuevos de ese método dejan de entrar a esta caja. Lo que ya tiene se conserva. ¿Desactivar?')) return;
+  if ((Number(c.saldo_inicial) !== saldo || c.fecha_corte !== corte) && !confirm('Si cambiás el saldo inicial o la fecha de corte, el saldo de esta caja se recalcula desde esa fecha. ¿Continuar?')) return;
+  const btn = document.getElementById('btnCajaEdGuardar'); btn.disabled = true;
+  try{
+    await sb(`cajas?id=eq.${id}`, { method:'PATCH', headers:{Prefer:'return=minimal'}, body: JSON.stringify({ nombre, saldo_inicial: saldo, fecha_corte: corte, activa }) });
+    toast('Caja guardada ✓');
+    caj2Cerrar();
+    await caj2Cargar(); cajasCargar();
+  }catch(e){ toast('Error guardando la caja: ' + caj2Err(e), true); }
+  finally{ btn.disabled = false; }
+}
+async function caj2Crear(){
+  const nombre = document.getElementById('c2NuevaNombre').value.trim();
+  const tipo = document.getElementById('c2NuevaTipo').value;
+  const saldo = Number(document.getElementById('c2NuevaSaldo').value || 0);
+  const se = document.getElementById('c2NuevaSede');
+  const sucursal_id = (se && se.value) || (sucPrincipal() && sucPrincipal().id);
+  if (nombre.length < 2){ toast('Poné un nombre para la caja (al menos 2 letras).', true); return; }
+  if (!sucursal_id){ toast('Elegí la sede.', true); return; }
+  const orden = caj2Todas().filter(c => c.sucursal_id === sucursal_id).reduce((m, c) => Math.max(m, Number(c.orden) || 0), 0) + 1;
+  const btn = document.getElementById('btnC2Crear'); btn.disabled = true;
+  try{
+    await sb('cajas', { method:'POST', headers:{Prefer:'return=minimal'}, body: JSON.stringify({ gimnasio_id: GIMNASIO_ACTUAL.id, sucursal_id, nombre, tipo, saldo_inicial: saldo, orden }) });
+    toast('Caja agregada ✓');
+    await caj2Cargar(); cajasCargar();
+  }catch(e){ toast('Error agregando la caja: ' + caj2Err(e), true); btn.disabled = false; }
+}
+async function caj2Mover(){
+  const o = document.getElementById('c2MovOrigen').value, d = document.getElementById('c2MovDestino').value;
+  const monto = Number(document.getElementById('c2MovMonto').value);
+  const fecha = document.getElementById('c2MovFecha').value || dateAIso(new Date());
+  const nota = document.getElementById('c2MovNota').value.trim() || null;
+  if (!o || !d){ toast('Elegí las dos cajas.', true); return; }
+  if (o === d){ toast('Elegí dos cajas distintas.', true); return; }
+  if (!monto || monto <= 0){ toast('Poné un monto mayor a cero.', true); return; }
+  const co = (CAJ2.data && CAJ2.data.cajas || []).find(c => c.id === o);
+  if (co && monto > Number(co.saldo) && !confirm(`El saldo actual de ${caj2Nombre(o, true)} es ${caj2M(co.saldo)}, menos que el monto a mover. ¿Registrarlo igual?`)) return;
+  const btn = document.getElementById('btnC2Mover'); btn.disabled = true;
+  try{
+    await sb('caja_movimientos', { method:'POST', headers:{Prefer:'return=minimal'}, body: JSON.stringify({ gimnasio_id: GIMNASIO_ACTUAL.id, fecha, caja_origen_id: o, caja_destino_id: d, monto, nota }) });
+    toast('Movimiento registrado ✓');
+    cajasCargar();
+  }catch(e){ toast('Error registrando el movimiento: ' + extraerMensajeError(e), true); btn.disabled = false; }
+}
+async function caj2EliminarMov(id){
+  if (!confirm('¿Eliminar este movimiento entre cajas? Los saldos se recalculan.')) return;
+  try{
+    await sb(`caja_movimientos?id=eq.${id}`, { method:'DELETE', headers:{Prefer:'return=minimal'} });
+    toast('Movimiento eliminado.');
+    cajasCargar();
+  }catch(e){ toast('Error: ' + extraerMensajeError(e), true); }
+}
+// Dashboard: saldos por tipo de caja (de la sede elegida arriba, o de todas)
+async function caj2Dashboard(gimId, cont){
+  const v = await sb('rpc/obtener_cajas_v2', { method:'POST', body: JSON.stringify({ p_gimnasio_id: gimId, p_sucursal_id: sucSel() || null }) });
+  const tipos = (v.por_tipo || []).filter(t => Number(t.saldo) !== 0 || t.tipo === 'efectivo' || t.tipo === 'banco');
+  const sc = v.sin_caja && v.sin_caja.egresos;
+  cont.innerHTML = tipos.map(t => cajasTarjetaSaldo(caj2Ico(t.tipo) + ' ' + (CAJ2_TIPOS[t.tipo] || CAJ2_TIPOS.otra)[1], Number(t.saldo))).join('')
+    + cajasTarjetaSaldo('Total en cajas' + (sucSel() ? ' · ' + sucNombre(sucSel()) : ''), Number(v.totales.saldo))
+    + (sc && sc.cantidad > 0 ? `<div class="muted" style="flex-basis:100%; font-size:12px; color:var(--warn-text);">⚠️ ${sc.cantidad} gasto(s) de este mes sin caja asignada no están restando de ningún saldo.</div>` : '');
 }
 
 // ---------- Proyección de ingresos (módulo opcional, se habilita por gimnasio) ----------
@@ -13332,7 +13611,7 @@ async function calcularFacturadorHoras(){
         <div>Total: ${totalHoras.toFixed(1)} horas${totalClases > 0 ? ` <span class="muted" style="font-weight:400;">(${(totalHoras - totalClases).toFixed(1)} de sala + ${totalClases.toFixed(1)} de clases)</span>` : ''}</div>
         ${tarifa ? `<div>${formatearMonto(monto)}</div>` : `<div class="muted" style="font-weight:400;">Cargá la tarifa/hora del profesor en "Profesores" para calcular el monto.</div>`}
       </div>
-      ${(!haySolapamiento && tarifa && totalHoras > 0) ? `<div class="row" style="margin-top:10px; align-items:end; gap:10px; flex-wrap:wrap;"><div class="field" style="min-width:170px; margin:0;"><label>Pagado desde</label><select id="factCaja"><option value="">-- elegí la caja --</option><option value="efectivo">💵 Efectivo</option><option value="banco">🏦 Banco</option></select></div><button onclick="confirmarLiquidacion()">Confirmar y registrar pago</button></div>` : ''}
+      ${(!haySolapamiento && tarifa && totalHoras > 0) ? `<div class="row" style="margin-top:10px; align-items:end; gap:10px; flex-wrap:wrap;"><div class="field" style="min-width:170px; margin:0;"><label>Pagado desde</label><select id="factCaja">${caj2On() ? caj2Opts('', '-- elegí la caja --') : '<option value="">-- elegí la caja --</option><option value="efectivo">💵 Efectivo</option><option value="banco">🏦 Banco</option>'}</select></div><button onclick="confirmarLiquidacion()">Confirmar y registrar pago</button></div>` : ''}
       ${(haySolapamiento && tarifa && totalHoras > 0) ? `<div class="muted" style="margin-top:8px; font-size:12px;">No se puede confirmar mientras el rango incluya días ya liquidados.</div>` : ''}
     `;
   }catch(e){ cont.innerHTML = 'Error: ' + e.message; }
@@ -13349,7 +13628,7 @@ async function confirmarLiquidacion(){
       gimnasio_id: GIMNASIO_ACTUAL.id, profesor_id: profesorId,
       periodo_desde: desde, periodo_hasta: hasta,
       horas_totales: totalHoras, tarifa_hora_aplicada: tarifa, impuesto_pct_aplicado: impuesto,
-      monto_total: monto, caja: cajaLiq,
+      monto_total: monto, ...(caj2On() ? { caja: caj2Legacy(caj2PorId(cajaLiq)), caja_id: cajaLiq } : { caja: cajaLiq }),
     })});
     toast('Liquidación registrada ✓');
     FACTURADOR_CALC = null;
@@ -14801,7 +15080,7 @@ async function abrirCobroAlumno(id, abrirForm){
   if (!p || !p.plan_id){ cerrarFicha(); abrirFichaAlumno(id, 'dat'); return; }
   const est = xCobEstado(p), e = COB_ESTADOS[est];
   const pct = GIMNASIO_ACTUAL?.descuento_efectivo_pct ?? 10;
-  const met = { mercado_pago:'💳 Mercado Pago', transferencia:'🏦 Transferencia', efectivo:'💵 Efectivo' };
+  const met = { mercado_pago:'💳 Mercado Pago', transferencia:'🏦 Transferencia', efectivo:'💵 Efectivo', tarjeta_credito:'💳 Tarjeta de crédito', tarjeta_debito:'💳 Tarjeta de débito' };
   const tel = al.telefono || ALUMNOS_CACHE.find(a => a.id === id)?.telefono;
   box.innerHTML = `<div class="x-fi-head">${xAv(al.nombre, al.foto_url)}<div class="tt"><div class="x-nm">${xe(al.nombre)}</div><div class="x-sub">${xe(p.plan_nombre || 'Plan')}</div></div><button type="button" class="x-cerrar est" aria-label="Cerrar" title="Cerrar" onclick="cerrarFicha()">✕</button></div>
     <div class="x-fi-body" style="padding-top:6px;">
@@ -14816,7 +15095,7 @@ async function abrirCobroAlumno(id, abrirForm){
       </div>
       <div id="cobrarForm${id}" style="display:none; margin-top:14px;">
         <div class="row">
-          <div class="field"><label>Forma de pago</label><select id="cobrarMetodo${id}" onchange="previewMontoCobro('${id}')"><option value="transferencia">Transferencia</option><option value="efectivo">Efectivo (con descuento)</option></select></div>
+          <div class="field"><label>Forma de pago</label><select id="cobrarMetodo${id}" onchange="previewMontoCobro('${id}')"><option value="transferencia">Transferencia</option><option value="efectivo">Efectivo (con descuento)</option><option value="mercado_pago">Mercado Pago (transferencia a MP)</option>${caj2On() ? '<option value="tarjeta_credito">Tarjeta de crédito</option><option value="tarjeta_debito">Tarjeta de débito</option>' : ''}</select></div>
           <div class="field"><label>Meses a pagar</label><select id="cobrarMeses${id}" onchange="previewMontoCobro('${id}')"><option value="">1 mes</option>${PLANES_PREPAGO_CACHE.filter(x => x.activo).map(x => `<option value="${x.id}">${xe(x.nombre)}</option>`).join('')}</select></div>
           <div class="field"><label>Monto a pagar</label><input disabled id="cobrarMonto${id}"></div>
           <button style="align-self:end;" onclick="confirmarCobro('${id}')">Confirmar pago</button>
@@ -14920,13 +15199,14 @@ async function agregarGasto(){
   const fecha = document.getElementById('gastoFecha').value || dateAIso(new Date());
   if (!categoriaId || categoriaId === '__nueva__'){ toast('Elegí (o creá) una categoría.', true); return; }
   if (!concepto || !monto){ toast('Completá concepto y monto.', true); return; }
-  const caja = document.getElementById('gastoCaja').value;
-  if (!caja){ toast('Elegí de qué caja salió la plata (Efectivo o Banco).', true); return; }
+  const caja = document.getElementById('gastoCaja').value, cv2 = caj2On();
+  if (!caja){ toast(cv2 ? 'Elegí de qué caja salió la plata.' : 'Elegí de qué caja salió la plata (Efectivo o Banco).', true); return; }
   const btn = document.getElementById('btnAgregarGasto');
   btn.disabled = true;
   try{
     await sb('gastos_gimnasio', { method:'POST', headers:{Prefer:'return=minimal'}, body: JSON.stringify({
-      gimnasio_id: GIMNASIO_ACTUAL.id, categoria_id: categoriaId, concepto, monto, fecha, caja,
+      gimnasio_id: GIMNASIO_ACTUAL.id, categoria_id: categoriaId, concepto, monto, fecha,
+      ...(cv2 ? { caja: caj2Legacy(caj2PorId(caja)), caja_id: caja } : { caja }),
     })});
     toast('Gasto agregado ✓');
     document.getElementById('gastoConcepto').value = '';
@@ -14952,9 +15232,14 @@ function gasEnPeriodo(f){
   return true;
 }
 function gasCajaHtml(r){
+  if (caj2On()){   // (v144)
+    if (r.caja_id) return xe(caj2Nombre(r.caja_id, true) || '—');
+    return `<select class="gas-caja" onchange="asignarCajaEgreso('${r.tipo}','${r.id}',this.value)">${caj2Opts('', '⚠️ Sin caja')}</select>`;
+  }
   if (r.caja) return r.caja === 'efectivo' ? '💵 Efectivo' : '🏦 Banco';
   return `<select class="gas-caja" onchange="asignarCajaEgreso('${r.tipo}','${r.id}',this.value)"><option value="">⚠️ Sin caja</option><option value="efectivo">💵 Efectivo</option><option value="banco">🏦 Banco</option></select>`;
 }
+function gasFaltaCaja(r){ return caj2On() ? !r.caja_id : !r.caja; }   // (v144)
 function gasPer(p){ GAS.per = p; gasPintar(); }
 function gasCat(i){ GAS.cat = i < 0 ? '' : (GAS.cats[i] || ''); gasPintar(); }
 function gasSinCaja(v){ GAS.sinCaja = !!v; if (v){ GAS.per = 'todo'; GAS.cat = ''; } gasPintar(); }
@@ -14970,7 +15255,7 @@ function gasPintar(){
   const mes = F.filter(r => gasMes(r.fecha, 0)), ant = F.filter(r => gasMes(r.fecha, -1));
   const porCatMes = {}; mes.forEach(r => { porCatMes[r.categoria] = (porCatMes[r.categoria] || 0) + r.monto; });
   const mayor = Object.entries(porCatMes).sort((a, b) => b[1] - a[1])[0];
-  const sinCaja = F.filter(r => !r.caja).length;
+  const sinCaja = F.filter(r => gasFaltaCaja(r)).length;
   if (GAS.sinCaja && !sinCaja) GAS.sinCaja = false;
   const dif = suma(ant) > 0 ? Math.round((suma(mes) - suma(ant)) / suma(ant) * 100) : null;
   const kp = document.getElementById('gasKpis');
@@ -14982,7 +15267,7 @@ function gasPintar(){
   const pers = [['mes', 'Este mes'], ['ant', 'Mes pasado'], ['3m', 'Últimos 3 meses'], ['todo', 'Todo']];
   const pe = document.getElementById('gasPeriodo');
   if (pe) pe.innerHTML = pers.map(p => `<button class="x-chip ${GAS.per === p[0] ? 'on' : ''}" onclick="gasPer('${p[0]}')">${p[1]}</button>`).join('');
-  const P = F.filter(r => gasEnPeriodo(r) && (!GAS.sinCaja || !r.caja));
+  const P = F.filter(r => gasEnPeriodo(r) && (!GAS.sinCaja || gasFaltaCaja(r)));
   const porCat = {}; P.forEach(r => { porCat[r.categoria] = (porCat[r.categoria] || 0) + r.monto; });
   const cats = Object.entries(porCat).sort((a, b) => b[1] - a[1]);
   GAS.cats = cats.map(c => c[0]);
@@ -15009,6 +15294,7 @@ async function cargarGastos(){
   const gimId = GIMNASIO_ACTUAL?.id;
   if (!gimId){ cont.innerHTML = '<div class="x-vacio">Necesitás estar logueado.</div>'; return; }
   if (!GAS.filas.length) cont.innerHTML = '<div class="x-vacio">Cargando…</div>';
+  try{ if (caj2Posible() && CAJ2.lista === null) await caj2Cargar(); else caj2PintarSelects(); }catch(e){}   // (v144)
   try{
     // (24/9, 3ra vuelta) Pedido de Martin: ver también el pago a profesores acá,
     // para chequear TODOS los gastos del gimnasio en un solo lugar. Se unen dos
@@ -15017,12 +15303,12 @@ async function cargarGastos(){
     // para borrar una liquidación se sigue usando su propio candado (eliminarLiquidacion),
     // nunca un borrado genérico, para no saltarse esa lógica.
     const [gastos, liquidaciones] = await Promise.all([
-      sb(`gastos_gimnasio?select=id,concepto,monto,fecha,caja,gastos_categorias(nombre)&gimnasio_id=eq.${gimId}&order=fecha.desc&limit=500`),
-      sb(`liquidaciones_profesor?select=id,monto_total,fecha_pago,caja,periodo_desde,periodo_hasta,profesores(nombre)&gimnasio_id=eq.${gimId}&order=fecha_pago.desc&limit=500`),
+      sb(`gastos_gimnasio?select=id,concepto,monto,fecha,caja${caj2On() ? ',caja_id' : ''},gastos_categorias(nombre)&gimnasio_id=eq.${gimId}&order=fecha.desc&limit=500`),
+      sb(`liquidaciones_profesor?select=id,monto_total,fecha_pago,caja${caj2On() ? ',caja_id' : ''},periodo_desde,periodo_hasta,profesores(nombre)&gimnasio_id=eq.${gimId}&order=fecha_pago.desc&limit=500`),
     ]);
     GAS.filas = [
-      ...gastos.map(r => ({ id:r.id, tipo:'gasto', concepto:r.concepto, monto:Number(r.monto), fecha:r.fecha, caja:r.caja, categoria:r.gastos_categorias?.nombre || 'Sin categoría' })),
-      ...liquidaciones.map(r => ({ id:r.id, tipo:'liquidacion', concepto:`Pago a ${r.profesores?.nombre || 'profesor'} (${formatearFechaCorta(r.periodo_desde)} al ${formatearFechaCorta(r.periodo_hasta)})`, monto:Number(r.monto_total), fecha:r.fecha_pago, caja:r.caja, categoria:'Pago a profesores' })),
+      ...gastos.map(r => ({ id:r.id, tipo:'gasto', concepto:r.concepto, monto:Number(r.monto), fecha:r.fecha, caja:r.caja, caja_id:r.caja_id, categoria:r.gastos_categorias?.nombre || 'Sin categoría' })),
+      ...liquidaciones.map(r => ({ id:r.id, tipo:'liquidacion', concepto:`Pago a ${r.profesores?.nombre || 'profesor'} (${formatearFechaCorta(r.periodo_desde)} al ${formatearFechaCorta(r.periodo_hasta)})`, monto:Number(r.monto_total), fecha:r.fecha_pago, caja:r.caja, caja_id:r.caja_id, categoria:'Pago a profesores' })),
     ].sort((a,b) => String(b.fecha).localeCompare(String(a.fecha)));
     gasPintar();
   }catch(e){ cont.innerHTML = `<div class="x-vacio">Error: ${xe(e.message)}</div>`; }
@@ -15362,7 +15648,7 @@ function armarDocRecibo(pago, alumnoNombre, planNombre){
   doc.text('Tu pago se registró correctamente. Este es tu comprobante.', marginX, y);
   y += 10;
 
-  const etiquetaMetodoRecibo = { efectivo: 'Efectivo', transferencia: 'Transferencia', mercado_pago: 'Mercado Pago' };
+  const etiquetaMetodoRecibo = { efectivo: 'Efectivo', transferencia: 'Transferencia', mercado_pago: 'Mercado Pago', tarjeta_credito: 'Tarjeta de crédito', tarjeta_debito: 'Tarjeta de débito' };
   const filas = [
     ['Plan', planNombre],
     ['Método de pago', etiquetaMetodoRecibo[pago.metodo_pago] || 'Transferencia'],
@@ -15856,7 +16142,7 @@ async function xFichaPagos(a, tok){
     const pagos = await sb(`pagos?alumno_id=eq.${a.id}&order=creado_en.desc&limit=12`);
     const b = body(); if (!b) return;
     FICHA_PAGOS = pagos;
-    const met = { mercado_pago:'💳 Mercado Pago', transferencia:'🏦 Transferencia', efectivo:'💵 Efectivo' };
+    const met = { mercado_pago:'💳 Mercado Pago', transferencia:'🏦 Transferencia', efectivo:'💵 Efectivo', tarjeta_credito:'💳 Tarjeta de crédito', tarjeta_debito:'💳 Tarjeta de débito' };
     b.innerHTML = (pagos.length ? `<div style="overflow-x:auto;"><table class="x-mini"><thead><tr><th>Fecha</th><th>Monto</th><th>Medio</th><th>Cubre hasta</th><th></th></tr></thead><tbody>${pagos.map((p, i) => `<tr><td><b>${xe(formatearFechaCorta((p.creado_en || '').slice(0, 10)))}</b></td><td>${xe(formatearMonto(p.monto))}</td><td>${xe(met[p.metodo_pago] || p.metodo_pago)}</td><td>${xe(formatearFechaCorta(p.vigencia_hasta))}</td><td><button class="ghost" title="Descargar comprobante" onclick="fichaRecibo(${i})">🧾</button></td></tr>`).join('')}</tbody></table></div>` : '<div class="muted">Todavía no hay pagos registrados.</div>')
       + `<div class="x-btns">${(VIGENTES_POR_ALUMNO[a.id] && VIGENTES_POR_ALUMNO[a.id].plan_id) ? '<button onclick="fichaCobrar()">💰 Cobrar</button>' : ''}</div>`;
   }catch(e){ const b = body(); if (b) b.innerHTML = '<div class="muted">Error: ' + xe(e.message) + '</div>'; }
@@ -23251,7 +23537,7 @@ async function toggleHistorialPagos(alumnoId){
   try{
     const pagos = await sb(`pagos?alumno_id=eq.${alumnoId}&order=creado_en.desc&limit=8`);
     if (!pagos.length){ cont.innerHTML = '<div class="muted" style="padding:6px 0;">Todavía no hay pagos registrados.</div>'; return; }
-    const etiquetaMetodo = { mercado_pago: '💳 Mercado Pago', transferencia: '🏦 Transferencia', efectivo: '💵 Efectivo' };
+    const etiquetaMetodo = { mercado_pago: '💳 Mercado Pago', transferencia: '🏦 Transferencia', efectivo: '💵 Efectivo', tarjeta_credito: '💳 Tarjeta de crédito', tarjeta_debito: '💳 Tarjeta de débito' };
     const alumnoNombre = ALUMNOS_CACHE.find(a => a.id === alumnoId)?.nombre || 'Alumno';
     const planNombre = COBRANZAS_CACHE[alumnoId]?.plan_nombre || 'Plan';
     cont.innerHTML = pagos.map(p => `
@@ -25895,6 +26181,22 @@ function perCargaAguda(alumnoId){
     <div class="row" style="justify-content:flex-end; gap:8px; margin-top:14px;">
       <button id="btnConfirmarActivarSuscripcion" onclick="confirmarActivarSuscripcion()">Activar</button>
     </div>
+  </div>
+</div>
+
+<!-- (v144) Editar una caja -->
+<div class="modal-overlay" id="modalCaja">
+  <div class="modal-box">
+    <div class="x-wrap"><button type="button" class="x-cerrar" aria-label="Cerrar" title="Cerrar" onclick="caj2Cerrar()">✕</button></div>
+    <h3 style="margin-top:0;" id="cajaEdTit">Caja</h3>
+    <div class="field"><label>Nombre</label><input id="cajaEdNombre" maxlength="40"></div>
+    <div class="row">
+      <div class="field" style="flex:1; min-width:130px;"><label>Saldo inicial</label><input inputmode="decimal" type="number" step="0.01" id="cajaEdSaldo"></div>
+      <div class="field" style="flex:1; min-width:140px;"><label>Fecha de corte</label><input type="date" id="cajaEdCorte"></div>
+    </div>
+    <div class="muted" style="font-size:12px; margin:6px 0 10px;">Saldo actual = saldo inicial + cobros − gastos ± movimientos, desde la fecha de corte.</div>
+    <label class="row" style="gap:8px; align-items:center; cursor:pointer; margin-bottom:12px;"><input type="checkbox" id="cajaEdActiva" style="width:auto;"> Caja activa (recibe cobros nuevos)</label>
+    <div class="row" style="gap:8px;"><button onclick="caj2Guardar()" id="btnCajaEdGuardar">Guardar</button><button class="ghost" onclick="caj2Cerrar()">Cancelar</button></div>
   </div>
 </div>
 
