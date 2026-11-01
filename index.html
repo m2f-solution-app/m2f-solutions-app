@@ -220,6 +220,45 @@ if ('serviceWorker' in navigator) window.addEventListener('load', function(){ tr
   .suc-chip{ font-family:inherit; font-size:13.5px; font-weight:700; padding:8px 16px; border-radius:999px; background:var(--panel2); color:var(--muted); border:1px solid var(--border); cursor:pointer; white-space:nowrap; }
   .suc-chip.on{ background:var(--accent); color:#fff; border-color:var(--accent); }
   /* (v145) admin por sede */
+  /* (v147) comparativo entre sedes: colores validados (4 sedes + gris) para tema oscuro y claro */
+  :root{ --cmp1:#da752d; --cmp2:#3f98eb; --cmp3:#b19100; --cmp4:#a979dd; --cmpn:#8a93a5; }
+  :root[data-tema="claro"]{ --cmp1:#d26100; --cmp2:#1289e7; --cmp3:#a78200; --cmp4:#9e66d7; --cmpn:#7a8294; }
+  .cmp-top{ display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; }
+  .cmp-top .suc-chips{ flex:none; overflow:visible; }
+  .cmp-nota{ font-size:12.5px; color:var(--muted); margin-top:6px; }
+  .cmp-lect{ margin-top:12px; padding:10px 12px; border:1px solid var(--border); border-left:3px solid var(--accent); border-radius:var(--radius); background:var(--panel2); font-size:13.5px; line-height:1.45; }
+  .cmp-m{ margin-top:18px; }
+  .cmp-mt{ font-weight:700; display:flex; justify-content:space-between; align-items:baseline; gap:8px; flex-wrap:wrap; }
+  .cmp-mt small{ font-weight:500; color:var(--muted); font-size:12px; }
+  .cmp-r{ margin-top:10px; }
+  .cmp-l{ display:flex; justify-content:space-between; align-items:baseline; gap:10px; font-size:14px; }
+  .cmp-n{ display:flex; align-items:center; gap:8px; min-width:0; }
+  .cmp-n i{ width:10px; height:10px; border-radius:3px; flex:none; }
+  .cmp-n span{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .cmp-v{ font-weight:800; white-space:nowrap; }
+  .cmp-v small{ font-weight:600; color:var(--muted); font-size:12px; margin-left:6px; }
+  .cmp-v small.dn{ color:var(--danger-text); }
+  .cmp-b{ height:10px; background:var(--panel2); border-radius:5px; margin-top:5px; overflow:hidden; }
+  .cmp-b b{ display:block; height:100%; border-radius:0 4px 4px 0; min-width:3px; }
+  .cmp-tot{ margin-top:10px; padding-top:8px; border-top:1px solid var(--border); display:flex; justify-content:space-between; gap:10px; font-size:13px; color:var(--muted); }
+  .cmp-leg{ display:flex; flex-wrap:wrap; gap:6px 14px; font-size:13px; margin:8px 0 2px; }
+  .cmp-leg span{ display:inline-flex; align-items:center; gap:6px; }
+  .cmp-leg i{ width:10px; height:10px; border-radius:3px; }
+  .cmp-svg{ width:100%; height:auto; display:block; touch-action:manipulation; }
+  .cmp-svg text{ fill:var(--muted); font-size:10px; }
+  .cmp-tip{ background:var(--panel2); border:1px solid var(--border); border-radius:var(--radius); padding:8px 10px; font-size:13px; margin-top:6px; }
+  .cmp-tip b{ font-weight:700; }
+  .cmp-tw{ overflow-x:auto; margin-top:8px; -webkit-overflow-scrolling:touch; }
+  .cmp-t{ border-collapse:collapse; font-size:13px; min-width:700px; width:100%; }
+  .cmp-t th, .cmp-t td{ padding:6px 8px; text-align:right; border-bottom:1px solid var(--border); white-space:nowrap; }
+  .cmp-t th{ color:var(--muted); font-weight:600; font-size:12px; }
+  .cmp-t th:first-child, .cmp-t td:first-child{ text-align:left; position:sticky; left:0; background:var(--panel); }
+  .cmp-t tr.tot td{ font-weight:800; border-top:2px solid var(--border); }
+  .cmp-t td.neg{ color:var(--danger-text); }
+  /* (v146) clases y recepción por sede */
+  .pill.suc{ color:var(--accent-text); border-color:var(--accent); font-weight:700; }
+  .rc-row .rc-sede{ width:auto; max-width:210px; min-width:150px; padding:6px 8px; font-size:13px; }
+  .cl-sedeinfo{ font-size:13px; }
   .suc-fija{ display:inline-flex; align-items:center; gap:8px; font-weight:700; }
   .suc-fija small{ font-weight:500; color:var(--muted); font-size:12px; }
   .adm-fila{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; padding:10px 0; border-bottom:1px solid var(--border); }
@@ -2547,7 +2586,7 @@ if ('serviceWorker' in navigator) window.addEventListener('load', function(){ tr
       <!-- ---- SUBVISTA: RECEPCIÓN (v85) — check-in y turnos por el alumno (administrador y usuario de recepción) ---- -->
       <div id="subvistaRecepcion" style="display:none;">
         <div class="vista-eyebrow">Check-in</div>
-        <div class="vista-titulo rc-tit"><span>Recepción</span><button type="button" class="secondary" id="rcQrBtn" style="display:none;" onclick="qrAbrir()">🔳 QR de asistencia</button></div>
+        <div class="vista-titulo rc-tit"><span>Recepción <span class="pill suc" id="rcSede" style="display:none;"></span></span><button type="button" class="secondary" id="rcQrBtn" style="display:none;" onclick="qrAbrir()">🔳 QR de asistencia</button></div>
         <div class="rc-grid">
           <div class="card">
             <h2 style="margin-top:0">Buscar socio</h2>
@@ -2610,6 +2649,10 @@ if ('serviceWorker' in navigator) window.addEventListener('load', function(){ tr
             <div class="muted" style="margin-top:14px; font-size:12px;">
               El monto pendiente por cobrar es estimado: toma el precio del plan de cada socio vencido, no una factura real.
             </div>
+
+            <details class="plegable dash-sec" data-k="dash-sedes" id="cmpBox" style="display:none;" open><summary>📍 Comparativo entre sedes</summary>
+              <div id="cmpBody"><div class="muted">Cargando…</div></div>
+            </details>
 
             <details class="plegable dash-sec" data-k="dash-ganancias" open><summary>💰 Ganancias del mes</summary>
             <div class="row" style="flex-wrap:wrap; gap:12px;">
@@ -3163,6 +3206,10 @@ if ('serviceWorker' in navigator) window.addEventListener('load', function(){ tr
             <div class="field" style="min-width:140px;">
               <label>DNI</label>
               <input id="nuevoRecepcionDni" inputmode="numeric" placeholder="Ej: 30123456" />
+            </div>
+            <div class="field" id="nuevoRecepcionSedeWrap" style="min-width:170px; display:none;">
+              <label>Sede</label>
+              <select id="nuevoRecepcionSede"></select>
             </div>
             <button onclick="crearRecepcion()" id="btnCrearRecepcion" style="align-self:end;">Crear usuario</button>
           </div>
@@ -5183,7 +5230,7 @@ function atlIniciarAlu(){
   atlCargarVista('aluAtletismoContenido', id || '');
 }
 
-const APP_VERSION = 145;
+const APP_VERSION = 147;
 let ES_PERSONAL = false;   // (v132) cuenta personal (gimnasios.tipo = 'personal'); se calcula en perAplicar()
 // (v96) Fecha de la última actualización: se cambia junto con APP_VERSION en cada entrega. Se muestra en la
 // pantalla de inicio y en el menú de cuenta ("v94 · actualizada el 5/10/2026").
@@ -9834,7 +9881,7 @@ function sucSel(){ const fija = sucAdminSede(); if (fija && sucMulti() && sucAct
 // ---------- (v145) ADMIN POR SEDE ----------
 // SQL: v145-admin-por-sede.sql. perfiles.sucursal_id: vacío = administrador general (ve todo, como siempre); con sede = administrador de esa sede.
 // El permiso real lo pone la base (RLS): acá solo se ordena la pantalla para que el admin de sede vea y elija únicamente su sede.
-function sucAdminSede(){ const p = PERFIL_ACTUAL; return (p && p.rol === 'admin' && p.sucursal_id) ? p.sucursal_id : null; }
+function sucAdminSede(){ const p = PERFIL_ACTUAL; return (p && (p.rol === 'admin' || p.rol === 'recepcion') && p.sucursal_id) ? p.sucursal_id : null; }   // (v146) también una cuenta de Recepción puede tener sede fija
 function sucEsAdminGlobal(){ return !!(PERFIL_ACTUAL && PERFIL_ACTUAL.rol === 'admin' && !PERFIL_ACTUAL.sucursal_id); }
 function sucElegibles(){ const a = sucAdminSede(); return a ? sucActivas().filter(s => s.id === a) : sucActivas(); }
 const SEDE_ADMIN_OCULTO = ['menuPlanes', 'ttPlanes', 'menuGimnasio', 'ttGimnasio', 'menuAlertas', 'ttAlertas', 'menuSeguimiento', 'ttSeguimiento'];
@@ -9842,11 +9889,12 @@ const SEDE_ADMIN_VISTAS_NO = ['planes', 'gimnasio', 'alertas', 'seguimiento'];
 function sedeAdminOcultar(){   // el admin de sede no ve las secciones generales del negocio
   if (!sucAdminSede()) return;
   SEDE_ADMIN_OCULTO.forEach(id => { const e = document.getElementById(id); if (e) e.style.display = 'none'; });
+  if (PERFIL_ACTUAL && PERFIL_ACTUAL.rol === 'admin') document.querySelectorAll('details[data-k="prof-recepcion"]').forEach(e => { e.style.display = 'none'; });   // (v146) las cuentas de Recepción las maneja el administrador general
 }
 async function sucCargarSedeDelPerfil(){   // sucursal_id del perfil (si la columna todavía no existe, queda como administrador general)
   if (!PERFIL_ACTUAL) return;
   PERFIL_ACTUAL.sucursal_id = null;
-  if (PERFIL_ACTUAL.rol !== 'admin') return;
+  if (PERFIL_ACTUAL.rol !== 'admin' && PERFIL_ACTUAL.rol !== 'recepcion') return;   // (v146) + Recepción
   try{
     const r = await sb(`perfiles?select=sucursal_id&id=eq.${PERFIL_ACTUAL.id}`);
     PERFIL_ACTUAL.sucursal_id = (r && r[0] && r[0].sucursal_id) || null;
@@ -9909,6 +9957,25 @@ function sucAplicar(){
   try{ sucPintar(); }catch(e){}
   try{ sucAdmPintar(); }catch(e){}   // (v145)
   try{ sedeAdminOcultar(); }catch(e){}
+  try{ sucRecepcionPintar(); }catch(e){}   // (v146)
+  try{ if (typeof clAplicarSede === 'function' && CL && CL.rowsAll){ clAplicarSede(); if (document.getElementById(CL.contId)) clRenderEn(); } }catch(e){}   // (v146) las clases se filtran por la sede elegida
+}
+// ----- (v146) Recepción por sede: etiqueta en la pantalla + sede al crear la cuenta -----
+function sucRecepcionPintar(){
+  const e = document.getElementById('rcSede');
+  if (e){ const f = sucAdminSede(), ver = !!(f && sucMulti()); e.style.display = ver ? '' : 'none'; if (ver) e.textContent = '📍 ' + sucNombre(f); }
+  const w = document.getElementById('nuevoRecepcionSedeWrap');
+  if (w){ const ver = !!(sucEsAdminGlobal() && sucMulti()); w.style.display = ver ? '' : 'none'; if (ver && !w.contains(document.activeElement)){ const v = document.getElementById('nuevoRecepcionSede').value; document.getElementById('nuevoRecepcionSede').innerHTML = sucRecOpts(v || ''); } }
+}
+function sucRecOpts(sel){ return `<option value="">🌐 Todas las sedes</option>` + sucActivas().map(s => `<option value="${s.id}" ${s.id === sel ? 'selected' : ''}>📍 Solo ${xe(s.nombre)}</option>`).join(''); }
+async function recAsignarSede(perfilId, sedeId){
+  if (SUC.busy) return; SUC.busy = true;
+  try{
+    await sb('rpc/perfil_asignar_sede', { method:'POST', body: JSON.stringify({ p_perfil_id: perfilId, p_sucursal_id: sedeId || null }) });
+    toast(sedeId ? 'Listo: esta cuenta de Recepción ve solo ' + sucNombre(sedeId) + ' ✓' : 'Listo: esta cuenta de Recepción ve todas las sedes ✓');
+  }catch(e){ toast(extraerMensajeError(e), true); }
+  SUC.busy = false;
+  cargarListaRecepcion();
 }
 // ----- Barra de sedes (arriba de todo, para admin y profesores) -----
 function sucBarraPintar(){
@@ -9936,6 +10003,7 @@ async function sucCambiar(id){
     if (vis('Profesores')){ await sucRecargarProfSedes(); renderListaProfesores(); }
     if (vis('Alumnos')) renderListaAlumnos();
     if (vis('Dashboard')) cargarDashboardAdmin();
+    if (vis('Clases')){ clAplicarSede(); clRenderEn(); }   // (v146)
   }catch(e){ console.error(e); }
   toast(SUC.sel ? '📍 ' + sucNombre(SUC.sel) : '📍 Todas las sedes');
 }
@@ -9973,7 +10041,7 @@ function sucAluSel(alumnoId){
   if (SUCALU.sel && !sucActivas().some(s => s.id === SUCALU.sel)) SUCALU.sel = '';
   return SUCALU.sel;
 }
-function sucAluElegir(id){ SUCALU.sel = id || ''; renderHorasAlu(); }
+function sucAluElegir(id){ SUCALU.sel = id || ''; renderHorasAlu(); try{ if (CL && CL.rolAlumno && CL.rowsAll){ clAplicarSede(); clRenderEn(); } }catch(e){} }   // (v146) también filtra las clases
 function sucAluBarraHtml(alumnoId){
   const sel = sucAluSel(alumnoId), s = sel ? sucPorId(sel) : null;
   const chips = `<button type="button" class="suc-chip ${!sel ? 'on' : ''}" onclick="sucAluElegir('')">Todas</button>`
@@ -10560,6 +10628,14 @@ async function crearRecepcion(){
   const btn = rcEl('btnCrearRecepcion'); btn.disabled = true;
   try{
     const r = await sbFn('gestionar-acceso', { accion: 'crear_recepcion', nombre, dni });
+    const sedeNueva = (sucEsAdminGlobal() && sucMulti()) ? ((rcEl('nuevoRecepcionSede') || {}).value || '') : '';   // (v146)
+    if (sedeNueva){
+      try{
+        const pf = await sb(`perfiles?select=id&email=eq.${encodeURIComponent('rec-' + dni.replace(/\D/g, '') + '@m2fsolutions.local')}`);
+        if (!(pf && pf[0])) throw new Error('No se encontró la cuenta recién creada.');
+        await sb('rpc/perfil_asignar_sede', { method:'POST', body: JSON.stringify({ p_perfil_id: pf[0].id, p_sucursal_id: sedeNueva }) });
+      }catch(e2){ toast('La cuenta se creó, pero no se pudo asignar la sede (' + extraerMensajeError(e2) + '). Asignala desde la lista, ahí abajo.', true); }
+    }
     mostrarCredenciales({ titulo: 'Usuario de Recepción creado ✓', nombre, usuario: r.usuario, password: r.password_temporal });
     rcEl('nuevoRecepcionNombre').value = ''; rcEl('nuevoRecepcionDni').value = '';
     cargarListaRecepcion();
@@ -10569,11 +10645,16 @@ async function crearRecepcion(){
 async function cargarListaRecepcion(){
   const cont = rcEl('listaRecepcion'); if (!cont || !PERFIL_ACTUAL) return;
   try{
-    const rows = await sb(`perfiles?select=id,nombre,email&rol=eq.recepcion&gimnasio_id=eq.${PERFIL_ACTUAL.gimnasio_id}&order=nombre.asc`);
+    let rows = null, conSede = false;
+    if (sucEsAdminGlobal() && sucMulti()){   // (v146) con sedes: se ve y se cambia la sede de cada cuenta
+      try{ rows = await sb(`perfiles?select=id,nombre,email,sucursal_id&rol=eq.recepcion&gimnasio_id=eq.${PERFIL_ACTUAL.gimnasio_id}&order=nombre.asc`); conSede = true; }catch(e){ rows = null; }
+    }
+    if (!rows) rows = await sb(`perfiles?select=id,nombre,email&rol=eq.recepcion&gimnasio_id=eq.${PERFIL_ACTUAL.gimnasio_id}&order=nombre.asc`);
     cont.innerHTML = rows.length ? rows.map(p => {
       const dni = (p.email || '').replace(/^rec-/, '').replace(/@m2fsolutions\.local$/, '');
       const nom = escaparHtml(p.nombre || '').replace(/'/g, '&apos;');
       return `<div class="rc-row"><span>${escaparHtml(p.nombre || '')} <span class="muted">· DNI ${escaparHtml(dni)}</span></span><span class="rc-act">
+        ${conSede ? `<select class="rc-sede" aria-label="Sede de ${escaparHtml(p.nombre || '')}" onchange="recAsignarSede('${p.id}', this.value)">${sucRecOpts(p.sucursal_id)}</select>` : ''}
         <button class="secondary rc-mini" onclick="resetearAccesoRecepcion('${p.id}','${nom}')">🔁 Contraseña nueva</button>
         <button class="secondary rc-mini" style="color:var(--danger);" onclick="quitarRecepcion('${p.id}','${nom}')">Quitar</button></span></div>`;
     }).join('') : '<div class="muted" style="font-size:13px;">Todavía no creaste ningún usuario de Recepción.</div>';
@@ -11235,6 +11316,7 @@ async function cargarDashboardAdmin(){
     cargarProyeccionIngresos(gimId);
     cargarGananciasDashboard(gimId, d.facturado_mes);
     cargarCajasDashboard(gimId);
+    cmpCargar().catch(() => {});   // (v147) comparativo entre sedes (solo admin general con 2+ sedes)
   }catch(e){
     estado.textContent = 'Error cargando el dashboard: ' + e.message;
     estado.style.display = '';
@@ -11535,6 +11617,143 @@ async function sedeDashboard(){
     cargarOcupacionSemanalDashboard(gimId);
     cargarCajasDashboard(gimId);
   }catch(e){ estado.textContent = 'Error cargando tu sede: ' + extraerMensajeError(e); estado.style.display = ''; kpis.style.display = 'none'; }
+}
+
+
+// ---------- (v147) COMPARATIVO ENTRE SEDES (solo administrador general, con 2+ sedes activas) ----------
+// SQL: v147-comparativo-sedes.sql (una función de solo lectura). Sin el SQL se muestra un aviso y el resto del dashboard anda igual.
+const CMP = { data: null, mes: 0, ok: null, busy: false, err: '', sel: null };   // mes: 0 = este mes · -1 = mes anterior
+const CMP_COL = ['var(--cmp1)', 'var(--cmp2)', 'var(--cmp3)', 'var(--cmp4)'];
+const CMP_MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+const CMP_MES3 = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+function cmpColor(id){   // el color sigue a la sede (por su orden), nunca a su posición en el ranking; las sedes 5+ y "sin sede" van en gris
+  if (!id) return 'var(--cmpn)';
+  const i = (SUC.lista || []).findIndex(s => s.id === id);
+  return (i >= 0 && i < 4) ? CMP_COL[i] : 'var(--cmpn)';
+}
+function cmpPct(a, b){ return (b > 0) ? Math.round(a / b * 100) : null; }
+function cmpCorto(n){ n = Number(n) || 0; const a = Math.abs(n); return a >= 1e6 ? (n / 1e6).toFixed(a >= 1e7 ? 0 : 1).replace('.', ',') + ' M' : a >= 1e3 ? Math.round(n / 1e3) + ' mil' : String(Math.round(n)); }
+function cmpFilas(){   // sedes a mostrar: las activas, las inactivas que todavía tengan datos y "sin sede" solo si tiene algo
+  const d = CMP.data; if (!d) return [];
+  return (d.sedes || []).filter(s => s.id ? (s.activo || s.activos + s.inactivos + s.facturado + s.gastos + s.turnos > 0) : (s.activos + s.inactivos + s.facturado + s.gastos + s.turnos + s.cobros > 0));
+}
+async function cmpCargar(){
+  const box = document.getElementById('cmpBox'); if (!box) return;
+  const ver = !!(sucEsAdminGlobal() && sucMulti());
+  box.style.display = ver ? '' : 'none';
+  if (!ver || CMP.busy || !GIMNASIO_ACTUAL) return;
+  CMP.busy = true;
+  if (!CMP.data) document.getElementById('cmpBody').innerHTML = '<div class="muted">Cargando…</div>';
+  try{
+    const d = new Date(); d.setDate(1); d.setMonth(d.getMonth() + CMP.mes);
+    CMP.data = await sb('rpc/obtener_comparativo_sedes', { method: 'POST', body: JSON.stringify({ p_gimnasio_id: GIMNASIO_ACTUAL.id, p_mes: fechaLocalISO(d) }) });
+    CMP.ok = true; CMP.err = ''; CMP.sel = null;
+  }catch(e){
+    const m = String((e && e.message) || '');
+    CMP.ok = /obtener_comparativo_sedes|PGRST202|42883|Could not find the function/i.test(m) ? false : null;
+    CMP.err = extraerMensajeError(e);
+  }
+  CMP.busy = false;
+  cmpPintar();
+}
+function cmpMes(m){ if (CMP.mes === m) return; CMP.mes = m; CMP.data = null; cmpCargar(); }
+function cmpMayus(s){ return s.charAt(0).toUpperCase() + s.slice(1); }
+function cmpMesTxt(){ const d = new Date(); d.setDate(1); d.setMonth(d.getMonth() + CMP.mes); return cmpMayus(CMP_MESES[d.getMonth()]) + ' ' + d.getFullYear(); }
+function cmpBloque(titulo, sub, filas, tot){   // filas: [{s, v (número para la barra), txt (valor mostrado), extra}]
+  const max = Math.max(1, ...filas.map(f => Math.max(0, f.v)));
+  return `<div class="cmp-m"><div class="cmp-mt"><span>${titulo}</span><small>${sub}</small></div>` + filas.map(f => `<div class="cmp-r">
+      <div class="cmp-l"><div class="cmp-n"><i style="background:${cmpColor(f.s.id)}"></i><span>${xe(f.s.nombre)}</span></div><div class="cmp-v">${f.txt}${f.extra || ''}</div></div>
+      <div class="cmp-b"><b style="width:${Math.max(0, f.v) / max * 100}%; background:${cmpColor(f.s.id)};"></b></div></div>`).join('')
+    + (tot ? `<div class="cmp-tot"><span>${tot[0]}</span><b>${tot[1]}</b></div>` : '') + `</div>`;
+}
+function cmpDelta(a, b){
+  if (!(b > 0)) return '';
+  const p = Math.round((a - b) / b * 100);
+  return `<small class="${p < 0 ? 'dn' : ''}">${p < 0 ? '▼' : p > 0 ? '▲' : '•'} ${Math.abs(p)}%</small>`;
+}
+function cmpLectura(f){
+  if (f.length < 2) return '';
+  const L = [];
+  const conAnt = f.filter(s => s.facturado_ant > 0);
+  if (conAnt.length >= 2){
+    const g = conAnt.map(s => ({ s, p: (s.facturado - s.facturado_ant) / s.facturado_ant * 100 })).sort((a, b) => b.p - a.p);
+    if (g[0].p > 0) L.push(`<b>${xe(g[0].s.nombre)}</b> es la que más creció en facturación (${Math.round(g[0].p)}% vs el mes anterior).`);
+    const peor = g[g.length - 1]; if (peor.p < -5) L.push(`<b>${xe(peor.s.nombre)}</b> cayó ${Math.abs(Math.round(peor.p))}% en facturación frente al mes anterior.`);
+  }
+  const v = f.filter(s => s.activos >= 5).map(s => ({ s, p: s.vencidos / s.activos * 100 })).sort((a, b) => b.p - a.p);
+  if (v.length >= 2 && v[0].p >= 15 && v[0].p > v[v.length - 1].p * 1.5) L.push(`<b>${xe(v[0].s.nombre)}</b> tiene ${Math.round(v[0].p)}% de sus socios con la cuota vencida (${v[0].s.vencidos}): es donde más conviene reclamar.`);
+  return L.length ? `<div class="cmp-lect">💡 ${L.slice(0, 2).join('<br>')}</div>` : '';
+}
+function cmpGrafico(f){
+  const d = CMP.data, ser = d.serie || [];
+  const meses = [...new Set(ser.map(x => x.mes))].sort();
+  if (meses.length < 2) return '';
+  const lineas = f.map(s => ({ s, pts: meses.map(m => { const r = ser.find(x => x.id === s.id && x.mes === m); return r ? Number(r.monto) : 0; }) })).filter(l => l.pts.some(v => v > 0));
+  if (!lineas.length) return '';
+  const W = 420, H = 170, pl = 44, pr = 14, pt = 12, pb = 24, max = Math.max(1, ...lineas.flatMap(l => l.pts));
+  const X = i => pl + (W - pl - pr) * i / (meses.length - 1), Y = v => pt + (H - pt - pb) * (1 - v / max);
+  const sel = CMP.sel == null ? meses.length - 1 : CMP.sel;
+  let g = [0, .5, 1].map(t => `<line x1="${pl}" x2="${W - pr}" y1="${Y(max * t)}" y2="${Y(max * t)}" stroke="var(--border)" stroke-width="1"/><text x="${pl - 6}" y="${Y(max * t) + 3}" text-anchor="end">${cmpCorto(max * t)}</text>`).join('');
+  g += meses.map((m, i) => `<text x="${X(i)}" y="${H - 6}" text-anchor="middle">${CMP_MES3[+m.slice(5, 7) - 1]}</text>`).join('');
+  g += `<line x1="${X(sel)}" x2="${X(sel)}" y1="${pt}" y2="${H - pb}" stroke="var(--muted)" stroke-width="1" stroke-dasharray="3 3"/>`;
+  g += lineas.map(l => `<polyline fill="none" stroke="${cmpColor(l.s.id)}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" points="${l.pts.map((v, i) => X(i).toFixed(1) + ',' + Y(v).toFixed(1)).join(' ')}"/>`
+    + l.pts.map((v, i) => `<circle cx="${X(i).toFixed(1)}" cy="${Y(v).toFixed(1)}" r="${i === sel ? 4 : 3}" fill="${cmpColor(l.s.id)}" stroke="var(--panel)" stroke-width="2"/>`).join('')).join('');
+  g += meses.map((m, i) => `<rect x="${X(i) - (W - pl - pr) / (meses.length - 1) / 2}" y="0" width="${(W - pl - pr) / (meses.length - 1)}" height="${H}" fill="transparent" style="cursor:pointer" onclick="cmpSelMes(${i})" onmouseenter="cmpSelMes(${i})"/>`).join('');
+  const m = meses[sel], mt = cmpMayus(CMP_MESES[+m.slice(5, 7) - 1]) + ' ' + m.slice(0, 4);
+  return `<div class="cmp-m"><div class="cmp-mt"><span>📈 Facturación de los últimos 6 meses</span><small>tocá un mes</small></div>
+    <div class="cmp-leg">${lineas.map(l => `<span><i style="background:${cmpColor(l.s.id)}"></i>${xe(l.s.nombre)}</span>`).join('')}</div>
+    <svg class="cmp-svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="Facturación mensual por sede">${g}</svg>
+    <div class="cmp-tip"><b>${mt}</b> · ${lineas.map(l => `${xe(l.s.nombre)} ${formatearMonto(l.pts[sel])}`).join(' · ')}</div></div>`;
+}
+function cmpSelMes(i){ if (CMP.sel === i) return; CMP.sel = i; const b = document.getElementById('cmpGraf'); if (b) b.innerHTML = cmpGrafico(cmpFilas()); }
+function cmpTabla(f){
+  const d = CMP.data, g = d.gastos_por_sede, horario = d.modo === 'horario';
+  const T = k => f.reduce((s, x) => s + (Number(x[k]) || 0), 0);
+  const fila = (x, tot) => {
+    const oc = horario ? null : cmpPct(x.reservados, x.capacidad), as = cmpPct(x.presentes, x.marcados), res = x.facturado - x.gastos;
+    return `<tr class="${tot ? 'tot' : ''}"><td>${tot ? 'Total' : xe(x.nombre)}</td><td>${x.activos}</td><td>${x.altas}</td><td>${x.bajas}</td><td>${formatearMonto(x.facturado)}</td><td>${x.vencidos}</td><td>${oc == null ? '—' : oc + '%'}</td><td>${as == null ? '—' : as + '%'}</td>`
+      + (g ? `<td>${formatearMonto(x.gastos)}</td><td class="${res < 0 ? 'neg' : ''}">${formatearMonto(res)}</td>` : '') + `</tr>`;
+  };
+  const tot = { activos: T('activos'), altas: T('altas'), bajas: T('bajas'), facturado: T('facturado'), vencidos: T('vencidos'), reservados: T('reservados'), capacidad: T('capacidad'), presentes: T('presentes'), marcados: T('marcados'), gastos: T('gastos') };
+  return `<details class="plegable" style="margin-top:16px;"><summary>🔢 Ver todos los números en tabla</summary><div class="cmp-tw"><table class="cmp-t"><thead><tr><th>Sede</th><th>Socios activos</th><th>Altas</th><th>Bajas</th><th>Facturado</th><th>Cuotas vencidas</th><th>Ocupación</th><th>Asistencia</th>${g ? '<th>Gastos</th><th>Resultado</th>' : ''}</tr></thead><tbody>${f.map(x => fila(x)).join('')}${fila(tot, true)}</tbody></table></div></details>`;
+}
+function cmpPintar(){
+  const box = document.getElementById('cmpBox'), body = document.getElementById('cmpBody'); if (!box || !body) return;
+  if (!(sucEsAdminGlobal() && sucMulti())){ box.style.display = 'none'; return; }
+  box.style.display = '';
+  if (CMP.ok === false){ body.innerHTML = '<div class="rpx-ban">⚠️ Falta activar esta función en la base de datos. Corré <b>v147-comparativo-sedes.sql</b> en Supabase (SQL Editor) y recargá la app.</div>'; return; }
+  if (CMP.ok !== true || !CMP.data){ body.innerHTML = `<div class="muted">${CMP.err ? 'No se pudo cargar el comparativo: ' + xe(CMP.err) : 'Cargando…'}</div>` + (CMP.err ? '<button type="button" class="secondary" style="margin-top:8px;" onclick="cmpCargar()">Reintentar</button>' : ''); return; }
+  const d = CMP.data, f = cmpFilas(), horario = d.modo === 'horario';
+  const conSedes = f.filter(s => s.id);
+  const chips = `<div class="suc-chips"><button type="button" class="suc-chip ${CMP.mes === 0 ? 'on' : ''}" onclick="cmpMes(0)">Este mes</button><button type="button" class="suc-chip ${CMP.mes === -1 ? 'on' : ''}" onclick="cmpMes(-1)">Mes anterior</button></div>`;
+  const top = `<div class="cmp-top"><b>${cmpMesTxt()}</b>${chips}</div>`
+    + (CMP.mes !== 0 ? '<div class="cmp-nota">Socios activos, cuotas vencidas y ocupación son de hoy; el resto es del mes elegido.</div>' : '');
+  const sinAsignar = f.find(s => !s.id);
+  if (!conSedes.some(s => s.activos + s.inactivos > 0)){
+    body.innerHTML = top + `<div class="cmp-lect">📍 Todavía no hay socios asignados a una sede. Elegí la sede en el alta de cada alumno o cambiala desde su ficha, y acá vas a ver la comparación.</div>`; return;
+  }
+  const act = f.map(s => ({ s, v: s.activos, txt: String(s.activos), extra: `<small>${s.altas ? '+' + s.altas : ''}${s.altas && s.bajas ? ' · ' : ''}${s.bajas ? '−' + s.bajas : ''}</small>` }));
+  const fac = f.map(s => ({ s, v: s.facturado, txt: formatearMonto(s.facturado), extra: cmpDelta(s.facturado, s.facturado_ant) }));
+  const ven = f.map(s => ({ s, v: s.vencidos, txt: String(s.vencidos), extra: `<small>de ${s.activos}</small>` }));
+  const ocu = horario ? [] : f.filter(s => s.id).map(s => ({ s, p: cmpPct(s.reservados, s.capacidad) })).filter(x => x.p != null).map(x => ({ s: x.s, v: x.p, txt: x.p + '%', extra: `<small>${x.s.reservados} de ${x.s.capacidad}</small>` }));
+  const asi = f.map(s => ({ s, p: cmpPct(s.presentes, s.marcados) })).filter(x => x.p != null).map(x => ({ s: x.s, v: x.p, txt: x.p + '%', extra: `<small>${x.s.presentes} de ${x.s.marcados}</small>` }));
+  const sum = k => f.reduce((a, s) => a + (Number(s[k]) || 0), 0);
+  let h = top + cmpLectura(conSedes);
+  h += cmpBloque('💰 Facturado', cmpMesTxt(), fac, ['Total', formatearMonto(sum('facturado'))]);
+  h += `<div id="cmpGraf">${cmpGrafico(f)}</div>`;
+  h += cmpBloque('👥 Socios activos', 'hoy · altas y bajas del mes', act, ['Total', String(sum('activos'))]);
+  h += cmpBloque('⚠️ Cuotas vencidas', 'socios activos con la cuota vencida', ven, ['Total', String(sum('vencidos'))]);
+  if (ocu.length) h += cmpBloque('🏋️ Ocupación de turnos', 'últimos 28 días · reservas sobre cupos', ocu, null);
+  if (asi.length) h += cmpBloque('✅ Asistencia', 'presentes sobre turnos con asistencia marcada', asi, null);
+  if (d.gastos_por_sede){
+    const res = f.map(s => ({ s, v: s.facturado - s.gastos, txt: formatearMonto(s.facturado - s.gastos), extra: `<small>gastos ${formatearMonto(s.gastos)}</small>` }));
+    h += cmpBloque('🧾 Resultado (facturado − gastos)', 'gastos y pagos a profesores por caja', res.map(x => Object.assign(x, { v: Math.max(0, x.v) })), ['Total', formatearMonto(sum('facturado') - sum('gastos'))]);
+  }else if (modOn('finanzas')){
+    h += `<div class="cmp-nota" style="margin-top:14px;">Para ver gastos y resultado por sede, activá las cajas por sede en Finanzas → Cajas.</div>`;
+  }
+  if (sinAsignar && sinAsignar.activos + sinAsignar.inactivos > 0) h += `<div class="cmp-nota" style="margin-top:10px;">⚪ ${sinAsignar.activos + sinAsignar.inactivos} socio(s) todavía no tienen sede asignada (figuran como “Sin sede asignada”).</div>`;
+  h += cmpTabla(f);
+  body.innerHTML = h;
 }
 
 // ---------- (v144) CAJAS POR SEDE: cada sede con sus cajas (Efectivo, Banco, Tarjetas, Mercado Pago + las que agregue el admin) ----------
@@ -17615,6 +17834,11 @@ const clHoy = () => (new Date().getDay() + 6) % 7;
 const clTm = t => { const [h, m] = String(t).split(':').map(Number); return h * 60 + (m || 0); };
 const clHM = t => String(t).slice(0, 5);
 function clColor(c){ let h = 0; const s = String(c.id); for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0; return CL_PAL[h % CL_PAL.length]; }
+// (v146) Clases por sede: CL.rowsAll = todas las que ve este usuario; CL.rows = las de la sede elegida (+ las de "todas las sedes").
+function clTodas(){ return CL.rowsAll || CL.rows; }
+function clSedeFiltro(){ if (!sucMulti() || CL.sucCol !== true) return ''; return CL.rolAlumno ? (sucAluSel(clAluId()) || '') : (sucSel() || ''); }
+function clAplicarSede(){ const f = clSedeFiltro(), all = clTodas(); CL.rows = f ? all.filter(c => !c.suc || c.suc === f) : all; }
+function clSedeTxt(c){ if (!sucMulti() || CL.sucCol !== true) return ''; return c.suc ? (sucNombre(c.suc) || '') : 'Todas las sedes'; }
 function clDelDia(d){ return CL.rows.filter(c => c.dias.includes(d)).sort((a, b) => clTm(a.ini) - clTm(b.ini) || clTm(a.fin) - clTm(b.fin)); }
 function clRango(){
   if (!CL.rows.length) return [8, 20];
@@ -17636,7 +17860,8 @@ function clBloque(o, s, d){
   const falta = CL.res === true && !c.cupo && !ro;   // clase cargada antes de v103: al admin se le pide el cupo
   // (v104) varias clases a la misma hora: cada una queda angosta, así que se muestra en formato compacto
   const cx = CL.res === true && (esMovilB3() ? o.n >= 3 : o.n >= 2);
-  const tip = `${c.ini}–${c.fin} · ${c.nombre}${c.prof ? ' · ' + c.prof : ' · Profesor a confirmar'}${c.nota ? ' · ' + c.nota : ''}${res ? ' · ' + est.t : ''}${falta ? ' · Falta cargar el cupo' : ''}`;
+  const stx = clSedeTxt(c);   // (v146)
+  const tip = `${c.ini}–${c.fin} · ${c.nombre}${c.prof ? ' · ' + c.prof : ' · Profesor a confirmar'}${c.nota ? ' · ' + c.nota : ''}${stx ? ' · 📍 ' + stx : ''}${res ? ' · ' + est.t : ''}${falta ? ' · Falta cargar el cupo' : ''}`;
   const chip = res ? `<span class="cl-cp ${est.k}">${cx ? clEstadoCorto(c, iso) : est.t}</span>` : (falta ? `<span class="cl-cp full">${cx ? '⚠ Cupo' : '⚠ Sin cupo'}</span>` : '');
   let body;
   if (h < (chip && !cx ? 52 : 34)) body = `<div class="n"><span class="t">${c.ini}</span> ${ejEsc(c.nombre)} ${chip}</div>`;
@@ -17649,6 +17874,7 @@ function clBloque(o, s, d){
     if (chip) body += `<div class="cpl">${chip}${res && iso !== clIso(clFechaBase(d)) ? `<span class="cl-prox">${clFechaTxt(iso)}</span>` : ''}</div>`;
     if (h >= (chip ? 70 : 50)) body += `<div class="p ${c.prof ? '' : 'tbc'}">👤 ${ejEsc(c.prof || 'A confirmar')}</div>`;
     if (h >= (chip ? 104 : 84) && c.nota) body += `<div class="p">📝 ${ejEsc(c.nota)}</div>`;
+    if (stx && !clSedeFiltro() && h >= (chip ? 88 : 68) + (c.nota ? 34 : 0)) body += `<div class="p">📍 ${ejEsc(stx)}</div>`;   // (v146) con "todas las sedes" cada clase dice la suya
   }
   const click = res ? `onclick="event.stopPropagation();${CL.rolAlumno ? 'clAluAbrir' : 'clListaAbrir'}('${c.id}','${iso}')"` : (ro ? '' : `onclick="clEditar('${c.id}')"`);
   return `<div class="cl-tb ${!res && ro ? 'ro' : ''} ${res ? 'res ' + est.k : ''} ${cx ? 'cx' : ''}" title="${ejEsc(tip)}" style="--c:${clColor(c)};top:${top}px;height:${h}px;left:calc(${o.l * w}% + 2px);width:calc(${w}% - 4px)" ${click}>${body}</div>`;
@@ -17679,8 +17905,8 @@ function clCalendarioHtml(){
 function clRenderEn(){
   const cont = document.getElementById(CL.contId); if (!cont) return;
   if (CL.contId === 'aluTurnosClases'){   // (v105) pestaña Clases del alumno: lista por día
-    const hay = CL.ok !== false && CL.res === true && CL.rows.some(c => c.cupo);
-    cont.innerHTML = hay ? clListaAluHtml() : '';
+    const hay = CL.ok !== false && CL.res === true && clTodas().some(c => c.cupo);
+    cont.innerHTML = hay ? ((sucMulti() && CL.sucCol === true ? sucAluBarraHtml(clAluId()) : '') + clListaAluHtml()) : '';   // (v146) + selector de sede
     const mm = document.getElementById('aluMisClasesTurnos'); if (mm) mm.innerHTML = hay ? clMisHtml() : '';
     aluTabsPintar();
     return;
@@ -17706,30 +17932,42 @@ function clRenderEn(){
     info = `<div class="cl-banner">Tocá una clase para ver los anotados y tomar asistencia, un lugar vacío para crear una ahí, o <b>+ Nueva clase</b>. Los alumnos se anotan desde su app y, con el cupo lleno, pasan a lista de espera. Las reglas (cancelación, clases por día, cuota) están en <b>Mi gimnasio → Clases y reservas</b>.</div>`
       + (sin ? `<div class="cl-banner cl-warn">⚠️ <b>${sin === 1 ? 'Hay 1 clase sin cupo' : 'Hay ' + sin + ' clases sin cupo'}.</b> Los alumnos no pueden anotarse hasta que se lo cargues: tocá la clase marcada “Sin cupo”.</div>` : '');
   }
+  const sedeBar = (CL.rolAlumno && sucMulti() && CL.sucCol === true) ? sucAluBarraHtml(clAluId()) : '';   // (v146)
+  const sedeInfo = (!CL.rolAlumno && sucMulti() && CL.sucCol === true) ? (clSedeFiltro() ? `<div class="cl-banner cl-sedeinfo">📍 <b>${ejEsc(sucNombre(clSedeFiltro()))}</b> · se muestran las clases de esta sede y las que se dan en todas las sedes.</div>` : `<div class="cl-banner cl-sedeinfo">📍 Mostrando <b>todas las sedes</b>. Cada clase indica su sede; elegí una arriba para ver solo esa.</div>`) : '';
   const ocErr = CL.ocErr ? `<div class="cl-banner">⚠️ No se pudo cargar la ocupación de las clases. Revisá la conexión y volvé a entrar a esta pantalla.</div>` : '';
-  cont.innerHTML = `<div class="${movil ? 'cl-movil' : ''}" id="clWrap">${aviso}${CL.ok === false ? '' : info + ocErr + (CL.rolAlumno ? clMisHtml() : '') + clCalendarioHtml()}</div>`;
+  cont.innerHTML = `<div class="${movil ? 'cl-movil' : ''}" id="clWrap">${aviso}${CL.ok === false ? '' : info + sedeInfo + ocErr + sedeBar + (CL.rolAlumno ? clMisHtml() : '') + clCalendarioHtml()}</div>`;
 }
 async function clCargar(contId, ro, rolAlumno, silencioso){
   CL.contId = contId; CL.ro = ro; CL.rolAlumno = !!rolAlumno;
   const cont = document.getElementById(contId); if (!cont) return;
   if (!silencioso) cont.innerHTML = '<div class="muted">Cargando clases...</div>';
-  const sel = conCupo => `clases?select=id,nombre,dias,hora_inicio,hora_fin,profesor_id,nota${conCupo ? ',cupo' : ''},profesores(nombre)&order=hora_inicio.asc`;
+  const sel = (conCupo, conSuc) => `clases?select=id,nombre,dias,hora_inicio,hora_fin,profesor_id,nota${conCupo ? ',cupo' : ''}${conSuc ? ',sucursal_id' : ''},profesores(nombre)&order=hora_inicio.asc`;
+  // (v146) con sedes se pide también clases.sucursal_id; si la columna no existe todavía (SQL sin correr) sigue como antes
+  const pedir = async conCupo => {
+    if (CL.sucCol !== false && sucOn() && SUC.ok === true){
+      try{ const r = await sb(sel(conCupo, true)); CL.sucCol = true; return r; }
+      catch(e){ if (/sucursal_id/i.test(String(e.message || '')) && /42703|does not exist/i.test(String(e.message || ''))) CL.sucCol = false; else throw e; }
+    }
+    return sb(sel(conCupo, false));
+  };
   try{
     let rows;
-    if (CL.res === false) rows = await sb(sel(false));
+    if (CL.res === false) rows = await pedir(false);
     else {
       // (v103) la columna cupo existe solo si se corrió clases-reservas.sql; si no, todo sigue como antes
-      try{ rows = await sb(sel(true)); CL.res = true; }
-      catch(e){ if (/cupo|42703/i.test(String(e.message || ''))){ CL.res = false; rows = await sb(sel(false)); } else throw e; }
+      try{ rows = await pedir(true); CL.res = true; }
+      catch(e){ if (/cupo|42703/i.test(String(e.message || ''))){ CL.res = false; rows = await pedir(false); } else throw e; }
     }
-    CL.rows = (rows || []).map(r => ({ id: r.id, nombre: r.nombre, dias: (r.dias || []).map(Number), ini: clHM(r.hora_inicio), fin: clHM(r.hora_fin), profId: r.profesor_id || '', prof: (r.profesores && r.profesores.nombre) || '', nota: r.nota || '', cupo: r.cupo || null }));
+    CL.rows = (rows || []).map(r => ({ id: r.id, nombre: r.nombre, dias: (r.dias || []).map(Number), ini: clHM(r.hora_inicio), fin: clHM(r.hora_fin), profId: r.profesor_id || '', prof: (r.profesores && r.profesores.nombre) || '', nota: r.nota || '', cupo: r.cupo || null, suc: r.sucursal_id || null }));
+    CL.rowsAll = CL.rows;
     CL.ok = true;
   }catch(e){
-    CL.rows = [];
+    CL.rows = []; CL.rowsAll = [];
     if (/clases|42P01|PGRST205|does not exist|schema cache/i.test(String(e.message || ''))) CL.ok = false;
     else { cont.innerHTML = `<div class="empty">No se pudieron cargar las clases: ${ejEsc(e.message || e)}</div>`; return; }
   }
   await Promise.all([rpxExtrasCargar(), clOcCargar()]);   // (v111) lugar y suspensiones, junto con la ocupación
+  clAplicarSede();   // (v146)
   clRenderEn();
 }
 function clIniciarStaff(){
@@ -17747,14 +17985,18 @@ function clSlot(ev, d, s){
 }
 function clEditar(id, pre){
   if (PERFIL_ACTUAL?.rol !== 'admin') return;
-  const c = id ? CL.rows.find(x => String(x.id) === String(id)) : Object.assign({ id: null, nombre: '', dias: [], ini: '18:00', fin: '19:00', profId: '', nota: '', cupo: null }, pre || {});
+  const c = id ? clTodas().find(x => String(x.id) === String(id)) : Object.assign({ id: null, nombre: '', dias: [], ini: '18:00', fin: '19:00', profId: '', nota: '', cupo: null, suc: (sucMulti() && CL.sucCol === true) ? sucDefault() : null }, pre || {});
   if (!c) return;
+  if (id && sucAdminSede() && CL.sucCol === true && !c.suc){ toast('Esta clase se da en todas las sedes: la edita el administrador general.', true); return; }   // (v146)
+  const conSede = sucMulti() && CL.sucCol === true;
+  const selSede = conSede ? `<div class="field"><label>📍 Sede</label><select id="clSede">${sucAdminSede() ? '' : `<option value="" ${!c.suc ? 'selected' : ''}>Todas las sedes</option>`}${sucOptsExacto(c.suc || '')}</select></div>` : '';
   CL.EC = JSON.parse(JSON.stringify(c));
   const profs = (PROFESORES_CACHE || []).filter(p => p.activo !== false);
   const m = document.getElementById('clMdl'), movil = esMovilB3();
   const selProf = `<select id="clProf"><option value="">Sin profesor asignado</option>${profs.map(p => `<option value="${p.id}" ${String(c.profId) === String(p.id) ? 'selected' : ''}>${ejEsc(p.nombre)}</option>`).join('')}</select>`;
   m.innerHTML = `<div class="cl-mh ${movil ? 'movil' : ''}" id="clMh"><h3>${id ? 'Editar clase' : 'Nueva clase'}</h3><span class="hint">⠿ arrastrá para mover</span><button type="button" class="ghost sm" onclick="clCerrar()" aria-label="Cerrar">✕</button></div>
     <div class="field"><label>Nombre de la clase</label><input id="clNom" value="${ejEsc(c.nombre)}" placeholder="ej: Funcional, Spinning, Yoga"></div>
+    ${selSede}
     <div class="field"><label>Días en que se repite</label><div class="cl-dchips" id="clDias">${CL_DL.map((l, d) => `<span class="${CL.EC.dias.includes(d) ? 'on' : ''}" onclick="clTogDia(${d})">${l}</span>`).join('')}</div></div>
     <div class="cl-row2"><div class="field"><label>Desde</label><input type="time" id="clIni" value="${c.ini}"></div><div class="field"><label>Hasta</label><input type="time" id="clFin" value="${c.fin}"></div></div>
     ${CL.res === true
@@ -17784,6 +18026,7 @@ async function clGuardar(id){
   if (!ini || !fin || fin <= ini){ toast('La hora de fin tiene que ser después de la de inicio.', true); return; }
   const body = { nombre, dias: CL.EC.dias.slice().sort((a, b) => a - b), hora_inicio: ini, hora_fin: fin, profesor_id: document.getElementById('clProf').value || null, nota: document.getElementById('clNota').value.trim() || null };
   const lg = rpxEditorLeer(); if (lg === false) return; if (lg) Object.assign(body, lg);   // (v111) punto de encuentro
+  const inSede = document.getElementById('clSede'); if (inSede) body.sucursal_id = inSede.value || null;   // (v146) sede de la clase (vacío = todas)
   const inCupo = document.getElementById('clCupo');
   if (CL.res === true && inCupo){   // (v103) toda clase lleva cupo
     const cv = inCupo.value.trim();
@@ -17878,8 +18121,8 @@ function clFechaTxt(iso, largo){
   return (largo ? CL_DIAS_L[k] : CL_DIAS[k]) + ' ' + String(dd).padStart(2, '0') + '/' + String(m).padStart(2, '0');
 }
 function clOc(id, iso){ return (CL.oc || {})[id + '|' + iso] || { a: 0, e: 0, miId: null, mi: null, pos: null }; }
-function clConCupo(){ return CL.res === true && CL.rows.some(c => c.cupo); }   // hay al menos una clase que se reserva
-function clClase(id){ return CL.rows.find(x => String(x.id) === String(id)); }
+function clConCupo(){ return CL.res === true && clTodas().some(c => c.cupo); }   // hay al menos una clase que se reserva
+function clClase(id){ return clTodas().find(x => String(x.id) === String(id)); }   // (v146) busca entre todas, no solo la sede elegida
 async function clOcCargar(){
   CL.oc = {}; CL.ocErr = false;
   if (CL.res !== true) return;
@@ -17954,7 +18197,7 @@ function clAluAbrir(id, iso){
   const ov = overlayGenerico('clResOv', 420);
   ov.querySelector('.modal-box').innerHTML = `
     <div class="row" style="justify-content:space-between; align-items:flex-start; gap:10px; flex-wrap:nowrap;"><h3 style="margin:0;">${ejEsc(c.nombre)}</h3><button type="button" class="ghost cl-sm" onclick="cerrarOverlayGenerico('clResOv')" aria-label="Cerrar">✕</button></div>
-    <div class="cl-det"><div>📅 <b>${clFechaTxt(iso, true)}</b> · ${c.ini} a ${c.fin}</div><div>👤 ${ejEsc(c.prof || 'Profesor a confirmar')}</div>${pubLugarHtml(c) ? `<div>${pubLugarHtml(c)}</div>` : ''}${c.nota ? `<div>📝 ${ejEsc(c.nota)}</div>` : ''}</div>
+    <div class="cl-det"><div>📅 <b>${clFechaTxt(iso, true)}</b> · ${c.ini} a ${c.fin}</div><div>👤 ${ejEsc(c.prof || 'Profesor a confirmar')}</div>${clSedeTxt(c) ? `<div>📍 ${ejEsc(clSedeTxt(c))}</div>` : ''}${pubLugarHtml(c) ? `<div>${pubLugarHtml(c)}</div>` : ''}${c.nota ? `<div>📝 ${ejEsc(c.nota)}</div>` : ''}</div>
     ${sp ? '' : clCupoHtml(c, o)}${estado}
     <div class="row" style="gap:8px; margin-top:14px;">${btn}<button type="button" class="ghost" style="margin-left:auto;" onclick="cerrarOverlayGenerico('clResOv')">Cerrar</button></div>
     ${!sp && !empezo && !(o.mi === 'anotado' && tarde) ? `<div class="muted" style="font-size:12px; margin-top:10px;">${o.mi === 'espera' ? 'De la lista de espera podés salir cuando quieras.' : 'Podés cancelar ' + lim + '.'}</div>` : ''}`;
@@ -18024,7 +18267,7 @@ function clListaPintar(){
     <button type="button" class="ghost cl-sm" onclick="clListaQuitar('${r.id}')">Quitar</button></div>`;
   const cupo = c.cupo || 0, pasada = L.iso < hoy;
   ov.querySelector('.modal-box').innerHTML = `
-    <div class="row" style="justify-content:space-between; align-items:flex-start; gap:10px; flex-wrap:nowrap;"><div><h3 style="margin:0;">${ejEsc(c.nombre)}</h3><div class="muted" style="font-size:13px;">${c.ini} a ${c.fin}${c.prof ? ' · 👤 ' + ejEsc(c.prof) : ''}</div></div><button type="button" class="ghost cl-sm" onclick="cerrarOverlayGenerico('clListaOv')" aria-label="Cerrar">✕</button></div>
+    <div class="row" style="justify-content:space-between; align-items:flex-start; gap:10px; flex-wrap:nowrap;"><div><h3 style="margin:0;">${ejEsc(c.nombre)}</h3><div class="muted" style="font-size:13px;">${c.ini} a ${c.fin}${c.prof ? ' · 👤 ' + ejEsc(c.prof) : ''}${clSedeTxt(c) ? ' · 📍 ' + ejEsc(clSedeTxt(c)) : ''}</div></div><button type="button" class="ghost cl-sm" onclick="cerrarOverlayGenerico('clListaOv')" aria-label="Cerrar">✕</button></div>
     <div class="cl-nav"><button type="button" class="ghost cl-sm" onclick="clListaMover(-1)" aria-label="Fecha anterior">‹</button><b>${clFechaTxt(L.iso, true)}</b>${L.iso === hoy ? '<span class="pill">hoy</span>' : ''}<button type="button" class="ghost cl-sm" onclick="clListaMover(1)" aria-label="Fecha siguiente">›</button></div>
     ${rpxSuspAviso(c, L.iso)}
     ${L.err ? `<div class="cl-est">No se pudo cargar la lista: ${ejEsc(L.err)}</div>` : `
@@ -18111,7 +18354,7 @@ function salaFechaTxt(iso){ const t = fechaLegible(iso); return t.charAt(0).toUp
 // ---------- Alumno: pestañas Sala / Clases ----------
 function aluTabsPintar(){
   const tabs = document.getElementById('aluTurnosTabs'); if (!tabs) return;
-  const hayClases = CL.contId === 'aluTurnosClases' && CL.res === true && modOn('clases') && CL.rows.some(c => c.cupo);
+  const hayClases = CL.contId === 'aluTurnosClases' && CL.res === true && modOn('clases') && clTodas().some(c => c.cupo);
   if (!hayClases) ALU_TAB = 'sala';
   tabs.style.display = hayClases ? '' : 'none';
   const nom = SALA.ok === true ? (SALA.nombre || 'Musculación') : 'Turnos';
@@ -18231,7 +18474,7 @@ function clListaAluHtml(){
       <div class="sl-h">${c.ini}<small>a ${c.fin}</small></div>
       <div class="sl-m" onclick="clAluAbrir('${c.id}','${iso}')" style="cursor:pointer;"><div class="sl-n">${ejEsc(c.nombre)}</div>${sp ? '' : `<div class="sl-bar ${lleno ? 'full' : ''}"><i style="width:${Math.min(100, oc.a / c.cupo * 100)}%"></i></div>`}
         <div class="sl-c">${sp ? `<b>${sp.motivo ? ejEsc(sp.motivo) : 'Sin clase este día'}</b>` : lleno ? `<b>Completa</b><span class="sl-lug"> · ${oc.a} de ${c.cupo}</span>` : `Quedan <b>${quedan}</b> de ${c.cupo}<span class="sl-lug"> lugares</span>`}</div>
-        <div class="sl-p">👤 ${ejEsc(c.prof || 'Profesor a confirmar')}${c.nota ? ' · 📝 ' + ejEsc(c.nota) : ''}</div></div>
+        <div class="sl-p">👤 ${ejEsc(c.prof || 'Profesor a confirmar')}${c.nota ? ' · 📝 ' + ejEsc(c.nota) : ''}${(!clSedeFiltro() && clSedeTxt(c)) ? ' · 📍 ' + ejEsc(clSedeTxt(c)) : ''}</div></div>
       <div class="sl-a">${acc}</div></div>`;
   }).join('');
   return `<div class="card"><div class="sec-t">Anotarte a una clase</div>
