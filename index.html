@@ -219,6 +219,14 @@ if ('serviceWorker' in navigator) window.addEventListener('load', function(){ tr
   .suc-chips::-webkit-scrollbar{ display:none; }
   .suc-chip{ font-family:inherit; font-size:13.5px; font-weight:700; padding:8px 16px; border-radius:999px; background:var(--panel2); color:var(--muted); border:1px solid var(--border); cursor:pointer; white-space:nowrap; }
   .suc-chip.on{ background:var(--accent); color:#fff; border-color:var(--accent); }
+  /* (v143) el alumno elige sede al reservar */
+  .suc-alu{ margin:0 0 14px; padding:12px; border:1px solid var(--border); border-radius:14px; background:var(--panel2); }
+  .suc-alu-t{ font-size:12.5px; font-weight:800; color:var(--muted); margin-bottom:8px; }
+  .suc-alu .suc-chips{ flex-wrap:wrap; overflow:visible; }
+  .suc-alu-det{ margin-top:10px; }
+  .suc-alu-det summary{ cursor:pointer; font-weight:700; font-size:13.5px; color:var(--accent-text); }
+  .suc-alu-det .suc-dir{ margin-top:8px; }
+  .suc-sede-conf{ text-align:left; margin:10px 0 14px; padding:10px; border:1px solid var(--border); border-radius:12px; background:var(--panel2); font-size:13px; }
   .suc-lista{ display:grid; gap:12px; }
   .suc-card{ border:1px solid var(--border); border-radius:14px; padding:14px; background:var(--panel2); }
   .suc-card.off{ opacity:.65; }
@@ -2422,6 +2430,7 @@ if ('serviceWorker' in navigator) window.addEventListener('load', function(){ tr
                   <option value="">-- sin plan por ahora --</option>
                 </select>
               </div>
+              <div class="field" id="nuevoAlumnoSedeWrap" style="flex:1; min-width:160px; display:none;"><label>📍 Sede</label><select id="nuevoAlumnoSede"></select></div>
               <div class="muted" style="align-self:end; padding-bottom:10px;">La forma de pago y el monto se cargan aparte, en "💰 Finanzas", el día que el alumno pague.</div>
             </div>
           </div>
@@ -3963,6 +3972,7 @@ if ('serviceWorker' in navigator) window.addEventListener('load', function(){ tr
   <div class="modal-box">
     <h3>Confirmar turno</h3>
     <div class="conf-turno"><div class="hora" id="modalTurnoHora"></div><div class="det" id="modalTurnoDetalle"></div></div>
+    <div class="suc-sede-conf" id="modalTurnoSede" style="display:none;"></div>
     <p id="modalTurnoTexto" style="display:none;">¿Confirmás la reserva?</p>
     <div class="row">
       <button class="btn-cancelar" onclick="cerrarModalTurno()">Cancelar</button>
@@ -5138,7 +5148,7 @@ function atlIniciarAlu(){
   atlCargarVista('aluAtletismoContenido', id || '');
 }
 
-const APP_VERSION = 142;
+const APP_VERSION = 143;
 let ES_PERSONAL = false;   // (v132) cuenta personal (gimnasios.tipo = 'personal'); se calcula en perAplicar()
 // (v96) Fecha de la última actualización: se cambia junto con APP_VERSION en cada entrega. Se muestra en la
 // pantalla de inicio y en el menú de cuenta ("v94 · actualizada el 5/10/2026").
@@ -9857,6 +9867,7 @@ async function sucCambiar(id){
   try{
     if (vis('Agenda')) renderAgenda();
     if (vis('Profesores')){ await sucRecargarProfSedes(); renderListaProfesores(); }
+    if (vis('Alumnos')) renderListaAlumnos();
     if (vis('Dashboard')) cargarDashboardAdmin();
   }catch(e){ console.error(e); }
   toast(SUC.sel ? '📍 ' + sucNombre(SUC.sel) : '📍 Todas las sedes');
@@ -9880,6 +9891,48 @@ function sucTarjetaHtml(s, conMapa){
     ${s.telefono ? `<div class="muted" style="font-size:13px;">📞 ${xe(s.telefono)}</div>` : ''}
     ${conMapa && sucTieneMapa(s) ? `<iframe class="suc-mapa" loading="lazy" referrerpolicy="no-referrer" title="Mapa de ${xe(s.nombre)}" src="${sucMapaSrc(s)}"></iframe>` : ''}
     ${url ? `<a class="suc-ir" href="${xe(url)}" target="_blank" rel="noopener">🧭 Cómo llegar</a>` : ''}</div>`;
+}
+// ---------- (v143) Sucursales parte 2: sede base del alumno + el alumno elige sede y ve dirección y mapa ----------
+// El alumno ve el selector solo con 2+ sedes activas. Arranca en su sede base; "Todas" muestra los turnos de todas.
+const SUCALU = { sel: undefined };   // undefined = todavía no eligió (arranca en su sede base) · '' = todas · id = esa sede
+function xselAlu(){ return XSEL_ALU + ((sucOn() && SUC.ok === true) ? ',sucursal_id' : ''); }
+function sucAluBase(alumnoId){
+  const a = (typeof buscarAlumnoCache === 'function') ? buscarAlumnoCache(alumnoId) : null;
+  return (a && a.sucursal_id && sucActivas().some(s => s.id === a.sucursal_id)) ? a.sucursal_id : '';
+}
+function sucAluSel(alumnoId){
+  if (!sucMulti()) return '';
+  if (SUCALU.sel === undefined) SUCALU.sel = sucAluBase(alumnoId);
+  if (SUCALU.sel && !sucActivas().some(s => s.id === SUCALU.sel)) SUCALU.sel = '';
+  return SUCALU.sel;
+}
+function sucAluElegir(id){ SUCALU.sel = id || ''; renderHorasAlu(); }
+function sucAluBarraHtml(alumnoId){
+  const sel = sucAluSel(alumnoId), s = sel ? sucPorId(sel) : null;
+  const chips = `<button type="button" class="suc-chip ${!sel ? 'on' : ''}" onclick="sucAluElegir('')">Todas</button>`
+    + sucActivas().map(x => `<button type="button" class="suc-chip ${sel === x.id ? 'on' : ''}" onclick="sucAluElegir('${x.id}')">${xe(x.nombre)}</button>`).join('');
+  return `<div class="suc-alu"><div class="suc-alu-t">📍 Elegí la sede</div><div class="suc-chips">${chips}</div>`
+    + (s ? `<details class="suc-alu-det"><summary>Dirección y mapa de ${xe(s.nombre)}</summary>${sucTarjetaHtml(s, true)}</details>` : '')
+    + `</div>`;
+}
+function sucOptsExacto(sel){   // como sucOpts pero sin forzar una sede por defecto ("sin sede" queda en blanco)
+  const act = sucActivas();
+  const extra = (sel && !act.some(s => s.id === sel) && sucPorId(sel)) ? [sucPorId(sel)] : [];
+  return act.concat(extra).map(s => `<option value="${s.id}" ${s.id === sel ? 'selected' : ''}>${xe(s.nombre)}${s.activo ? '' : ' (inactiva)'}</option>`).join('');
+}
+function sucAltaAlumnoPintar(){
+  const w = document.getElementById('nuevoAlumnoSedeWrap'); if (!w) return;
+  const ver = sucMulti(); w.style.display = ver ? '' : 'none';
+  if (ver) document.getElementById('nuevoAlumnoSede').innerHTML = sucOpts('');
+}
+async function sucCambiarSedeAlumno(alumnoId, val){
+  try{
+    await sb(`alumnos?id=eq.${alumnoId}`, { method:'PATCH', headers:{Prefer:'return=minimal'}, body: JSON.stringify({ sucursal_id: val || null }) });
+    [ALUMNOS_CACHE, ALUMNOS_LISTA_CACHE].forEach(L => { const a = (L || []).find(x => x.id === alumnoId); if (a) a.sucursal_id = val || null; });
+    if (FICHA_ALU && FICHA_ALU.a && FICHA_ALU.a.id === alumnoId) FICHA_ALU.a.sucursal_id = val || null;
+    toast('Sede actualizada ✓');
+    renderListaAlumnos();
+  }catch(e){ toast('Error actualizando la sede: ' + extraerMensajeError(e), true); }
 }
 function sucParseMapsUrl(u){
   const s = String(u || '');
@@ -12813,7 +12866,7 @@ async function cargarPersonas(){
   // esto devuelve listas vacías directamente desde la base (ya no hay acceso anónimo).
   const filtroGym = PERFIL_ACTUAL ? `&gimnasio_id=eq.${PERFIL_ACTUAL.gimnasio_id}` : '';
   const [alumnos, profesores] = await Promise.all([
-    sb(`alumnos?select=id,nombre,tipo,tipo_alumno_id,gimnasio_id,plan_id,altura_cm,peso_kg,objetivo,telefono,email,direccion,dni,perfil_id,equipo_id,posicion,foto_url,fecha_nacimiento,sexo,deporte_disciplina,categoria_peso,equipos(nombre),alumno_categorias(categoria_id,categorias(nombre))&activo=eq.true${filtroGym}&order=nombre.asc`),
+    sb(`alumnos?select=${sucOn() && SUC.ok === true ? 'sucursal_id,' : ''}id,nombre,tipo,tipo_alumno_id,gimnasio_id,plan_id,altura_cm,peso_kg,objetivo,telefono,email,direccion,dni,perfil_id,equipo_id,posicion,foto_url,fecha_nacimiento,sexo,deporte_disciplina,categoria_peso,equipos(nombre),alumno_categorias(categoria_id,categorias(nombre))&activo=eq.true${filtroGym}&order=nombre.asc`),
     sb(`profesores?select=id,nombre,perfil_id,gimnasio_id,dni,tarifa_hora,impuesto_pct,perfiles(rol)&activo=eq.true${filtroGym}&order=nombre.asc`),
   ]);
   const optsAlu = alumnos.map(a=>`<option value="${a.id}">${a.nombre}</option>`).join('');
@@ -15395,6 +15448,7 @@ async function crearAlumno(){
   const direccion = document.getElementById('nuevoAlumnoDireccion').value.trim() || null;
   const planId = document.getElementById('nuevoAlumnoPlan').value || null;
   const fecha_nacimiento = document.getElementById('nuevoAlumnoNac').value || null;   // (v101)
+  const sedeEl = document.getElementById('nuevoAlumnoSede'); const sucursal_id = (sucMulti() && sedeEl && sedeEl.value) ? sedeEl.value : null;   // (v143)
   if (!planId && !confirm('No elegiste un plan para este alumno. Sin plan no va a poder pagar su cuota desde la app ni figurar en cobranzas.\n\n¿Crearlo igual sin plan? (Podés asignárselo después desde su ficha.)')) return;
   const btn = document.getElementById('btnCrearAlumno');
   btn.disabled = true;
@@ -15405,7 +15459,8 @@ async function crearAlumno(){
         nombre, tipo_alumno_id: tipoAlumnoId, gimnasio_id: PERFIL_ACTUAL?.gimnasio_id || null,
         altura_cm, peso_kg, objetivo: objetivo || null, telefono, email, direccion,
         plan_id: planId, dni,
-        ...(fecha_nacimiento ? { fecha_nacimiento } : {})
+        ...(fecha_nacimiento ? { fecha_nacimiento } : {}),
+        ...(sucursal_id ? { sucursal_id } : {})
       }])
     });
     document.getElementById('nuevoAlumnoNombre').value = '';
@@ -15575,7 +15630,7 @@ async function cargarListaAlumnos(){
   const filtroEstado = FILTRO_ESTADO_ALUMNOS === 'activos' ? '&activo=eq.true'
     : FILTRO_ESTADO_ALUMNOS === 'inactivos' ? '&activo=eq.false' : '';
   try{
-    ALUMNOS_LISTA_CACHE = await sb(`alumnos?select=${XSEL_ALU}${filtroEstado}${filtroGym}&order=nombre.asc`);
+    ALUMNOS_LISTA_CACHE = await sb(`alumnos?select=${xselAlu()}${filtroEstado}${filtroGym}&order=nombre.asc`);
   }catch(e){
     cont.innerHTML = `<div class="empty">Error cargando alumnos: ${xe(e.message)}</div>`;
     return;
@@ -15595,7 +15650,7 @@ async function cargarListaAlumnos(){
 function renderListaAlumnos(){
   const cont = document.getElementById('listaAlumnos');
   if (!cont) return;
-  const base = ALUMNOS_LISTA_CACHE;
+  const base = sucSel() ? ALUMNOS_LISTA_CACHE.filter(a => !a.sucursal_id || a.sucursal_id === sucSel()) : ALUMNOS_LISTA_CACHE;   // (v143) sede elegida arriba
   const q = xNorm(document.getElementById('aluBuscar')?.value || '');
   const sinN = base.filter(xSinRutina).length;
   const vencN = base.filter(a => xCuota(a).est === 'vencido').length;
@@ -15614,7 +15669,7 @@ function renderListaAlumnos(){
     const cu = xCuota(a), tipo = xTipoNombre(a), plan = xPlanNombre(a);
     return `<tr onclick="abrirFichaAlumno('${a.id}')">
       <td>${xQuien(a.nombre, a.dni ? 'DNI ' + a.dni : 'Sin DNI', false, a.foto_url)}</td>
-      <td>${xe(tipo || '—')}${a.equipos?.nombre ? ` · ${xe(a.equipos.nombre)}` : ''}<div class="x-sub">${plan ? 'Plan ' + xe(plan) : 'Sin plan'}</div></td>
+      <td>${xe(tipo || '—')}${a.equipos?.nombre ? ` · ${xe(a.equipos.nombre)}` : ''}<div class="x-sub">${plan ? 'Plan ' + xe(plan) : 'Sin plan'}${sucMulti() && a.sucursal_id && sucNombre(a.sucursal_id) ? ' · 📍 ' + xe(sucNombre(a.sucursal_id)) : ''}</div></td>
       <td>${estPill(a)}</td>
       <td class="t-${cu.cl}" style="font-weight:600;">${xe(cu.t)}</td>
       <td>${xRutinaCelda(a)}</td>
@@ -15623,14 +15678,14 @@ function renderListaAlumnos(){
   const lista = L.map(a => {
     const cu = xCuota(a), tipo = xTipoNombre(a), plan = xPlanNombre(a);
     return `<div class="x-li" onclick="abrirFichaAlumno('${a.id}')">${xAv(a.nombre, a.foto_url)}
-      <div class="mid"><div class="x-nm">${xe(a.nombre)}</div><div class="x-sub">${xe([tipo, plan ? 'Plan ' + plan : 'Sin plan'].filter(Boolean).join(' · '))}</div>${xSinRutina(a) ? '<div style="margin-top:5px"><span class="pill warn">Sin rutina</span></div>' : ''}</div>
+      <div class="mid"><div class="x-nm">${xe(a.nombre)}</div><div class="x-sub">${xe([tipo, plan ? 'Plan ' + plan : 'Sin plan', (sucMulti() && a.sucursal_id && sucNombre(a.sucursal_id)) ? '📍 ' + sucNombre(a.sucursal_id) : ''].filter(Boolean).join(' · '))}</div>${xSinRutina(a) ? '<div style="margin-top:5px"><span class="pill warn">Sin rutina</span></div>' : ''}</div>
       <div class="end"><div class="x-sub t-${cu.cl}" style="font-weight:600;">${xe(cu.t)}</div>${a.activo === false ? '<div class="x-sub">Inactivo</div>' : ''}</div><span class="go">›</span></div>`;
   }).join('');
   cont.innerHTML = `<div class="x-tbl-wrap" style="overflow-x:auto;"><table class="x-tbl"><thead><tr><th>Alumno</th><th>Tipo · Plan</th><th>Estado</th><th>Cuota</th><th>Rutina</th><th></th></tr></thead><tbody>${rows}</tbody></table></div><div class="x-lst">${lista}</div>`;
 }
 
 // ---------- Alta: formulario corto en ventana emergente (el resto se completa desde la ficha) ----------
-function toggleFormNuevoAlumno(){ xAbrirModal('modalNuevoAlumno'); setTimeout(() => document.getElementById('nuevoAlumnoNombre')?.focus(), 60); }
+function toggleFormNuevoAlumno(){ try{ sucAltaAlumnoPintar(); }catch(e){} xAbrirModal('modalNuevoAlumno'); setTimeout(() => document.getElementById('nuevoAlumnoNombre')?.focus(), 60); }
 function cerrarModalNuevoAlumno(){ xCerrarModal('modalNuevoAlumno'); }
 function toggleFormNuevoProfesor(){ xAbrirModal('modalNuevoProfesor'); setTimeout(() => document.getElementById('nuevoProfesorNombre')?.focus(), 60); }
 function cerrarModalNuevoProfesor(){ xCerrarModal('modalNuevoProfesor'); }
@@ -15647,7 +15702,7 @@ async function abrirFichaAlumno(id, tab){
   xAbrirModal('modalFicha');
   let a = buscarAlumnoCache(id) || null;
   try{
-    const [fresco] = await sb(`alumnos?select=${XSEL_ALU}&id=eq.${id}`);
+    const [fresco] = await sb(`alumnos?select=${xselAlu()}&id=eq.${id}`);
     if (fresco){ if (a) Object.assign(a, fresco); else { a = fresco; XEXTRA_ALU[id] = a; } }
   }catch(e){ /* se usa lo que haya en memoria */ }
   if (!a){ toast('No se encontró el alumno.', true); cerrarFicha(); return; }
@@ -15765,6 +15820,7 @@ function xFichaDat(a){
     ['Nacimiento', a.fecha_nacimiento ? formatearFechaCorta(a.fecha_nacimiento) + (edadDesdeFecha(a.fecha_nacimiento) != null ? ' · ' + edadDesdeFecha(a.fecha_nacimiento) + ' años' : '') : '—'],
     ['Altura', a.altura_cm ? a.altura_cm + ' cm' : '—'], ['Peso', a.peso_kg ? a.peso_kg + ' kg' : '—'], ['Objetivo', a.objetivo || '—'],
     ['Equipo · posición', [a.equipos?.nombre, a.posicion].filter(Boolean).join(' · ') || '—'], ['Categorías', cats || '—']];
+  if (sucMulti()) dl.push(['Sede base', sucNombre(a.sucursal_id) || '—']);
   const acceso = a.perfil_id
     ? `<span class="pill ok">🔑 Tiene cuenta</span> <button class="ghost" onclick="abrirGestionAccesoAlumno('${a.id}')">🔁 Acceso</button>`
     : (a.dni ? `<button class="ghost" onclick="generarAccesoAlumno('${a.id}')">🔑 Generar acceso</button>` : `<span class="pill" title="Cargale el DNI para poder generarle acceso">🔒 Sin DNI</span>`);
@@ -15780,6 +15836,7 @@ function xFichaDat(a){
       <div class="field"><label>Tipo de entrenamiento</label><select onchange="cambiarTipoAlumno('${a.id}', this.value)"><option value="">-- sin tipo --</option>${TIPOS_ALUMNO_CACHE.map(t => `<option value="${t.id}" ${a.tipo_alumno_id === t.id ? 'selected' : ''}>${xe(t.nombre)}</option>`).join('')}</select></div>
       <div class="field"><label>Plan</label><select onchange="cambiarPlanAlumno('${a.id}', this.value)"><option value="">-- sin plan --</option>${PLANES_CACHE.map(p => `<option value="${p.id}" ${a.plan_id === p.id ? 'selected' : ''}>${xe(p.nombre)}</option>`).join('')}</select></div>
     </div>
+    ${sucMulti() ? `<div class="x-sec">📍 Sede</div><div class="x-fi-two"><div class="field"><label>Sede base</label><select onchange="sucCambiarSedeAlumno('${a.id}', this.value)"><option value="">-- sin sede --</option>${sucOptsExacto(a.sucursal_id || '')}</select></div></div><div class="x-sub">Puede reservar turnos en cualquier sede; esta es la que ve primero.</div>` : ''}
     <div class="x-sec">Acceso a la app y estado</div>
     <div class="x-btns" style="margin-top:0; align-items:center;">${acceso} ${btnEstado}</div>
     <div class="x-sub" style="margin-top:10px;">Dar de baja no borra al alumno ni su historial: solo lo saca de las listas activas. Se puede reactivar cuando quieras.</div>`;
@@ -23316,42 +23373,61 @@ async function renderHorasAlu(){
   const profesorFiltroId = document.getElementById('aluFiltroProfesor').value;
   wrap.innerHTML = 'Buscando turnos disponibles...';
   try{
-    const rows = await sb('rpc/obtener_turnos_disponibles', {
-      method: 'POST',
-      body: JSON.stringify({ p_gimnasio_id: alumno.gimnasio_id, p_fecha: fecha, p_profesor_id: profesorFiltroId || null })
-    });
-    if (!rows.length){ wrap.innerHTML = '<div class="empty">No hay horario de trabajo cargado para ese día. Probá otro día o profesor.</div>'; return; }
+    const alumnoSedes = sucMulti();
+    const sedeSel = alumnoSedes ? sucAluSel(alumnoId) : '';
+    let rows = null;
+    if (alumnoSedes){
+      try{
+        rows = await sb('rpc/obtener_turnos_disponibles_sede', {
+          method: 'POST',
+          body: JSON.stringify({ p_gimnasio_id: alumno.gimnasio_id, p_fecha: fecha, p_profesor_id: profesorFiltroId || null, p_sucursal_id: sedeSel || null })
+        });
+      }catch(e){ rows = null; }   // SQL v140 sin correr: sigue por el camino de siempre
+    }
+    if (!rows){
+      rows = await sb('rpc/obtener_turnos_disponibles', {
+        method: 'POST',
+        body: JSON.stringify({ p_gimnasio_id: alumno.gimnasio_id, p_fecha: fecha, p_profesor_id: profesorFiltroId || null })
+      });
+    }
+    const barraSede = alumnoSedes ? sucAluBarraHtml(alumnoId) : '';
+    if (!rows.length){ wrap.innerHTML = barraSede + '<div class="empty">No hay horario de trabajo cargado para ese día' + (sedeSel ? ' en esta sede' : '') + '. Probá otro día' + (alumnoSedes ? ', otra sede' : '') + ' o profesor.</div>'; return; }
 
-    // Agrupamos por profesor: si se están mostrando varios, cada uno con su título arriba.
-    const profesorIds = [...new Set(rows.map(r => r.profesor_id))];
-    wrap.innerHTML = profesorIds.map(pid => {
-      const filas = rows.filter(r => r.profesor_id === pid);
+    // Agrupamos por profesor (y por sede si hay varias): si se están mostrando varios, cada uno con su título arriba.
+    const claves = [...new Set(rows.map(r => r.profesor_id + '|' + (alumnoSedes ? (r.sucursal_id || '') : '')))];
+    wrap.innerHTML = barraSede + claves.map(k => {
+      const [pid, sid] = k.split('|');
+      const filas = rows.filter(r => r.profesor_id === pid && (!alumnoSedes || (r.sucursal_id || '') === sid));
       const nombreProf = filas[0].profesor_nombre;
       const horasHtml = filas.map(r => {
         const hora = r.hora.slice(0,5);
         let clase = 'libre';
         if (r.cupo_disponible <= 0) clase = 'agotado';
         else if (r.cupo_disponible <= 2) clase = 'poco';
-        const onclick = r.cupo_disponible <= 0 ? '' : `onclick="pedirConfirmacionTurno('${pid}','${r.hora}','${nombreProf.replace(/'/g,"&apos;")}','${fecha}')"`;
+        const onclick = r.cupo_disponible <= 0 ? '' : `onclick="pedirConfirmacionTurno('${pid}','${r.hora}','${nombreProf.replace(/'/g,"&apos;")}','${fecha}','${sid}')"`;
         return `<div class="hora-btn ${clase}" ${onclick}>
           <span class="hora">${hora}</span>
           <span class="cupos">${r.cupo_disponible<=0 ? 'Sin cupo' : r.cupo_disponible+' de '+r.cupo_total+' cupos'}</span>
         </div>`;
       }).join('');
+      const sedeTxt = (alumnoSedes && sid && sucNombre(sid)) ? ` · 📍 ${xe(sucNombre(sid))}` : '';
       return `<div class="prof-grupo">
-        <div class="prof-titulo">${nombreProf}</div>
+        <div class="prof-titulo">${nombreProf}${sedeTxt}</div>
         <div class="horas-grid">${horasHtml}</div>
       </div>`;
     }).join('');
   }catch(e){ wrap.innerHTML = 'Error: ' + e.message; }
 }
 
-function pedirConfirmacionTurno(profesorId, hora, profesorNombre, fecha){
+function pedirConfirmacionTurno(profesorId, hora, profesorNombre, fecha, sedeId){
   PENDIENTE_TURNO_ALU = { profesorId, hora, profesorNombre, fecha };
+  const sede = (sedeId && sucMulti()) ? sucPorId(sedeId) : null;
   document.getElementById('modalTurnoTexto').textContent =
     `¿Confirmás la reserva del ${hora.slice(0,5)} hs con ${profesorNombre} (${fechaLegible(fecha)})?`;
   document.getElementById('modalTurnoHora').textContent = hora.slice(0,5) + ' hs';
-  document.getElementById('modalTurnoDetalle').textContent = `con ${profesorNombre} · ${fechaLegible(fecha)}`;
+  document.getElementById('modalTurnoDetalle').textContent = `con ${profesorNombre} · ${fechaLegible(fecha)}` + (sede ? ` · 📍 ${sede.nombre}` : '');
+  const ms = document.getElementById('modalTurnoSede');
+  if (ms){ ms.style.display = sede ? '' : 'none'; ms.innerHTML = sede ? sucTarjetaHtml(sede, false) : ''; }
   document.getElementById('modalConfirmarTurno').classList.add('show');
 }
 
@@ -23985,7 +24061,7 @@ async function cargarTurnos(alumnoId){
   cont.innerHTML = 'Cargando...';
   try{
     const [rows, ejecucionesFinalizadas] = await Promise.all([
-      sb(`turnos?select=id,fecha,hora,estado,rutina_dia_id,rutina_dias(id,nombre_dia),profesores(nombre)&alumno_id=eq.${alumnoId}&order=fecha.desc,hora.desc&limit=30`),
+      sb(`turnos?select=id,fecha,hora,estado,rutina_dia_id,rutina_dias(id,nombre_dia),profesores(nombre)${sucMulti() ? ',sucursal_id' : ''}&alumno_id=eq.${alumnoId}&order=fecha.desc,hora.desc&limit=30`),
       sb(`ejecuciones?select=rutina_dia_id&alumno_id=eq.${alumnoId}&estado=eq.finalizada&rutina_dia_id=not.is.null`),
     ]);
     if (!rows.length){ cont.innerHTML = '<div class="empty">Todavía no reservaste turnos.</div>'; return; }
@@ -24021,7 +24097,7 @@ async function cargarTurnos(alumnoId){
       const [cls, txt] = cancelado ? ['canc','Cancelado'] : completado ? ['hecho','Hecho'] : vencido ? ['venc','Vencido'] : futuro ? ['','Próximo'] : diffDias === 0 ? ['hoy','Hoy'] : ['pend','Pendiente'];
       return tcardHtml({
         fecha: t.fecha, cls: cancelado ? 'canc' : vencido ? 'venc' : '',
-        titulo: t.hora.slice(0,5) + ' hs' + (t.profesores?.nombre ? ' · ' + t.profesores.nombre : ''),
+        titulo: t.hora.slice(0,5) + ' hs' + (t.profesores?.nombre ? ' · ' + t.profesores.nombre : '') + (sucMulti() && t.sucursal_id && sucNombre(t.sucursal_id) ? ' · 📍 ' + sucNombre(t.sucursal_id) : ''),
         sub: cancelado ? 'Cancelado' : completado ? '✓ Entrenamiento realizado' : vencido ? 'Vencido' : futuro ? 'Disponible ese día' : (t.rutina_dias ? t.rutina_dias.nombre_dia : 'Todavía sin rutina planificada para este día'),
         estadoCls: cls, estadoTxt: txt, acciones,
       });
