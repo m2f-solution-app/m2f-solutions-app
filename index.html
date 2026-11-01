@@ -5138,7 +5138,7 @@ function atlIniciarAlu(){
   atlCargarVista('aluAtletismoContenido', id || '');
 }
 
-const APP_VERSION = 141;
+const APP_VERSION = 142;
 let ES_PERSONAL = false;   // (v132) cuenta personal (gimnasios.tipo = 'personal'); se calcula en perAplicar()
 // (v96) Fecha de la última actualización: se cambia junto con APP_VERSION en cada entrega. Se muestra en la
 // pantalla de inicio y en el menú de cuenta ("v94 · actualizada el 5/10/2026").
@@ -12886,8 +12886,8 @@ function renderListaProfesores(){
       <td>${xQuien(p.nombre, (p.dni ? 'DNI ' + p.dni : 'Sin DNI') + sucProfTxt(p.id))}</td><td>${rolPill(p)}</td>
       <td>${cargado ? st(p.id).hoy : '…'}</td><td>${cargado ? st(p.id).sem : '…'}</td>
       <td>${p.tarifa_hora != null && p.tarifa_hora !== '' ? xe(formatearMonto(p.tarifa_hora)) : '<span class="muted">—</span>'}</td>
-      <td class="r"><button class="ghost" onclick="event.stopPropagation();abrirFichaProfesor('${p.id}')">Ver ficha</button> ${btnBaja(p, '')}</td></tr>`).join('');
-  const lista = sucProfLista().map(p => `<div class="x-li" onclick="abrirFichaProfesor('${p.id}')">${xAv(p.nombre)}<div class="mid"><div class="x-nm">${xe(p.nombre)}</div><div class="x-sub">${cargado ? `${st(p.id).hoy} turnos hoy · ${st(p.id).sem} en 7 días` : 'Cargando…'}</div>${p.perfil_id ? '' : '<div style="margin-top:5px"><span class="pill warn">Sin cuenta</span></div>'}</div>${btnBaja(p, 'prof-baja-mini')}<span class="go">›</span></div>`).join('');
+      <td class="r"><button class="ghost" onclick="event.stopPropagation();abrirFichaProfesor('${p.id}','age')">🕒 Horarios</button> <button class="ghost" onclick="event.stopPropagation();abrirFichaProfesor('${p.id}')">Ver ficha</button> ${btnBaja(p, '')}</td></tr>`).join('');
+  const lista = sucProfLista().map(p => `<div class="x-li" onclick="abrirFichaProfesor('${p.id}')">${xAv(p.nombre)}<div class="mid"><div class="x-nm">${xe(p.nombre)}</div><div class="x-sub">${cargado ? `${st(p.id).hoy} turnos hoy · ${st(p.id).sem} en 7 días` : 'Cargando…'}</div><div style="margin-top:5px; display:flex; gap:5px; flex-wrap:wrap;"><span class="pill ok" style="cursor:pointer;" onclick="event.stopPropagation();abrirFichaProfesor('${p.id}','age')">🕒 Horarios</span>${p.perfil_id ? '' : '<span class="pill warn">Sin cuenta</span>'}</div></div>${btnBaja(p, 'prof-baja-mini')}<span class="go">›</span></div>`).join('');
   cont.className = '';
   cont.innerHTML = `<div class="x-tbl-wrap" style="overflow-x:auto;"><table class="x-tbl"><thead><tr><th>Profesor</th><th>Rol</th><th>Turnos hoy</th><th>Próx. 7 días</th><th>Tarifa/hora</th><th></th></tr></thead><tbody>${rows}</tbody></table></div><div class="x-lst">${lista}</div>`;
 }
@@ -12905,7 +12905,7 @@ async function cargarListaProfesores(){
   renderListaProfesores();
   if (FICHA_PROF) pintarFichaProfesor();
 }
-const FICHA_PROF_TABS = [['res','Resumen'],['dat','Datos'],['age','Agenda'],['acc','Acceso']];
+const FICHA_PROF_TABS = [['res','Resumen'],['dat','Datos'],['age','🕒 Horarios'],['acc','Acceso']];
 function abrirFichaProfesor(id, tab){
   FICHA_ALU = null; FICHA_PROF = { id, tab: tab || 'res' };
   document.getElementById('fichaBox').className = 'modal-box x-box x-ficha';
@@ -12915,6 +12915,7 @@ function abrirFichaProfesor(id, tab){
 function fichaProfTab(t){ if (!FICHA_PROF) return; FICHA_PROF.tab = t; pintarFichaProfesor(); }
 function pintarFichaProfesor(){
   const F = FICHA_PROF; if (!F) return;
+  HOR_FICHA = false;
   const p = PROFESORES_CACHE.find(x => x.id === F.id);
   if (!p){ cerrarFicha(); return; }
   const st = (PROF_STATS && PROF_STATS[p.id]) || { hoy: 0, sem: 0 };
@@ -12944,7 +12945,7 @@ function pintarFichaProfesor(){
       <button class="ghost" style="color:var(--danger-text);" onclick="cerrarFicha();abrirModalBajaProfesor('${p.id}','${(p.nombre || '').replace(/'/g, '&apos;')}')">Dar de baja</button>
       <div class="x-sub" style="margin-top:8px;">Si tiene turnos pendientes, elegís si lo reemplazás con otro profesor o no.</div>`}`;
   } else if (F.tab === 'age'){
-    body.innerHTML = '<div class="muted">Cargando…</div>'; xFichaProfAgenda(p, tok);
+    body.innerHTML = '<div class="muted">Cargando…</div>'; fichaHorCargar();
   } else if (F.tab === 'acc'){
     const puedeGestion = p.perfil_id && rol === 'profesor' && !(PERFIL_ACTUAL && p.perfil_id === PERFIL_ACTUAL.id);
     body.innerHTML = `<div class="x-item"><div><div style="font-weight:700;">Acceso a la app</div><div class="x-sub">${p.perfil_id ? 'Entra con su DNI y una contraseña propia.' : 'Cargado antes del login: todavía no tiene cuenta.'}</div></div><span class="pill ${p.perfil_id ? 'ok' : 'warn'}">${p.perfil_id ? 'Activo' : 'Sin cuenta'}</span></div>
@@ -13680,7 +13681,82 @@ async function quitarExcepcionHorario(id){
 const DIAS_SEMANA = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
 let HORARIOS_CACHE = [];
 
+
+// ---------- (v142) Horarios y sede desde la ficha del profesor ----------
+// El mismo editor de siempre (rangos por día, cupo, sede), pero dentro de Profesores → ficha → 🕒 Horarios,
+// sin tener que ir a otra pantalla. HOR_FICHA indica si las funciones de abajo editan al profe de la ficha
+// (true) o al elegido en la pantalla 🕒 Horarios (false).
+let HOR_FICHA = false;
+function horProfId(){ return HOR_FICHA ? ((FICHA_PROF && FICHA_PROF.id) || '') : document.getElementById('profActual').value; }
+function horCont(){ return document.getElementById(HOR_FICHA ? 'fichaHorLista' : 'listaHorarios'); }
+async function horRecargar(){ if (HOR_FICHA) await fichaHorCargar(); else await cargarHorarioProfesorActual(); }
+async function fichaHorCargar(){
+  const F = FICHA_PROF; const body = document.getElementById('fichaTabBody');
+  if (!F || !body) return;
+  const tok = FICHA_TOK, id = F.id;
+  HOR_FICHA = true;
+  const lh = document.getElementById('listaHorarios'); if (lh) lh.innerHTML = '';   // evita ids repetidos con la pantalla Horarios
+  const multi = sucMulti();
+  const diasOrden = [1,2,3,4,5,6,0];
+  body.innerHTML = `
+    <div class="x-sec" style="margin-top:0;">Agregar horario rápido</div>
+    <div class="x-sub" style="margin-bottom:8px;">Tildá los días, poné desde/hasta y tocá Agregar. Después podés ajustar cada rango abajo.</div>
+    <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:8px;">${diasOrden.map(d => `<label class="x-chip" style="cursor:pointer; display:inline-flex; align-items:center; gap:5px;"><input type="checkbox" class="fhDia" value="${d}"> ${DIAS_NOMBRE_AGENDA[d]}</label>`).join('')}</div>
+    <div class="row" style="align-items:end; gap:8px; flex-wrap:wrap;">
+      <div class="field" style="min-width:95px;"><label>Desde</label><input type="time" id="fhDesde" value="08:00"></div>
+      <div class="field" style="min-width:95px;"><label>Hasta</label><input type="time" id="fhHasta" value="12:00"></div>
+      <div class="field" style="min-width:80px;"><label>Cupo x turno</label><input inputmode="numeric" type="number" min="1" id="fhCupo" value="1"></div>
+      ${multi ? `<div class="field" style="min-width:130px;"><label>📍 Sede</label><select id="fhSede">${sucOpts('')}</select></div>` : ''}
+      <button onclick="fichaHorRapido()">＋ Agregar</button>
+    </div>
+    ${multi ? `<div class="x-sec">📍 Sede de este profesor</div>
+    <div class="row" style="align-items:end; gap:8px; flex-wrap:wrap;">
+      <div class="field" style="min-width:150px;"><select id="fichaHorSedeTodos">${sucOpts('')}</select></div>
+      <button class="ghost" onclick="fichaHorSedeTodos()">Asignar a todos sus horarios</button>
+    </div>
+    <div class="x-sub" style="margin-top:4px;">Si trabaja en más de una sede, elegí la sede de cada rango abajo.</div>` : ''}
+    <div class="x-sec">Sus horarios</div>
+    <div id="fichaHorLista" class="muted">Cargando…</div>`;
+  try{
+    const hs = await sb(`horarios_trabajo?profesor_id=eq.${id}&order=dia_semana.asc,hora_inicio.asc`);
+    if (tok !== FICHA_TOK || !FICHA_PROF || !HOR_FICHA) return;
+    HORARIOS_CACHE = hs;
+    const c = document.getElementById('fichaHorLista'); if (c) c.className = '';
+    renderHorarios();
+  }catch(e){ const c = document.getElementById('fichaHorLista'); if (c) c.textContent = 'Error: ' + e.message; }
+}
+async function fichaHorRapido(){
+  const id = FICHA_PROF && FICHA_PROF.id; if (!id) return;
+  const dias = Array.from(document.querySelectorAll('.fhDia:checked')).map(e => parseInt(e.value, 10));
+  const hora_inicio = document.getElementById('fhDesde').value, hora_fin = document.getElementById('fhHasta').value;
+  const cupo_por_turno = parseInt(document.getElementById('fhCupo').value, 10) || 1;
+  const sede = document.getElementById('fhSede');
+  if (!dias.length){ toast('Tildá al menos un día.', true); return; }
+  if (!hora_inicio || !hora_fin || hora_fin <= hora_inicio){ toast('El horario "Hasta" tiene que ser mayor que "Desde".', true); return; }
+  const ya = (d) => HORARIOS_CACHE.some(h => h.dia_semana === d && String(h.hora_inicio).slice(0,5) === hora_inicio && String(h.hora_fin).slice(0,5) === hora_fin);
+  const nuevos = dias.filter(d => !ya(d));
+  if (!nuevos.length){ toast('Ya tiene ese horario en esos días.', true); return; }
+  try{
+    const filas = nuevos.map(d => ({ profesor_id: id, dia_semana: d, hora_inicio, hora_fin, cupo_por_turno, activo: true, ...(sede && sede.value ? { sucursal_id: sede.value } : {}) }));
+    await sb('horarios_trabajo', { method:'POST', headers:{Prefer:'return=minimal'}, body: JSON.stringify(filas) });
+    toast(`Horario agregado a ${nuevos.length} día(s) ✓`); sucRecargarProfSedes();
+    await fichaHorCargar();
+  }catch(e){ toast('Error agregando el horario: ' + extraerMensajeError(e), true); }
+}
+async function fichaHorSedeTodos(){
+  const id = FICHA_PROF && FICHA_PROF.id; const sel = document.getElementById('fichaHorSedeTodos');
+  if (!id || !sel || !sel.value) return;
+  const n = HORARIOS_CACHE.filter(h => !String(h.id).startsWith('nuevo-')).length;
+  if (!n){ toast('Primero cargá algún horario.', true); return; }
+  try{
+    await sb(`horarios_trabajo?profesor_id=eq.${id}`, { method:'PATCH', headers:{Prefer:'return=minimal'}, body: JSON.stringify({ sucursal_id: sel.value }) });
+    toast(`Sede asignada a ${n} rango(s) ✓`); sucRecargarProfSedes();
+    await fichaHorCargar();
+  }catch(e){ toast('Error asignando la sede: ' + extraerMensajeError(e), true); }
+}
+
 async function cargarHorarioProfesorActual(){
+  HOR_FICHA = false;
   const profesorId = document.getElementById('profActual').value;
   const cont = document.getElementById('listaHorarios');
   if (!profesorId){ cont.innerHTML = 'Elegí un profesor arriba.'; return; }
@@ -13696,7 +13772,8 @@ async function cargarHorarioProfesorActual(){
 // "+ Agregar rango horario" suma una fila nueva (todavía sin guardar, con un
 // id temporal "nuevo-...") que se graba recién al tocar/cambiar algo en ella.
 function renderHorarios(){
-  const cont = document.getElementById('listaHorarios');
+  const cont = horCont();
+  if (!cont) return;
   cont.innerHTML = DIAS_SEMANA.map((nombreDia, dia) => {
     const rangos = HORARIOS_CACHE.filter(h => h.dia_semana === dia);
     const filasHtml = rangos.length
@@ -13737,7 +13814,7 @@ function cerrarModalCopiarHorario(){
 }
 async function confirmarCopiarHorario(){
   const esNuevo = COPIAR_HORARIO_MODO === 'nuevo';
-  const profesorId = esNuevo ? PROFESOR_RECIEN_CREADO?.id : document.getElementById('profActual').value;
+  const profesorId = esNuevo ? PROFESOR_RECIEN_CREADO?.id : horProfId();
   const cache = esNuevo ? HORARIOS_CACHE_NUEVO : HORARIOS_CACHE;
   const diasDestino = Array.from(document.querySelectorAll('.chkCopiarHorarioDia:checked')).map(el => parseInt(el.value, 10));
   if (!profesorId){ toast('No se encontró el profesor.', true); return; }
@@ -13760,7 +13837,7 @@ async function confirmarCopiarHorario(){
       HORARIOS_CACHE_NUEVO = await sb(`horarios_trabajo?profesor_id=eq.${profesorId}&order=dia_semana.asc,hora_inicio.asc`);
       renderHorariosNuevo();
     } else {
-      await cargarHorarioProfesorActual();
+      await horRecargar();
     }
   }catch(e){ toast('Error copiando el horario: ' + e.message, true); }
 }
@@ -13867,14 +13944,14 @@ function cerrarHorarioNuevoProf(){
 }
 
 function agregarRangoHorario(dia){
-  const profesorId = document.getElementById('profActual').value;
+  const profesorId = horProfId();
   const tempId = 'nuevo-' + Math.random().toString(36).slice(2);
   HORARIOS_CACHE.push({ id: tempId, profesor_id: profesorId, dia_semana: dia, hora_inicio: '08:00:00', hora_fin: '12:00:00', cupo_por_turno: 1, activo: true, sucursal_id: sucMulti() ? sucDefault() : null });
   renderHorarios();
 }
 
 async function guardarRangoHorario(dia, rowId){
-  const profesorId = document.getElementById('profActual').value;
+  const profesorId = horProfId();
   if (!profesorId){ toast('Elegí un profesor primero.', true); return; }
   const activo = document.getElementById(`horActivo-${rowId}`).checked;
   const hora_inicio = document.getElementById(`horDesde-${rowId}`).value;
@@ -15407,7 +15484,7 @@ function xQuien(nombre, sub, big, foto){
 }
 function xAbrirModal(id){ document.getElementById(id).classList.add('show'); }
 function xCerrarModal(id){ document.getElementById(id).classList.remove('show'); }
-function cerrarFicha(){ xCerrarModal('modalFicha'); FICHA_ALU = null; FICHA_PROF = null; FICHA_TOK++; }
+function cerrarFicha(){ xCerrarModal('modalFicha'); FICHA_ALU = null; FICHA_PROF = null; FICHA_TOK++; HOR_FICHA = false; }
 document.addEventListener('keydown', e => { if (e.key === 'Escape'){ ['modalFicha', 'modalNuevoAlumno', 'modalNuevoProfesor', 'modalGuia', 'modalGuiaBienvenida'].forEach(id => { const m = document.getElementById(id); if (m && m.classList.contains('show')) m.classList.remove('show'); }); FICHA_ALU = null; FICHA_PROF = null; } });
 const XEXTRA_ALU = {}; // alumnos traídos solo para la ficha (p. ej. dados de baja desde Alertas)
 
