@@ -306,6 +306,14 @@ if ('serviceWorker' in navigator) window.addEventListener('load', function(){ tr
   .suc-form{ margin-top:14px; padding:14px; border:1px dashed var(--border); border-radius:14px; }
   .suc-grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
   @media (max-width:560px){ .suc-grid{ grid-template-columns:1fr; } .suc-barra .suc-lbl{ display:none; } }
+  /* (v148) servicios y turnos con duración */
+  .srv-chips{ display:flex; gap:6px; flex-wrap:wrap; margin:10px 0; }
+  button.srv-chip{ background:var(--panel2); border:1px solid var(--border); color:var(--muted); border-radius:999px; padding:8px 14px; font-size:13.5px; white-space:nowrap; width:auto; }
+  button.srv-chip small{ opacity:.75; margin-left:4px; }
+  button.srv-chip.on{ border-color:var(--accent); color:var(--text); font-weight:700; background:rgba(255,122,48,.12); }
+  .srv-pros{ display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:6px; margin-top:4px; }
+  .field .srv-pro{ display:flex; align-items:center; gap:8px; font-size:14px; padding:6px 10px; border:1px solid var(--border); border-radius:10px; background:var(--panel2); cursor:pointer; color:var(--text); text-transform:none; letter-spacing:0; font-weight:500; }
+  .srv-pro input{ width:auto; margin:0; }
   .pill{display:inline-block; background:var(--panel2); border:1px solid var(--border); border-radius:999px; padding:2px 10px; font-size:12px; color:var(--muted);}
   .chip-toggle{display:inline-block; font-size:12.5px; font-weight:600; padding:6px 13px; border-radius:999px; background:var(--panel2); border:1px solid var(--border); color:var(--muted); cursor:pointer; user-select:none;}
   .chip-toggle.active{background:var(--accent); border-color:var(--accent); color:#1a0e00;}
@@ -1899,6 +1907,8 @@ if ('serviceWorker' in navigator) window.addEventListener('load', function(){ tr
   .ip-tip{ position:absolute; pointer-events:none; background:var(--text); color:var(--bg); font-size:11.5px; font-weight:700; padding:5px 9px; border-radius:8px; white-space:nowrap; transform:translate(-50%,-120%); display:none; z-index:5; }
   @media (max-width:999px){ #ipFechaCorta{ display:none; } }
   /* Celu: orden pensado para el día a día (turnos → atención → wellness → números) */
+  /* (v149) gimnasio sin Wellness: se esconden las piezas que solo existen por él */
+  body.sin-wellness .se-sem, body.sin-wellness .se-wl, body.sin-wellness .se-alr, body.sin-wellness .wl-col{ display:none !important; }
   #ipPnTurnos{ order:1; } #ipPnAlertas{ order:2; } #ipPnWell{ order:3; } #ipPnDash{ order:4; }
   /* PC: 4 paneles a la vista, sin scroll de página */
   @media (min-width:1000px){
@@ -3768,6 +3778,8 @@ if ('serviceWorker' in navigator) window.addEventListener('load', function(){ tr
         <details class="plegable card" data-k="gim-suc" id="gimSucBox" style="display:none;"><summary>📍 Sucursales (sedes, dirección y mapa)</summary><div class="plg-body" id="gimSucBody"><div class="muted">Cargando…</div></div></details>
         <!-- (v145) Administradores por sede -->
         <details class="plegable card" data-k="gim-adm" id="gimAdmBox" style="display:none;"><summary>👥 Administradores por sede</summary><div class="plg-body" id="gimAdmBody"><div class="muted">Cargando…</div></div></details>
+        <!-- (v148) Servicios y turnos con duración -->
+        <details class="plegable card" data-k="gim-srv" id="gimSrvBox" style="display:none;"><summary>🩺 Servicios (turnos con duración)</summary><div class="plg-body" id="gimSrvBody"><div class="muted">Cargando…</div></div></details>
         <!-- (v103) Reglas de reservas de clases -->
         <details class="plegable card" data-k="gim-clases" id="gimClasesBox" style="display:none;"><summary>Clases y reservas</summary><div class="plg-body">
           <div class="muted" style="margin-bottom:10px;">Reglas para cuando el alumno reserva desde su app. El staff y Recepción pueden anotar, sacar turnos o quitar alumnos a mano sin estas restricciones (salvo el cupo).</div>
@@ -4676,15 +4688,18 @@ const MOD_IDS = {   // elementos de menú / barra / navegación inferior por mó
   seguimiento:  ['menuSeguimiento', 'ttSeguimiento', 'menuAluSeguimiento', 'bnavSeguimiento'],
   logros:       ['menuLogros', 'ttLogros', 'menuAluLogros'],
   dashboard:    ['menuDashboard', 'ttDashboard'],
+  wellness:     ['ipPnWell', 'wellnessCard'],   // (v149)
 };
 // Presets de venta (editables acá): se aplican de un toque y después se ajusta a mano.
 const MOD_PRESETS = {
-  independiente: { n: 'Independiente', ico: '🧍', on: ['agenda', 'evaluaciones', 'logros', 'seguimiento', 'planes', 'finanzas'] },
-  gimnasio:      { n: 'Gimnasio',      ico: '🏋️', on: ['agenda', 'evaluaciones', 'logros', 'seguimiento', 'planes', 'finanzas', 'recepcion', 'clases', 'alertas', 'equipo'] },
+  independiente: { n: 'Independiente', ico: '🧍', on: ['agenda', 'evaluaciones', 'logros', 'seguimiento', 'planes', 'finanzas', 'wellness'] },
+  gimnasio:      { n: 'Gimnasio',      ico: '🏋️', on: ['agenda', 'evaluaciones', 'logros', 'seguimiento', 'planes', 'finanzas', 'recepcion', 'clases', 'alertas', 'equipo', 'wellness'] },
   pro:           { n: 'Pro',           ico: '🚀', on: '*' },
-  personal:      { n: 'Personal',      ico: '💪', on: ['seguimiento', 'logros'] },   // (v132) entrena por su cuenta: solo rutinas + progreso
+  personal:      { n: 'Personal',      ico: '💪', on: ['seguimiento', 'logros', 'wellness'] },   // (v132) entrena por su cuenta: solo rutinas + progreso
 };
-const MOD_BLOQUEO_SERVIDOR = ['clases', 'evaluaciones', 'alertas', 'finanzas', 'recepcion', 'proyeccion_ingresos'];   // etapa 1 (SQL) + proyección (ya la valida su RPC)
+const MOD_FUERA_PRESET = ['sucursales', 'servicios'];   // módulos que no entran en ningún plan: se prenden aparte, gimnasio por gimnasio
+const MOD_BLOQUEO_SERVIDOR = ['clases', 'evaluaciones', 'alertas', 'finanzas', 'recepcion', 'proyeccion_ingresos', 'servicios', 'wellness'];   // etapa 1 (SQL) + proyección (ya la valida su RPC)
+function wellOn(){ return modOn('wellness'); }   // (v149) Wellness es un módulo por gimnasio
 function modOn(k){
   if (k === 'atletismo') return atlOn();
   if (!k || !MOD_MAP) return true;
@@ -4698,6 +4713,7 @@ function modVistaOk(kind, v){
 }
 function modAvisoBloqueada(){ toast('Esta sección no está incluida en tu plan.', true); }
 function modGuiaOk(x){   // para filtrar pasos / preguntas de la Guía según lo que el gimnasio tiene
+  if (x && x.mod && !modOn(x.mod)) return false;   // (v149)
   const ir = x && x.ir;
   if (!ir) return true;
   if (ir.s) return modVistaOk('staff', ir.s);
@@ -4708,6 +4724,8 @@ function modAplicarMenu(){
   try{ clCfgPintar(); }catch(e){}   // (v103) la sección "Clases y reservas" de Mi gimnasio sigue al módulo Clases
   try{ rpxCfgPintar(); }catch(e){}   // (v111) y el link de reservas
   try{ sucAplicar(); }catch(e){}   // (v140) sedes
+  try{ srvAplicar(); }catch(e){}   // (v148) servicios
+  try{ document.body.classList.toggle('sin-wellness', !wellOn()); }catch(e){}   // (v149)
   const roles = new Set([...(typeof MENU_SOLO_ADMIN !== 'undefined' ? MENU_SOLO_ADMIN : []), ...(typeof BNAV_SOLO_ADMIN !== 'undefined' ? BNAV_SOLO_ADMIN : []), 'menuRecepcion', 'ttRecepcion']);
   Object.keys(MOD_IDS).forEach(k => {
     const on = modOn(k);
@@ -4726,6 +4744,7 @@ async function modulosCargar(){
     else MOD_MAP = null;
   }catch(e){ MOD_MAP = null; }   // SQL todavía sin correr / sin sesión: se ve todo, como antes
   try{ await sucCargar(); }catch(e){ console.error(e); }   // (v140)
+  try{ await srvCargar(); }catch(e){ console.error(e); }   // (v148) servicios
   try{ aplicarPermisosPorRol(); }catch(e){ modAplicarMenu(); }
 }
 
@@ -4739,7 +4758,7 @@ function modPresetDe(vals){
   const mods = (MOD_CAT || []).filter(c => !c.nucleo);
   for (const k of Object.keys(MOD_PRESETS)){
     const p = MOD_PRESETS[k];
-    if (mods.every(c => !!vals[c.modulo] === (p.on === '*' ? c.modulo !== 'sucursales' : p.on.includes(c.modulo)))) return p.n;
+    if (mods.every(c => !!vals[c.modulo] === (p.on === '*' ? !MOD_FUERA_PRESET.includes(c.modulo) : p.on.includes(c.modulo)))) return p.n;
   }
   return null;
 }
@@ -4767,7 +4786,7 @@ function modAccesosCerrar(){ const m = document.getElementById('modalAccesos'); 
 function modAccesosPreset(k){
   if (!MOD_EDIT) return;
   const p = MOD_PRESETS[k]; if (!p) return;
-  MOD_CAT.filter(c => !c.nucleo).forEach(c => { MOD_EDIT.vals[c.modulo] = p.on === '*' ? c.modulo !== 'sucursales' : p.on.includes(c.modulo); });
+  MOD_CAT.filter(c => !c.nucleo).forEach(c => { MOD_EDIT.vals[c.modulo] = p.on === '*' ? !MOD_FUERA_PRESET.includes(c.modulo) : p.on.includes(c.modulo); });
   modAccesosPintar();
 }
 function modAccesosSet(m, v){ if (MOD_EDIT){ MOD_EDIT.vals[m] = !!v; modAccesosPintar(); } }
@@ -5230,7 +5249,7 @@ function atlIniciarAlu(){
   atlCargarVista('aluAtletismoContenido', id || '');
 }
 
-const APP_VERSION = 147;
+const APP_VERSION = 149;
 let ES_PERSONAL = false;   // (v132) cuenta personal (gimnasios.tipo = 'personal'); se calcula en perAplicar()
 // (v96) Fecha de la última actualización: se cambia junto con APP_VERSION en cada entrega. Se muestra en la
 // pantalla de inicio y en el menú de cuenta ("v94 · actualizada el 5/10/2026").
@@ -6319,6 +6338,7 @@ function chequearBloqueoEscrituraStaff(path, opts){
 
 async function sb(path, opts = {}, _retry, _redReintento){
   chequearBloqueoEscrituraStaff(path, opts);
+  if (typeof path === 'string' && path.startsWith('wellness_respuestas') && !wellOn()) return [];   // (v149) gimnasio sin Wellness: no se lee ni se guarda
   // Si hay sesión real (login del profesor/admin), mandamos su token en vez del
   // anon key, para que más adelante las políticas de RLS puedan distinguir quién
   // hace cada operación. Sin sesión (ej: vista Alumno, todavía sin login propio)
@@ -7601,10 +7621,10 @@ function ipRenderCabecera(){
   const sinConf = d.turnos.filter(t => t.asistio === null && t.ef === false).length;
   document.getElementById('ipTiles').innerHTML = [
     [alumnos, ipPlural(d.slots.length, 'turno', 'turnos') + ' hoy · alumnos', null, "cambiarSubvista('agenda')"],
-    [revisar, 'Wellness a revisar (rojo / ámbar)', revisar ? (w.rd ? 'var(--danger)' : 'var(--warn)') : null, "ipIrAWell('todos')"],
+    wellOn() ? [revisar, 'Wellness a revisar (rojo / ámbar)', revisar ? (w.rd ? 'var(--danger)' : 'var(--warn)') : null, "ipIrAWell('todos')"] : null,
     [sinRut, 'Sin rutina en sus próximos turnos', sinRut ? 'var(--warn)' : null, "cambiarSubvista('especiales')"],
     [sinConf, 'Asistencias sin confirmar', sinConf ? 'var(--muted)' : null, "cambiarSubvista('agenda')"],
-  ].map(t => `<div class="alu-tile" onclick="${t[3]}">${t[2] ? `<span class="dot" style="background:${t[2]}"></span>` : ''}<div class="n">${t[0]}</div><div class="l">${t[1]}</div></div>`).join('');
+  ].filter(Boolean).map(t => `<div class="alu-tile" onclick="${t[3]}">${t[2] ? `<span class="dot" style="background:${t[2]}"></span>` : ''}<div class="n">${t[0]}</div><div class="l">${t[1]}</div></div>`).join('');
 }
 
 function ipAlcance(v){ INICIO.alcance = v; INICIO.sel = null; INICIO.selW = null; cargarInicioProfesor(); }
@@ -7683,6 +7703,7 @@ function ipRenderWell(){
   const l = d.turnos.filter(t => (!INICIO.selW || t.h === INICIO.selW) && (INICIO.filtroW === 'todos' || cls(t) === INICIO.filtroW))
     .sort((a, b) => orden[cls(a)] - orden[cls(b)] || a.h.localeCompare(b.h));
   const el = document.getElementById('ipWell');
+  if (!wellOn()) return;   // (v149)
   if (!l.length){ el.innerHTML = `<div class="ip-vacio">${d.turnos.length ? 'Nada para mostrar con este filtro.' : 'Sin turnos hoy, sin Wellness para revisar.'}</div>`; return; }
   el.innerHTML = l.map(t => {
     const bajo = t.w ? WELLNESS_ITEMS.filter(it => t.w[it.k] != null) : [];
@@ -7707,12 +7728,12 @@ function ipRenderAlertas(){
   const items = [];
   const cum = cumHoy();   // (v101) cumpleaños de hoy
   if (cum.length) items.push(['🎂', 'var(--accent)', cum.length === 1 ? `Hoy cumple años ${cum[0].a.nombre}` : `${cum.length} cumpleaños hoy`, cum.length === 1 ? ((cum[0].edad ? `Cumple ${cum[0].edad} · ` : '') + 'tocá para saludar') : nom(cum.map(x => ({ nombre: x.a.nombre }))), 'cumAbrirHoy()']);
-  const rojos = d.turnos.filter(t => cls(t) === 'rd');
+  const rojos = wellOn() ? d.turnos.filter(t => cls(t) === 'rd') : [];   // (v149)
   if (rojos.length === 1) items.push(['🔴', 'var(--danger)', `${rojos[0].nombre} llega con Wellness ${rojos[0].w.total}/25`, rojos[0].w.nota ? rojos[0].w.nota : `Turno ${rojos[0].h}`, "ipIrAWell('rd')"]);
   else if (rojos.length) items.push(['🔴', 'var(--danger)', `${rojos.length} alumnos con Wellness en rojo`, nom(rojos), "ipIrAWell('rd')"]);
-  const amar = d.turnos.filter(t => cls(t) === 'y');
+  const amar = wellOn() ? d.turnos.filter(t => cls(t) === 'y') : [];
   if (amar.length) items.push(['🟡', 'var(--warn)', `${ipPlural(amar.length, 'alumno', 'alumnos')} con Wellness en ámbar`, nom(amar), "ipIrAWell('y')"]);
-  const pend = d.turnos.filter(t => cls(t) === 'n0' && ipMin(t.h) - d.nowMin <= 120 && ipMin(t.h) - d.nowMin > -60);
+  const pend = !wellOn() ? [] : d.turnos.filter(t => cls(t) === 'n0' && ipMin(t.h) - d.nowMin <= 120 && ipMin(t.h) - d.nowMin > -60);
   if (pend.length) items.push(['⏳', 'var(--muted)', `${pend.length} sin completar el Wellness`, `Entran en las próximas 2 horas · ${nom(pend)}`, "ipIrAWell('n0')"]);
   if (d.sinRutina.length) items.push(['📋', 'var(--warn)', `${ipPlural(d.sinRutina.length, 'alumno', 'alumnos')} sin rutina en sus próximos turnos`, nom(d.sinRutina.map(x => ({ nombre: x.nombre }))), "cambiarSubvista('especiales')"]);
   if (d.rotFin && d.rotFin.length){
@@ -7760,8 +7781,8 @@ function ipRenderNumeros(){
     [new Set(d.turnos.map(t => t.alumnoId)).size, 'Alumnos hoy'],
     [d.pctAsist == null ? '—' : d.pctAsist + '%', 'Asistencia últimos 7 días'],
     [d.turnosSemana, 'Turnos de la semana'],
-    [`${compl}/${d.turnos.length}`, 'Wellness completados hoy'],
-  ].map(k => `<div class="ip-kpi"><div class="n">${k[0]}</div><div class="l">${k[1]}</div></div>`).join('');
+    wellOn() ? [`${compl}/${d.turnos.length}`, 'Wellness completados hoy'] : null,
+  ].filter(Boolean).map(k => `<div class="ip-kpi"><div class="n">${k[0]}</div><div class="l">${k[1]}</div></div>`).join('');
   ipDibujarLinea(d); ipDibujarBarras(d);
 }
 
@@ -7892,7 +7913,7 @@ async function rcAbrir(alumnoId, ingreso){
   const mio = RC.abre = (RC.abre || 0) + 1;   // (v106) si entra otro socio mientras carga, queda a la vista el último
   if (ingreso === undefined){ RC.buf = ''; rcPintar(); }   // viniendo del DNI el visor ya se limpió al dar Enter
   rcEl('rcQ').value = '';
-  RC.dia = 0; RC.slot = null; RC.confirmar = null; RC.ultimo = null; RC.verMas = false; RC.disp = null; RC.dispKey = '';
+  RC.dia = 0; RC.slot = null; RC.confirmar = null; RC.ultimo = null; RC.verMas = false; RC.disp = null; RC.dispKey = ''; try{ srvRcReset(); }catch(e){}
   const ing = ingreso ? await rcIngreso(alumnoId) : null;   // (v106)
   if (mio !== RC.abre){ if (ing) rcCargarLlegadas(); return; }
   RC.ing = ing;
@@ -7903,12 +7924,13 @@ async function rcRefrescar(msg, alumnoId){
   const mio = RC.abre;
   try{
     if (msg !== undefined) RC.ing = null;   // (v106) después de una acción manual, el cartel del ingreso ya no vale
-    const [ficha, clases] = await Promise.all([
+    const [ficha, clases, prox] = await Promise.all([
       sb('rpc/recepcion_ficha_socio', { method:'POST', body: JSON.stringify({ p_alumno_id: id }) }),
       rcClasesHoy(id),   // (v106) clases de hoy
+      srvUsa() ? sb('rpc/recepcion_proximo_turno_sugerido', { method:'POST', body: JSON.stringify({ p_alumno_id: id }) }).catch(() => null) : null,   // (v148) último turno y servicios de los turnos
     ]);
     if (mio !== RC.abre) return;   // mientras cargaba se abrió otro socio
-    RC.ficha = ficha; RC.clases = clases;
+    RC.ficha = ficha; RC.clases = clases; RC.prox = prox;
     rcRender(msg);
     rcCargarLlegadas();
   }catch(e){ toast(extraerMensajeError(e), true); }
@@ -7940,7 +7962,7 @@ function rcRender(msg){
   if (!f.turnos.length) h += `<div class="rc-hint" style="margin:0 0 6px;">No tiene turnos reservados.</div>`;
   f.turnos.forEach(t => {
     const pres = t.asistio === true;
-    h += `<div class="rc-row"><span><b>${escaparHtml(rcEtiquetaDia(t.fecha, f.hoy))} ${escaparHtml(t.hora)}</b> <span class="muted">· ${escaparHtml(t.profesor_nombre || '')}</span> ${pres ? '<span class="rc-pill rc-p-ok" style="margin:0 0 0 6px;">Llegó</span>' : ''}</span><span class="rc-act">`;
+    h += `<div class="rc-row"><span><b>${escaparHtml(rcEtiquetaDia(t.fecha, f.hoy))} ${escaparHtml(t.hora)}</b> <span class="muted">· ${escaparHtml(t.profesor_nombre || '')}</span>${srvOn() ? srvRcTag(t.id) : ''} ${pres ? '<span class="rc-pill rc-p-ok" style="margin:0 0 0 6px;">Llegó</span>' : ''}</span><span class="rc-act">`;
     if (RC.confirmar === t.id){
       h += `<span style="color:var(--warn-text);">¿Cancelar${pres ? ' y sacar la llegada' : ''}?</span>
         <button class="rc-mini" style="background:var(--danger); color:#fff;" onclick="rcCancelar('${t.id}')">Sí</button>
@@ -7964,15 +7986,16 @@ function rcRender(msg){
     if (tHoy && presHoy && !ingOk) h += `<div class="rc-msg ok" style="font-size:16px;">✅ <b>Llegada registrada</b> · turno ${escaparHtml(tHoy.hora)}</div>`;
     if (!tHoy) h += claseHoy ? `<div class="rc-hint">Hoy no tiene turno reservado (sí clase). Si también lo necesita, sacale uno acá abajo.</div>`
       : `<div class="rc-msg warn">Hoy no tiene turno reservado. Sacale uno acá abajo y queda marcada la llegada.</div>`;
+    if (srvUsa()) h += srvRcProxBtn(f);   // (v148) agendar el próximo turno
     if (tHoy && !RC.verMas){
       h += `<button class="secondary rc-wide" onclick="RC.verMas=true; rcRender()">＋ Sacarle otro turno (otro día u horario)</button>`;
     } else {
-      h += rcReservaHtml(f, tHoy);
+      h += (srvUsa() ? srvRcHtml(f, tHoy) : rcReservaHtml(f, tHoy));
     }
   }
   if (msg) h += `<div class="rc-msg ok">${escaparHtml(msg)}${RC.ultimo ? ` <button class="${btnMini}" style="display:block; margin-top:8px;" onclick="rcDeshacerUltimo()">↩ Deshacer</button>` : ''}</div>`;
   rcEl('rcRes').innerHTML = h;
-  if (!bloqueado && (!tHoy || RC.verMas)) rcAsegurarDisp();
+  if (!bloqueado && (!tHoy || RC.verMas)){ if (srvUsa()) srvRcAsegurar(); else rcAsegurarDisp(); }
 }
 
 function rcReservaHtml(f, tHoy){
@@ -10183,6 +10206,337 @@ async function sucActivoToggle(id, activo){
   SUC.busy = false;
 }
 
+// ---------- (v148) SERVICIOS: turnos con duración (kinesiología, quiropraxia, estética…) ----------
+// SQL: v148-servicios.sql. Módulo 'servicios' (apagado por defecto: lo prende Martin en 🧩 Accesos).
+// Gimnasio sin el módulo → la app se ve y anda EXACTAMENTE igual que antes (ningún pedido nuevo, ninguna columna nueva).
+const SRV = { lista: null, ok: null, profs: {}, edit: null, busy: false, maxDia: 1,
+  rc: { sel: null, pid: '', fecha: null, slots: null, key: '', slot: null, rep: 1, res: null, cargando: null, prefHora: null },
+  alu: { sel: null } };
+const SRV_EJEMPLOS = [['Quiropraxia', 15, '🦴'], ['Kinesiología', 60, '🦵'], ['Depilación', 30, '✨'], ['Consulta', 30, '🩺']];
+function srvOn(){ return !!(MOD_MAP && MOD_MAP.servicios === true); }
+function srvActivos(){ return (SRV.lista || []).filter(s => s.activo); }
+function srvPorId(id){ return (SRV.lista || []).find(s => s.id === id) || null; }
+function srvUsa(){ return srvOn() && SRV.ok === true && srvActivos().length > 0 && !salaHorario(); }   // hay servicios para reservar
+function srvCols(){ return (srvOn() && SRV.ok === true) ? ',servicio_id,duracion_min' : ''; }   // columnas extra de turnos (solo con el módulo prendido)
+function srvDur(m){ m = +m || 0; if (m < 60) return m + ' min'; const h = Math.floor(m / 60), r = m % 60; return r ? `${h} h ${r} min` : `${h} h`; }
+function srvEtq(s){ return s ? ((s.icono ? s.icono + ' ' : '') + s.nombre) : ''; }
+function srvProfes(sid){   // profesionales activos que dan el servicio
+  const set = SRV.profs[sid]; if (!set) return [];
+  return (PROFESORES_CACHE || []).filter(p => set.has(p.id) && p.activo !== false);
+}
+function srvHoraFin(hora, dur){ const [h, m] = String(hora).slice(0, 5).split(':').map(Number); const t = h * 60 + m + (+dur || 0); return String(Math.floor(t / 60) % 24).padStart(2, '0') + ':' + String(t % 60).padStart(2, '0'); }
+async function srvCargar(){
+  SRV.lista = []; SRV.ok = null; SRV.profs = {};
+  if (!srvOn() || !PERFIL_ACTUAL || !PERFIL_ACTUAL.gimnasio_id){ srvAplicar(); return; }
+  try{
+    SRV.lista = await sb('servicios?select=*&order=orden.asc,nombre.asc'); SRV.ok = true;
+    const ps = await sb('profesor_servicios?select=profesor_id,servicio_id&limit=3000');
+    (ps || []).forEach(x => { (SRV.profs[x.servicio_id] = SRV.profs[x.servicio_id] || new Set()).add(x.profesor_id); });
+  }catch(e){
+    SRV.lista = []; SRV.profs = {};
+    SRV.ok = /42P01|does not exist|servicios/i.test((e && e.message) || '') ? false : null;
+  }
+  SRV.maxDia = 1;
+  if (SRV.ok === true){
+    try{ const g = await sb(`gimnasios?select=turnos_max_dia&id=eq.${PERFIL_ACTUAL.gimnasio_id}`); SRV.maxDia = Math.max(1, Math.min(10, parseInt(g && g[0] && g[0].turnos_max_dia, 10) || 1)); }catch(e){}
+  }
+  srvAplicar();
+}
+function srvAplicar(){
+  try{ srvPintar(); }catch(e){}
+  try{ if (RC && RC.ficha && typeof rcRender === 'function') { if (srvUsa() && !RC.prox) rcRefrescar(RC.msg); } }catch(e){}
+}
+
+// ----- Mi gimnasio: lista y alta de servicios + límite de turnos por día -----
+function srvEsAdmin(){ return !!(PERFIL_ACTUAL && PERFIL_ACTUAL.rol === 'admin' && !PERFIL_ACTUAL.sucursal_id); }
+function srvPintar(forzar){
+  const box = document.getElementById('gimSrvBox'); if (!box) return;
+  const ver = srvEsAdmin() && srvOn();
+  box.style.display = ver ? '' : 'none';
+  const body = document.getElementById('gimSrvBody'); if (!ver || !body) return;
+  if (!forzar && body.contains(document.activeElement) && /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName)) return;
+  if (SRV.ok === false){ body.innerHTML = '<div class="rpx-ban">⚠️ Falta activar esta función en la base de datos. Corré <b>v148-servicios.sql</b> en Supabase (SQL Editor) y recargá la app.</div>'; return; }
+  if (SRV.ok !== true){ body.innerHTML = '<div class="muted">Cargando…</div>'; return; }
+  const lista = SRV.lista || [], e = SRV.edit;
+  const profes = (PROFESORES_CACHE || []).filter(p => p.activo !== false);
+  const tarjetas = lista.map(s => {
+    const nombres = srvProfes(s.id).map(p => xe(p.nombre));
+    return `<div class="suc-card ${s.activo ? '' : 'off'}">
+      <div class="suc-card-h"><b>${xe(srvEtq(s))}</b><span class="pill">${srvDur(s.duracion_min)}</span>${s.activo ? '' : '<span class="pill warn">Desactivado</span>'}
+        <span style="flex:1"></span>
+        <button type="button" class="ghost" onclick="srvEditar('${s.id}')">Editar</button>
+        <button type="button" class="ghost" onclick="srvActivoToggle('${s.id}', ${s.activo ? 'false' : 'true'})">${s.activo ? 'Desactivar' : 'Activar'}</button></div>
+      ${s.descripcion ? `<div class="muted" style="font-size:13px;margin-bottom:4px;">${xe(s.descripcion)}</div>` : ''}
+      <div style="font-size:13.5px;">${nombres.length ? '👤 ' + nombres.join(', ') : '<span style="color:var(--warn-text);">⚠ Sin profesionales: nadie puede darlo todavía. Tocá Editar y elegilos.</span>'}</div></div>`;
+  }).join('');
+  let form = '';
+  if (e){
+    const sel = new Set(e.profs || []);
+    const chips = [5, 10, 15, 20, 30, 45, 60, 90].map(m => `<button type="button" class="srv-chip ${+e.duracion_min === m ? 'on' : ''}" onclick="srvDurSet(${m})">${srvDur(m)}</button>`).join('');
+    form = `<div class="suc-form"><div style="font-weight:700;margin-bottom:10px;">${e.id ? 'Editar servicio' : 'Nuevo servicio'}</div>
+      <div class="suc-grid">
+        <div class="field"><label>Nombre</label><input id="srvF_nombre" maxlength="60" value="${xe(e.nombre || '')}" placeholder="Ej: Quiropraxia"></div>
+        <div class="field"><label>Ícono (opcional)</label><input id="srvF_ico" maxlength="4" value="${xe(e.icono || '')}" placeholder="🦴"></div>
+      </div>
+      <div class="field" style="margin-top:8px;"><label>Cuánto dura cada turno (minutos)</label>
+        <div class="srv-chips" style="margin:4px 0 6px;">${chips}</div>
+        <input id="srvF_dur" type="number" inputmode="numeric" min="5" max="240" step="5" value="${xe(e.duracion_min || '')}" style="max-width:140px;" oninput="srvDurInput()">
+        ${e.id ? '<div class="muted" style="font-size:12px;margin-top:4px;">Si cambiás la duración, los turnos ya dados no se mueven: solo cambian los nuevos.</div>' : '<div class="muted" style="font-size:12px;margin-top:4px;">Múltiplo de 5. Los turnos salen cada esa cantidad de minutos desde el inicio del horario del profesional.</div>'}</div>
+      <div class="field" style="margin-top:8px;"><label>Descripción (opcional)</label><input id="srvF_desc" maxlength="200" value="${xe(e.descripcion || '')}" placeholder="Se muestra al elegir el servicio"></div>
+      <div class="field" style="margin-top:8px;"><label>¿Quién lo da?</label>
+        ${profes.length ? `<div class="srv-pros">${profes.map(p => `<label class="srv-pro"><input type="checkbox" ${sel.has(p.id) ? 'checked' : ''} onchange="srvProfSet('${p.id}', this.checked)"> ${xe(p.nombre)}</label>`).join('')}</div>`
+          : '<div class="muted">Primero cargá a los profesionales en <b>Profesores</b>.</div>'}</div>
+      <div class="row" style="margin-top:14px;"><button type="button" id="srvBtnGuardar" onclick="srvGuardar()">Guardar servicio</button><button type="button" class="ghost" onclick="srvCancelar()">Cancelar</button></div></div>`;
+  }
+  const ejemplos = (!lista.length && !e) ? `<div class="muted" style="margin:10px 0 4px;">Para arrancar rápido, tocá uno de estos y ajustalo:</div>
+    <div class="srv-chips">${SRV_EJEMPLOS.map((x, i) => `<button type="button" class="srv-chip" onclick="srvNuevo(${i})">${x[2]} ${xe(x[0])} <small>${srvDur(x[1])}</small></button>`).join('')}</div>` : '';
+  const maxOpts = [1, 2, 3, 4, 5].map(n => `<option value="${n}" ${SRV.maxDia === n ? 'selected' : ''}>${n === 1 ? '1 turno por día (lo habitual)' : n + ' turnos por día'}</option>`).join('');
+  body.innerHTML = `<div class="muted" style="margin-bottom:12px;">Un servicio es un tipo de turno con su duración: por ejemplo <b>Quiropraxia 15 min</b> o <b>Kinesiología 1 h</b>. Los turnos se generan solos según el horario de cada profesional (🕒 Horarios) y la sede donde atiende. Un servicio no se borra: se desactiva y el historial se conserva. Mientras haya servicios activos, los turnos nuevos se sacan eligiendo un servicio.</div>
+    <div class="suc-lista">${tarjetas}</div>${ejemplos}
+    ${form || '<div class="row" style="margin-top:14px;"><button type="button" onclick="srvNuevo()">＋ Agregar servicio</button></div>'}
+    <div class="field" style="margin-top:18px;max-width:380px;"><label>Cuántos turnos puede tener una persona el mismo día</label>
+      <select id="srvMaxDia" onchange="srvMaxDiaGuardar()">${maxOpts}</select>
+      <div class="muted" style="font-size:12px;margin-top:4px;">Subilo a 2 si un paciente hace, por ejemplo, kinesiología y quiropraxia el mismo día.</div></div>`;
+}
+function srvNuevo(i){
+  const x = (i != null) ? SRV_EJEMPLOS[i] : null;
+  SRV.edit = { id: null, nombre: x ? x[0] : '', duracion_min: x ? x[1] : 30, icono: x ? x[2] : '', descripcion: '', profs: [] }; srvPintar(true);
+}
+function srvEditar(id){ const s = srvPorId(id); if (!s) return; SRV.edit = Object.assign({}, s, { profs: [...(SRV.profs[id] || [])] }); srvPintar(true); }
+function srvCancelar(){ SRV.edit = null; srvPintar(true); }
+function srvFormLeer(){
+  const e = SRV.edit; if (!e) return;
+  const g = id => { const el = document.getElementById(id); return el ? el.value : ''; };
+  e.nombre = g('srvF_nombre'); e.icono = g('srvF_ico'); e.descripcion = g('srvF_desc'); e.duracion_min = g('srvF_dur');
+}
+function srvDurSet(m){ srvFormLeer(); SRV.edit.duracion_min = m; srvPintar(true); }
+function srvDurInput(){ srvFormLeer(); document.querySelectorAll('#gimSrvBody .srv-chip').forEach(b => { b.classList.toggle('on', b.textContent.trim() === srvDur(+SRV.edit.duracion_min)); }); }
+function srvProfSet(id, on){ srvFormLeer(); const e = SRV.edit; const s = new Set(e.profs || []); if (on) s.add(id); else s.delete(id); e.profs = [...s]; }
+async function srvGuardar(){
+  if (SRV.busy || !SRV.edit) return; srvFormLeer();
+  const e = SRV.edit, nombre = (e.nombre || '').trim(), dur = parseInt(e.duracion_min, 10);
+  if (nombre.length < 2){ toast('Poné el nombre del servicio.', true); return; }
+  if (!(dur >= 5 && dur <= 240 && dur % 5 === 0)){ toast('La duración tiene que estar entre 5 y 240 minutos, de a 5.', true); return; }
+  const fila = { nombre, duracion_min: dur, icono: (e.icono || '').trim() || null, descripcion: (e.descripcion || '').trim() || null };
+  SRV.busy = true; const btn = document.getElementById('srvBtnGuardar'); if (btn){ btn.disabled = true; btn.textContent = 'Guardando…'; }
+  try{
+    let id = e.id;
+    if (id) await sb(`servicios?id=eq.${id}`, { method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: JSON.stringify(fila) });
+    else{
+      const r = await sb('servicios', { method: 'POST', headers: { Prefer: 'return=representation' }, body: JSON.stringify([Object.assign({ gimnasio_id: PERFIL_ACTUAL.gimnasio_id, orden: (SRV.lista || []).length }, fila)]) });
+      id = r && r[0] && r[0].id;
+    }
+    if (!id) throw new Error('No se pudo crear el servicio.');
+    const viejos = new Set([...(e.id ? (SRV.profs[id] || []) : [])]), nuevos = new Set(e.profs || []);
+    const sacar = [...viejos].filter(x => !nuevos.has(x)), agregar = [...nuevos].filter(x => !viejos.has(x));
+    if (sacar.length) await sb(`profesor_servicios?servicio_id=eq.${id}&profesor_id=in.(${sacar.join(',')})`, { method: 'DELETE', headers: { Prefer: 'return=minimal' } });
+    if (agregar.length) await sb('profesor_servicios', { method: 'POST', headers: { Prefer: 'return=minimal' }, body: JSON.stringify(agregar.map(p => ({ profesor_id: p, servicio_id: id }))) });
+    SRV.edit = null; await srvCargar(); toast(e.id ? 'Servicio guardado ✓' : 'Servicio creado ✓');
+  }catch(err){
+    const m = extraerMensajeError(err);
+    toast(/servicios_nombre_uq|duplicate/i.test(m) ? 'Ya tenés un servicio con ese nombre.' : m, true);
+    if (btn){ btn.disabled = false; btn.textContent = 'Guardar servicio'; }
+  }
+  SRV.busy = false;
+}
+async function srvActivoToggle(id, activo){
+  if (SRV.busy) return;
+  if (!activo && !confirm('¿Desactivar este servicio? Deja de aparecer para sacar turnos nuevos; los turnos ya dados y el historial se conservan.')) return;
+  SRV.busy = true;
+  try{ await sb(`servicios?id=eq.${id}`, { method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: JSON.stringify({ activo }) }); await srvCargar(); toast(activo ? 'Servicio activado ✓' : 'Servicio desactivado'); }
+  catch(err){ toast(extraerMensajeError(err), true); }
+  SRV.busy = false;
+}
+async function srvMaxDiaGuardar(){
+  const el = document.getElementById('srvMaxDia'); if (!el || SRV.busy) return;
+  const v = parseInt(el.value, 10); if (!(v >= 1 && v <= 10)) return;
+  SRV.busy = true;
+  try{ await sb(`gimnasios?id=eq.${PERFIL_ACTUAL.gimnasio_id}`, { method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: JSON.stringify({ turnos_max_dia: v }) }); SRV.maxDia = v; toast(v === 1 ? 'Listo: 1 turno por día ✓' : `Listo: hasta ${v} turnos por día ✓`); }
+  catch(err){ toast('No se pudo guardar: ' + extraerMensajeError(err), true); el.value = String(SRV.maxDia); }
+  SRV.busy = false;
+}
+
+// ----- Recepción: sacar turno con servicio, "agendar próximo turno" y repetir cada semana -----
+function srvRcReset(){ SRV.rc = { sel: SRV.rc && SRV.rc.sel, pid: '', fecha: null, slots: null, key: '', slot: null, rep: 1, res: null, cargando: null, prefHora: null }; RC.prox = null; }
+function srvRcKey(){ const R = SRV.rc; return `${R.sel}|${R.pid}|${R.fecha}`; }
+function srvRcTag(turnoId){   // etiqueta de servicio en la lista "Turnos reservados"
+  const x = RC.prox && (RC.prox.futuros || []).find(t => t.turno_id === turnoId);
+  return (x && x.servicio_nombre) ? ` <span class="muted">· ${xe(x.servicio_nombre)}</span>` : '';
+}
+function srvRcProxBtn(f){
+  const u = RC.prox && RC.prox.ultimo; if (!u) return '';
+  const sv = u.servicio_id ? srvPorId(u.servicio_id) : null;
+  const que = (sv && sv.activo) ? srvEtq(sv) : 'el mismo tipo de turno';
+  const ya = (RC.prox.futuros || []).filter(t => t.fecha > f.hoy).length;
+  return `<button class="rc-wide" style="margin-top:14px;" onclick="srvRcProx()">📅 Agendar próximo turno</button>
+    <div class="rc-hint" style="margin-top:6px;">Repite ${xe(que)}${u.profesor_nombre ? ' con ' + xe(u.profesor_nombre) : ''} · último: ${xe(rcEtiquetaDia(u.fecha, f.hoy).toLowerCase())} ${xe(rcHora(u.hora))}${ya ? ` · ya tiene ${ya} turno${ya === 1 ? '' : 's'} agendado${ya === 1 ? '' : 's'}` : ''}</div>`;
+}
+function srvRcProx(){
+  const f = RC.ficha, u = RC.prox && RC.prox.ultimo; if (!f || !u) return;
+  const R = SRV.rc, sv = u.servicio_id ? srvPorId(u.servicio_id) : null;
+  if (sv && sv.activo) R.sel = sv.id;
+  if (!R.sel || !srvActivos().some(s => s.id === R.sel)) R.sel = srvActivos()[0].id;
+  R.pid = (u.profesor_id && srvProfes(R.sel).some(p => p.id === u.profesor_id)) ? u.profesor_id : '';
+  let d = rcSumarDias(u.fecha, 7); while (d <= f.hoy) d = rcSumarDias(d, 7);   // mismo día de la semana, la semana que viene
+  R.fecha = d; R.slot = null; R.slots = null; R.key = ''; R.prefHora = rcHora(u.hora); R.res = null;
+  RC.verMas = true; rcRender(RC.msg);
+  const el = document.getElementById('srvRcPanel'); if (el && el.scrollIntoView) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+function srvRcSet(k, v){
+  const R = SRV.rc;
+  if (k === 'rep') R.rep = parseInt(v, 10) || 1;
+  else{
+    R[k] = v; R.slot = null; R.slots = null; R.key = ''; R.res = null; R.prefHora = null;
+    if (k === 'sel') R.pid = '';
+  }
+  rcRender(RC.msg);
+}
+function srvRcDia(n){ const f = RC.ficha; if (!f) return; srvRcSet('fecha', rcSumarDias(f.hoy, n)); }
+function srvRcElegir(pid, hora){ SRV.rc.slot = { pid, hora }; rcRender(RC.msg); }
+function srvRcHtml(f, tHoy){
+  const R = SRV.rc, act = srvActivos();
+  if (!R.sel || !act.some(s => s.id === R.sel)) R.sel = act[0].id;
+  if (!R.fecha || R.fecha < f.hoy) R.fecha = f.hoy;
+  const s = srvPorId(R.sel), profs = srvProfes(R.sel);
+  if (R.pid && !profs.some(p => p.id === R.pid)) R.pid = '';
+  let h = `<h2 id="srvRcPanel" style="margin:18px 0 0;">Sacarle turno <span class="muted" style="font-weight:400; font-size:12px;">(como si fuera el alumno)</span></h2>
+    <div class="srv-chips">${act.map(x => `<button type="button" class="srv-chip ${x.id === R.sel ? 'on' : ''}" onclick="srvRcSet('sel','${x.id}')">${xe(srvEtq(x))} <small>${srvDur(x.duracion_min)}</small></button>`).join('')}</div>`;
+  if (s && s.descripcion) h += `<div class="rc-hint" style="margin-top:0;">${xe(s.descripcion)}</div>`;
+  if (!profs.length) return h + '<div class="rc-hint">Todavía no hay profesionales para este servicio. Se asignan en Mi gimnasio → Servicios.</div>';
+  if (profs.length > 1) h += `<div class="field" style="margin-top:8px;"><label>Profesional</label><select onchange="srvRcSet('pid', this.value)"><option value="">Cualquiera disponible</option>${profs.map(p => `<option value="${p.id}" ${p.id === R.pid ? 'selected' : ''}>${xe(p.nombre)}</option>`).join('')}</select></div>`;
+  const rel = [['Hoy', 0], ['Mañana', 1], ['En 1 semana', 7], ['En 2 semanas', 14], ['En 1 mes', 30]];
+  h += `<div class="rc-days">${rel.map(([t, n]) => `<button class="rc-day ${R.fecha === rcSumarDias(f.hoy, n) ? 'on' : ''}" onclick="srvRcDia(${n})">${t}</button>`).join('')}</div>
+    <div class="field"><label>Fecha</label><input type="date" min="${f.hoy}" value="${R.fecha}" onchange="if(this.value) srvRcSet('fecha', this.value)" style="max-width:200px;"> <span class="muted" style="font-size:12.5px;">${xe(new Date(R.fecha + 'T12:00:00').toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' }))}</span></div>`;
+  const rows = (R.key === srvRcKey() && R.slots) ? R.slots : null;
+  if (!rows) return h + '<div class="rc-hint">Buscando horarios…</div>';
+  const vivos = rows.filter(r => !r.ya_termino);
+  if (!vivos.length) return h + `<div class="rc-hint">No hay horarios de ${xe(s.nombre)} ese día. Probá otra fecha${profs.length > 1 && R.pid ? ' o “Cualquiera disponible”' : ''}.</div>` + srvRcResHtml(f);
+  const porHora = new Map(); vivos.forEach(r => { const k = rcHora(r.hora); if (!porHora.has(k)) porHora.set(k, []); porHora.get(k).push(r); });
+  const varios = profs.length > 1 && !R.pid;
+  h += '<div class="rc-slots">' + [...porHora.entries()].map(([hora, rs]) => {
+    const libre = rs.find(r => r.cupo_disponible > 0), total = rs.reduce((a, r) => a + Math.max(r.cupo_disponible, 0), 0);
+    const sel = R.slot && R.slot.hora === hora;
+    const grupal = rs.some(r => r.cupo_total > 1);   // con cupo 1 (lo común en servicios) no hace falta avisar "poco lugar"
+    const cls = (!libre ? 'agotado ' : '') + ((grupal && total > 0 && total <= 2) ? 'poco ' : '') + (sel ? 'sel' : '');
+    const click = libre ? `onclick="srvRcElegir('${libre.profesor_id}','${hora}')"` : '';
+    const sub = !libre ? 'sin cupo' : (varios ? xe((libre.profesor_nombre || '').split(' ')[0]) : (grupal ? `${total} lugar${total === 1 ? '' : 'es'}` : 'libre'));
+    return `<div class="rc-slot ${cls}" ${click} title="hasta ${xe(rcHora((libre || rs[0]).hora_fin))}"><b>${xe(hora)}</b><span>${sub}</span></div>`;
+  }).join('') + '</div>';
+  const rep = [1, 2, 3, 4, 6, 8, 10, 12, 16, 20, 26];
+  h += `<div class="field" style="margin-top:12px;"><label>Repetir</label><select onchange="srvRcSet('rep', this.value)">${rep.map(n => `<option value="${n}" ${R.rep === n ? 'selected' : ''}>${n === 1 ? 'Solo este día' : `Cada semana, el mismo día y hora · ${n} turnos`}</option>`).join('')}</select></div>`;
+  const etiqueta = R.slot ? ` ${rcEtiquetaDia(R.fecha, f.hoy).toLowerCase()} ${R.slot.hora}` : '';
+  const off = (R.slot && !RC.ocupado) ? '' : 'disabled';
+  if (R.rep > 1) h += `<button class="rc-wide" ${off} onclick="srvRcReservar(false)">📅 Agendar ${R.rep} turnos${etiqueta} (cada semana)</button>`;
+  else if (R.fecha === f.hoy && !tHoy) h += `<button class="rc-wide" ${off} onclick="srvRcReservar(true)">📅 Sacar turno${etiqueta} y marcar llegada</button>
+    <button class="secondary rc-wide" ${off} onclick="srvRcReservar(false)" style="margin-top:8px;">Solo sacar el turno (todavía no llegó)</button>`;
+  else h += `<button class="rc-wide" ${off} onclick="srvRcReservar(false)">📅 Sacar turno${etiqueta}</button>`;
+  const previo = SRV.maxDia === 1 ? f.turnos.find(t => t.fecha === R.fecha) : null;
+  if (previo && R.slot && R.rep === 1) h += `<div class="rc-hint">Ya tiene turno ese día (${xe(rcHora(previo.hora))}): al confirmar, se cambia por este y se libera su lugar.</div>`;
+  if (previo && R.rep > 1) h += `<div class="rc-hint">Ya tiene turno el ${xe(rcEtiquetaDia(R.fecha, f.hoy).toLowerCase())} y el límite es 1 por día: esa fecha va a quedar sin agendar y te lo aviso.</div>`;
+  return h + srvRcResHtml(f);
+}
+function srvRcResHtml(f){
+  const r = SRV.rc.res; if (!r) return '';
+  const filas = (r.resultados || []).map(x => {
+    const dia = xe(rcEtiquetaDia(x.fecha, f.hoy));
+    if (x.ok) return `<div class="rc-row"><span>✅ <b>${dia}</b> ${xe(x.hora_alt || SRV.rc.horaSerie || '')}${x.hora_alt ? ' <span class="muted">(horario alternativo)</span>' : ''}</span></div>`;
+    const alts = (x.alternativas || []).map(a => `<button class="secondary rc-mini" onclick="srvRcAlt('${x.fecha}','${a}')">${xe(a)}</button>`).join(' ');
+    return `<div class="rc-row"><span>⚠️ <b>${dia}</b> <span class="muted">${xe(x.error || 'No se pudo')}</span></span>${alts ? `<span class="rc-act"><span class="muted" style="font-size:12px;">Agendar a las:</span> ${alts}</span>` : ''}</div>`;
+  }).join('');
+  return `<div class="rc-msg ${r.fallidos ? 'warn' : 'ok'}"><b>${r.creados} de ${r.creados + r.fallidos} turnos agendados.</b>${r.fallidos ? ' Revisá las fechas con ⚠️.' : ''}<div style="margin-top:6px;">${filas}</div></div>`;
+}
+async function srvRcAsegurar(){
+  const f = RC.ficha, R = SRV.rc; if (!f || !R.sel) return;
+  const key = srvRcKey(); if (R.key === key && R.slots) return; if (R.cargando === key) return;
+  R.cargando = key;
+  try{
+    let rows = await sb('rpc/servicio_turnos_disponibles', { method: 'POST', body: JSON.stringify({ p_gimnasio_id: f.gimnasio_id, p_fecha: R.fecha, p_servicio_id: R.sel, p_profesor_id: R.pid || null }) });
+    rows = rows || [];
+    const sede = sucMulti() ? sucSel() : null; if (sede) rows = rows.filter(x => x.sucursal_id === sede);
+    R.slots = rows; R.key = key;
+    if (R.prefHora && !R.slot){ const m = rows.find(x => rcHora(x.hora) === R.prefHora && x.cupo_disponible > 0 && !x.ya_termino); if (m) R.slot = { pid: m.profesor_id, hora: R.prefHora }; }
+    R.prefHora = null;
+  }catch(e){ R.slots = []; R.key = key; toast('No se pudieron cargar los horarios: ' + extraerMensajeError(e), true); }
+  finally{ R.cargando = null; }
+  if (RC.ficha && srvRcKey() === key) rcRender(RC.msg);
+}
+async function srvRcReservar(marcar){
+  const f = RC.ficha, R = SRV.rc, s = R.slot;
+  if (!f || !s || RC.ocupado) return;
+  RC.ocupado = true;
+  const sv = srvPorId(R.sel), fecha = R.fecha, hora = s.hora;
+  try{
+    if (R.rep > 1){
+      const r = await sb('rpc/recepcion_agendar_serie', { method: 'POST', body: JSON.stringify({ p_alumno_id: f.alumno_id, p_profesor_id: s.pid, p_servicio_id: R.sel, p_fecha_inicio: fecha, p_hora: hora, p_semanas: R.rep }) });
+      R.res = r; R.horaSerie = hora; R.slot = null; R.slots = null; R.key = ''; R.rep = 1; RC.ocupado = false;
+      await rcRefrescar(r.fallidos ? `Se agendaron ${r.creados} de ${r.creados + r.fallidos} turnos de ${sv ? sv.nombre : 'servicio'} para ${f.nombre}.` : `📅 ${r.creados} turnos de ${sv ? sv.nombre : 'servicio'} agendados para ${f.nombre}, cada semana a las ${hora}.`);
+      return;
+    }
+    const previo = SRV.maxDia === 1 ? f.turnos.find(t => t.fecha === fecha) : null;
+    const r = await sb('rpc/recepcion_reservar_turno_servicio', { method: 'POST', body: JSON.stringify({
+      p_alumno_id: f.alumno_id, p_profesor_id: s.pid, p_servicio_id: R.sel, p_fecha: fecha, p_hora: hora, p_marcar_llegada: !!marcar, p_reemplazar: !!previo }) });
+    RC.ultimo = { tipo: 'reserva', nuevo: r.turno_id, previo: r.reemplazo_turno_id || null };
+    R.slot = null; R.slots = null; R.key = ''; R.res = null; RC.ocupado = false;
+    await rcRefrescar(`📅 ${sv ? sv.nombre : 'Turno'} ${rcEtiquetaDia(fecha, f.hoy).toLowerCase()} ${hora} reservado para ${f.nombre}${r.llegada ? ' y llegada marcada' : ''}${previo ? ` (reemplaza al de ${rcHora(previo.hora)})` : ''}.`);
+  }catch(e){ RC.ocupado = false; toast(extraerMensajeError(e), true); R.slots = null; R.key = ''; rcRefrescar(); }
+}
+async function srvRcAlt(fecha, hora){   // un horario alternativo para una fecha de la serie que no pudo agendarse
+  const f = RC.ficha, R = SRV.rc, r = R.res; if (!f || !r || RC.ocupado) return;
+  RC.ocupado = true;
+  try{
+    const pid = R.slot ? R.slot.pid : (R.pid || (srvProfes(R.sel)[0] || {}).id);
+    await sb('rpc/recepcion_reservar_turno_servicio', { method: 'POST', body: JSON.stringify({ p_alumno_id: f.alumno_id, p_profesor_id: pid, p_servicio_id: R.sel, p_fecha: fecha, p_hora: hora, p_marcar_llegada: false, p_reemplazar: false }) });
+    const x = (r.resultados || []).find(z => z.fecha === fecha); if (x){ x.ok = true; x.hora_alt = hora; r.creados++; r.fallidos--; }
+    RC.ocupado = false; R.slots = null; R.key = '';
+    await rcRefrescar(`📅 Turno del ${rcEtiquetaDia(fecha, f.hoy).toLowerCase()} ${hora} agendado.`);
+  }catch(e){ RC.ocupado = false; toast(extraerMensajeError(e), true); rcRender(RC.msg); }
+}
+
+// ----- App del alumno: elegir servicio y horario -----
+async function srvAluRender(){
+  const wrap = document.getElementById('aluHorasWrap'), alumnoId = document.getElementById('aluAlumno').value;
+  if (!alumnoId){ wrap.innerHTML = 'Elegí tu nombre arriba.'; return; }
+  const alumno = ALUMNOS_CACHE.find(a => a.id === alumnoId);
+  if (!alumno || !alumno.gimnasio_id){ wrap.innerHTML = '<div class="empty">Este alumno no tiene gimnasio asignado.</div>'; return; }
+  const act = srvActivos(); if (!act.some(s => s.id === SRV.alu.sel)) SRV.alu.sel = act[0].id;
+  const sv = srvPorId(SRV.alu.sel), fecha = fechaISOAlu(DIA_TURNO_ALU);
+  const profFiltro = document.getElementById('aluFiltroProfesor').value;
+  const sedes = sucMulti(), sedeSel = sedes ? sucAluSel(alumnoId) : '';
+  const barra = (sedes ? sucAluBarraHtml(alumnoId) : '')
+    + `<div class="srv-chips">${act.map(x => `<button type="button" class="srv-chip ${x.id === sv.id ? 'on' : ''}" onclick="srvAluElegir('${x.id}')">${xe(srvEtq(x))} <small>${srvDur(x.duracion_min)}</small></button>`).join('')}</div>`
+    + (sv.descripcion ? `<div class="muted" style="font-size:13px;margin-bottom:6px;">${xe(sv.descripcion)}</div>` : '');
+  wrap.innerHTML = barra + 'Buscando turnos disponibles...';
+  try{
+    let rows = await sb('rpc/servicio_turnos_disponibles', { method: 'POST', body: JSON.stringify({ p_gimnasio_id: alumno.gimnasio_id, p_fecha: fecha, p_servicio_id: sv.id, p_profesor_id: profFiltro || null }) });
+    rows = (rows || []).filter(r => !r.ya_empezo && (!sedeSel || r.sucursal_id === sedeSel));
+    if (!rows.length){ wrap.innerHTML = barra + `<div class="empty">No hay horarios de ${xe(sv.nombre)} ese día${sedeSel ? ' en esta sede' : ''}. Probá otro día${sedes ? ', otra sede' : ''}${profFiltro ? ' o profesional' : ''}.</div>`; return; }
+    const claves = [...new Set(rows.map(r => r.profesor_id + '|' + (sedes ? (r.sucursal_id || '') : '')))];
+    wrap.innerHTML = barra + claves.map(k => {
+      const [pid, sid] = k.split('|');
+      const filas = rows.filter(r => r.profesor_id === pid && (!sedes || (r.sucursal_id || '') === sid));
+      const nom = filas[0].profesor_nombre;
+      const horas = filas.map(r => {
+        const hora = r.hora.slice(0, 5), clase = r.cupo_disponible <= 0 ? 'agotado' : 'libre';
+        const onclick = r.cupo_disponible <= 0 ? '' : `onclick="pedirConfirmacionTurno('${pid}','${r.hora}','${String(nom).replace(/'/g, '&apos;')}','${fecha}','${sid}','${sv.id}')"`;
+        return `<div class="hora-btn ${clase}" ${onclick}><span class="hora">${hora}</span><span class="cupos">${r.cupo_disponible <= 0 ? 'Ocupado' : 'hasta ' + r.hora_fin.slice(0, 5)}</span></div>`;
+      }).join('');
+      const sedeTxt = (sedes && sid && sucNombre(sid)) ? ` · 📍 ${xe(sucNombre(sid))}` : '';
+      return `<div class="prof-grupo"><div class="prof-titulo">${xe(nom)}${sedeTxt}</div><div class="horas-grid">${horas}</div></div>`;
+    }).join('');
+  }catch(e){ wrap.innerHTML = barra + 'Error: ' + xe(e.message); }
+}
+function srvAluElegir(id){ SRV.alu.sel = id; renderHorasAlu(); }
+
+// ----- Agenda del día: tarjetas de turnos con servicio (hora real y duración) -----
+function srvAgendaTag(r){
+  const s = srvPorId(r.servId);
+  return `<div class="chip-progreso" style="color:var(--accent2-text);">${xe(s ? srvEtq(s) : 'Servicio')} · ${xe(rcHora(r.hora))}–${srvHoraFin(r.hora, r.dur)}</div>`;
+}
+function srvFranjaTxt(ns, cupo){
+  const min = Math.round(ns.reduce((a, r) => a + (r.dur || 60), 0));
+  return `${ns.length} turno${ns.length === 1 ? '' : 's'} · ${min} de ${60 * cupo} min ocupados`;
+}
+
 const QB = { busy: false, lista: null, listaOk: null };
 const QB_MODOS = [
   ['registro', '🙋 Que se registre y entre a la app', 'Deja nombre, DNI y WhatsApp, y vos le das el acceso. No necesita el módulo Clases.'],
@@ -10751,7 +11105,7 @@ function guiaPasosBase(rol){
       det:['Tocá ⚙️ arriba a la derecha → Notificaciones → Activar.','En iPhone solo funcionan con la app instalada (iOS 16.4 o más nuevo).'] },
     { id:'turno', ico:'📅', t:'Reservá tu primer turno', d:'Elegí día y horario según los cupos disponibles.', ir:{ a:'turnos' }, visita:'turnos',
       det:['Tocá Turnos.','Elegí el día (los no habilitados aparecen atenuados).','Elegí el horario y confirmá: la app te engancha tu rutina del día.'] },
-    { id:'well', ico:'🟢', t:'Completá el Wellness antes de entrenar', d:'30 segundos para que tu profe ajuste la sesión.', manual:true,
+    { id:'well', mod:'wellness', ico:'🟢', t:'Completá el Wellness antes de entrenar', d:'30 segundos para que tu profe ajuste la sesión.', manual:true,
       det:['El día de tu turno aparece una tarjeta “¿Cómo llegás hoy a entrenar?” en Inicio.','Tocá Completar y respondé.'] },
     { id:'entr', ico:'🏋️', t:'Entrená y registrá tus series', d:'Peso, repeticiones y RIR de cada serie.', ir:{ a:'rutinas' }, visita:'rutinas',
       det:['Inicio → Entrenar (o Mis rutinas → Empezar).','Cargá peso, repeticiones y RIR; usá el cronómetro de descanso.','Al terminar, tocá Finalizar: si superaste un récord, te lo avisa.'] },
@@ -11229,6 +11583,7 @@ function cambiarSubvista(v){
   if (v==='ejercicios') cargarListaEjerciciosPersonalizados();
   if (v==='equipo'){ poblarSelectEquipoVista(); cargarVistaEquipo(); }
   if (v==='gimnasio') rpxCfgCargar().catch(() => {});   // (v111)
+  if (v==='gimnasio'){ try{ srvPintar(true); }catch(e){} }   // (v148)
   if (v==='gimnasio'){
     document.getElementById('gimNombre').value = GIMNASIO_ACTUAL?.nombre || '';
     document.getElementById('gimLogoUrl').value = GIMNASIO_ACTUAL?.logo_url || '';
@@ -14825,7 +15180,7 @@ async function renderAgenda(){
     } else {
     [horarios, turnosDelDia] = await Promise.all([
       sb(`horarios_trabajo?profesor_id=in.(${idsProf.join(',')})&dia_semana=eq.${dow}&activo=eq.true`),
-      sb(`turnos?select=id,hora,profesor_id,alumno_id,asistio,rutina_dia_id,rutina_ajustada_en,rutina_ajuste_motivo,rutina_dias(nombre_dia),alumnos(nombre,tipo_alumno_id)&fecha=eq.${fecha}&profesor_id=in.(${idsProf.join(',')})&estado=neq.cancelado`),
+      sb(`turnos?select=id,hora,profesor_id,alumno_id,asistio,rutina_dia_id,rutina_ajustada_en,rutina_ajuste_motivo,rutina_dias(nombre_dia),alumnos(nombre,tipo_alumno_id)${srvCols()}&fecha=eq.${fecha}&profesor_id=in.(${idsProf.join(',')})&estado=neq.cancelado`),
     ]);
     horarios = sucFiltrarHor(horarios);   // (v140) solo la sede elegida
     }
@@ -14843,7 +15198,7 @@ async function renderAgenda(){
     const reservasPorSlot = {}; // `${profesor_id}|${hora}` -> [{id, alumnoId, nombre, asistio, rutinaDiaId, nombreDia, progreso}]
     turnosDelDia.forEach(t => {
       if (!t.hora) return;
-      const clave = `${SH ? '__sala' : t.profesor_id}|${t.hora}`;
+      const clave = `${SH ? '__sala' : t.profesor_id}|${(t.servicio_id && t.hora) ? t.hora.slice(0,2) + ':00:00' : t.hora}`;   // (v148) los turnos de servicio caen en la franja de su hora
       (reservasPorSlot[clave] = reservasPorSlot[clave] || []).push({
         id: t.id, alumnoId: t.alumno_id, nombre: t.alumnos ? t.alumnos.nombre : 'Alumno', asistio: t.asistio,
         rutinaDiaId: t.rutina_dia_id, nombreDia: t.rutina_dias?.nombre_dia || null,
@@ -14851,6 +15206,7 @@ async function renderAgenda(){
         wellness: WELLNESS_DIA[t.alumno_id] || null,
         ajustada: !!t.rutina_ajustada_en,
         profId: t.profesor_id,
+        hora: t.servicio_id ? t.hora : null, servId: t.servicio_id || null, dur: t.servicio_id ? (t.duracion_min || 60) : null,   // (v148)
         rot: rotAg ? (rotAg.rotDe[t.alumno_id] ? { nombre: rotAg.rotDe[t.alumno_id], dia: rotAg.rotDia[t.alumno_id] || null } : (rotAg.ok && !t.rutina_dia_id ? 'sin' : null)) : null,
       });
     });
@@ -14861,7 +15217,7 @@ async function renderAgenda(){
     const horariosPorProfesor = {};
     horarios.forEach(h => (horariosPorProfesor[h.profesor_id] = horariosPorProfesor[h.profesor_id] || []).push(h));
 
-    let totalReservados = 0, totalCupos = 0, franjasVacias = 0, totalPresentes = 0, totalAusentes = 0, totalAusentesAuto = 0;
+    let totalOcup = 0, totalReservados = 0, totalCupos = 0, franjasVacias = 0, totalPresentes = 0, totalAusentes = 0, totalAusentesAuto = 0;
     const bloquesHtml = [];
 
     profesores.forEach(prof => {
@@ -14876,19 +15232,22 @@ async function renderAgenda(){
           const horaStr = String(hh).padStart(2,'0')+':00:00';
           const horaLabel = String(hh).padStart(2,'0')+':00';
           const nombres = reservasPorSlot[`${prof.id}|${horaStr}`] || [];
+          if (nombres.some(r => r.hora)) nombres.sort((a, b) => (a.hora || horaStr).localeCompare(b.hora || horaStr));   // (v148)
+          const occH = nombres.reduce((a, r) => a + (r.dur ? r.dur / 60 : 1), 0);   // (v148) ocupación en horas (turno viejo = 1)
           totalReservados += nombres.length;
+          totalOcup += occH;
           totalCupos += h.cupo_por_turno;
           nombres.forEach(r => {
-            const efectivo = asistenciaEfectiva(r.asistio, fecha, horaStr);
+            const efectivo = asistenciaEfectiva(r.asistio, fecha, r.hora || horaStr);
             if (efectivo === true) totalPresentes++;
             else if (efectivo === false){ totalAusentes++; if (r.asistio === null) totalAusentesAuto++; }
           });
           if (nombres.length === 0) franjasVacias++;
           if (agendaSoloLibres && nombres.length > 0) continue;
           huboFranja = true;
-          const pct = Math.round((nombres.length / h.cupo_por_turno) * 100);
+          const pct = Math.round((occH / h.cupo_por_turno) * 100);
           const chips = nombres.map(r => {
-            const efectivo = asistenciaEfectiva(r.asistio, fecha, horaStr);
+            const efectivo = asistenciaEfectiva(r.asistio, fecha, r.hora || horaStr);
             const esAuto = r.asistio === null && efectivo === false;
             const estado = efectivo === true ? 'presente' : efectivo === false ? 'ausente' : 'sinmarcar';
             const icono = estado==='presente' ? ' ✅' : estado==='ausente' ? ' ❌' : '';
@@ -14898,7 +15257,7 @@ async function renderAgenda(){
             const nombreDiaEscapado = (r.nombreDia || '').replace(/'/g,"&apos;");
             // Progreso del entrenamiento de HOY, sin tener que abrir el detalle.
             let progresoHtml = '';
-            if (r.rutinaDiaId){
+            if (r.rutinaDiaId && !r.servId){
               if (!r.progreso){
                 progresoHtml = `<div class="chip-progreso sin-empezar">Sin empezar</div>`;
               } else if (r.progreso.total > 0 && r.progreso.hechos >= r.progreso.total){
@@ -14909,18 +15268,18 @@ async function renderAgenda(){
             }
             // (v122) Sin rutina enganchada al turno: o tiene una rotativa en curso (le toca el día X) o no tiene ninguna.
             let rotHtml = '';
-            if (!r.rutinaDiaId && r.rot){
+            if (!r.rutinaDiaId && r.rot && !r.servId){
               rotHtml = r.rot === 'sin'
                 ? `<div class="chip-progreso" style="color:var(--warn-text);">⚠ Sin rutina asignada</div>`
                 : `<div class="chip-progreso" style="color:var(--accent2-text);">🔁 Mensual${r.rot.dia ? ` · <b>${escaparHtml(r.rot.dia.nombre)}</b>${r.rot.dia.manual ? ' ✎' : ''}` : ` · ${escaparHtml(r.rot.nombre)}`}</div>`;
             }
-            return `<div class="alumno-chip asistencia-${estado} ${esAuto?'asistencia-auto':''}" onclick="abrirModalAsistencia('${r.id}', ${asistioArg}, '${fecha}', '${horaStr}', '${r.alumnoId}', '${nombreEscapado}', ${rutinaDiaArg}, '${nombreDiaEscapado}', '${SH ? (r.profId || '') : prof.id}')">
+            return `<div class="alumno-chip asistencia-${estado} ${esAuto?'asistencia-auto':''}" onclick="abrirModalAsistencia('${r.id}', ${asistioArg}, '${fecha}', '${r.hora || horaStr}', '${r.alumnoId}', '${nombreEscapado}', ${rutinaDiaArg}, '${nombreDiaEscapado}', '${SH ? (r.profId || '') : prof.id}')">
               <span class="avatar">${iniciales(r.nombre)}</span>
               <div class="chip-info">
                 <div class="chip-nombre">${r.nombre}${icono}</div>
-                ${progresoHtml}${rotHtml}
+                ${r.servId ? srvAgendaTag(r) : ''}${progresoHtml}${rotHtml}
                 ${SH ? `<div class="chip-progreso" style="color:var(--muted);">👤 ${escaparHtml((PROFESORES_CACHE.find(p => p.id === r.profId) || {}).nombre || 'Sin profesor')}</div>` : ''}
-                ${wellnessChipHtml(r.wellness, fecha)}
+                ${r.servId ? '' : wellnessChipHtml(r.wellness, fecha)}
                 ${r.ajustada ? '<div class="chip-progreso" style="color:var(--warn-text);">🔄 Sesión ajustada</div>' : ''}
               </div>
               <span class="chip-chevron">›</span>
@@ -14931,7 +15290,7 @@ async function renderAgenda(){
               <div class="franja-hora">${horaLabel}</div>
               <div class="franja-cuerpo">
                 <div class="franja-barra-wrap"><div class="franja-barra ${pct>=100?'llena':''}" style="width:${pct}%;"></div></div>
-                <div class="franja-cupo-txt">${nombres.length} de ${h.cupo_por_turno} cupos ocupados${SH && esperaSala[horaStr] ? ' · ⏳ ' + esperaSala[horaStr] + ' en espera' : ''}</div>
+                <div class="franja-cupo-txt">${nombres.some(r => r.servId) ? srvFranjaTxt(nombres, h.cupo_por_turno) : nombres.length + ' de ' + h.cupo_por_turno + ' cupos ocupados'}${SH && esperaSala[horaStr] ? ' · ⏳ ' + esperaSala[horaStr] + ' en espera' : ''}</div>
                 ${nombres.length ? `<div class="alumnos-chips">${chips}</div>` : '<div class="franja-vacia">Sin reservas en este horario</div>'}
               </div>
             </div>`;
@@ -14944,7 +15303,7 @@ async function renderAgenda(){
       `);
     });
 
-    const ocupacion = totalCupos ? Math.round((totalReservados/totalCupos)*100) : 0;
+    const ocupacion = totalCupos ? Math.round((totalOcup/totalCupos)*100) : 0;
     document.getElementById('agendaKpis').innerHTML = `
       <div class="kpi"><div class="num">${totalReservados}</div><div class="label">Turnos reservados</div></div>
       <div class="kpi clickable ${agendaSoloLibres?'activo':''}" onclick="toggleAgendaFiltroLibres()"><div class="num">${franjasVacias}</div><div class="label">Horarios libres</div></div>
@@ -17679,7 +18038,7 @@ function caHtml(D){
       <div class="x-kpi"><div class="k">Carga de la semana</div><div class="v">${Math.round(a.ua)} <span class="x-sub">UA</span></div></div>
       <div class="x-kpi"><div class="k">Promedio 4 semanas</div><div class="v">${a.cal ? Math.round(a.cronica) : '—'} <span class="x-sub">UA</span></div></div>
       <div class="x-kpi"><div class="k">ACWR</div><div class="v">${caNum(D.acwr, 2)}</div><div class="x-sub">${zPill}</div></div>
-      <div class="x-kpi"><div class="k">Último Wellness</div><div class="v" style="font-size:15px;">${wTxt}</div></div></div>
+      ${wellOn() ? `<div class="x-kpi"><div class="k">Último Wellness</div><div class="v" style="font-size:15px;">${wTxt}</div></div>` : ''}</div>
     ${D.calibrando ? `<div class="rc-msg" style="margin:0 0 10px;">⏳ <b>Calibrando.</b> Faltan ${D.faltan} semana(s) de historial para que el ACWR sea confiable; mientras tanto se ve la carga semanal.</div>` : ''}
     ${caCruce(D)}
     <div style="font-weight:700; margin:12px 0 2px;">Carga por semana</div>${caLeyenda([{ c:'var(--accent)', t:'Carga semanal (UA)' }, { c:'#5aa9ff', t:'Promedio de 4 semanas', l:1 }])}${caGrafCarga(D)}
@@ -20905,9 +21264,9 @@ async function sesEqPanel(id){
       <div class="se-g3"><div><b>${ejs.length}</b><span>entrenaron</span></div><div><b>${aus.length}</b><span>ausentes</span></div><div><b>${prom == null ? '–' : prom.toFixed(1)}</b><span>RPE medio</span></div></div>
       ${min && prom != null ? `<div class="se-note">📈 Carga de la sesión: <b>${min} min × RPE medio ${prom.toFixed(1).replace('.', ',')} = ${Math.round(min * prom)} UA</b> por jugador (promedio). Ya cuenta en la carga aguda de cada uno.</div>` : (min ? '<div class="se-note">📈 Cuando cada jugador ponga su RPE, la sesión entra en su carga aguda (' + min + ' min × RPE).</div>' : '')}
       <div class="se-f"><label>RPE de los jugadores · ${conRpe.length} de ${ejs.length}</label><div class="se-prog"><i style="width:${pct}%"></i></div></div>
-      <table class="se-tbl"><tr><th>Jugador</th><th>Estado</th><th>Wellness</th><th>RPE</th></tr>
-        ${ejs.slice().sort(ord).map(e => `<tr><td>${escaparHtml(e.alumnos?.nombre || '')}</td><td><span class="se-tag ok">entrenó</span></td><td>${sesEqWTxt(wm[e.alumno_id])}</td><td>${e.rpe != null ? '<b>' + e.rpe + '</b>' : '<span class="muted">pendiente</span>'}</td></tr>`).join('')}
-        ${aus.slice().sort(ord).map(a => `<tr><td>${escaparHtml(a.alumnos?.nombre || '')}</td><td><span class="se-tag no">${SESEQ_MOTIVOS[a.motivo] || a.motivo}</span></td><td>${sesEqWTxt(wm[a.alumno_id])}</td><td>–</td></tr>`).join('')}
+      <table class="se-tbl"><tr><th>Jugador</th><th>Estado</th><th class="wl-col">Wellness</th><th>RPE</th></tr>
+        ${ejs.slice().sort(ord).map(e => `<tr><td>${escaparHtml(e.alumnos?.nombre || '')}</td><td><span class="se-tag ok">entrenó</span></td><td class="wl-col">${sesEqWTxt(wm[e.alumno_id])}</td><td>${e.rpe != null ? '<b>' + e.rpe + '</b>' : '<span class="muted">pendiente</span>'}</td></tr>`).join('')}
+        ${aus.slice().sort(ord).map(a => `<tr><td>${escaparHtml(a.alumnos?.nombre || '')}</td><td><span class="se-tag no">${SESEQ_MOTIVOS[a.motivo] || a.motivo}</span></td><td class="wl-col">${sesEqWTxt(wm[a.alumno_id])}</td><td>–</td></tr>`).join('')}
       </table>
       <div class="se-btns">
         ${!ses.anulada_en && conRpe.length < ejs.length ? `<button onclick="sesEqRecordar('${id}')">🔔 Recordar el RPE a los ${ejs.length - conRpe.length} que faltan</button>` : ''}
@@ -21975,7 +22334,7 @@ function reporteCargaHtml(D){
       ${kpi(D.acwr == null ? '—' : caNum(D.acwr, 2), 'ACWR actual' + (k ? ' · ' + CA_REP_TXT[k] : ''), k ? CA_REP_COL[k] : null)}
       ${kpi(Math.round(a.ua) + ' UA', 'Carga de la semana')}
       ${kpi(a.cal ? Math.round(a.cronica) + ' UA' : '—', 'Promedio 4 semanas')}
-      ${kpi(w ? w.total + "/25" : "—", "Último Wellness" + (w ? " · " + w.semaforo : ""))}
+      ${wellOn() ? kpi(w ? w.total + "/25" : "—", "Último Wellness" + (w ? " · " + w.semaforo : "")) : ''}
     </div>
     <div id="reporteCargaChart">${reporteCargaSvg(S)}</div>
     <div style="color:#6b7280; font-size:11.5px; margin:4px 0 8px;"><span style="color:#2563eb;">- - -</span> promedio de 4 semanas · barras: <span style="color:#6b7280;">gris</span> calibrando, <span style="color:#15803d;">verde</span> óptima (0,8–1,3), <span style="color:#b45309;">naranja</span> precaución (1,3–1,5), <span style="color:#b91c1c;">rojo</span> riesgo (+1,5).</div>
@@ -23356,6 +23715,7 @@ async function revisarWellnessPendiente(alumnoId, forzar){
       // Red de seguridad: si el aviso llega con la app abierta, se detecta a los pocos minutos.
       setInterval(() => rechequear(), 3*60*1000);
     }
+    if (!wellOn()){ wellnessCardMostrar(false); return; }   // (v149) módulo apagado en este gimnasio
     if (document.getElementById('modalWellness')?.classList.contains('show')) return;   // (v112) ya abierto
     const hoy = dateAIso(new Date());
     const [turnos, resp] = await Promise.all([
@@ -23385,6 +23745,7 @@ async function wellnessAtajo(){
   }catch(e){ /* best-effort */ }
 }
 function abrirWellness(){
+  if (!wellOn()) return;   // (v149)
   if (document.getElementById('modalWellness')?.classList.contains('show')) return;   // (v112)
   WELLNESS_CTX.valores = {};
   let ov = document.getElementById('modalWellness');
@@ -23478,12 +23839,14 @@ async function cargarWellnessDelDia(fecha, turnos){
 }
 
 function wellnessChipHtml(w, fecha){
+  if (!wellOn()) return '';   // (v149)
   if (w) return `<div class="chip-progreso" style="color:${WELLNESS_COLOR[w.semaforo] || 'inherit'};">${WELLNESS_ICONO[w.semaforo] || ''} Wellness ${w.total}/25</div>`;
   if (fecha === dateAIso(new Date())) return `<div class="chip-progreso sin-empezar">Wellness pendiente</div>`;
   return '';
 }
 
 function wellnessDetalleHtml(w, fecha){
+  if (!wellOn()) return '';   // (v149)
   if (!w){
     return fecha === dateAIso(new Date())
       ? `<div class="muted" style="margin:8px 0; font-size:13px;">El alumno todavía no completó el Wellness de hoy.</div>`
@@ -24049,6 +24412,7 @@ function elegirDiaAlu(i){
 async function renderHorasAlu(){
   ALU_MODO_PINTADO = salaHorario();
   if (ALU_MODO_PINTADO) return salaRenderHorasAlu();   // (v105) cupo por horario
+  if (srvUsa()) return srvAluRender();   // (v148) con servicios activos se reserva eligiendo servicio
   const alumnoId = document.getElementById('aluAlumno').value;
   const wrap = document.getElementById('aluHorasWrap');
   if (!alumnoId){ wrap.innerHTML = 'Elegí tu nombre arriba.'; return; }
@@ -24104,13 +24468,15 @@ async function renderHorasAlu(){
   }catch(e){ wrap.innerHTML = 'Error: ' + e.message; }
 }
 
-function pedirConfirmacionTurno(profesorId, hora, profesorNombre, fecha, sedeId){
-  PENDIENTE_TURNO_ALU = { profesorId, hora, profesorNombre, fecha };
+function pedirConfirmacionTurno(profesorId, hora, profesorNombre, fecha, sedeId, servicioId){
+  PENDIENTE_TURNO_ALU = { profesorId, hora, profesorNombre, fecha, servicioId: servicioId || null };
+  const sv = servicioId ? srvPorId(servicioId) : null;   // (v148)
   const sede = (sedeId && sucMulti()) ? sucPorId(sedeId) : null;
-  document.getElementById('modalTurnoTexto').textContent =
-    `¿Confirmás la reserva del ${hora.slice(0,5)} hs con ${profesorNombre} (${fechaLegible(fecha)})?`;
+  document.getElementById('modalTurnoTexto').textContent = sv
+    ? `¿Confirmás tu turno de ${sv.nombre} (${srvDur(sv.duracion_min)}) a las ${hora.slice(0,5)} hs con ${profesorNombre} (${fechaLegible(fecha)})?`
+    : `¿Confirmás la reserva del ${hora.slice(0,5)} hs con ${profesorNombre} (${fechaLegible(fecha)})?`;
   document.getElementById('modalTurnoHora').textContent = hora.slice(0,5) + ' hs';
-  document.getElementById('modalTurnoDetalle').textContent = `con ${profesorNombre} · ${fechaLegible(fecha)}` + (sede ? ` · 📍 ${sede.nombre}` : '');
+  document.getElementById('modalTurnoDetalle').textContent = (sv ? srvEtq(sv) + ' · ' : '') + `con ${profesorNombre} · ${fechaLegible(fecha)}` + (sede ? ` · 📍 ${sede.nombre}` : '');
   const ms = document.getElementById('modalTurnoSede');
   if (ms){ ms.style.display = sede ? '' : 'none'; ms.innerHTML = sede ? sucTarjetaHtml(sede, false) : ''; }
   document.getElementById('modalConfirmarTurno').classList.add('show');
@@ -24123,10 +24489,19 @@ function cerrarModalTurno(){
 
 async function confirmarReservaTurno(){
   if (!PENDIENTE_TURNO_ALU) return;
-  const { profesorId, hora, fecha } = PENDIENTE_TURNO_ALU;
+  const { profesorId, hora, fecha, servicioId } = PENDIENTE_TURNO_ALU;
   const alumnoId = document.getElementById('aluAlumno').value;
   cerrarModalTurno();
   if (!alumnoId) return;
+  if (servicioId){   // (v148) turno de un servicio: sin enganche de rutina
+    try{
+      await sb('rpc/reservar_turno_servicio', { method: 'POST', body: JSON.stringify({ p_alumno_id: alumnoId, p_profesor_id: profesorId, p_servicio_id: servicioId, p_fecha: fecha, p_hora: hora }) });
+      toast('Turno reservado ✓');
+      cargarTurnos(alumnoId);
+    }catch(e){ toast('Error reservando turno: ' + extraerMensajeError(e), true); }
+    renderTurnosDisponibles();
+    return;
+  }
   try{
     const [turno] = await sb('rpc/reservar_turno', {
       method: 'POST',
@@ -24746,7 +25121,7 @@ async function cargarTurnos(alumnoId){
   cont.innerHTML = 'Cargando...';
   try{
     const [rows, ejecucionesFinalizadas] = await Promise.all([
-      sb(`turnos?select=id,fecha,hora,estado,rutina_dia_id,rutina_dias(id,nombre_dia),profesores(nombre)${sucMulti() ? ',sucursal_id' : ''}&alumno_id=eq.${alumnoId}&order=fecha.desc,hora.desc&limit=30`),
+      sb(`turnos?select=id,fecha,hora,estado,rutina_dia_id,rutina_dias(id,nombre_dia),profesores(nombre)${sucMulti() ? ',sucursal_id' : ''}${srvCols()}&alumno_id=eq.${alumnoId}&order=fecha.desc,hora.desc&limit=30`),
       sb(`ejecuciones?select=rutina_dia_id&alumno_id=eq.${alumnoId}&estado=eq.finalizada&rutina_dia_id=not.is.null`),
     ]);
     if (!rows.length){ cont.innerHTML = '<div class="empty">Todavía no reservaste turnos.</div>'; return; }
@@ -24780,11 +25155,13 @@ async function cargarTurnos(alumnoId){
           : `<button class="secondary" onclick="reintentarAsignacion('${t.id}','${alumnoId}','${t.fecha}')">Reintentar</button>`) : '')
         + ((cancelado || completado || vencido) ? '' : `<button class="ghost" onclick="cancelarTurno('${t.id}','${alumnoId}')">Cancelar</button>`);
       const [cls, txt] = cancelado ? ['canc','Cancelado'] : completado ? ['hecho','Hecho'] : vencido ? ['venc','Vencido'] : futuro ? ['','Próximo'] : diffDias === 0 ? ['hoy','Hoy'] : ['pend','Pendiente'];
+      const sv = t.servicio_id ? (srvPorId(t.servicio_id) || { nombre: 'Servicio' }) : null;   // (v148)
       return tcardHtml({
         fecha: t.fecha, cls: cancelado ? 'canc' : vencido ? 'venc' : '',
-        titulo: t.hora.slice(0,5) + ' hs' + (t.profesores?.nombre ? ' · ' + t.profesores.nombre : '') + (sucMulti() && t.sucursal_id && sucNombre(t.sucursal_id) ? ' · 📍 ' + sucNombre(t.sucursal_id) : ''),
-        sub: cancelado ? 'Cancelado' : completado ? '✓ Entrenamiento realizado' : vencido ? 'Vencido' : futuro ? 'Disponible ese día' : (t.rutina_dias ? t.rutina_dias.nombre_dia : 'Todavía sin rutina planificada para este día'),
-        estadoCls: cls, estadoTxt: txt, acciones,
+        titulo: t.hora.slice(0,5) + ' hs' + (sv ? ' · ' + srvEtq(sv) + (t.duracion_min ? ' (' + srvDur(t.duracion_min) + ')' : '') : '') + (t.profesores?.nombre ? ' · ' + t.profesores.nombre : '') + (sucMulti() && t.sucursal_id && sucNombre(t.sucursal_id) ? ' · 📍 ' + sucNombre(t.sucursal_id) : ''),
+        sub: sv ? (cancelado ? 'Cancelado' : diffDias > 0 ? 'Turno pasado' : diffDias === 0 ? 'Es hoy' : 'Próximo turno') : cancelado ? 'Cancelado' : completado ? '✓ Entrenamiento realizado' : vencido ? 'Vencido' : futuro ? 'Disponible ese día' : (t.rutina_dias ? t.rutina_dias.nombre_dia : 'Todavía sin rutina planificada para este día'),
+        estadoCls: cls, estadoTxt: (sv && diffDias > 0 && !cancelado) ? 'Pasado' : txt,
+        acciones: sv ? ((cancelado || diffDias > 0) ? '' : `<button class="ghost" onclick="cancelarTurno('${t.id}','${alumnoId}')">Cancelar</button>`) : acciones,
       });
     }).join('');
   }catch(e){ cont.innerHTML = 'Error: ' + e.message; }
@@ -26310,7 +26687,7 @@ comenzarEntrenamiento = async function(rutinaDiaId, alumnoId, nombreDia){
   if (GIMNASIO_ACTUAL_BLOQUEADO){ perPaywall(); return; }
   PER_SESION = { diaId: rutinaDiaId, nombre: nombreDia };
   try{
-    if (Date.now() >= WELLNESS_POSPUESTO_HASTA){
+    if (wellOn() && Date.now() >= WELLNESS_POSPUESTO_HASTA){
       const hoy = dateAIso(new Date());
       const r = await sb(`wellness_respuestas?select=id&alumno_id=eq.${alumnoId}&fecha=eq.${hoy}&limit=1`);
       if (!r.length){ await new Promise(res => { WELLNESS_CTX.alumnoId = alumnoId; WELLNESS_CTX.despues = res; abrirWellness(); }); }
@@ -26322,7 +26699,7 @@ comenzarEntrenamiento = async function(rutinaDiaId, alumnoId, nombreDia){
 // ya se hizo o es de otro día (comenzarEntrenamiento va a avisar), ni si lo salteó hace menos de 1 hora. Nunca frena el entrenamiento.
 async function wellnessAntesDeEmpezar(rutinaDiaId, alumnoId){
   try{
-    if (Date.now() < WELLNESS_SALTADO_HASTA) return;
+    if (!wellOn() || Date.now() < WELLNESS_SALTADO_HASTA) return;   // (v149)
     const hoy = dateAIso(new Date());
     const [resp, enCurso, dia, hechas] = await Promise.all([
       sb(`wellness_respuestas?select=id&alumno_id=eq.${alumnoId}&fecha=eq.${hoy}&limit=1`),
