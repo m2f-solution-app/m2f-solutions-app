@@ -193,6 +193,24 @@
   }
   .grid-exercise img, .grid-exercise video, .grid-exercise iframe, .grid-exercise .media-wrap{width:56px;height:56px;object-fit:cover;border-radius:8px;background:#000;border:none;}
   .muted{color:var(--muted); font-size:13px;}
+  /* (v140) Sucursales */
+  .suc-barra{ display:flex; align-items:center; gap:10px; margin:0 0 14px; padding:8px 12px; background:var(--panel); border:1px solid var(--border); border-radius:14px; }
+  .suc-barra .suc-lbl{ font-size:12.5px; font-weight:700; color:var(--muted); white-space:nowrap; }
+  .suc-chips{ display:flex; gap:8px; overflow-x:auto; scrollbar-width:none; flex:1; }
+  .suc-chips::-webkit-scrollbar{ display:none; }
+  .suc-chip{ font-family:inherit; font-size:13.5px; font-weight:700; padding:8px 16px; border-radius:999px; background:var(--panel2); color:var(--muted); border:1px solid var(--border); cursor:pointer; white-space:nowrap; }
+  .suc-chip.on{ background:var(--accent); color:#fff; border-color:var(--accent); }
+  .suc-lista{ display:grid; gap:12px; }
+  .suc-card{ border:1px solid var(--border); border-radius:14px; padding:14px; background:var(--panel2); }
+  .suc-card.off{ opacity:.65; }
+  .suc-card-h{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:8px; }
+  .suc-dir{ display:grid; gap:6px; }
+  .suc-dir-t{ font-weight:600; }
+  .suc-mapa{ width:100%; height:190px; border:1px solid var(--border); border-radius:12px; margin-top:6px; background:var(--panel); }
+  .suc-ir{ display:inline-block; margin-top:6px; font-weight:700; font-size:14px; color:var(--accent); text-decoration:none; }
+  .suc-form{ margin-top:14px; padding:14px; border:1px dashed var(--border); border-radius:14px; }
+  .suc-grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  @media (max-width:560px){ .suc-grid{ grid-template-columns:1fr; } .suc-barra .suc-lbl{ display:none; } }
   .pill{display:inline-block; background:var(--panel2); border:1px solid var(--border); border-radius:999px; padding:2px 10px; font-size:12px; color:var(--muted);}
   .chip-toggle{display:inline-block; font-size:12.5px; font-weight:600; padding:6px 13px; border-radius:999px; background:var(--panel2); border:1px solid var(--border); color:var(--muted); cursor:pointer; user-select:none;}
   .chip-toggle.active{background:var(--accent); border-color:var(--accent); color:#1a0e00;}
@@ -2418,6 +2436,8 @@
 
   <div class="prof-layout">
     <div class="prof-main">
+      <!-- (v140) Sedes -->
+      <div class="suc-barra" id="sucBarra" style="display:none;"><span class="suc-lbl">📍 Sede</span><div class="suc-chips"></div></div>
 
       <!-- ---- SUBVISTA: INICIO (v81) — lo primero que ve el profesor al entrar ---- -->
       <div id="subvistaInicio" style="display:none;">
@@ -3637,6 +3657,8 @@
           </div>
           <div id="listaEquipos" class="muted" style="margin-top:10px;">Cargando...</div>
         </div></details>
+        <!-- (v140) Sucursales -->
+        <details class="plegable card" data-k="gim-suc" id="gimSucBox" style="display:none;"><summary>📍 Sucursales (sedes, dirección y mapa)</summary><div class="plg-body" id="gimSucBody"><div class="muted">Cargando…</div></div></details>
         <!-- (v103) Reglas de reservas de clases -->
         <details class="plegable card" data-k="gim-clases" id="gimClasesBox" style="display:none;"><summary>Clases y reservas</summary><div class="plg-body">
           <div class="muted" style="margin-bottom:10px;">Reglas para cuando el alumno reserva desde su app. El staff y Recepción pueden anotar, sacar turnos o quitar alumnos a mano sin estas restricciones (salvo el cupo).</div>
@@ -4575,6 +4597,7 @@ function modGuiaOk(x){   // para filtrar pasos / preguntas de la Guía según lo
 function modAplicarMenu(){
   try{ clCfgPintar(); }catch(e){}   // (v103) la sección "Clases y reservas" de Mi gimnasio sigue al módulo Clases
   try{ rpxCfgPintar(); }catch(e){}   // (v111) y el link de reservas
+  try{ sucAplicar(); }catch(e){}   // (v140) sedes
   const roles = new Set([...(typeof MENU_SOLO_ADMIN !== 'undefined' ? MENU_SOLO_ADMIN : []), ...(typeof BNAV_SOLO_ADMIN !== 'undefined' ? BNAV_SOLO_ADMIN : []), 'menuRecepcion', 'ttRecepcion']);
   Object.keys(MOD_IDS).forEach(k => {
     const on = modOn(k);
@@ -4591,6 +4614,7 @@ async function modulosCargar(){
     if (Array.isArray(r) && r.length){ MOD_MAP = {}; r.forEach(x => { MOD_MAP[x.modulo] = !!x.habilitado; }); }
     else MOD_MAP = null;
   }catch(e){ MOD_MAP = null; }   // SQL todavía sin correr / sin sesión: se ve todo, como antes
+  try{ await sucCargar(); }catch(e){ console.error(e); }   // (v140)
   try{ aplicarPermisosPorRol(); }catch(e){ modAplicarMenu(); }
 }
 
@@ -4604,7 +4628,7 @@ function modPresetDe(vals){
   const mods = (MOD_CAT || []).filter(c => !c.nucleo);
   for (const k of Object.keys(MOD_PRESETS)){
     const p = MOD_PRESETS[k];
-    if (mods.every(c => !!vals[c.modulo] === (p.on === '*' || p.on.includes(c.modulo)))) return p.n;
+    if (mods.every(c => !!vals[c.modulo] === (p.on === '*' ? c.modulo !== 'sucursales' : p.on.includes(c.modulo)))) return p.n;
   }
   return null;
 }
@@ -4632,7 +4656,7 @@ function modAccesosCerrar(){ const m = document.getElementById('modalAccesos'); 
 function modAccesosPreset(k){
   if (!MOD_EDIT) return;
   const p = MOD_PRESETS[k]; if (!p) return;
-  MOD_CAT.filter(c => !c.nucleo).forEach(c => { MOD_EDIT.vals[c.modulo] = p.on === '*' || p.on.includes(c.modulo); });
+  MOD_CAT.filter(c => !c.nucleo).forEach(c => { MOD_EDIT.vals[c.modulo] = p.on === '*' ? c.modulo !== 'sucursales' : p.on.includes(c.modulo); });
   modAccesosPintar();
 }
 function modAccesosSet(m, v){ if (MOD_EDIT){ MOD_EDIT.vals[m] = !!v; modAccesosPintar(); } }
@@ -5095,7 +5119,7 @@ function atlIniciarAlu(){
   atlCargarVista('aluAtletismoContenido', id || '');
 }
 
-const APP_VERSION = 139;
+const APP_VERSION = 140;
 let ES_PERSONAL = false;   // (v132) cuenta personal (gimnasios.tipo = 'personal'); se calcula en perAplicar()
 // (v96) Fecha de la última actualización: se cambia junto con APP_VERSION en cada entrega. Se muestra en la
 // pantalla de inicio y en el menú de cuenta ("v94 · actualizada el 5/10/2026").
@@ -9663,6 +9687,228 @@ function rpxQrAbrir(){
 
 // ===== (v139) QR DEL ESCRITORIO: un QR para pegar en el mostrador. Mismo link ?r=slug; lo que hace al escanear lo elige el gimnasio =====
 // SQL: v139-qr-escritorio.sql (columna reservas_entrada). Sin el SQL el QR funciona como siempre (lleva a las reservas).
+// ---------- (v140) SUCURSALES: varias sedes con dirección y mapa; horarios, turnos y agenda por sede ----------
+// SQL: v140-sucursales.sql. Módulo 'sucursales' (apagado por defecto: lo prende Martin en 🧩 Accesos).
+// Gimnasio con 0 o 1 sedes → la app se ve y anda EXACTAMENTE igual que antes (sin selector, sin columnas nuevas).
+const SUC = { lista: null, ok: null, sel: null, profSedes: null, edit: null, busy: false, geo: false };
+function sucOn(){ return !!(MOD_MAP && MOD_MAP.sucursales === true); }
+function sucActivas(){ return (SUC.lista || []).filter(s => s.activo); }
+function sucMulti(){ return sucOn() && SUC.ok === true && sucActivas().length >= 2; }
+function sucPrincipal(){ return (SUC.lista || []).find(s => s.es_principal) || sucActivas()[0] || null; }
+function sucPorId(id){ return (SUC.lista || []).find(s => s.id === id) || null; }
+function sucNombre(id){ const s = sucPorId(id); return s ? s.nombre : ''; }
+function sucSel(){ return (sucMulti() && SUC.sel && sucActivas().some(s => s.id === SUC.sel)) ? SUC.sel : null; }
+function sucLsKey(){ return 'm2f_suc_' + ((PERFIL_ACTUAL && PERFIL_ACTUAL.gimnasio_id) || ''); }
+function sucDefault(){ return sucSel() || (sucPrincipal() && sucPrincipal().id) || null; }
+function sucOpts(sel){
+  const act = sucActivas(); const val = sel || sucDefault();
+  const extra = (sel && !act.some(s => s.id === sel) && sucPorId(sel)) ? [sucPorId(sel)] : [];
+  return act.concat(extra).map(s => `<option value="${s.id}" ${s.id === val ? 'selected' : ''}>${xe(s.nombre)}</option>`).join('');
+}
+// Valor de sede de una fila del editor de horarios ({} si no hay selector → no toca la base como antes)
+function sucHorVal(suf, rowId){
+  const el = document.getElementById(`horSuc${suf}-${rowId}`);
+  return (el && el.value) ? { sucursal_id: el.value } : {};
+}
+function sucFiltrarHor(hs){
+  const s = sucSel(); if (!s) return hs;
+  return (hs || []).filter(h => h.sucursal_id === s);
+}
+function sucProfEnSel(profId){
+  const s = sucSel(); if (!s || !SUC.profSedes) return true;
+  const set = SUC.profSedes[profId];
+  return !set || !set.size || set.has(s);   // sin horarios cargados todavía: se ve en todas (para poder configurarlo)
+}
+function sucProfLista(){ return (PROFESORES_CACHE || []).filter(p => sucProfEnSel(p.id)); }
+function sucProfTxt(profId){
+  if (!sucMulti() || !SUC.profSedes) return '';
+  const set = SUC.profSedes[profId]; if (!set || !set.size) return '';
+  const n = [...set].map(sucNombre).filter(Boolean); return n.length ? ' · 📍 ' + n.join(', ') : '';
+}
+async function sucCargar(){
+  SUC.lista = []; SUC.ok = null; SUC.profSedes = null;
+  if (!sucOn() || !PERFIL_ACTUAL || !PERFIL_ACTUAL.gimnasio_id){ sucAplicar(); return; }
+  try{
+    SUC.lista = await sb('sucursales?select=*&order=orden.asc,nombre.asc'); SUC.ok = true;
+  }catch(e){
+    SUC.lista = []; SUC.ok = /42P01|does not exist|sucursales/i.test((e && e.message) || '') ? false : null;
+  }
+  if (sucMulti()){
+    await sucRecargarProfSedes();
+    try{ SUC.sel = localStorage.getItem(sucLsKey()) || null; }catch(e){ SUC.sel = null; }
+    if (SUC.sel && !sucActivas().some(s => s.id === SUC.sel)) SUC.sel = null;
+  }else SUC.sel = null;
+  sucAplicar();
+}
+async function sucRecargarProfSedes(){   // qué profesores trabajan en qué sede (según sus horarios)
+  if (!sucMulti()) return;
+  try{
+    const hs = await sb('horarios_trabajo?select=profesor_id,sucursal_id&activo=eq.true&limit=3000');
+    const m = {}; (hs || []).forEach(h => { if (!h.sucursal_id) return; (m[h.profesor_id] = m[h.profesor_id] || new Set()).add(h.sucursal_id); });
+    SUC.profSedes = m;
+  }catch(e){ SUC.profSedes = null; }
+}
+function sucAplicar(){
+  try{ sucBarraPintar(); }catch(e){}
+  try{ sucPintar(); }catch(e){}
+}
+// ----- Barra de sedes (arriba de todo, para admin y profesores) -----
+function sucBarraPintar(){
+  const bar = document.getElementById('sucBarra'); if (!bar) return;
+  const ver = !!(PERFIL_ACTUAL && PERFIL_ACTUAL.rol !== 'recepcion' && sucMulti());
+  bar.style.display = ver ? '' : 'none';
+  if (!ver) return;
+  const sel = sucSel();
+  bar.querySelector('.suc-chips').innerHTML =
+    `<button type="button" class="suc-chip ${!sel ? 'on' : ''}" onclick="sucCambiar(null)">Todas</button>` +
+    sucActivas().map(s => `<button type="button" class="suc-chip ${sel === s.id ? 'on' : ''}" onclick="sucCambiar('${s.id}')">${xe(s.nombre)}</button>`).join('');
+}
+async function sucCambiar(id){
+  SUC.sel = id || null;
+  try{ if (SUC.sel) localStorage.setItem(sucLsKey(), SUC.sel); else localStorage.removeItem(sucLsKey()); }catch(e){}
+  sucBarraPintar();
+  const vis = n => { const e = document.getElementById('subvista' + n); return e && e.style.display !== 'none'; };
+  try{
+    if (vis('Agenda')) renderAgenda();
+    if (vis('Profesores')){ await sucRecargarProfSedes(); renderListaProfesores(); }
+    if (vis('Dashboard')) cargarDashboardAdmin();
+  }catch(e){ console.error(e); }
+  toast(SUC.sel ? '📍 ' + sucNombre(SUC.sel) : '📍 Todas las sedes');
+}
+// ----- Mapa y cómo llegar -----
+function sucTieneMapa(s){ return !!(s && s.lat != null && s.lng != null && s.lat !== '' && s.lng !== ''); }
+function sucMapaSrc(s){
+  const la = Number(s.lat), ln = Number(s.lng), dx = 0.0045, dy = 0.0028;
+  return `https://www.openstreetmap.org/export/embed.html?bbox=${(ln - dx).toFixed(6)}%2C${(la - dy).toFixed(6)}%2C${(ln + dx).toFixed(6)}%2C${(la + dy).toFixed(6)}&layer=mapnik&marker=${la}%2C${ln}`;
+}
+function sucDireccionTxt(s){ return [s.direccion, s.localidad].filter(Boolean).join(', '); }
+function sucComoLlegarUrl(s){
+  if (sucTieneMapa(s)) return `https://www.google.com/maps/dir/?api=1&destination=${Number(s.lat)},${Number(s.lng)}`;
+  const d = sucDireccionTxt(s);
+  if (d) return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(d)}`;
+  return s.maps_url || '';
+}
+function sucTarjetaHtml(s, conMapa){
+  const dir = sucDireccionTxt(s), url = sucComoLlegarUrl(s);
+  return `<div class="suc-dir">${dir ? `<div class="suc-dir-t">📍 ${xe(dir)}</div>` : '<div class="muted">Sin dirección cargada.</div>'}
+    ${s.telefono ? `<div class="muted" style="font-size:13px;">📞 ${xe(s.telefono)}</div>` : ''}
+    ${conMapa && sucTieneMapa(s) ? `<iframe class="suc-mapa" loading="lazy" referrerpolicy="no-referrer" title="Mapa de ${xe(s.nombre)}" src="${sucMapaSrc(s)}"></iframe>` : ''}
+    ${url ? `<a class="suc-ir" href="${xe(url)}" target="_blank" rel="noopener">🧭 Cómo llegar</a>` : ''}</div>`;
+}
+function sucParseMapsUrl(u){
+  const s = String(u || '');
+  const m = s.match(/@(-?\d{1,3}\.\d+),(-?\d{1,3}\.\d+)/) || s.match(/!3d(-?\d{1,3}\.\d+)!4d(-?\d{1,3}\.\d+)/)
+         || s.match(/[?&](?:q|ll|query|destination)=(-?\d{1,3}\.\d+)(?:,|%2C)(-?\d{1,3}\.\d+)/i);
+  return m ? { lat: Number(m[1]), lng: Number(m[2]) } : null;
+}
+async function sucGeocodificar(){
+  const g = id => (document.getElementById(id) || {}).value || '';
+  const q = [g('sucF_dir'), g('sucF_loc')].map(x => x.trim()).filter(Boolean).join(', ');
+  const url = g('sucF_url').trim();
+  const p = url ? sucParseMapsUrl(url) : null;
+  if (p){ SUC.edit.lat = p.lat; SUC.edit.lng = p.lng; sucFormGuardarCampos(); sucPintar(true); toast('Ubicación tomada del link de Google Maps ✓'); return; }
+  if (!q){ toast('Escribí la dirección (y la localidad) primero.', true); return; }
+  if (SUC.geo) return; SUC.geo = true;
+  const btn = document.getElementById('sucBtnUbicar'); if (btn){ btn.disabled = true; btn.textContent = 'Buscando…'; }
+  try{
+    const r = await fetch('https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=ar&accept-language=es&q=' + encodeURIComponent(q));
+    const j = await r.json();
+    if (!Array.isArray(j) || !j.length){ toast('No encontré esa dirección. Probá con calle, número y localidad, o pegá el link de Google Maps.', true); }
+    else { SUC.edit.lat = Number(Number(j[0].lat).toFixed(6)); SUC.edit.lng = Number(Number(j[0].lon).toFixed(6)); sucFormGuardarCampos(); toast('Ubicada en el mapa ✓ Revisá que el punto sea el correcto.'); }
+  }catch(e){ toast('No pude buscar la dirección ahora. Pegá el link de Google Maps o probá más tarde.', true); }
+  SUC.geo = false; sucPintar(true);
+}
+// ----- Mi gimnasio → 📍 Sucursales -----
+function sucFormGuardarCampos(){
+  const g = id => { const e = document.getElementById(id); return e ? e.value : ''; };
+  if (!SUC.edit || !document.getElementById('sucF_nombre')) return;
+  Object.assign(SUC.edit, { nombre: g('sucF_nombre'), direccion: g('sucF_dir'), localidad: g('sucF_loc'), telefono: g('sucF_tel'), maps_url: g('sucF_url') });
+}
+function sucPintar(forzar){
+  const box = document.getElementById('gimSucBox'); if (!box) return;
+  const ver = !!(PERFIL_ACTUAL && PERFIL_ACTUAL.rol === 'admin' && sucOn());
+  box.style.display = ver ? '' : 'none';
+  const body = document.getElementById('gimSucBody'); if (!ver || !body) return;
+  if (!forzar && body.contains(document.activeElement) && /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName)) return;
+  if (SUC.ok === false){ body.innerHTML = '<div class="rpx-ban">⚠️ Falta activar esta función en la base de datos. Corré <b>v140-sucursales.sql</b> en Supabase (SQL Editor) y recargá la app.</div>'; return; }
+  if (SUC.ok !== true){ body.innerHTML = '<div class="muted">Cargando…</div>'; return; }
+  const lista = SUC.lista || [];
+  if (!lista.length){
+    body.innerHTML = `<div class="muted" style="margin-bottom:12px;">Si tu centro tiene <b>más de un local</b>, activá las sucursales: cada una con su dirección y mapa, sus profesores y horarios, y sus turnos. Arriba de todo vas a poder tocar una sede y ver solo lo de esa sede, o <b>Todas</b> juntas. Lo que ya cargaste pasa a la primera sede.</div>
+      <div class="field" style="max-width:340px;"><label>Nombre de tu primera sede</label><input id="sucNomPrincipal" maxlength="60" value="${xe((GIMNASIO_ACTUAL && GIMNASIO_ACTUAL.nombre) || '')}" placeholder="Ej: Sede Centro"></div>
+      <div class="row" style="margin-top:12px;"><button type="button" onclick="sucActivarClick()">📍 Activar sucursales</button></div>`;
+    return;
+  }
+  const e = SUC.edit;
+  const tarjetas = lista.map(s => `<div class="suc-card ${s.activo ? '' : 'off'}">
+      <div class="suc-card-h"><b>${xe(s.nombre)}</b>${s.es_principal ? '<span class="pill">Principal</span>' : ''}${s.activo ? '' : '<span class="pill warn">Desactivada</span>'}
+        <span style="flex:1"></span>
+        <button type="button" class="ghost" onclick="sucEditar('${s.id}')">Editar</button>
+        ${s.es_principal ? '' : `<button type="button" class="ghost" onclick="sucActivoToggle('${s.id}', ${s.activo ? 'false' : 'true'})">${s.activo ? 'Desactivar' : 'Activar'}</button>`}</div>
+      ${sucTarjetaHtml(s, true)}</div>`).join('');
+  let form = '';
+  if (e){
+    const p = { lat: e.lat, lng: e.lng };
+    form = `<div class="suc-form"><div style="font-weight:700;margin-bottom:10px;">${e.id ? 'Editar sucursal' : 'Nueva sucursal'}</div>
+      <div class="suc-grid">
+        <div class="field"><label>Nombre</label><input id="sucF_nombre" maxlength="60" value="${xe(e.nombre || '')}" placeholder="Ej: Norte"></div>
+        <div class="field"><label>Teléfono (opcional)</label><input id="sucF_tel" maxlength="30" inputmode="tel" value="${xe(e.telefono || '')}"></div>
+        <div class="field"><label>Dirección</label><input id="sucF_dir" maxlength="200" value="${xe(e.direccion || '')}" placeholder="Calle y número"></div>
+        <div class="field"><label>Localidad</label><input id="sucF_loc" maxlength="80" value="${xe(e.localidad || '')}" placeholder="Ej: Vicente López"></div>
+      </div>
+      <div class="field" style="margin-top:8px;"><label>Link de Google Maps (opcional)</label><input id="sucF_url" maxlength="500" value="${xe(e.maps_url || '')}" placeholder="Pegá el link de “Compartir” de Google Maps"></div>
+      <div class="row" style="margin-top:10px;align-items:center;"><button type="button" class="ghost" id="sucBtnUbicar" onclick="sucFormGuardarCampos();sucGeocodificar()">📍 Ubicar en el mapa</button>
+        <span class="muted" style="font-size:12.5px;">${sucTieneMapa(p) ? 'Ubicada ✓' : 'Escribí la dirección y tocá el botón.'}</span></div>
+      ${sucTieneMapa(p) ? `<iframe class="suc-mapa" title="Mapa" src="${sucMapaSrc(p)}"></iframe>` : ''}
+      <div class="row" style="margin-top:14px;"><button type="button" id="sucBtnGuardar" onclick="sucGuardar()">Guardar sucursal</button><button type="button" class="ghost" onclick="sucCancelar()">Cancelar</button></div></div>`;
+  }
+  body.innerHTML = `<div class="muted" style="margin-bottom:12px;">Cada sucursal tiene su dirección y mapa. Los profesores eligen en qué sede trabajan cada día desde <b>🕒 Horarios</b>, y los turnos quedan en la sede del profesor. Una sede no se borra: se desactiva.</div>
+    <div class="suc-lista">${tarjetas}</div>
+    ${form || '<div class="row" style="margin-top:14px;"><button type="button" onclick="sucNueva()">＋ Agregar sucursal</button></div>'}`;
+}
+async function sucActivarClick(){
+  if (SUC.busy) return; SUC.busy = true;
+  try{
+    const nom = ((document.getElementById('sucNomPrincipal') || {}).value || '').trim();
+    await sb('rpc/sucursales_activar', { method: 'POST', body: JSON.stringify({ p_nombre: nom || null }) });
+    await sucCargar();
+    toast('Sucursales activadas ✓ Ahora agregá las otras sedes.');
+    SUC.edit = { id: null, nombre: '', direccion: '', localidad: '', telefono: '', maps_url: '', lat: null, lng: null }; sucPintar(true);
+  }catch(e){ toast(extraerMensajeError(e), true); }
+  SUC.busy = false;
+}
+function sucNueva(){ SUC.edit = { id: null, nombre: '', direccion: '', localidad: '', telefono: '', maps_url: '', lat: null, lng: null }; sucPintar(true); }
+function sucEditar(id){ const s = sucPorId(id); if (!s) return; SUC.edit = Object.assign({}, s); sucPintar(true); }
+function sucCancelar(){ SUC.edit = null; sucPintar(true); }
+async function sucGuardar(){
+  if (SUC.busy || !SUC.edit) return; sucFormGuardarCampos();
+  const e = SUC.edit; const nombre = (e.nombre || '').trim();
+  if (nombre.length < 2){ toast('Poné el nombre de la sucursal.', true); return; }
+  const p = sucParseMapsUrl(e.maps_url);   // si pegó un link con coordenadas y no ubicó a mano, las toma de ahí
+  let lat = e.lat, lng = e.lng; if (!sucTieneMapa({ lat, lng }) && p){ lat = p.lat; lng = p.lng; }
+  const fila = { nombre, direccion: (e.direccion || '').trim() || null, localidad: (e.localidad || '').trim() || null, telefono: (e.telefono || '').trim() || null,
+    maps_url: (e.maps_url || '').trim() || null, lat: sucTieneMapa({ lat, lng }) ? lat : null, lng: sucTieneMapa({ lat, lng }) ? lng : null };
+  SUC.busy = true; const btn = document.getElementById('sucBtnGuardar'); if (btn){ btn.disabled = true; btn.textContent = 'Guardando…'; }
+  try{
+    if (e.id) await sb(`sucursales?id=eq.${e.id}`, { method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: JSON.stringify(fila) });
+    else await sb('sucursales', { method: 'POST', headers: { Prefer: 'return=minimal' }, body: JSON.stringify([Object.assign({ gimnasio_id: PERFIL_ACTUAL.gimnasio_id, orden: (SUC.lista || []).length }, fila)]) });
+    SUC.edit = null; await sucCargar(); toast(e.id ? 'Sucursal guardada ✓' : 'Sucursal creada ✓');
+  }catch(err){
+    const m = extraerMensajeError(err);
+    toast(/sucursales_nombre_uk|duplicate/i.test(m) ? 'Ya tenés una sucursal con ese nombre.' : m, true);
+    if (btn){ btn.disabled = false; btn.textContent = 'Guardar sucursal'; }
+  }
+  SUC.busy = false;
+}
+async function sucActivoToggle(id, activo){
+  if (SUC.busy) return;
+  if (!activo && !confirm('¿Desactivar esta sucursal? Deja de aparecer para elegir; el historial se conserva. Los profesores con horarios en esta sede siguen figurando ahí hasta que cambies su sede.')) return;
+  SUC.busy = true;
+  try{ await sb(`sucursales?id=eq.${id}`, { method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: JSON.stringify({ activo }) }); await sucCargar(); toast(activo ? 'Sucursal activada ✓' : 'Sucursal desactivada'); }
+  catch(err){ toast(extraerMensajeError(err), true); }
+  SUC.busy = false;
+}
+
 const QB = { busy: false, lista: null, listaOk: null };
 const QB_MODOS = [
   ['registro', '🙋 Que se registre y entre a la app', 'Deja nombre, DNI y WhatsApp, y vos le das el acceso. No necesita el módulo Clases.'],
@@ -11160,9 +11406,9 @@ async function cargarOcupacionSemanalDashboard(gimId){
   const cont = document.getElementById('dashboardOcupacion');
   cont.innerHTML = 'Cargando...';
   try{
-    const filas = await sb('rpc/obtener_ocupacion_semanal', {
+    const filas = await sb(sucSel() ? 'rpc/obtener_ocupacion_semanal_sede' : 'rpc/obtener_ocupacion_semanal', {
       method: 'POST',
-      body: JSON.stringify({ p_gimnasio_id: gimId })
+      body: JSON.stringify(sucSel() ? { p_gimnasio_id: gimId, p_sucursal_id: sucSel() } : { p_gimnasio_id: gimId })
     });
     if (!filas || !filas.some(f => f.capacidad > 0)){
       cont.innerHTML = '<div class="empty">Todavía no hay suficientes horarios de trabajo o turnos cargados para calcular esto.</div>';
@@ -12550,12 +12796,12 @@ function renderListaProfesores(){
   const rolPill = p => p.perfil_id ? `<span class="pill ${p.perfiles?.rol === 'admin' ? 'warn' : ''}">${p.perfiles?.rol === 'admin' ? 'Administrador' : 'Profesor'}</span>` : '<span class="pill">Sin cuenta</span>';
   const puedeBaja = p => !(PERFIL_ACTUAL && p.perfil_id && p.perfil_id === PERFIL_ACTUAL.id);   // (v124) uno no se da de baja a sí mismo
   const btnBaja = (p, cls) => puedeBaja(p) ? `<button type="button" class="ghost ${cls}" style="color:var(--danger-text);" onclick="event.stopPropagation();abrirModalBajaProfesor('${p.id}','${(p.nombre || '').replace(/'/g, '&apos;')}')">Dar de baja</button>` : '';
-  const rows = PROFESORES_CACHE.map(p => `<tr onclick="abrirFichaProfesor('${p.id}')">
-      <td>${xQuien(p.nombre, p.dni ? 'DNI ' + p.dni : 'Sin DNI')}</td><td>${rolPill(p)}</td>
+  const rows = sucProfLista().map(p => `<tr onclick="abrirFichaProfesor('${p.id}')">
+      <td>${xQuien(p.nombre, (p.dni ? 'DNI ' + p.dni : 'Sin DNI') + sucProfTxt(p.id))}</td><td>${rolPill(p)}</td>
       <td>${cargado ? st(p.id).hoy : '…'}</td><td>${cargado ? st(p.id).sem : '…'}</td>
       <td>${p.tarifa_hora != null && p.tarifa_hora !== '' ? xe(formatearMonto(p.tarifa_hora)) : '<span class="muted">—</span>'}</td>
       <td class="r"><button class="ghost" onclick="event.stopPropagation();abrirFichaProfesor('${p.id}')">Ver ficha</button> ${btnBaja(p, '')}</td></tr>`).join('');
-  const lista = PROFESORES_CACHE.map(p => `<div class="x-li" onclick="abrirFichaProfesor('${p.id}')">${xAv(p.nombre)}<div class="mid"><div class="x-nm">${xe(p.nombre)}</div><div class="x-sub">${cargado ? `${st(p.id).hoy} turnos hoy · ${st(p.id).sem} en 7 días` : 'Cargando…'}</div>${p.perfil_id ? '' : '<div style="margin-top:5px"><span class="pill warn">Sin cuenta</span></div>'}</div>${btnBaja(p, 'prof-baja-mini')}<span class="go">›</span></div>`).join('');
+  const lista = sucProfLista().map(p => `<div class="x-li" onclick="abrirFichaProfesor('${p.id}')">${xAv(p.nombre)}<div class="mid"><div class="x-nm">${xe(p.nombre)}</div><div class="x-sub">${cargado ? `${st(p.id).hoy} turnos hoy · ${st(p.id).sem} en 7 días` : 'Cargando…'}</div>${p.perfil_id ? '' : '<div style="margin-top:5px"><span class="pill warn">Sin cuenta</span></div>'}</div>${btnBaja(p, 'prof-baja-mini')}<span class="go">›</span></div>`).join('');
   cont.className = '';
   cont.innerHTML = `<div class="x-tbl-wrap" style="overflow-x:auto;"><table class="x-tbl"><thead><tr><th>Profesor</th><th>Rol</th><th>Turnos hoy</th><th>Próx. 7 días</th><th>Tarifa/hora</th><th></th></tr></thead><tbody>${rows}</tbody></table></div><div class="x-lst">${lista}</div>`;
 }
@@ -12631,9 +12877,9 @@ async function xFichaProfHoy(p, tok){
 async function xFichaProfAgenda(p, tok){
   const body = () => (tok === FICHA_TOK) ? document.getElementById('fichaTabBody') : null;
   try{
-    const hs = await sb(`horarios_trabajo?select=dia_semana,hora_inicio,hora_fin,cupo_por_turno&profesor_id=eq.${p.id}&activo=eq.true&order=dia_semana.asc,hora_inicio.asc`);
+    const hs = await sb(`horarios_trabajo?select=dia_semana,hora_inicio,hora_fin,cupo_por_turno${sucMulti() ? ',sucursal_id' : ''}&profesor_id=eq.${p.id}&activo=eq.true&order=dia_semana.asc,hora_inicio.asc`);
     const b = body(); if (!b) return;
-    b.innerHTML = hs.length ? `<div style="overflow-x:auto;"><table class="x-mini"><thead><tr><th>Día</th><th>Horario</th><th>Cupo por turno</th></tr></thead><tbody>${hs.map(h => `<tr><td><b>${xe(DIAS_NOMBRE_AGENDA[h.dia_semana] || h.dia_semana)}</b></td><td>${xe((h.hora_inicio || '').slice(0, 5))} – ${xe((h.hora_fin || '').slice(0, 5))}</td><td class="muted">${h.cupo_por_turno ?? '—'}</td></tr>`).join('')}</tbody></table></div>` : '<div class="muted">No tiene horarios de trabajo cargados (se cargan en 🕒 Horarios).</div>';
+    b.innerHTML = hs.length ? `<div style="overflow-x:auto;"><table class="x-mini"><thead><tr><th>Día</th><th>Horario</th><th>Cupo por turno</th>${sucMulti() ? '<th>Sede</th>' : ''}</tr></thead><tbody>${hs.map(h => `<tr><td><b>${xe(DIAS_NOMBRE_AGENDA[h.dia_semana] || h.dia_semana)}</b></td><td>${xe((h.hora_inicio || '').slice(0, 5))} – ${xe((h.hora_fin || '').slice(0, 5))}</td><td class="muted">${h.cupo_por_turno ?? '—'}</td>${sucMulti() ? `<td>${xe(sucNombre(h.sucursal_id) || '—')}</td>` : ''}</tr>`).join('')}</tbody></table></div>` : '<div class="muted">No tiene horarios de trabajo cargados (se cargan en 🕒 Horarios).</div>';
   }catch(err){ const b = body(); if (b) b.innerHTML = '<div class="muted">Error: ' + xe(err.message) + '</div>'; }
 }
 
@@ -13418,10 +13664,11 @@ async function confirmarCopiarHorario(){
       rangosOrigen.forEach(r => filas.push({
         profesor_id: profesorId, dia_semana: dia,
         hora_inicio: r.hora_inicio, hora_fin: r.hora_fin, cupo_por_turno: r.cupo_por_turno, activo: r.activo,
+        ...(r.sucursal_id && sucMulti() ? { sucursal_id: r.sucursal_id } : {}),
       }));
     });
     await sb('horarios_trabajo', { method:'POST', headers:{Prefer:'return=minimal'}, body: JSON.stringify(filas) });
-    toast(`Horario copiado a ${diasDestino.length} día(s) ✓`);
+    toast(`Horario copiado a ${diasDestino.length} día(s) ✓`); sucRecargarProfSedes();
     cerrarModalCopiarHorario();
     if (esNuevo){
       HORARIOS_CACHE_NUEVO = await sb(`horarios_trabajo?profesor_id=eq.${profesorId}&order=dia_semana.asc,hora_inicio.asc`);
@@ -13452,6 +13699,7 @@ function filaRangoHorarioHtml(dia, h, modo){
         <label>Cupo x turno</label>
         <input inputmode="numeric" type="number" min="1" id="horCupo${suf}-${rid}" value="${h.cupo_por_turno ?? 1}" onchange="guardarRangoHorario${suf}(${dia},'${rid}')">
       </div>
+      ${sucMulti() ? `<div class="field" style="min-width:130px;"><label>📍 Sede</label><select id="horSuc${suf}-${rid}" onchange="guardarRangoHorario${suf}(${dia},'${rid}')">${sucOpts(h.sucursal_id)}</select></div>` : ''}
       <button class="danger" onclick="eliminarRangoHorario${suf}('${rid}')">Quitar</button>
     </div>
   `;
@@ -13483,7 +13731,7 @@ function renderHorariosNuevo(){
 function agregarRangoHorarioNuevo(dia){
   if (!PROFESOR_RECIEN_CREADO) return;
   const tempId = 'nuevo-' + Math.random().toString(36).slice(2);
-  HORARIOS_CACHE_NUEVO.push({ id: tempId, profesor_id: PROFESOR_RECIEN_CREADO.id, dia_semana: dia, hora_inicio: '08:00:00', hora_fin: '12:00:00', cupo_por_turno: 1, activo: true });
+  HORARIOS_CACHE_NUEVO.push({ id: tempId, profesor_id: PROFESOR_RECIEN_CREADO.id, dia_semana: dia, hora_inicio: '08:00:00', hora_fin: '12:00:00', cupo_por_turno: 1, activo: true, sucursal_id: sucMulti() ? sucDefault() : null });
   renderHorariosNuevo();
 }
 
@@ -13499,7 +13747,7 @@ async function guardarRangoHorarioNuevo(dia, rowId){
     if (esNuevo){
       const [creado] = await sb('horarios_trabajo', {
         method:'POST', headers:{Prefer:'return=representation'},
-        body: JSON.stringify([{ profesor_id: PROFESOR_RECIEN_CREADO.id, dia_semana: dia, hora_inicio, hora_fin, cupo_por_turno, activo }])
+        body: JSON.stringify([{ profesor_id: PROFESOR_RECIEN_CREADO.id, dia_semana: dia, hora_inicio, hora_fin, cupo_por_turno, activo, ...sucHorVal('Nuevo', rowId) }])
       });
       const idx = HORARIOS_CACHE_NUEVO.findIndex(h => h.id === rowId);
       if (idx >= 0) HORARIOS_CACHE_NUEVO[idx] = creado;
@@ -13507,12 +13755,12 @@ async function guardarRangoHorarioNuevo(dia, rowId){
     } else {
       await sb(`horarios_trabajo?id=eq.${rowId}`, {
         method:'PATCH', headers:{Prefer:'return=minimal'},
-        body: JSON.stringify({ hora_inicio, hora_fin, cupo_por_turno, activo })
+        body: JSON.stringify({ hora_inicio, hora_fin, cupo_por_turno, activo, ...sucHorVal('Nuevo', rowId) })
       });
       const idx = HORARIOS_CACHE_NUEVO.findIndex(h => h.id === rowId);
-      if (idx >= 0) Object.assign(HORARIOS_CACHE_NUEVO[idx], { hora_inicio, hora_fin, cupo_por_turno, activo });
+      if (idx >= 0) Object.assign(HORARIOS_CACHE_NUEVO[idx], { hora_inicio, hora_fin, cupo_por_turno, activo, ...sucHorVal('Nuevo', rowId) });
     }
-    toast('Horario guardado ✓');
+    toast('Horario guardado ✓'); sucRecargarProfSedes();
   }catch(e){ toast('Error guardando horario: ' + e.message, true); }
 }
 
@@ -13521,7 +13769,7 @@ async function eliminarRangoHorarioNuevo(rowId){
   HORARIOS_CACHE_NUEVO = HORARIOS_CACHE_NUEVO.filter(h => h.id !== rowId);
   renderHorariosNuevo();
   if (!esNuevo){
-    try{ await sb(`horarios_trabajo?id=eq.${rowId}`, { method:'DELETE', headers:{Prefer:'return=minimal'} }); }
+    try{ await sb(`horarios_trabajo?id=eq.${rowId}`, { method:'DELETE', headers:{Prefer:'return=minimal'} }); sucRecargarProfSedes(); }
     catch(e){ toast('Error eliminando el rango: ' + e.message, true); }
   }
 }
@@ -13535,7 +13783,7 @@ function cerrarHorarioNuevoProf(){
 function agregarRangoHorario(dia){
   const profesorId = document.getElementById('profActual').value;
   const tempId = 'nuevo-' + Math.random().toString(36).slice(2);
-  HORARIOS_CACHE.push({ id: tempId, profesor_id: profesorId, dia_semana: dia, hora_inicio: '08:00:00', hora_fin: '12:00:00', cupo_por_turno: 1, activo: true });
+  HORARIOS_CACHE.push({ id: tempId, profesor_id: profesorId, dia_semana: dia, hora_inicio: '08:00:00', hora_fin: '12:00:00', cupo_por_turno: 1, activo: true, sucursal_id: sucMulti() ? sucDefault() : null });
   renderHorarios();
 }
 
@@ -13552,7 +13800,7 @@ async function guardarRangoHorario(dia, rowId){
     if (esNuevo){
       const [creado] = await sb('horarios_trabajo', {
         method:'POST', headers:{Prefer:'return=representation'},
-        body: JSON.stringify([{ profesor_id: profesorId, dia_semana: dia, hora_inicio, hora_fin, cupo_por_turno, activo }])
+        body: JSON.stringify([{ profesor_id: profesorId, dia_semana: dia, hora_inicio, hora_fin, cupo_por_turno, activo, ...sucHorVal('', rowId) }])
       });
       const idx = HORARIOS_CACHE.findIndex(h => h.id === rowId);
       if (idx >= 0) HORARIOS_CACHE[idx] = creado;
@@ -13560,12 +13808,12 @@ async function guardarRangoHorario(dia, rowId){
     } else {
       await sb(`horarios_trabajo?id=eq.${rowId}`, {
         method:'PATCH', headers:{Prefer:'return=minimal'},
-        body: JSON.stringify({ hora_inicio, hora_fin, cupo_por_turno, activo })
+        body: JSON.stringify({ hora_inicio, hora_fin, cupo_por_turno, activo, ...sucHorVal('', rowId) })
       });
       const idx = HORARIOS_CACHE.findIndex(h => h.id === rowId);
-      if (idx >= 0) Object.assign(HORARIOS_CACHE[idx], { hora_inicio, hora_fin, cupo_por_turno, activo });
+      if (idx >= 0) Object.assign(HORARIOS_CACHE[idx], { hora_inicio, hora_fin, cupo_por_turno, activo, ...sucHorVal('', rowId) });
     }
-    toast('Horario guardado ✓');
+    toast('Horario guardado ✓'); sucRecargarProfSedes();
   }catch(e){ toast('Error guardando horario: ' + e.message, true); }
 }
 
@@ -13574,7 +13822,7 @@ async function eliminarRangoHorario(rowId){
   HORARIOS_CACHE = HORARIOS_CACHE.filter(h => h.id !== rowId);
   renderHorarios();
   if (!esNuevo){
-    try{ await sb(`horarios_trabajo?id=eq.${rowId}`, { method:'DELETE', headers:{Prefer:'return=minimal'} }); }
+    try{ await sb(`horarios_trabajo?id=eq.${rowId}`, { method:'DELETE', headers:{Prefer:'return=minimal'} }); sucRecargarProfSedes(); }
     catch(e){ toast('Error eliminando el rango: ' + e.message, true); }
   }
 }
@@ -13709,6 +13957,7 @@ async function renderAgenda(){
       sb(`horarios_trabajo?profesor_id=in.(${idsProf.join(',')})&dia_semana=eq.${dow}&activo=eq.true`),
       sb(`turnos?select=id,hora,profesor_id,alumno_id,asistio,rutina_dia_id,rutina_ajustada_en,rutina_ajuste_motivo,rutina_dias(nombre_dia),alumnos(nombre,tipo_alumno_id)&fecha=eq.${fecha}&profesor_id=in.(${idsProf.join(',')})&estado=neq.cancelado`),
     ]);
+    horarios = sucFiltrarHor(horarios);   // (v140) solo la sede elegida
     }
 
     // Progreso en vivo (24/9, pedido de Martin): a medida que el alumno va finalizando
