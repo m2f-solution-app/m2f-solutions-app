@@ -308,6 +308,17 @@ if ('serviceWorker' in navigator) window.addEventListener('load', function(){ tr
   @media (max-width:560px){ .suc-grid{ grid-template-columns:1fr; } .suc-barra .suc-lbl{ display:none; } }
   /* (v148) servicios y turnos con duración */
   .srv-chips{ display:flex; gap:6px; flex-wrap:wrap; margin:10px 0; }
+  /* (v151) asistente de reserva con servicios en la app del alumno */
+  .aw-h{ font-size:17px; font-weight:800; margin:6px 0 10px; }
+  .aw-fichas{ margin-bottom:6px; }
+  .aw-fichas .suc-chip.aw-auto{ opacity:.7; cursor:default; }
+  .aw-op{ display:block; width:100%; text-align:left; font-family:inherit; color:var(--text); background:var(--panel2); border:1px solid var(--border); border-radius:14px; padding:13px 14px; margin:0 0 8px; cursor:pointer; }
+  .aw-op:hover{ border-color:var(--accent); }
+  .aw-op b{ display:block; font-size:15px; }
+  .aw-op small{ display:block; margin-top:3px; color:var(--muted); font-size:12.5px; }
+  .aw-dur{ font-weight:600; font-size:12.5px; color:var(--muted); margin-left:6px; }
+  .aw-fecha{ margin:12px 0 0; font-weight:800; font-size:13px; text-transform:uppercase; letter-spacing:.3px; color:var(--muted); }
+  .aw-mas{ display:block; margin:12px auto 0; }
   button.srv-chip{ background:var(--panel2); border:1px solid var(--border); color:var(--muted); border-radius:999px; padding:8px 14px; font-size:13.5px; white-space:nowrap; width:auto; }
   button.srv-chip small{ opacity:.75; margin-left:4px; }
   button.srv-chip.on{ border-color:var(--accent); color:var(--text); font-weight:700; background:rgba(255,122,48,.12); }
@@ -3925,7 +3936,7 @@ if ('serviceWorker' in navigator) window.addEventListener('load', function(){ tr
             </select>
           </div>
         </div>
-        <label style="margin-top:14px; display:block;">Elegí el día</label>
+        <label id="aluDiaLabel" style="margin-top:14px; display:block;">Elegí el día</label>
         <div class="dias-scroll" id="aluDiasScroll"></div>
         <div id="aluHorasWrap" style="margin-top:12px;">Elegí tu nombre arriba.</div>
         <div class="leyenda" id="aluLeyendaTurnos">
@@ -5258,7 +5269,7 @@ function atlIniciarAlu(){
   atlCargarVista('aluAtletismoContenido', id || '');
 }
 
-const APP_VERSION = 150;
+const APP_VERSION = 151;
 let ES_PERSONAL = false;   // (v132) cuenta personal (gimnasios.tipo = 'personal'); se calcula en perAplicar()
 // (v96) Fecha de la última actualización: se cambia junto con APP_VERSION en cada entrega. Se muestra en la
 // pantalla de inicio y en el menú de cuenta ("v94 · actualizada el 5/10/2026").
@@ -10776,7 +10787,7 @@ async function srvRcAlt(fecha, hora){   // un horario alternativo para una fecha
 }
 
 // ----- App del alumno: elegir servicio y horario -----
-async function srvAluRender(){
+async function srvAluRenderViejo(){
   const wrap = document.getElementById('aluHorasWrap'), alumnoId = document.getElementById('aluAlumno').value;
   if (!alumnoId){ wrap.innerHTML = 'Elegí tu nombre arriba.'; return; }
   const alumno = ALUMNOS_CACHE.find(a => a.id === alumnoId);
@@ -10809,6 +10820,142 @@ async function srvAluRender(){
   }catch(e){ wrap.innerHTML = barra + 'Error: ' + xe(e.message); }
 }
 function srvAluElegir(id){ SRV.alu.sel = id; renderHorasAlu(); }
+
+// ----- (v151) App del alumno: asistente de reserva con servicios (sede → servicio → profesional → día y hora) -----
+// Pide los horarios de 14 días de una vez (servicio_turnos_rango, SQL v151). Sin el SQL cae al selector de siempre (v148).
+const AW = { w: null, alumnoId: null };
+const AW_ORDEN = ['sede', 'serv', 'prof'], AW_DIAS = ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb'];
+function awNueva(alumnoId){
+  const w = { sede: '', serv: '', prof: '', dia: '', dias: null, hasta: '', cargando: false, err: '', t: 0, noRango: false, auto: {} };
+  if (sucMulti()){ const b = sucAluSel(alumnoId); if (b) w.sede = b; }
+  return w;
+}
+function awControles(ver){
+  ['aluFiltroProfesorWrap', 'aluDiasScroll', 'aluDiaLabel', 'aluLeyendaTurnos'].forEach(id => { const e = document.getElementById(id); if (e) e.style.display = ver ? '' : 'none'; });
+}
+function awProfes(){
+  const w = AW.w, m = new Map();
+  ((w && w.dias) || []).forEach(d => (d.turnos || []).forEach(t => { if (t.profesor_id && !m.has(t.profesor_id)) m.set(t.profesor_id, t.profesor || 'Profesional'); }));
+  return [...m.entries()].map(([id, nombre]) => ({ id, nombre })).sort((a, b) => a.nombre.localeCompare(b.nombre));
+}
+function awPaso(){
+  const w = AW.w, act = srvActivos();
+  if (sucMulti() && !w.sede) return 'sede';
+  if (!w.serv){ if (act.length === 1){ w.serv = act[0].id; w.auto.serv = true; } else return 'serv'; }
+  if (w.dias === null) return 'cargar';
+  if (!w.prof){ const ps = awProfes(); if (ps.length === 1){ w.prof = ps[0].id; w.auto.prof = true; } else if (ps.length > 1) return 'prof'; }
+  return 'hora';
+}
+async function awCargar(mas){
+  const w = AW.w, alumnoId = AW.alumnoId; if (!w || w.cargando) return;
+  const alumno = ALUMNOS_CACHE.find(a => a.id === alumnoId); if (!alumno) return;
+  w.cargando = true; w.err = ''; awPintar();
+  try{
+    const ult = mas && w.dias && w.dias.length ? w.dias[w.dias.length - 1].fecha : null;
+    const sumar = (iso, n) => { const [y, m, d] = iso.split('-').map(Number); return fechaLocalISO(new Date(y, m - 1, d + n, 12)); };
+    const r = await sb('rpc/servicio_turnos_rango', { method: 'POST', body: JSON.stringify({
+      p_gimnasio_id: alumno.gimnasio_id, p_servicio_id: w.serv, p_profesor_id: null,
+      p_sucursal_id: (sucMulti() && w.sede && w.sede !== '*') ? w.sede : null, p_desde: ult ? sumar(ult, 1) : null, p_dias: 14 }) });
+    w.dias = (mas ? (w.dias || []) : []).concat((r && r.dias) || []); w.hasta = (r && r.hasta) || ''; w.t = Date.now();
+    const vis = awDiasVis();
+    if (!w.dia || !vis.some(d => d.fecha === w.dia)) w.dia = (vis[0] || {}).fecha || '';
+  }catch(e){
+    const m = String((e && e.message) || e);
+    if (/PGRST202|Could not find|42883|404/i.test(m)) w.noRango = true;
+    else { w.err = extraerMensajeError(e); if (!mas) w.dias = []; }
+  }
+  w.cargando = false; awPintar();
+}
+function awDiasVis(){
+  const w = AW.w; if (!w || !w.dias) return [];
+  return w.dias.map(d => ({ fecha: d.fecha, turnos: (d.turnos || []).filter(t => !w.prof || w.prof === '*' || t.profesor_id === w.prof) })).filter(d => d.turnos.length);
+}
+function awElegir(k, v){
+  const w = AW.w; if (!w) return;
+  w[k] = v; w.auto[k] = false;
+  if (k === 'sede'){ w.serv = ''; w.prof = ''; w.dias = null; w.dia = ''; w.auto = {}; try{ SUCALU.sel = (v === '*') ? '' : v; }catch(e){} }
+  if (k === 'serv'){ w.prof = ''; w.dias = null; w.dia = ''; w.auto.prof = false; }
+  if (k === 'prof'){ w.dia = ''; const vis = awDiasVis(); w.dia = (vis[0] || {}).fecha || ''; }
+  awPintar();
+}
+function awReset(k){
+  const w = AW.w; if (!w) return;
+  const i = AW_ORDEN.indexOf(k); if (i < 0) return;
+  AW_ORDEN.slice(i).forEach(f => { w[f] = ''; w.auto[f] = false; });
+  if (i <= 1){ w.dias = null; w.dia = ''; }
+  else { w.dia = ''; }
+  awPintar();
+}
+function awDia(f){ if (AW.w){ AW.w.dia = f; awPintar(); } }
+function awHora(h){
+  const w = AW.w; if (!w) return;
+  const d = awDiasVis().find(x => x.fecha === w.dia); const t = d && d.turnos.find(x => x.hora === h); if (!t) return;
+  pedirConfirmacionTurno(t.profesor_id, t.hora + ':00', t.profesor || '', d.fecha, t.sucursal_id || '', w.serv);
+}
+function awFichas(){
+  const w = AW.w, f = [];
+  const add = (k, txt) => f.push(w.auto[k] ? `<span class="suc-chip aw-auto">${txt}</span>` : `<button type="button" class="suc-chip on" onclick="awReset('${k}')" title="Cambiar">${txt} ✎</button>`);
+  if (sucMulti() && w.sede) add('sede', '📍 ' + xe(w.sede === '*' ? 'Cualquier sede' : sucNombre(w.sede)));
+  const sv = w.serv ? srvPorId(w.serv) : null; if (sv) add('serv', xe(srvEtq(sv)));
+  if (w.prof) add('prof', '👤 ' + xe(w.prof === '*' ? 'Cualquiera disponible' : ((awProfes().find(p => p.id === w.prof) || {}).nombre || 'Profesional')));
+  return f.length ? `<div class="suc-chips aw-fichas">${f.join('')}</div>` : '';
+}
+function awOpcion(onclick, t, m){ return `<button type="button" class="aw-op" onclick="${onclick}"><b>${t}</b>${m ? `<small>${m}</small>` : ''}</button>`; }
+function awPintar(){
+  const wrap = document.getElementById('aluHorasWrap'); if (!wrap || !AW.w) return;
+  if (AW.w.noRango){ awControles(true); return srvAluRenderViejo(); }
+  const w = AW.w, paso = awPaso(), fich = awFichas();
+  let h = '';
+  if (paso === 'sede'){
+    h = `<div class="aw-h">¿En qué sede?</div>` + sucActivas().map(s => awOpcion(`awElegir('sede','${s.id}')`, '📍 ' + xe(s.nombre), xe([s.direccion, s.localidad].filter(Boolean).join(', ')))).join('')
+      + awOpcion(`awElegir('sede','*')`, '🗺️ Cualquiera de las sedes', 'Te mostramos todos los horarios');
+  }else if (paso === 'serv'){
+    h = `<div class="aw-h">¿Qué servicio necesitás?</div>` + srvActivos().map(s => awOpcion(`awElegir('serv','${s.id}')`, xe(srvEtq(s)) + ` <span class="aw-dur">${xe(srvDur(s.duracion_min))}</span>`, xe(s.descripcion || ''))).join('');
+  }else if (paso === 'cargar'){
+    h = `<div class="muted" style="margin:14px 0;">Buscando horarios…</div>`;
+    if (!w.cargando) setTimeout(() => awCargar(false), 0);
+  }else if (paso === 'prof'){
+    h = `<div class="aw-h">¿Con quién?</div>` + awOpcion(`awElegir('prof','*')`, '👥 Cualquiera disponible', 'Te mostramos todos los horarios libres')
+      + awProfes().map(p => awOpcion(`awElegir('prof','${p.id}')`, '👤 ' + xe(p.nombre))).join('');
+  }else{
+    const sv = srvPorId(w.serv), vis = awDiasVis();
+    h = `<div class="aw-h">¿Qué día y horario?</div>${sv ? `<div class="muted" style="font-size:13px;">${xe(sv.nombre)} · dura ${xe(srvDur(sv.duracion_min))}</div>` : ''}`;
+    if (w.err) h += `<div class="empty" style="margin-top:8px;">${xe(w.err)} <button type="button" class="secondary" onclick="awCargar(false)">Reintentar</button></div>`;
+    const mas = w.hasta && w.dias && w.dias.length && w.dias[w.dias.length - 1].fecha < w.hasta;
+    if (!vis.length){
+      h += `<div class="empty" style="margin-top:10px;">No hay horarios libres en los próximos días${w.prof && w.prof !== '*' ? ' con este profesional' : ''}${sucMulti() && w.sede && w.sede !== '*' ? ' en esta sede' : ''}. Probá con otro profesional, otra sede o escribile al lugar.</div>`;
+    }else{
+      h += `<div class="dias-scroll">${vis.map(d => { const [y, m, dd] = d.fecha.split('-').map(Number); return `<button type="button" class="dia-btn ${d.fecha === w.dia ? 'activo' : ''}" onclick="awDia('${d.fecha}')"><span class="nombre-dia">${AW_DIAS[new Date(y, m - 1, dd, 12).getDay()]}</span><span class="num-dia">${dd}</span></button>`; }).join('')}</div>`;
+      const dsel = vis.find(d => d.fecha === w.dia) || vis[0], vistos = new Set(), horas = [];
+      dsel.turnos.forEach(t => { if (!vistos.has(t.hora)){ vistos.add(t.hora); horas.push(t); } });
+      h += `<div class="aw-fecha">${xe(fechaLegible(dsel.fecha))}</div><div class="horas-grid">${horas.map(t => `<div class="hora-btn libre" onclick="awHora('${t.hora}')"><span class="hora">${xe(t.hora)}</span><span class="cupos">hasta ${xe(t.hora_fin)}</span></div>`).join('')}</div>`;
+      if (w.prof === '*') h += `<div class="muted" style="font-size:12.5px;margin-top:8px;">Te asignamos uno de los profesionales disponibles en ese horario.</div>`;
+    }
+    if (mas) h += `<button type="button" class="secondary aw-mas" onclick="awCargar(true)" ${w.cargando ? 'disabled' : ''}>${w.cargando ? 'Buscando…' : 'Ver más días ›'}</button>`;
+  }
+  wrap.innerHTML = fich + h;
+}
+// ¿Está corrida la función de la v151? Se prueba una sola vez por sesión; si falta, se usa el selector de la v148.
+async function awProbar(alumno){
+  if (AW.sql !== undefined) return;
+  try{
+    await sb('rpc/servicio_turnos_rango', { method: 'POST', body: JSON.stringify({ p_gimnasio_id: alumno.gimnasio_id, p_servicio_id: srvActivos()[0].id, p_profesor_id: null, p_sucursal_id: null, p_desde: null, p_dias: 1 }) });
+    AW.sql = true;
+  }catch(e){ AW.sql = /PGRST202|Could not find|42883|404/i.test(String((e && e.message) || e)) ? false : true; }
+}
+async function srvAluRender(){
+  const wrap = document.getElementById('aluHorasWrap'), alumnoId = document.getElementById('aluAlumno').value;
+  if (!alumnoId){ wrap.innerHTML = 'Elegí tu nombre arriba.'; return; }
+  const alumno = ALUMNOS_CACHE.find(a => a.id === alumnoId);
+  if (!alumno || !alumno.gimnasio_id){ wrap.innerHTML = '<div class="empty">Este alumno no tiene gimnasio asignado.</div>'; return; }
+  if (AW.sql === undefined){ wrap.innerHTML = 'Buscando turnos disponibles...'; await awProbar(alumno); }
+  if (AW.sql === false){ awControles(true); return srvAluRenderViejo(); }
+  if (AW.alumnoId !== alumnoId || !AW.w){ AW.alumnoId = alumnoId; AW.w = awNueva(alumnoId); }
+  else if (AW.w.dias && AW.w.t && Date.now() - AW.w.t > 90000) AW.w.dias = null;   // horarios viejos: se vuelven a pedir
+  if (AW.w.noRango){ awControles(true); return srvAluRenderViejo(); }
+  awControles(false); awPintar();
+}
+
 
 // ----- Agenda del día: tarjetas de turnos con servicio (hora real y duración) -----
 function srvAgendaTag(r){
@@ -11925,6 +12072,8 @@ if (document.readyState === 'loading') document.addEventListener('DOMContentLoad
 
 async function cargarDashboardAdmin(){
   if (sucAdminSede()) return sedeDashboard();   // (v145) admin de sede: su sede, no el negocio entero
+  if (sucEsAdminGlobal() && sucSel()) return sedeDashboard(sucSel());   // (v151) admin general con una sede elegida: los números de esa sede
+  dashRestaurar();
   const estado = document.getElementById('dashboardEstado');
   const kpis = document.getElementById('dashboardKpis');
   const gimId = GIMNASIO_ACTUAL?.id;
@@ -12226,16 +12375,22 @@ async function sucAdmPromover(){
 async function fichaAdmSede(perfilId, sedeId){ await sucAdmAsignar(perfilId, sedeId); try{ pintarFichaProfesor(); }catch(e){} }
 
 // ----- Pantalla de inicio del administrador de sede (en vez del dashboard general) -----
-async function sedeDashboard(){
+// (v151) ocultar / restaurar lo que no se puede abrir por sede
+function dashOcultar(el){ if (!el) return; if (el.dataset.dshPrev === undefined) el.dataset.dshPrev = el.style.display || ''; el.style.display = 'none'; }
+function dashRestaurar(){
+  document.querySelectorAll('#dashboardKpis [data-dsh-prev]').forEach(e => { e.style.display = e.dataset.dshPrev; delete e.dataset.dshPrev; });
+  const n = document.getElementById('dashSedeNota'); if (n) n.remove();
+}
+async function sedeDashboard(sedeElegida){
   const estado = document.getElementById('dashboardEstado'), kpis = document.getElementById('dashboardKpis');
-  const gimId = GIMNASIO_ACTUAL?.id, sede = sucAdminSede();
+  const gimId = GIMNASIO_ACTUAL?.id, sede = sedeElegida || sucAdminSede(), general = !!sedeElegida;
   estado.textContent = 'Cargando…'; estado.style.display = ''; kpis.style.display = 'none';
   try{
     const hoy = new Date(), mesIni = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-01`;
     const [als, pagos] = await Promise.all([
       sb(`alumnos?select=id,activo,creado_en&sucursal_id=eq.${sede}&limit=5000`),
       sb(`pagos?select=monto,metodo_pago,creado_en,alumnos!inner(sucursal_id)&alumnos.sucursal_id=eq.${sede}&creado_en=gte.${mesIni}&limit=5000`)
-        .catch(() => sb(`pagos?select=monto,metodo_pago,creado_en&creado_en=gte.${mesIni}&limit=5000`)).catch(() => []),
+        .catch(e => { if (general) throw e; return sb(`pagos?select=monto,metodo_pago,creado_en&creado_en=gte.${mesIni}&limit=5000`); }).catch(e => { if (general) throw e; return []; }),
     ]);
     const act = als.filter(a => a.activo !== false).length;
     document.getElementById('kpiActivos').textContent = act;
@@ -12248,12 +12403,18 @@ async function sedeDashboard(){
     document.getElementById('kpiFacturadoDesglose').textContent = Object.keys(por).map(k => `${nom[k] || k}: ${formatearMonto(por[k])}`).join(' · ') || ('Sede ' + sucNombre(sede));
     estado.style.display = 'none'; kpis.style.display = '';
     // lo que es del negocio entero no se muestra
-    ['kpiPendiente', 'kpiPorVencer'].forEach(id => { const e = document.getElementById(id); if (e && e.parentElement) e.parentElement.style.display = 'none'; });
-    document.querySelectorAll('#dashboardKpis details[data-k="dash-ganancias"], #dashboardKpis details[data-k="dash-membresia"]').forEach(d => d.style.display = 'none');
-    const ps = document.getElementById('proyeccionSeccion'); if (ps) ps.style.display = 'none';
-    const tn = document.querySelector('#dashboardKpis > .muted'); if (tn) tn.style.display = 'none';
+    ['kpiPendiente', 'kpiPorVencer'].forEach(id => { const e = document.getElementById(id); if (e) dashOcultar(e.parentElement); });
+    document.querySelectorAll('#dashboardKpis details[data-k="dash-ganancias"], #dashboardKpis details[data-k="dash-membresia"]').forEach(d => dashOcultar(d));
+    dashOcultar(document.getElementById('proyeccionSeccion'));
+    dashOcultar(document.querySelector('#dashboardKpis > .muted'));
+    let nota = document.getElementById('dashSedeNota');
+    if (general){
+      if (!nota){ nota = document.createElement('div'); nota.id = 'dashSedeNota'; nota.className = 'rpx-ban'; nota.style.cssText = 'margin-bottom:12px;'; kpis.insertBefore(nota, kpis.firstChild); }
+      nota.innerHTML = '📍 Estás viendo solo la sede <b>' + xe(sucNombre(sede)) + '</b>. Cuotas vencidas, ganancias, membresía y proyección se ven en <b>Todas las sedes</b>.';
+    }else if (nota) nota.remove();
     cargarOcupacionSemanalDashboard(gimId);
     cargarCajasDashboard(gimId);
+    if (general) cmpCargar().catch(() => {});
   }catch(e){ estado.textContent = 'Error cargando tu sede: ' + extraerMensajeError(e); estado.style.display = ''; kpis.style.display = 'none'; }
 }
 
@@ -24696,6 +24857,7 @@ async function renderHorasAlu(){
   ALU_MODO_PINTADO = salaHorario();
   if (ALU_MODO_PINTADO) return salaRenderHorasAlu();   // (v105) cupo por horario
   if (srvUsa()) return srvAluRender();   // (v148) con servicios activos se reserva eligiendo servicio
+  awControles(true);   // (v151) sin servicios: vuelven el filtro de profesor y los días de siempre
   const alumnoId = document.getElementById('aluAlumno').value;
   const wrap = document.getElementById('aluHorasWrap');
   if (!alumnoId){ wrap.innerHTML = 'Elegí tu nombre arriba.'; return; }
@@ -24780,6 +24942,7 @@ async function confirmarReservaTurno(){
     try{
       await sb('rpc/reservar_turno_servicio', { method: 'POST', body: JSON.stringify({ p_alumno_id: alumnoId, p_profesor_id: profesorId, p_servicio_id: servicioId, p_fecha: fecha, p_hora: hora }) });
       toast('Turno reservado ✓');
+      if (AW.w) AW.w.dias = null;   // (v151) los horarios cambiaron
       cargarTurnos(alumnoId);
     }catch(e){ toast('Error reservando turno: ' + extraerMensajeError(e), true); }
     renderTurnosDisponibles();
