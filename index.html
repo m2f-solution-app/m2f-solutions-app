@@ -310,6 +310,14 @@ if ('serviceWorker' in navigator) window.addEventListener('load', function(){ tr
   button.avi-wa{ }
   .avi-ok{ color:var(--text); font-weight:600; font-size:13px; }
   .avi-auto{ font-size:12.5px; color:var(--muted); }
+  /* (v153) Cuota: desde cuándo cuenta */
+  .cuo-vig{ margin-top:12px; padding:12px; border:1px solid var(--border); border-radius:12px; background:var(--panel2); }
+  .cuo-line{ font-size:14.5px; margin-bottom:6px; }
+  .cuo-warn{ font-size:13px; color:var(--warn-text); margin:6px 0; }
+  .cuo-ctl{ display:flex; gap:8px; align-items:flex-end; flex-wrap:wrap; margin-top:8px; }
+  .cuo-ctl label{ width:100%; margin:0; font-size:12.5px; }
+  .cuo-ctl input[type=date]{ width:auto; max-width:170px; }
+  .cuo-ajuste{ margin-top:12px; padding:12px; border:1px solid var(--border); border-radius:12px; background:var(--panel2); }
   .suc-card-h{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:8px; }
   .suc-dir{ display:grid; gap:6px; }
   .suc-dir-t{ font-weight:600; }
@@ -5283,7 +5291,7 @@ function atlIniciarAlu(){
   atlCargarVista('aluAtletismoContenido', id || '');
 }
 
-const APP_VERSION = 152;
+const APP_VERSION = 153;
 let ES_PERSONAL = false;   // (v132) cuenta personal (gimnasios.tipo = 'personal'); se calcula en perAplicar()
 // (v96) Fecha de la última actualización: se cambia junto con APP_VERSION en cada entrega. Se muestra en la
 // pantalla de inicio y en el menú de cuenta ("v94 · actualizada el 5/10/2026").
@@ -16397,6 +16405,7 @@ async function abrirCobroAlumno(id, abrirForm){
         <button onclick="toggleCobrar('${id}')">💰 Cobrar</button>
         ${GIMNASIO_ACTUAL?.mp_conectado ? `<button class="ghost" onclick="abrirModalCobrarQR('${id}')">📲 Cobrar con QR</button>` : ''}
         <button class="ghost" onclick="toggleHistorialPagos('${id}')">🧾 Historial</button>
+        ${(PERFIL_ACTUAL && PERFIL_ACTUAL.rol === 'admin' && CUO.ok !== false && p.pago_id) ? `<button class="ghost" onclick="CUO.auto=true;cerrarFicha();abrirFichaAlumno('${id}','pag')">✏️ Corregir vencimiento</button>` : ''}
         ${tel ? `<button class="ghost" onclick="xCobRecordatorio('${id}')">💬 Recordatorio</button>` : ''}
         <button class="ghost" onclick="cerrarFicha();abrirFichaAlumno('${id}')">Ver ficha del alumno</button>
       </div>
@@ -16407,6 +16416,7 @@ async function abrirCobroAlumno(id, abrirForm){
           <div class="field"><label>Monto a pagar</label><input disabled id="cobrarMonto${id}"></div>
           <button style="align-self:end;" onclick="confirmarCobro('${id}')">Confirmar pago</button>
         </div>
+        <div id="cobrarVig${id}" class="cuo-vig" style="display:none;"></div>
       </div>
       <div id="historialPagos${id}" style="display:none; margin-top:14px;"></div>
     </div>`;
@@ -16793,7 +16803,87 @@ function toggleCobrar(alumnoId){
   const div = document.getElementById(`cobrarForm${alumnoId}`);
   const abrir = div.style.display === 'none';
   div.style.display = abrir ? '' : 'none';
-  if (abrir) previewMontoCobro(alumnoId);
+  if (abrir){ cuoReset(alumnoId); previewMontoCobro(alumnoId); }
+}
+
+// ----- (v153) Cuota: desde cuándo empieza a contar + corregir vencimiento -----
+const CUO = { ok: null, desde: {}, abierto: {}, tok: {}, auto: false };
+function cuoMsg(e){ return String((e && e.message) || e || ''); }
+function cuoSinSql(e){ return /pago_vigencia_preview|pago_ajustar_vigencia|PGRST202|42883|Could not find the function/i.test(cuoMsg(e)); }
+function cuoISO(n){ const d = new Date(); d.setDate(d.getDate() + n); return fechaLocalISO(d); }
+async function cuoPreview(id){
+  const box = document.getElementById('cobrarVig' + id); if (!box) return;
+  if (CUO.ok === false){ box.style.display = 'none'; return; }
+  const tok = CUO.tok[id] = (CUO.tok[id] || 0) + 1;
+  const sel = document.getElementById('cobrarMeses' + id);
+  let r;
+  try{
+    r = await sb('rpc/pago_vigencia_preview', { method: 'POST', body: JSON.stringify({ p_alumno_id: id, p_forma_pago_id: (sel && sel.value) || null, p_desde: CUO.desde[id] || null }) });
+    CUO.ok = true;
+  }catch(e){
+    if (cuoSinSql(e)) CUO.ok = false;
+    box.style.display = 'none'; return;
+  }
+  if (tok !== CUO.tok[id] || !document.getElementById('cobrarVig' + id)) return;
+  box.style.display = '';
+  const manual = !!CUO.desde[id];
+  const ctl = (manual || CUO.abierto[id])
+    ? `<div class="cuo-ctl"><label>La cuota empieza a contar el</label>
+        <input type="date" id="cobrarDesde${id}" min="${cuoISO(-180)}" max="${cuoISO(60)}" value="${xe(CUO.desde[id] || (r && r.desde) || '')}" onchange="cuoSetDesde('${id}', this.value)">
+        <button type="button" class="ghost avi-b" onclick="cuoSetDesde('${id}', '${cuoISO(0)}')">Hoy</button>
+        ${manual ? `<button type="button" class="ghost avi-b" onclick="cuoAuto('${id}')">↩ Volver a automático</button>` : ''}</div>`
+    : `<button type="button" class="ghost avi-b" onclick="cuoAbrir('${id}')">📅 Cambiar cuándo empieza a contar</button>`;
+  if (!r || r.error){
+    box.innerHTML = `<div class="cuo-warn">⚠️ ${xe((r && r.error) || 'No se pudo calcular la cuota.')}</div>${ctl}`; return;
+  }
+  const f = formatearFechaCorta;
+  const porque = manual ? 'Fecha elegida por vos.'
+    : r.continua ? `Sigue el ciclo: arranca el día siguiente al vencimiento anterior (${f(r.ultimo_hasta)}).`
+    : r.ultimo_hasta ? 'Hace más de 45 días que no paga: arranca hoy. Si volvió antes, elegí la fecha.' : 'Primer pago: arranca hoy.';
+  const venc = r.vencida_despues ? `<div class="cuo-warn">⚠️ Aun con este pago la cuota queda <b>vencida hace ${r.dias_vencida_despues} día${r.dias_vencida_despues === 1 ? '' : 's'}</b>. Si dejó de entrenar y volvió, elegí desde qué fecha volvió.</div>` : '';
+  box.innerHTML = `<div class="cuo-line">📅 La cuota va del <b>${xe(f(r.desde))}</b> al <b>${xe(f(r.hasta))}</b><div class="muted" style="font-size:12.5px;">${xe(porque)}</div></div>${venc}${ctl}`;
+}
+function cuoAbrir(id){ CUO.abierto[id] = true; cuoPreview(id); }
+function cuoSetDesde(id, v){ CUO.desde[id] = /^\d{4}-\d{2}-\d{2}$/.test(v || '') ? v : null; cuoPreview(id); }
+function cuoAuto(id){ CUO.desde[id] = null; CUO.abierto[id] = false; cuoPreview(id); }
+function cuoReset(id){ CUO.desde[id] = null; CUO.abierto[id] = false; }
+
+// Corregir el vencimiento del último pago (ficha → Pagos)
+function cuoAjusteAbrir(){
+  const box = document.getElementById('cuoAjuste'); const p = (FICHA_PAGOS || []).slice().sort((a, b) => (b.vigencia_hasta || '').localeCompare(a.vigencia_hasta || ''))[0];
+  if (!box || !p) return;
+  box.innerHTML = `<div class="cuo-ajuste"><b>✏️ Corregir vencimiento del último pago</b>
+    <div class="muted" style="font-size:12.5px;margin:2px 0 8px;">Cuota actual: ${xe(formatearFechaCorta(p.vigencia_desde))} → ${xe(formatearFechaCorta(p.vigencia_hasta))}. Queda registrado quién lo cambió y por qué.</div>
+    <div class="row"><div class="field"><label>Empieza</label><input type="date" id="cuoAjDesde" value="${xe(p.vigencia_desde)}"></div>
+      <div class="field"><label>Vence</label><input type="date" id="cuoAjHasta" value="${xe(p.vigencia_hasta)}"></div></div>
+    <div class="field" style="margin-top:6px;"><label>Motivo (obligatorio)</label><input id="cuoAjMotivo" maxlength="200" placeholder="Ej: dejó de entrenar y volvió el 10/11"></div>
+    <div class="row" style="margin-top:10px;"><button type="button" id="cuoAjBtn" onclick="cuoAjusteGuardar('${p.id}')">Guardar cambio</button><button type="button" class="ghost" onclick="document.getElementById('cuoAjuste').innerHTML=''">Cancelar</button></div></div>`;
+  box.scrollIntoView({ block: 'nearest' });
+}
+async function cuoAjusteGuardar(pagoId){
+  const g = i => (document.getElementById(i) || {}).value || '';
+  const desde = g('cuoAjDesde'), hasta = g('cuoAjHasta'), motivo = g('cuoAjMotivo').trim();
+  if (!desde || !hasta){ toast('Elegí las dos fechas.', true); return; }
+  if (motivo.length < 3){ toast('Poné el motivo del cambio.', true); return; }
+  const btn = document.getElementById('cuoAjBtn'); if (btn){ btn.disabled = true; btn.textContent = 'Guardando…'; }
+  try{
+    await sb('rpc/pago_ajustar_vigencia', { method: 'POST', body: JSON.stringify({ p_pago_id: pagoId, p_desde: desde, p_hasta: hasta, p_motivo: motivo }) });
+    toast('Vencimiento corregido ✓');
+    const aid = FICHA_ALU && FICHA_ALU.id;
+    if (aid){ delete VIGENTES_POR_ALUMNO[aid]; delete COBRANZAS_CACHE[aid]; }
+    try{ cargarCobranzas(); cargarListaAlumnos(); }catch(e){}
+    if (FICHA_ALU && FICHA_ALU.a) xFichaPagos(FICHA_ALU.a, FICHA_TOK);
+  }catch(e){
+    toast(cuoSinSql(e) ? 'Falta correr el SQL v153 en Supabase.' : extraerMensajeError(e), true);
+    if (btn){ btn.disabled = false; btn.textContent = 'Guardar cambio'; }
+  }
+}
+async function cuoAjustesHtml(alumnoId){
+  try{
+    const xs = await sb(`pagos_ajustes?select=desde_antes,hasta_antes,desde_nuevo,hasta_nuevo,motivo,creado_en&alumno_id=eq.${alumnoId}&order=creado_en.desc&limit=3`);
+    if (!xs || !xs.length) return '';
+    return `<div class="muted" style="font-size:12.5px;margin-top:10px;">${xs.map(x => `✏️ Corregido el ${xe(formatearFechaCorta((x.creado_en || '').slice(0, 10)))}: ${xe(formatearFechaCorta(x.desde_antes))}→${xe(formatearFechaCorta(x.hasta_antes))} pasó a ${xe(formatearFechaCorta(x.desde_nuevo))}→${xe(formatearFechaCorta(x.hasta_nuevo))} · “${xe(x.motivo)}”`).join('<br>')}</div>`;
+  }catch(e){ return ''; }
 }
 
 function previewMontoCobro(alumnoId){
@@ -16813,6 +16903,7 @@ function previewMontoCobro(alumnoId){
     etiqueta = metodo === 'efectivo' ? ` (-${pct}%)` : '';
   }
   document.getElementById(`cobrarMonto${alumnoId}`).value = `$${monto.toFixed(2)}${etiqueta}`;
+  try{ cuoPreview(alumnoId); }catch(e){}   // (v153) desde / hasta de esta cuota
 }
 
 async function confirmarCobro(alumnoId){
@@ -16823,8 +16914,9 @@ async function confirmarCobro(alumnoId){
   try{
     const resp = await sb('rpc/registrar_pago', {
       method: 'POST',
-      body: JSON.stringify({ p_alumno_id: alumnoId, p_metodo_pago: metodo, p_forma_pago_id: formaPagoId })
+      body: JSON.stringify(Object.assign({ p_alumno_id: alumnoId, p_metodo_pago: metodo, p_forma_pago_id: formaPagoId }, CUO.desde[alumnoId] ? { p_desde: CUO.desde[alumnoId] } : {}))   // (v153) inicio elegido
     });
+    cuoReset(alumnoId);
     const pago = Array.isArray(resp) ? resp[0] : resp;
     toast('Pago registrado ✓');
     cerrarFicha();
@@ -17450,8 +17542,10 @@ async function xFichaPagos(a, tok){
     const b = body(); if (!b) return;
     FICHA_PAGOS = pagos;
     const met = { mercado_pago:'💳 Mercado Pago', transferencia:'🏦 Transferencia', efectivo:'💵 Efectivo', tarjeta_credito:'💳 Tarjeta de crédito', tarjeta_debito:'💳 Tarjeta de débito' };
-    b.innerHTML = (pagos.length ? `<div style="overflow-x:auto;"><table class="x-mini"><thead><tr><th>Fecha</th><th>Monto</th><th>Medio</th><th>Cubre hasta</th><th></th></tr></thead><tbody>${pagos.map((p, i) => `<tr><td><b>${xe(formatearFechaCorta((p.creado_en || '').slice(0, 10)))}</b></td><td>${xe(formatearMonto(p.monto))}</td><td>${xe(met[p.metodo_pago] || p.metodo_pago)}</td><td>${xe(formatearFechaCorta(p.vigencia_hasta))}</td><td><button class="ghost" title="Descargar comprobante" onclick="fichaRecibo(${i})">🧾</button></td></tr>`).join('')}</tbody></table></div>` : '<div class="muted">Todavía no hay pagos registrados.</div>')
-      + `<div class="x-btns">${(VIGENTES_POR_ALUMNO[a.id] && VIGENTES_POR_ALUMNO[a.id].plan_id) ? '<button onclick="fichaCobrar()">💰 Cobrar</button>' : ''}</div>`;
+    b.innerHTML = (pagos.length ? `<div style="overflow-x:auto;"><table class="x-mini"><thead><tr><th>Fecha</th><th>Monto</th><th>Medio</th><th>Cubre</th><th></th></tr></thead><tbody>${pagos.map((p, i) => `<tr><td><b>${xe(formatearFechaCorta((p.creado_en || '').slice(0, 10)))}</b></td><td>${xe(formatearMonto(p.monto))}</td><td>${xe(met[p.metodo_pago] || p.metodo_pago)}</td><td>${xe(formatearFechaCorta(p.vigencia_desde))} → ${xe(formatearFechaCorta(p.vigencia_hasta))}</td><td><button class="ghost" title="Descargar comprobante" onclick="fichaRecibo(${i})">🧾</button></td></tr>`).join('')}</tbody></table></div>` : '<div class="muted">Todavía no hay pagos registrados.</div>')
+      + `<div class="x-btns">${(VIGENTES_POR_ALUMNO[a.id] && VIGENTES_POR_ALUMNO[a.id].plan_id) ? '<button onclick="fichaCobrar()">💰 Cobrar</button>' : ''}${(pagos.length && PERFIL_ACTUAL && PERFIL_ACTUAL.rol === 'admin' && CUO.ok !== false) ? '<button class="ghost" onclick="cuoAjusteAbrir()">✏️ Corregir vencimiento</button>' : ''}</div><div id="cuoAjuste"></div>`
+      + (pagos.length && PERFIL_ACTUAL && PERFIL_ACTUAL.rol === 'admin' ? await cuoAjustesHtml(a.id) : '');
+    if (CUO.auto){ CUO.auto = false; if (pagos.length) cuoAjusteAbrir(); }
   }catch(e){ const b = body(); if (b) b.innerHTML = '<div class="muted">Error: ' + xe(e.message) + '</div>'; }
 }
 async function xFichaAsistencia(a, tok){
