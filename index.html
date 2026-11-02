@@ -1693,6 +1693,15 @@ if ('serviceWorker' in navigator) window.addEventListener('load', function(){ tr
   .rpx-chips{display:flex; gap:6px; flex-wrap:wrap; margin:6px 0 10px;}
   .rpx-chips span{cursor:pointer; padding:5px 11px; border-radius:99px; background:var(--panel2); border:1px solid var(--border); font-size:12.5px; font-weight:700;}
   body.pub-modo #avisoActualizacion{ display:none !important; }
+  /* (v150) link público con servicios */
+  .pb-fichas{display:flex; flex-wrap:wrap; gap:6px; margin:8px 0 0;}
+  .pb-fi{font-size:12.5px; font-weight:700; padding:5px 11px; border-radius:99px; background:var(--panel2); border:1px solid var(--border); color:var(--text); line-height:1.2;}
+  button.pb-fi{cursor:pointer;} .pb-fi.auto{opacity:.8;}
+  .pb-d.off{opacity:.4;}
+  .pb-mas{background:none; border:none; color:var(--accent-text); font-weight:800; font-size:14px; padding:4px 2px; border-radius:8px;}
+  .pb-hrs{display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:8px;}
+  .pb-hr{padding:14px 4px; border-radius:14px; background:var(--panel); border:1px solid var(--border); color:var(--text); font-weight:800; font-size:16.5px;}
+  .pb-hr:active{background:var(--accent); color:#1a1000;}
   .cl-li .mid.rpx-m{ overflow:visible; white-space:normal; }
   /* (v109) Gastos en formato tabla (igual que Cobros) */
   .x-frow.gas{ grid-template-columns:86px minmax(0,2.4fr) minmax(0,1.3fr) 150px 130px 40px; cursor:default; }
@@ -5249,7 +5258,7 @@ function atlIniciarAlu(){
   atlCargarVista('aluAtletismoContenido', id || '');
 }
 
-const APP_VERSION = 149;
+const APP_VERSION = 150;
 let ES_PERSONAL = false;   // (v132) cuenta personal (gimnasios.tipo = 'personal'); se calcula en perAplicar()
 // (v96) Fecha de la última actualización: se cambia junto con APP_VERSION en cada entrega. Se muestra en la
 // pantalla de inicio y en el menú de cuenta ("v94 · actualizada el 5/10/2026").
@@ -9454,11 +9463,13 @@ const ING = { t: null };
     if (['alumno', 'independiente', 'personal', 'gimnasio', 'login'].includes(v)) ING.t = v;
   }catch(e){}
 })();
-const PUB = { slug: null, g: null, cl: null, t0: 0, dni: '', nombre: '', prueba: false, pant: 'cargando', modo: 'reservar', dia: 0, sel: null, mi: null, res: null, busy: false, err: '', msg: '', f: { dni: '', nombre: '', apellido: '', tel: '', ok: false }, canc: null };
+const PUB = { slug: null, g: null, cl: null, t0: 0, dni: '', nombre: '', prueba: false, pant: 'cargando', modo: 'reservar', dia: 0, sel: null, mi: null, res: null, busy: false, err: '', msg: '', f: { dni: '', nombre: '', apellido: '', tel: '', ok: false }, canc: null, srv: false, cat: null, w: null, sedeQ: null };
 (function pubCapturarLink(){
   try{
     const s = (new URLSearchParams(location.search).get('r') || '').trim().toLowerCase();
     if (s.length >= 3 && s.length <= 40 && /^[a-z0-9]+(-[a-z0-9]+)*$/.test(s)) PUB.slug = s;
+    const q = (new URLSearchParams(location.search).get('s') || '').trim().toLowerCase();   // (v150) cartel de una sede
+    if (q && q.length <= 60 && /^[a-z0-9-]+$/.test(q)) PUB.sedeQ = q;
   }catch(e){}
 })();
 const PUB_DIAS = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'], PUB_DIAS_L = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'];
@@ -9519,7 +9530,9 @@ async function pubIniciar(){
     if (g && g.disponible){ aplicarTemaGimnasio(g); document.title = (g.nombre || 'Reservas') + (g.entrada === 'registro' ? ' · Bienvenida' : ' · Reservas'); }
     if (!g || !g.disponible){ PUB.pant = 'cerrado'; pubRender(); return; }
     const gd = pubGuardado(); if (gd){ PUB.dni = gd.dni; PUB.nombre = gd.nombre || ''; }
-    if (g.entrada !== 'registro') pubCargarClases().catch(() => {});   // (v139) en modo registro no hace falta el módulo Clases
+    PUB.srv = !!g.tiene_servicios;   // (v150)
+    if (PUB.srv){ try{ await pubWzCargarCat(); }catch(e){ PUB.srv = false; if (g.tiene_clases === false){ PUB.err = e.message; PUB.pant = 'cerrado'; pubRender(); return; } } }
+    if (g.entrada !== 'registro' && g.tiene_clases !== false) pubCargarClases().catch(() => {});   // (v139) en modo registro no hace falta el módulo Clases
     PUB.pant = 'inicio';
   }catch(e){ PUB.err = e.message; PUB.pant = 'cerrado'; }
   pubRender();
@@ -9533,6 +9546,7 @@ async function pubCargarClases(){
 
 // ----- acciones -----
 function pubEmpezar(modo){
+  if (PUB.srv && modo === 'reservar'){ pubWzEmpezar(); return; }   // (v150)
   PUB.modo = modo; pubLimpiaMsg();
   if (modo === 'registro'){ if (PUB.dni){ PUB.ya = true; pubIr('registrado'); } else pubIr('dni'); return; }   // (v139)
   if (PUB.dni){ if (modo === 'semana') pubVerSemana(); else pubVerClases(); return; }
@@ -9549,8 +9563,9 @@ async function pubContinuarDni(){
     PUB.busy = false;
     if (r && r.otro_lugar){ PUB.err = 'Ese DNI ya está registrado en otro lugar. Escribinos por WhatsApp y lo resolvemos.'; pubRender(true); return; }
     if (r && r.baja){ PUB.err = 'Tu cuenta está dada de baja. Escribile al gimnasio por WhatsApp.'; pubRender(true); return; }
-    if (r && r.existe){ PUB.dni = d; PUB.nombre = r.nombre || ''; pubGuardar(); if (PUB.modo === 'registro'){ PUB.ya = true; pubIr('registrado'); } else if (PUB.modo === 'semana') pubVerSemana(); else pubVerClases(); return; }
+    if (r && r.existe){ PUB.dni = d; PUB.nombre = r.nombre || ''; pubGuardar(); if (PUB.modo === 'wz'){ pubWzTrasDni(); return; } if (PUB.modo === 'registro'){ PUB.ya = true; pubIr('registrado'); } else if (PUB.modo === 'semana') pubVerSemana(); else pubVerClases(); return; }
     PUB.dni = ''; PUB.f.dni = d;
+    if (PUB.modo === 'wz'){ pubWzIr('registro'); return; }   // (v150)
     pubIr('registro');
     if (PUB.modo === 'semana'){ PUB.msg = 'No encontramos ese DNI. Si es tu primera vez, completá tus datos y reservá tu entrenamiento.'; pubRender(true); }
   }catch(e){ PUB.busy = false; PUB.err = e.message; pubRender(true); }
@@ -9566,14 +9581,14 @@ async function pubRegistrar(){
   try{
     const r = await pubRpc('publico_registrar', { p_slug: PUB.slug, p_dni: f.dni, p_nombre: n, p_apellido: a, p_telefono: t });
     PUB.busy = false; PUB.dni = String(f.dni).replace(/\D/g, ''); PUB.nombre = (r && r.nombre) || n; pubGuardar();
-    if (PUB.modo === 'registro'){ PUB.ya = !!(r && r.ya_existia); pubIr('registrado'); } else pubVerClases();
+    if (PUB.modo === 'wz'){ pubWzTrasDni(); } else if (PUB.modo === 'registro'){ PUB.ya = !!(r && r.ya_existia); pubIr('registrado'); } else pubVerClases();
   }catch(e){ PUB.busy = false; PUB.err = e.message; pubRender(true); }
 }
 async function pubVerClases(){
   pubLimpiaMsg(); PUB.pant = 'clases'; PUB.sel = null; PUB.res = null; pubRender(true);
   document.getElementById('pubReservas').scrollTop = 0;
   try{
-    const [cl, mi] = await Promise.all([pubCargarClases(), pubRpc('publico_mi_semana', { p_slug: PUB.slug, p_dni: PUB.dni })]);
+    const [cl, mi] = await Promise.all([pubCargarClases(), pubCargarMi()]);
     PUB.mi = mi; PUB.prueba = !!(mi && mi.prueba); if (mi && mi.nombre) PUB.nombre = mi.nombre;
     if (PUB.dia > 6) PUB.dia = 0;
   }catch(e){
@@ -9585,7 +9600,7 @@ async function pubVerClases(){
 async function pubVerSemana(){
   pubLimpiaMsg(); PUB.pant = 'semana'; PUB.canc = null; pubRender(true);
   document.getElementById('pubReservas').scrollTop = 0;
-  try{ const mi = await pubRpc('publico_mi_semana', { p_slug: PUB.slug, p_dni: PUB.dni }); PUB.mi = mi; PUB.prueba = !!(mi && mi.prueba); if (mi && mi.nombre) PUB.nombre = mi.nombre; }
+  try{ const mi = await pubCargarMi(); PUB.mi = mi; PUB.prueba = !!(mi && mi.prueba); if (mi && mi.nombre) PUB.nombre = mi.nombre; }
   catch(e){
     if (/No encontramos tu DNI|dada de baja/i.test(e.message)){ pubOlvidar(); pubIr('dni'); PUB.err = e.message; pubRender(true); return; }
     PUB.err = e.message;
@@ -9615,7 +9630,7 @@ async function pubCancelar(id){
   try{
     await pubRpc('publico_cancelar', { p_slug: PUB.slug, p_dni: PUB.dni, p_inscripcion_id: id });
     PUB.busy = false; PUB.canc = null; PUB.msg = 'Listo, cancelamos tu reserva.';
-    PUB.mi = await pubRpc('publico_mi_semana', { p_slug: PUB.slug, p_dni: PUB.dni });
+    PUB.mi = await pubCargarMi();
     pubCargarClases().catch(() => {});
   }catch(e){ PUB.busy = false; PUB.err = e.message; }
   pubRender(true);
@@ -9673,8 +9688,8 @@ function pubPantInicio(){
     const d0 = pubDias()[0], lista = pubClasesDia(d0).filter(c => pubSusp(c.id, d0.iso) === null).slice(0, 4);
     if (lista.length) hoyHtml = `<div class="pb-hoy-t">Hoy</div>${lista.map(c => { const o = pubOc(c.id, d0.iso); return `<div class="pb-cl"><div class="pb-cl-h"><div class="pb-cl-t">${ejEsc(c.nombre)}</div><div class="pb-cl-hr">${ejEsc(c.inicio)}</div></div><div class="pb-cl-m">${o.a >= c.cupo ? 'Completa' : (c.cupo - o.a === 1 ? 'Queda 1 lugar' : 'Quedan ' + (c.cupo - o.a) + ' lugares')}${pubLugarHtml(c) ? ' · ' + pubLugarHtml(c) : ''}</div></div>`; }).join('')}`;
   }
-  return `${pubTop()}${pubMarca(true)}<div class="pb-acc"><button type="button" onclick="pubEmpezar('reservar')">🏋️ Reservar entrenamiento</button><button type="button" class="secondary" onclick="pubEmpezar('semana')">📅 Ver mi semana · ingresar con mi DNI</button>${pubWaBtn('Consultas por WhatsApp')}</div>
-    ${g.prueba ? `<div class="pb-info" style="text-align:center;">🎁 Tu primer entrenamiento es de prueba.</div>` : ''}${hoyHtml}${pubPie()}`;
+  return `${pubTop()}${pubMarca(true)}<div class="pb-acc"><button type="button" onclick="pubEmpezar('reservar')">${PUB.srv ? '📅 Sacar turno' : '🏋️ Reservar entrenamiento'}</button><button type="button" class="secondary" onclick="pubEmpezar('semana')">📅 Ver mi semana · ingresar con mi DNI</button>${pubWaBtn('Consultas por WhatsApp')}</div>
+    ${g.prueba && g.tiene_clases !== false ? `<div class="pb-info" style="text-align:center;">🎁 Tu primer entrenamiento es de prueba.</div>` : ''}${hoyHtml}${pubPie()}`;
 }
 function pubEntrarApp(){ location.href = location.pathname + '?ingresar=alumno'; }
 function pubPantInicioQr(ent){
@@ -9683,8 +9698,8 @@ function pubPantInicioQr(ent){
   const ent_ = `<button type="button" class="secondary" onclick="pubEntrarApp()">📲 Ya soy socio · entrar a la app</button>`;
   if (ent === 'registro')
     return `${pubTop()}${pubMarca(true)}<div class="pb-acc">${reg}${ent_}${pubWaBtn('Consultas por WhatsApp')}</div>${pubPie()}`;
-  return `${pubTop()}${pubMarca(true)}<div class="pb-acc">${reg}${ent_}<button type="button" class="secondary" onclick="pubEmpezar('reservar')">🏋️ Reservar entrenamiento</button><button type="button" class="secondary" onclick="pubEmpezar('semana')">📅 Ver mi semana</button>${pubWaBtn('Consultas por WhatsApp')}</div>
-    ${g.prueba ? `<div class="pb-info" style="text-align:center;">🎁 Tu primer entrenamiento es de prueba.</div>` : ''}${pubPie()}`;
+  return `${pubTop()}${pubMarca(true)}<div class="pb-acc">${reg}${ent_}<button type="button" class="secondary" onclick="pubEmpezar('reservar')">${PUB.srv ? '📅 Sacar turno' : '🏋️ Reservar entrenamiento'}</button><button type="button" class="secondary" onclick="pubEmpezar('semana')">📅 Ver mi semana</button>${pubWaBtn('Consultas por WhatsApp')}</div>
+    ${g.prueba && g.tiene_clases !== false ? `<div class="pb-info" style="text-align:center;">🎁 Tu primer entrenamiento es de prueba.</div>` : ''}${pubPie()}`;
 }
 function pubPantRegistrado(){
   const g = PUB.g || {}, ya = !!PUB.ya, nm = PUB.nombre ? ', ' + PUB.nombre : '';
@@ -9729,8 +9744,8 @@ function pubPantSemana(){
   const mi = PUB.mi, g = PUB.g || {};
   let cuerpo;
   if (!mi) cuerpo = PUB.err ? '' : '<div class="pb-cargando">Cargando tu semana…</div>';
-  else if (!(mi.reservas || []).length) cuerpo = `<div class="pb-vacio">Todavía no tenés clases reservadas.</div>`;
-  else cuerpo = mi.reservas.map(r => `<div class="pb-res"><div class="pb-cl-h"><div class="pb-cl-t">${ejEsc(r.nombre)}</div><div class="pb-cl-hr">${ejEsc(r.inicio)}</div></div>
+  else if (!(mi.reservas || []).length && !(mi.turnos || []).length) cuerpo = `<div class="pb-vacio">Todavía no tenés ${PUB.srv ? 'turnos' : 'clases'} reservad${PUB.srv ? 'os' : 'as'}.</div>`;
+  else cuerpo = pubTurnosHtml(mi.turnos) + (mi.reservas || []).map(r => `<div class="pb-res"><div class="pb-cl-h"><div class="pb-cl-t">${ejEsc(r.nombre)}</div><div class="pb-cl-hr">${ejEsc(r.inicio)}</div></div>
       <div class="pb-cl-m">📅 ${ejEsc(pubFechaTxt(r.fecha))} · ${ejEsc(r.inicio)} a ${ejEsc(r.fin)}${r.profesor ? '<br>👤 ' + ejEsc(r.profesor) : ''}${pubLugarHtml(r) ? '<br>' + pubLugarHtml(r) : ''}</div>${pubChipEstado(r)}
       ${r.puede_cancelar
         ? (PUB.canc === r.id
@@ -9739,7 +9754,7 @@ function pubPantSemana(){
         : `<div class="pb-cl-m" style="margin-top:8px;">Ya no se puede cancelar desde acá: avisale al gimnasio por WhatsApp.</div>`}</div>`).join('');
   return `${pubTop()}${pubMarca(false)}<button type="button" class="pb-back" onclick="pubIr('inicio')">‹ Inicio</button>
     <div class="pb-h" style="margin-top:6px;">${PUB.nombre ? 'Tu semana, ' + ejEsc(PUB.nombre) : 'Tu semana'}</div>${pubErr()}${cuerpo}
-    <div class="pb-acc"><button type="button" onclick="pubVerClases()">🏋️ Reservar otra clase</button>${pubWaBtn('Escribir al gimnasio')}</div>${pubPie()}`;
+    <div class="pb-acc">${PUB.srv ? `<button type="button" onclick="pubEmpezar('reservar')">📅 Sacar un turno</button>` : `<button type="button" onclick="pubVerClases()">🏋️ Reservar otra clase</button>`}${pubWaBtn('Escribir al gimnasio')}</div>${pubPie()}`;
 }
 function pubPantListo(){
   const r = PUB.res || {}, c = ((PUB.cl && PUB.cl.clases) || []).find(x => x.id === r.clase_id) || {}, g = PUB.g || {};
@@ -9764,11 +9779,267 @@ function pubRender(conservarFoco){
   const root = document.getElementById('pubReservas'); if (!root) return;
   const foco = conservarFoco && document.activeElement && document.activeElement.id, pos = foco ? document.activeElement.selectionStart : null;
   const y = root.scrollTop;
-  const mapa = { cargando: () => `${pubTop()}<div class="pb-cargando">Cargando…</div>`, inicio: pubPantInicio, dni: pubPantDni, registro: pubPantRegistro, clases: pubPantClases, semana: pubPantSemana, listo: pubPantListo, registrado: pubPantRegistrado, cerrado: pubPantCerrado };
+  const mapa = { cargando: () => `${pubTop()}<div class="pb-cargando">Cargando…</div>`, inicio: pubPantInicio, dni: pubPantDni, registro: pubPantRegistro, clases: pubPantClases, semana: pubPantSemana, listo: pubPantListo, registrado: pubPantRegistrado, cerrado: pubPantCerrado, wz: pubPantWz };
   root.innerHTML = `<div class="pb-wrap">${(mapa[PUB.pant] || mapa.cerrado)()}</div>`;
   root.scrollTop = y;
   if (foco){ const e = document.getElementById(foco); if (e && e.focus){ e.focus(); try{ if (pos != null) e.setSelectionRange(pos, pos); }catch(x){} } }
-  else if (PUB.pant === 'dni'){ const e = document.getElementById('pbDni'); if (e && !esMovilB3()) e.focus(); }
+  else if (PUB.pant === 'dni' || (PUB.pant === 'wz' && PUB.w && !PUB.dni && !PUB.w.sub && PUB.w.sel)){ const e = document.getElementById('pbDni'); if (e && !esMovilB3()) e.focus(); }
+}
+
+// ---------- (v150) Link público con servicios: Sede → ¿Profesional o clase? → Servicio → Profesional → Día y hora → DNI → Resumen ----------
+// SQL: v150-link-publico.sql. Sin ese SQL (g.tiene_servicios ausente) el link funciona como siempre, solo con clases.
+const PUB_WZ_ORDEN = ['sede', 'tipo', 'serv', 'prof', 'sel'];
+function pubWzSlug(s){ return String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, ''); }
+async function pubWzCargarCat(){
+  const c = await pubRpc('publico_catalogo', { p_slug: PUB.slug });
+  PUB.cat = c && typeof c === 'object' ? c : { sedes: [], servicios: [], tiene_clases: false };
+  PUB.cat.sedes = PUB.cat.sedes || []; PUB.cat.servicios = PUB.cat.servicios || [];
+}
+function pubWzNueva(){ return { sede: null, tipo: null, serv: null, prof: null, sel: null, dias: null, hasta: null, dia: null, cargando: false, errH: '', auto: {}, sub: null, res: null }; }
+function pubWzMulti(){ return !!(PUB.cat && PUB.cat.sedes.length >= 2); }
+function pubWzSede(id){ return ((PUB.cat && PUB.cat.sedes) || []).find(s => s.id === id) || null; }
+function pubWzServiciosSede(){
+  const w = PUB.w, ss = (PUB.cat && PUB.cat.servicios) || [];
+  if (!pubWzMulti() || !w.sede) return ss;
+  return ss.filter(s => (s.profesores || []).some(p => !(p.sedes || []).length || (p.sedes || []).includes(w.sede)));
+}
+function pubWzServ(){ return ((PUB.cat && PUB.cat.servicios) || []).find(s => s.id === (PUB.w && PUB.w.serv)) || null; }
+function pubWzProfes(){
+  const w = PUB.w, sv = pubWzServ(); if (!sv) return [];
+  return (sv.profesores || []).filter(p => !pubWzMulti() || !w.sede || !(p.sedes || []).length || (p.sedes || []).includes(w.sede));
+}
+// Primer paso que falta (elige solo los pasos con una única opción)
+function pubWzCalc(){
+  const w = PUB.w, cat = PUB.cat; if (!w || !cat) return 'vacio';
+  if (pubWzMulti() && !w.sede) return 'sede';
+  const sv = pubWzServiciosSede(), hayProf = sv.length > 0, hayClase = !!cat.tiene_clases;
+  if (!hayProf && !hayClase) return 'vacio';
+  if (!w.tipo){
+    if (hayProf && hayClase) return 'tipo';
+    w.tipo = hayClase && !hayProf ? 'clase' : 'prof'; w.auto.tipo = true;
+  }
+  if (w.tipo === 'clase') return 'clase';
+  if (!w.serv){
+    if (sv.length === 1){ w.serv = sv[0].id; w.auto.serv = true; } else return 'serv';
+  }
+  if (!w.prof){
+    const ps = pubWzProfes();
+    if (ps.length === 1){ w.prof = ps[0].id; w.auto.prof = true; } else if (!ps.length) return 'vacio'; else return 'prof';
+  }
+  if (!w.sel) return 'hora';
+  if (w.res) return 'listo';
+  if (!PUB.dni) return w.sub === 'registro' ? 'registro' : 'dni';
+  return 'resumen';
+}
+function pubWzEmpezar(){
+  if (!PUB.cat) return;
+  PUB.modo = 'wz'; PUB.w = pubWzNueva(); pubLimpiaMsg();
+  const q = PUB.sedeQ;
+  if (q && pubWzMulti()){
+    const s = PUB.cat.sedes.find(x => x.id === q || pubWzSlug(x.nombre) === q);
+    if (s){ PUB.w.sede = s.id; PUB.w.auto.sede = true; }
+  }
+  pubWzAvanzar();
+}
+function pubWzAvanzar(){
+  const w = PUB.w; if (!w) return;
+  const p = pubWzCalc();
+  if (p === 'clase'){ PUB.modo = 'reservar'; PUB.w = null; if (PUB.dni) pubVerClases(); else pubIr('dni'); return; }
+  if (p === 'hora' && !w.dias && !w.cargando){ pubWzCargarHoras(false); return; }
+  PUB.pant = 'wz'; pubRender(); const r = document.getElementById('pubReservas'); if (r) r.scrollTop = 0;
+}
+function pubWzElegir(k, v){
+  const w = PUB.w; if (!w) return;
+  w[k] = v; w.auto[k] = false; pubLimpiaMsg();
+  if (k === 'sede') { w.serv = null; w.prof = null; w.sel = null; w.dias = null; w.dia = null; w.auto.serv = false; w.auto.prof = false; w.auto.tipo = false; }
+  if (k === 'tipo') { w.serv = null; w.prof = null; w.sel = null; w.dias = null; w.dia = null; }
+  if (k === 'serv') { w.prof = null; w.sel = null; w.dias = null; w.dia = null; w.auto.prof = false; }
+  if (k === 'prof') { w.sel = null; w.dias = null; w.dia = null; }
+  pubWzAvanzar();
+}
+// Vuelve a un paso: borra esa elección y las siguientes
+function pubWzReset(k){
+  const w = PUB.w; if (!w) return;
+  const i = PUB_WZ_ORDEN.indexOf(k); if (i < 0) return;
+  PUB_WZ_ORDEN.slice(i).forEach(f => { w[f] = null; w.auto[f] = false; });
+  if (i <= 3){ w.dias = null; w.dia = null; }
+  if (i <= 4){ w.res = null; w.sub = null; }
+  pubLimpiaMsg(); pubWzAvanzar();
+}
+function pubWzVolver(){
+  const w = PUB.w; if (!w) { pubIr('inicio'); return; }
+  if (w.sub === 'registro'){ w.sub = null; pubLimpiaMsg(); pubRender(true); return; }
+  for (let i = PUB_WZ_ORDEN.length - 1; i >= 0; i--){
+    const f = PUB_WZ_ORDEN[i];
+    if (w[f] && !w.auto[f]){ pubWzReset(f); return; }
+  }
+  PUB.w = null; pubIr('inicio');
+}
+function pubWzIr(sub){ if (PUB.w){ PUB.w.sub = sub === 'registro' ? 'registro' : null; pubLimpiaMsg(); pubRender(true); } }
+function pubWzTrasDni(){ pubLimpiaMsg(); if (PUB.w) PUB.w.sub = null; pubWzAvanzar(); }
+function pubWzSumar(iso, n){ const [y, m, d] = iso.split('-').map(Number); return fechaLocalISO(new Date(y, m - 1, d + n, 12)); }
+async function pubWzCargarHoras(mas){
+  const w = PUB.w; if (!w) return;
+  w.cargando = true; w.errH = ''; PUB.pant = 'wz'; pubRender(true);
+  try{
+    const ult = mas && w.dias && w.dias.length ? w.dias[w.dias.length - 1].fecha : null;
+    const r = await pubRpc('publico_servicio_turnos', { p_slug: PUB.slug, p_servicio_id: w.serv, p_profesor_id: w.prof === '*' ? null : w.prof,
+      p_sucursal_id: pubWzMulti() ? w.sede : null, p_desde: ult ? pubWzSumar(ult, 1) : null, p_dias: 14 });
+    w.dias = (mas ? (w.dias || []) : []).concat((r && r.dias) || []); w.hasta = r && r.hasta;
+    if (!w.dia || !w.dias.some(d => d.fecha === w.dia && (d.turnos || []).length)) w.dia = (w.dias.find(d => (d.turnos || []).length) || {}).fecha || null;
+  }catch(e){ w.errH = e.message; if (!mas) w.dias = []; }
+  w.cargando = false; pubRender(true);
+}
+function pubWzDia(iso){ if (PUB.w){ PUB.w.dia = iso; pubRender(true); } }
+function pubWzHora(h){
+  const w = PUB.w; if (!w) return;
+  const d = (w.dias || []).find(x => x.fecha === w.dia); if (!d) return;
+  const t = (d.turnos || []).find(x => x.hora === h); if (!t) return;
+  w.sel = { fecha: d.fecha, hora: t.hora, hora_fin: t.hora_fin, profesor_id: t.profesor_id, profesor: t.profesor, sucursal_id: t.sucursal_id };
+  pubLimpiaMsg(); pubWzAvanzar();
+}
+async function pubWzConfirmar(){
+  const w = PUB.w; if (!w || !w.sel || PUB.busy) return;
+  PUB.busy = true; PUB.err = ''; pubRender(true);
+  try{
+    const r = await pubRpc('publico_reservar_servicio', { p_slug: PUB.slug, p_dni: PUB.dni, p_servicio_id: w.serv, p_profesor_id: w.sel.profesor_id, p_fecha: w.sel.fecha, p_hora: w.sel.hora });
+    PUB.busy = false; w.res = r || {}; PUB.pant = 'wz'; pubRender(true);
+    const el = document.getElementById('pubReservas'); if (el) el.scrollTop = 0;
+  }catch(e){
+    PUB.busy = false; PUB.err = e.message;
+    if (/No encontramos tu DNI|dada de baja/i.test(e.message)){ pubOlvidar(); pubRender(true); return; }
+    if (/no está disponible|No quedan cupos|ya pasó|ya empezó/i.test(e.message)){ const m = e.message; w.sel = null; w.dias = null; pubLimpiaMsg(); pubWzCargarHoras(false).then(() => { PUB.err = m; pubRender(true); }); return; }
+    pubRender(true);
+  }
+}
+function pubWzOtro(){ pubWzEmpezar(); }
+async function pubCargarMi(){
+  const conClases = !PUB.g || PUB.g.tiene_clases !== false;
+  const [a, b] = await Promise.all([
+    conClases ? pubRpc('publico_mi_semana', { p_slug: PUB.slug, p_dni: PUB.dni }) : Promise.resolve({ reservas: [] }),
+    PUB.srv ? pubRpc('publico_mis_turnos', { p_slug: PUB.slug, p_dni: PUB.dni }) : Promise.resolve(null)]);
+  const mi = Object.assign({ reservas: [], nombre: PUB.nombre }, a || {});
+  if (b) mi.turnos = b.turnos || [];
+  return mi;
+}
+async function pubCancelarTurno(id){
+  if (PUB.busy) return;
+  PUB.busy = true; PUB.err = ''; pubRender(true);
+  try{
+    await pubRpc('publico_cancelar_turno', { p_slug: PUB.slug, p_dni: PUB.dni, p_turno_id: id });
+    PUB.busy = false; PUB.canc = null; PUB.msg = 'Listo, cancelamos tu turno.';
+    PUB.mi = await pubCargarMi();
+  }catch(e){ PUB.busy = false; PUB.err = e.message; }
+  pubRender(true);
+}
+function pubTurnosHtml(ts){
+  return (ts || []).map(t => `<div class="pb-res"><div class="pb-cl-h"><div class="pb-cl-t">${ejEsc((t.icono ? t.icono + ' ' : '') + (t.servicio || 'Turno'))}</div><div class="pb-cl-hr">${ejEsc(t.hora)}</div></div>
+      <div class="pb-cl-m">📅 ${ejEsc(pubFechaTxt(t.fecha))} · ${ejEsc(t.hora)} a ${ejEsc(t.hora_fin)}${t.profesor ? '<br>👤 ' + ejEsc(t.profesor) : ''}${t.sede ? '<br>📍 ' + ejEsc(t.sede) : ''}</div><span class="pb-chip ok">✓ Reservado</span>
+      ${t.puede_cancelar
+        ? (PUB.canc === t.id
+          ? `<div class="pb-info" style="margin-top:10px;">¿Cancelar este turno?</div><div style="display:flex; gap:8px; margin-top:8px;"><button type="button" class="pb-ccl" style="flex:1;" onclick="pubCancelarTurno('${ejEsc(t.id)}')" ${PUB.busy ? 'disabled' : ''}>Sí, cancelar</button><button type="button" class="pb-ccl ghost" style="flex:1;" onclick="pubPedirCancelar('${ejEsc(t.id)}')">No</button></div>`
+          : `<button type="button" class="pb-ccl secondary" onclick="pubPedirCancelar('${ejEsc(t.id)}')">Cancelar turno</button>`)
+        : `<div class="pb-cl-m" style="margin-top:8px;">Ya no se puede cancelar desde acá: avisale por WhatsApp.</div>`}</div>`).join('');
+}
+
+// ----- dibujo del camino -----
+function pubWzFichas(){
+  const w = PUB.w, f = [];
+  const add = (k, txt) => { const auto = !!w.auto[k]; f.push(auto || w.res ? `<span class="pb-fi auto">${txt}</span>` : `<button type="button" class="pb-fi" onclick="pubWzReset('${k}')" title="Cambiar">${txt}</button>`); };
+  if (w.sede && pubWzMulti()){ const s = pubWzSede(w.sede); if (s) add('sede', '📍 ' + ejEsc(s.nombre)); }
+  if (w.tipo === 'prof' && !w.auto.tipo) add('tipo', '🧑‍⚕️ Profesional');
+  const sv = pubWzServ(); if (w.serv && sv) add('serv', ejEsc((sv.icono ? sv.icono + ' ' : '') + sv.nombre));
+  if (w.prof){ const p = w.prof === '*' ? null : pubWzProfes().find(x => x.id === w.prof); add('prof', '👤 ' + ejEsc(w.prof === '*' ? 'Cualquiera disponible' : (p ? p.nombre : 'Profesional'))); }
+  if (w.sel && !w.res) add('sel', '📅 ' + ejEsc(pubFechaTxt(w.sel.fecha).replace(/^\S+ /, '')) + ' · ' + ejEsc(w.sel.hora));
+  return f.length ? `<div class="pb-fichas">${f.join('')}</div>` : '';
+}
+function pubWzPasoSede(){
+  return `<div class="pb-h">¿En qué sede?</div><p class="pb-p">Elegí dónde querés atenderte.</p>` + PUB.cat.sedes.map(s =>
+    `<button type="button" class="pb-cl" onclick="pubWzElegir('sede','${ejEsc(s.id)}')"><div class="pb-cl-t">📍 ${ejEsc(s.nombre)}</div>${s.direccion || s.localidad ? `<div class="pb-cl-m">${ejEsc([s.direccion, s.localidad].filter(Boolean).join(', '))}</div>` : ''}</button>`).join('');
+}
+function pubWzPasoTipo(){
+  const nombres = pubWzServiciosSede().map(s => s.nombre).slice(0, 4).join(', ');
+  return `<div class="pb-h">¿Qué querés reservar?</div>
+    <button type="button" class="pb-cl" onclick="pubWzElegir('tipo','prof')"><div class="pb-cl-t">🧑‍⚕️ Un turno con un profesional</div><div class="pb-cl-m">${ejEsc(nombres)}</div></button>
+    <button type="button" class="pb-cl" onclick="pubWzElegir('tipo','clase')"><div class="pb-cl-t">🏋️ Una clase</div><div class="pb-cl-m">Clases grupales con cupo</div></button>`;
+}
+function pubWzPasoServ(){
+  return `<div class="pb-h">¿Qué servicio necesitás?</div>` + pubWzServiciosSede().map(s =>
+    `<button type="button" class="pb-cl" onclick="pubWzElegir('serv','${ejEsc(s.id)}')"><div class="pb-cl-h"><div class="pb-cl-t">${ejEsc((s.icono ? s.icono + ' ' : '') + s.nombre)}</div><div class="pb-cl-hr">${ejEsc(pubWzDur(s.duracion_min))}</div></div>${s.descripcion ? `<div class="pb-cl-m">${ejEsc(s.descripcion)}</div>` : ''}</button>`).join('');
+}
+function pubWzDur(m){ m = Number(m) || 0; return m >= 60 && m % 60 === 0 ? (m / 60) + ' h' : m > 60 ? Math.floor(m / 60) + ' h ' + (m % 60) + ' min' : m + ' min'; }
+function pubWzPasoProf(){
+  return `<div class="pb-h">¿Con quién?</div>
+    <button type="button" class="pb-cl" onclick="pubWzElegir('prof','*')"><div class="pb-cl-t">👥 Cualquiera disponible</div><div class="pb-cl-m">Te mostramos todos los horarios libres</div></button>` +
+    pubWzProfes().map(p => `<button type="button" class="pb-cl" onclick="pubWzElegir('prof','${ejEsc(p.id)}')"><div class="pb-cl-t">👤 ${ejEsc(p.nombre)}</div></button>`).join('');
+}
+function pubWzPasoHora(){
+  const w = PUB.w, sv = pubWzServ();
+  let h = `<div class="pb-h">¿Qué día y horario?</div>${sv ? `<p class="pb-p">${ejEsc(sv.nombre)} · dura ${ejEsc(pubWzDur(sv.duracion_min))}</p>` : ''}`;
+  if (w.cargando && !(w.dias || []).length) return h + '<div class="pb-cargando">Buscando horarios…</div>';
+  if (w.errH) h += `<div class="pb-err" role="alert">${ejEsc(w.errH)}</div>`;
+  h += pubErr();
+  const dias = w.dias || [];
+  if (!dias.some(d => (d.turnos || []).length) && !(w.hasta && dias.length && dias[dias.length - 1].fecha < w.hasta))
+    return h + `<div class="pb-vacio">No hay horarios libres en los próximos días.<br>Probá con otro profesional o escribinos por WhatsApp.</div>${pubWaBtn('Consultar por WhatsApp')}`;
+  const pills = dias.map(d => {
+    const [y, m, dd] = d.fecha.split('-').map(Number), k = (new Date(y, m - 1, dd, 12).getDay() + 6) % 7, n = (d.turnos || []).length;
+    return `<button type="button" class="pb-d ${d.fecha === w.dia ? 'on' : ''} ${n ? '' : 'off'}" ${n ? '' : 'disabled'} onclick="pubWzDia('${ejEsc(d.fecha)}')">${PUB_DIAS[k]}<b>${dd}</b><small>${n ? n + (n === 1 ? ' hora' : ' horas') : 'sin turnos'}</small></button>`;
+  }).join('');
+  const dsel = dias.find(d => d.fecha === w.dia);
+  const horas = []; const vistos = new Set(); ((dsel && dsel.turnos) || []).forEach(t => { if (!vistos.has(t.hora)){ vistos.add(t.hora); horas.push(t); } });
+  const mas = w.hasta && dias.length && dias[dias.length - 1].fecha < w.hasta;
+  h += `<div class="pb-days">${pills}</div>`;
+  if (mas) h += `<button type="button" class="pb-mas" onclick="pubWzCargarHoras(true)" ${w.cargando ? 'disabled' : ''}>${w.cargando ? 'Buscando…' : 'Ver más días ›'}</button>`;
+  if (dsel){
+    h += `<div class="pb-hoy-t" style="margin-top:10px;">${ejEsc(pubFechaTxt(dsel.fecha))}</div><div class="pb-hrs">${horas.map(t => `<button type="button" class="pb-hr" onclick="pubWzHora('${ejEsc(t.hora)}')">${ejEsc(t.hora)}</button>`).join('')}</div>`;
+    if (w.prof === '*') h += `<div class="pb-cl-m" style="margin-top:10px;">Te asignamos uno de los profesionales disponibles en ese horario.</div>`;
+  } else h += `<div class="pb-vacio" style="margin-top:12px;">Elegí un día con horarios disponibles.</div>`;
+  return h;
+}
+function pubWzPasoDni(){
+  return `<div class="pb-h">Para confirmar, tu DNI</div><p class="pb-p">Si ya te atendiste antes, entrás directo. Si es tu primera vez, te pedimos unos datos.</p>
+    <div class="pb-f"><label for="pbDni">Tu DNI (solo números)</label><input id="pbDni" inputmode="numeric" autocomplete="off" maxlength="12" placeholder="Ej: 30123456" value="${ejEsc(PUB.f.dni)}" oninput="pubCampo('dni',this.value); this.value=PUB.f.dni;" onkeydown="if(event.key==='Enter')pubContinuarDni()"></div>
+    ${pubErr()}<div class="pb-acc" style="margin-top:16px;"><button type="button" onclick="pubContinuarDni()" ${PUB.busy ? 'disabled' : ''}>${PUB.busy ? 'Buscando…' : 'Continuar'}</button></div>`;
+}
+function pubWzTarjeta(r, sel){
+  const w = PUB.w, sv = pubWzServ() || {}, sd = pubWzSede((sel && sel.sucursal_id) || (r && r.sede_id) || w.sede) || (pubWzMulti() ? null : (PUB.cat.sedes[0] || null));
+  const prof = (r && r.profesor) || (sel && sel.profesor) || '';
+  const sedeTxt = (r && r.sede) || (sd && sd.nombre) || '';
+  const hIni = (r && r.hora) || sel.hora, hFin = (r && r.hora_fin) || sel.hora_fin, fecha = (r && r.fecha) || sel.fecha;
+  const mapa = sd && sd.maps_url && /^https?:\/\//i.test(sd.maps_url) ? ` · <a class="pb-map" href="${ejEsc(sd.maps_url)}" target="_blank" rel="noopener">ver mapa</a>` : '';
+  return `<div class="pb-res"><div class="pb-cl-h"><div class="pb-cl-t">${ejEsc((sv.icono ? sv.icono + ' ' : '') + ((r && r.servicio) || sv.nombre || 'Turno'))}</div><div class="pb-cl-hr">${ejEsc(hIni)}</div></div>
+    <div class="pb-cl-m">📅 ${ejEsc(pubFechaTxt(fecha))} · ${ejEsc(hIni)} a ${ejEsc(hFin)}${prof ? '<br>👤 ' + ejEsc(prof) : ''}${sedeTxt ? '<br>📍 ' + ejEsc(sedeTxt) + (sd && sd.direccion ? ' · ' + ejEsc(sd.direccion) : '') + mapa : ''}</div></div>`;
+}
+function pubWzPasoResumen(){
+  const w = PUB.w, g = PUB.g || {}, m = Number(g.cancelar_min) || 0;
+  const cancel = m <= 0 ? 'Podés cancelarlo hasta que empiece, desde “Ver mi semana”.' : 'Podés cancelarlo ' + (m % 60 === 0 ? 'hasta ' + (m / 60) + (m === 60 ? ' hora' : ' horas') : 'hasta ' + m + ' minutos') + ' antes, desde “Ver mi semana”.';
+  return `<div class="pb-h">${PUB.nombre ? 'Revisá tu turno, ' + ejEsc(PUB.nombre) : 'Revisá tu turno'}</div>${pubWzTarjeta(null, w.sel)}
+    <p class="pb-p" style="margin-top:10px;">${ejEsc(cancel)}</p>${pubErr()}
+    <div class="pb-acc"><button type="button" onclick="pubWzConfirmar()" ${PUB.busy ? 'disabled' : ''}>${PUB.busy ? 'Reservando…' : 'Confirmar turno'}</button><button type="button" class="secondary" onclick="pubWzReset('sel')">Cambiar horario</button></div>`;
+}
+function pubWzPasoListo(){
+  const w = PUB.w, r = w.res || {}, nm = PUB.nombre ? ', ' + PUB.nombre : '';
+  return `<div class="pb-center"><div class="pb-big">✅</div><div class="pb-h" style="margin-top:0;">¡Turno reservado${ejEsc(nm)}!</div><p class="pb-p">Te esperamos. Lo podés ver o cancelar desde “Ver mi semana”.</p></div>${pubWzTarjeta(r, w.sel)}
+    <div class="pb-acc"><button type="button" onclick="pubVerSemana()">📅 Ver mi semana</button><button type="button" class="secondary" onclick="pubWzOtro()">Sacar otro turno</button>${pubWaBtn('Escribir por WhatsApp')}</div>`;
+}
+function pubWzPasoRegistro(){
+  const f = PUB.f, g = PUB.g || {};
+  return `<div class="pb-h">Es tu primera vez</div><p class="pb-p">Completá tus datos para confirmar tu turno.</p>
+    <div class="pb-f"><label>DNI</label><input value="${ejEsc(f.dni)}" readonly></div>
+    <div class="pb-f"><label for="pbNom">Nombre</label><input id="pbNom" autocomplete="given-name" maxlength="40" value="${ejEsc(f.nombre)}" oninput="pubCampo('nombre',this.value)"></div>
+    <div class="pb-f"><label for="pbApe">Apellido</label><input id="pbApe" autocomplete="family-name" maxlength="40" value="${ejEsc(f.apellido)}" oninput="pubCampo('apellido',this.value)"></div>
+    <div class="pb-f"><label for="pbTel">WhatsApp (con código de área)</label><input id="pbTel" type="tel" inputmode="tel" autocomplete="tel" maxlength="20" placeholder="Ej: 11 5555 1234" value="${ejEsc(f.tel)}" oninput="pubCampo('tel',this.value)"></div>
+    <label class="pb-chk"><input type="checkbox" ${f.ok ? 'checked' : ''} onchange="pubCampo('ok',this.checked)"><span>Acepto que ${ejEsc(g.nombre || 'el lugar')} use mis datos para contactarme por WhatsApp sobre mi turno.</span></label>
+    ${pubErr()}<div class="pb-acc" style="margin-top:16px;"><button type="button" onclick="pubRegistrar()" ${PUB.busy ? 'disabled' : ''}>${PUB.busy ? 'Registrando…' : 'Continuar'}</button></div>`;
+}
+function pubPantWz(){
+  const w = PUB.w; if (!w || !PUB.cat) return pubPantInicio();
+  const paso = pubWzCalc();
+  const mapa = { sede: pubWzPasoSede, tipo: pubWzPasoTipo, serv: pubWzPasoServ, prof: pubWzPasoProf, hora: pubWzPasoHora, dni: pubWzPasoDni, registro: pubWzPasoRegistro, resumen: pubWzPasoResumen, listo: pubWzPasoListo,
+    vacio: () => `<div class="pb-vacio">Por ahora no hay nada para reservar desde acá.</div>${pubWaBtn('Escribinos por WhatsApp')}` };
+  const volver = paso === 'listo' ? `<button type="button" class="pb-back" onclick="pubIr('inicio')">‹ Inicio</button>` : `<button type="button" class="pb-back" onclick="pubWzVolver()">‹ Volver</button>`;
+  return `${pubTop()}${pubMarca(false)}${volver}${paso === 'listo' ? '' : pubWzFichas()}${(mapa[paso] || mapa.vacio)()}${pubPie()}`;
 }
 
 // ---------- (v111) STAFF: link de reservas (Mi gimnasio), "Nuevos desde el link", lugar de la clase y suspensión por día ----------
@@ -9792,7 +10063,8 @@ function rpxIrAplicar(r){
       else if (r === 'rpe'){ cambiarSubvistaAlu('inicio'); if (typeof WELLNESS_CTX !== 'undefined' && WELLNESS_CTX.alumnoId) rpeCardAluCargar(WELLNESS_CTX.alumnoId); }   // (v137) aviso de RPE → Inicio, donde está la tarjeta
       else if (r === 'wellness'){ if (typeof WELLNESS_CTX !== 'undefined' && WELLNESS_CTX.alumnoId) revisarWellnessPendiente(WELLNESS_CTX.alumnoId, true); }   // (v112) aviso de Wellness → abre el cuestionario
     } else if (r === 'clases') cambiarSubvista('clases');
-    else if (r === 'equipo') cambiarSubvista('equipo');   // (v138) aviso del reloj del partido → Equipo
+    else if (r === 'equipo') cambiarSubvista('equipo');
+    else if (r === 'agenda') cambiarSubvista('agenda');   // (v150) aviso de paciente nuevo por el link   // (v138) aviso del reloj del partido → Equipo
   }catch(e){}
 }
 function rpxMsg(e){ return String((e && e.message) || e || ''); }
@@ -9816,7 +10088,7 @@ async function rpxCfgCargar(){
 function rpxCfgPintar(){
   try{ qbPintar(); }catch(e){}   // (v139)
   const box = document.getElementById('gimLinkBox'); if (!box) return;
-  const ver = !!(PERFIL_ACTUAL && PERFIL_ACTUAL.rol === 'admin' && modOn('clases'));
+  const ver = !!(PERFIL_ACTUAL && PERFIL_ACTUAL.rol === 'admin' && (modOn('clases') || srvOn()));   // (v150) también con Servicios
   box.style.display = ver ? '' : 'none';
   const body = document.getElementById('gimLinkBody'); if (!ver || !body) return;
   if (RPX.ok === false){ body.innerHTML = '<div class="rpx-ban">⚠️ Falta activar esta función en la base de datos. Corré <b>reservas-publicas.sql</b> en Supabase (SQL Editor) y recargá la app.</div>'; return; }
@@ -9824,19 +10096,30 @@ function rpxCfgPintar(){
   if (body.contains(document.activeElement) && document.activeElement.tagName !== 'BODY') return;   // no pisar lo que se está escribiendo
   const c = RPX.cfg || {}, slug = c.reservas_slug || rpxSlugAuto(GIMNASIO_ACTUAL && GIMNASIO_ACTUAL.nombre);
   body.innerHTML = `
-    <div class="muted" style="margin-bottom:10px;">Un link para pegar en tu Instagram: quien lo toca ve tus clases con sus lugares y reserva sin que tengas que darlo de alta antes. Si no se registró, te pide nombre, apellido y WhatsApp y te avisamos al celular. <b>Solo aparecen las clases que tienen cupo.</b></div>
+    <div class="muted" style="margin-bottom:10px;">${srvOn() ? 'Un link para pegar en tu Instagram o en el cartel: quien lo toca elige servicio, profesional, día y horario, y reserva sin que tengas que darlo de alta antes. Si es su primera vez, te pide nombre, apellido y WhatsApp y te avisamos. <b>Solo aparecen horarios libres.</b></div>' : 'Un link para pegar en tu Instagram: quien lo toca ve tus clases con sus lugares y reserva sin que tengas que darlo de alta antes. Si no se registró, te pide nombre, apellido y WhatsApp y te avisamos al celular. <b>Solo aparecen las clases que tienen cupo.</b></div>'}
     <label class="cl-chk"><input type="checkbox" id="gimLkOn" ${c.reservas_publicas ? 'checked' : ''} onchange="rpxLkVista()"><span><b>Link de reservas activo</b> · si lo apagás, nadie puede entrar</span></label>
     <div class="field" style="margin-top:12px;"><label>Nombre del link</label>
       <div class="rpx-slug"><span class="pre">${ejEsc(rpxUrl('').replace(/\?r=$/, ''))}?r=</span><input id="gimLkSlug" maxlength="40" autocapitalize="none" autocomplete="off" spellcheck="false" value="${ejEsc(slug)}" oninput="rpxLkVista()" placeholder="ej: mi-gimnasio"></div>
       <div class="muted" style="font-size:12px; margin-top:4px;">De 3 a 40 letras minúsculas, números y guiones. Si lo cambiás, el link anterior deja de funcionar.</div></div>
     <div class="rpx-link"><code id="gimLkUrl"></code><button type="button" class="secondary" onclick="rpxCopiar()">📋 Copiar</button><button type="button" class="secondary" id="gimLkShare" onclick="rpxCompartir()" style="display:none;">📤 Compartir</button><button type="button" class="secondary" onclick="rpxQrAbrir()">🔳 QR</button><button type="button" class="secondary" onclick="rpxVer()">👁 Ver cómo se ve</button></div>
+    ${rpxSedesLinks(c)}
     <label class="cl-chk"><input type="checkbox" id="gimLkPrueba" ${c.reservas_prueba !== false ? 'checked' : ''}><span>La primera clase es de prueba: quien no es alumno puede reservar <b>una</b> clase sin plan. Si lo apagás, solo reservan los que ya tienen plan.</span></label>
     <label class="cl-chk"><input type="checkbox" id="gimLkAprob" ${c.reservas_aprobacion ? 'checked' : ''}><span>Confirmar a mano cada reserva nueva: queda “por confirmar” (ocupa lugar) hasta que la aceptes en Clases.</span></label>
     <div class="field" style="margin-top:12px;"><label>Texto de bienvenida (opcional)</label><textarea id="gimLkBienv" rows="3" maxlength="300" placeholder="ej: Entrenamos al aire libre en Palermo. Traé agua y ropa cómoda 💪">${ejEsc(c.reservas_bienvenida || '')}</textarea></div>
     <div class="row" style="margin-top:14px;"><button type="button" id="gimLkBtn" onclick="rpxCfgGuardar()">Guardar link</button></div>
-    <div class="muted" style="margin-top:8px; font-size:12.5px;">A quien reserva por el link se lo ve en <b>Clases → Nuevos desde el link</b>, con botón de WhatsApp. Las reglas de cancelación son las de “Clases y reservas”. Quien ya es alumno entra con su DNI y se le aplican las mismas reglas que en la app (cuota, días del plan, una por día).</div>`;
+    <div class="muted" style="margin-top:8px; font-size:12.5px;">${srvOn() && !modOn('clases') ? 'A quien reserva por el link por primera vez lo ves en <b>Agenda</b> y te llega un aviso (campana).' : 'A quien reserva por el link se lo ve en <b>Clases → Nuevos desde el link</b>, con botón de WhatsApp.'} Las reglas de cancelación son las de “Clases y reservas”. Quien ya es alumno entra con su DNI y se le aplican las mismas reglas que en la app (cuota, días del plan, una por día).</div>`;
   rpxLkVista();
   const sh = document.getElementById('gimLkShare'); if (sh && navigator.share) sh.style.display = '';
+}
+// (v150) Un cartel por sede: el mismo link con &s=<sede> salta el primer paso
+function rpxSedesLinks(c){
+  try{
+    if (!srvOn() || !modOn('sucursales') || !c || !c.reservas_publicas || !c.reservas_slug) return '';
+    const sedes = sucActivas(); if (sedes.length < 2) return '';
+    return `<details style="margin:10px 0;"><summary style="cursor:pointer; font-weight:800;">📍 Link para el cartel de cada sede</summary>
+      <div class="muted" style="font-size:12.5px; margin:6px 0;">Cada sede puede imprimir su QR con este link: la persona entra directo a esa sede, sin tener que elegirla.</div>
+      ${sedes.map(s => { const u = rpxUrl(c.reservas_slug) + '&s=' + encodeURIComponent(pubWzSlug(s.nombre)); return `<div class="rpx-link"><span style="flex:0 0 100%; font-weight:700;">${ejEsc(s.nombre)}</span><code>${ejEsc(u)}</code><button type="button" class="secondary" onclick="rpxCopiarUrl('${ejEsc(u)}')">📋 Copiar</button></div>`; }).join('')}</details>`;
+  }catch(e){ return ''; }
 }
 function rpxLkSlug(){ return ((document.getElementById('gimLkSlug') || {}).value || '').trim().toLowerCase(); }
 function rpxLkVista(){
