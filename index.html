@@ -298,6 +298,18 @@ if ('serviceWorker' in navigator) window.addEventListener('load', function(){ tr
   .suc-lista{ display:grid; gap:12px; }
   .suc-card{ border:1px solid var(--border); border-radius:14px; padding:14px; background:var(--panel2); }
   .suc-card.off{ opacity:.65; }
+  /* (v152) Avisos de turno */
+  .avi-card{ margin-bottom:14px; }
+  .avi-h{ display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:8px; }
+  .avi-chips{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:10px; }
+  .avi-fecha{ width:auto; max-width:160px; padding:7px 10px; font-size:13.5px; }
+  .avi-row{ display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; padding:10px 0; border-top:1px solid var(--border); }
+  .avi-quien{ min-width:200px; flex:1; }
+  .avi-acc{ display:flex; gap:6px; align-items:center; flex-wrap:wrap; }
+  button.avi-b{ width:auto; padding:7px 12px; font-size:13px; }
+  button.avi-wa{ }
+  .avi-ok{ color:var(--text); font-weight:600; font-size:13px; }
+  .avi-auto{ font-size:12.5px; color:var(--muted); }
   .suc-card-h{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:8px; }
   .suc-dir{ display:grid; gap:6px; }
   .suc-dir-t{ font-weight:600; }
@@ -2626,6 +2638,7 @@ if ('serviceWorker' in navigator) window.addEventListener('load', function(){ tr
             <div class="rc-hint" id="rcHintIng">Con el teclado de la pantalla o un teclado numérico USB: escribí el DNI y Enter.</div>
           </div>
           <div class="card" id="rcRes"></div>
+          <div class="card rc-full avi-card" id="aviRecep" style="display:none;"></div>
           <div class="card rc-full">
             <h2 style="margin-top:0">Llegadas de hoy · <span id="rcCnt" style="color:var(--accent-text);">0</span></h2>
             <div id="rcLog" class="muted">Cargando...</div>
@@ -3285,6 +3298,7 @@ if ('serviceWorker' in navigator) window.addEventListener('load', function(){ tr
           <label style="margin-top:14px;">Día</label>
           <div class="dias-scroll" id="agendaDiasScroll"></div>
         </div>
+        <div class="card avi-card" id="aviAgenda" style="display:none;"></div>
         <div class="kpis" id="agendaKpis"></div>
         <div id="agendaTimelineWrap">Elegí un día.</div>
       </div>
@@ -5269,7 +5283,7 @@ function atlIniciarAlu(){
   atlCargarVista('aluAtletismoContenido', id || '');
 }
 
-const APP_VERSION = 151;
+const APP_VERSION = 152;
 let ES_PERSONAL = false;   // (v132) cuenta personal (gimnasios.tipo = 'personal'); se calcula en perAplicar()
 // (v96) Fecha de la última actualización: se cambia junto con APP_VERSION en cada entrega. Se muestra en la
 // pantalla de inicio y en el menú de cuenta ("v94 · actualizada el 5/10/2026").
@@ -10070,7 +10084,8 @@ function rpxIrAplicar(r){
   if (!r || !PERFIL_ACTUAL) return;
   try{
     if (PERFIL_ACTUAL.rol === 'alumno'){
-      if (r === 'clases'){ cambiarSubvistaAlu('turnos'); ALU_TAB = 'clases'; setTimeout(() => { try{ aluTabsPintar(); }catch(e){} }, 1500); }
+      if (r === 'turnos'){ cambiarSubvistaAlu('turnos'); }   // (v152) aviso "mañana tenés turno"
+      else if (r === 'clases'){ cambiarSubvistaAlu('turnos'); ALU_TAB = 'clases'; setTimeout(() => { try{ aluTabsPintar(); }catch(e){} }, 1500); }
       else if (r === 'rpe'){ cambiarSubvistaAlu('inicio'); if (typeof WELLNESS_CTX !== 'undefined' && WELLNESS_CTX.alumnoId) rpeCardAluCargar(WELLNESS_CTX.alumnoId); }   // (v137) aviso de RPE → Inicio, donde está la tarjeta
       else if (r === 'wellness'){ if (typeof WELLNESS_CTX !== 'undefined' && WELLNESS_CTX.alumnoId) revisarWellnessPendiente(WELLNESS_CTX.alumnoId, true); }   // (v112) aviso de Wellness → abre el cuestionario
     } else if (r === 'clases') cambiarSubvista('clases');
@@ -10541,6 +10556,115 @@ function srvAplicar(){
   try{ if (RC && RC.ficha && typeof rcRender === 'function') { if (srvUsa() && !RC.prox) rcRefrescar(RC.msg); } }catch(e){}
 }
 
+// ----- (v152) Avisos de turno: "a quién avisar" (el turno es mañana) -----
+const AVI = { ok: null, dias: 1, fecha: null, items: [], cargando: false, busy: {}, ts: 0, err: '' };
+function aviOn(){ return srvOn() && AVI.ok !== false; }
+function aviFechaDe(dias){ const d = new Date(); d.setDate(d.getDate() + dias); return fechaLocalISO(d); }
+function aviHoraAR(){   // hora actual en Argentina (0-23.99)
+  try{ const p = new Intl.DateTimeFormat('en-GB', { timeZone: 'America/Argentina/Buenos_Aires', hour: '2-digit', minute: '2-digit', hour12: false }).formatToParts(new Date()); const h = +p.find(x => x.type === 'hour').value, m = +p.find(x => x.type === 'minute').value; return (h % 24) + m / 60; }catch(e){ return new Date().getHours(); }
+}
+// ¿lo va a avisar solo la app a las 10:00? (tiene la app, es para mañana y todavía no son las 10)
+function aviAutoPendiente(it){ return !!(it.tiene_app && !it.aviso_estado && AVI.dias === 1 && aviHoraAR() < 10); }
+function aviPendientes(){ return (AVI.items || []).filter(it => !it.aviso_estado && !aviAutoPendiente(it)); }
+async function aviCargar(dias, forzar){
+  if (!srvOn() || !PERFIL_ACTUAL || AVI.ok === false) { aviRender(); return; }
+  if (dias != null) AVI.dias = dias;
+  const fecha = AVI.fecha && AVI.dias === 0 ? AVI.fecha : aviFechaDe(AVI.dias);
+  if (!forzar && AVI.ts && Date.now() - AVI.ts < 15000 && AVI.fecha === fecha) { aviRender(); return; }
+  AVI.cargando = true; AVI.err = ''; aviRender();
+  try{
+    const r = await sb('rpc/avisos_turnos_pendientes', { method: 'POST', body: JSON.stringify({ p_fecha: fecha }) });
+    AVI.ok = true; AVI.fecha = (r && r.fecha) || fecha; AVI.items = (r && r.items) || []; AVI.ts = Date.now();
+    if (r && r.servicios === false) { AVI.items = []; }
+  }catch(e){
+    const m = rpxMsg(e);
+    if (/avisos_turnos_pendientes|42883|PGRST202|Could not find/i.test(m)) AVI.ok = false;   // v152.sql sin correr: el panel no aparece
+    else { AVI.err = extraerMensajeError(e); }
+  }
+  AVI.cargando = false; aviRender();
+}
+function aviDia(n){ AVI.dias = n; AVI.fecha = null; aviCargar(n, true); }
+function aviFechaElegida(v){
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(v || '')) return;
+  const hoy = fechaLocalISO(), max = aviFechaDe(7);
+  if (v < hoy || v > max){ toast('Elegí una fecha de hoy a 7 días.', true); return; }
+  const n = Math.round((new Date(v + 'T00:00:00') - new Date(hoy + 'T00:00:00')) / 86400000);
+  AVI.dias = n; AVI.fecha = v; aviCargar(n, true);
+}
+function aviMsg(it){
+  const nom = String(it.alumno || '').trim().split(/\s+/)[0] || '';
+  const nombre = nom ? nom.charAt(0).toUpperCase() + nom.slice(1).toLowerCase() : '';
+  const cuando = AVI.dias === 1 ? 'mañana' : (AVI.dias === 0 ? 'hoy' : 'el ' + fechaLegible(AVI.fecha));
+  const gim = (typeof GIMNASIO_ACTUAL !== 'undefined' && GIMNASIO_ACTUAL && GIMNASIO_ACTUAL.nombre) ? GIMNASIO_ACTUAL.nombre : '';
+  const donde = (it.sucursal && sucOn()) ? ' en ' + it.sucursal : (gim ? ' en ' + gim : '');
+  const con = it.profesor ? ' con ' + it.profesor : '';
+  return `Hola ${nombre}! Te recordamos tu turno de ${it.servicio} ${cuando} a las ${it.hora}${donde}${con}. Si no podés venir avisanos así liberamos el horario. ¡Te esperamos!`;
+}
+async function aviMarcar(id, estado, canal){
+  if (AVI.busy[id]) return; AVI.busy[id] = true;
+  try{
+    await sb('rpc/avisos_turno_marcar', { method: 'POST', body: JSON.stringify({ p_turno_id: id, p_estado: estado, p_canal: canal || null }) });
+    const it = AVI.items.find(x => x.turno_id === id);
+    if (it){ it.aviso_estado = estado; it.aviso_canal = estado === 'enviado' ? (canal || 'manual') : null; it.aviso_en = estado ? new Date().toISOString() : null; }
+  }catch(e){ toast(extraerMensajeError(e), true); }
+  AVI.busy[id] = false; aviRender();
+}
+function aviWhatsapp(id){
+  const it = AVI.items.find(x => x.turno_id === id); if (!it) return;
+  const url = whatsappUrlAlumno(it.telefono, aviMsg(it));
+  if (!url){ toast('Este paciente no tiene teléfono cargado.', true); return; }
+  window.open(url, '_blank', 'noopener');
+  aviMarcar(id, 'enviado', 'whatsapp');
+}
+function aviCanalTxt(c){ return c === 'app' ? 'por la app' : c === 'whatsapp' ? 'por WhatsApp' : 'a mano'; }
+function aviFila(it){
+  const sede = (it.sucursal && sucOn()) ? ` · 📍 ${xe(it.sucursal)}` : '';
+  let acc;
+  if (it.aviso_estado === 'enviado') acc = `<span class="avi-ok">✓ Avisado ${aviCanalTxt(it.aviso_canal)}</span>${it.aviso_canal === 'app' ? '' : `<button type="button" class="ghost avi-b" onclick="aviMarcar('${it.turno_id}', null)">Deshacer</button>`}`;
+  else if (it.aviso_estado === 'omitido') acc = `<span class="muted">Omitido</span><button type="button" class="ghost avi-b" onclick="aviMarcar('${it.turno_id}', null)">Deshacer</button>`;
+  else {
+    const auto = aviAutoPendiente(it);
+    acc = (auto ? '<span class="avi-auto">🔔 Hoy 10:00 se avisa solo por la app</span>' : '')
+      + (it.telefono ? `<button type="button" class="avi-b avi-wa" onclick="aviWhatsapp('${it.turno_id}')">💬 WhatsApp</button>` : '<span class="muted" style="font-size:12px;">Sin teléfono</span>')
+      + `<button type="button" class="secondary avi-b" onclick="aviMarcar('${it.turno_id}', 'enviado', 'manual')">✓ Ya avisé</button>`
+      + `<button type="button" class="ghost avi-b" onclick="aviMarcar('${it.turno_id}', 'omitido')">Omitir</button>`;
+  }
+  return `<div class="avi-row"><div class="avi-quien"><b>${xe(it.hora)}–${xe(it.hora_fin)}</b> ${xe(it.alumno)}${it.tiene_app ? ' <span class="pill" title="Tiene la app">📱</span>' : ''}
+    <div class="muted" style="font-size:12.5px;">${it.icono ? xe(it.icono) + ' ' : ''}${xe(it.servicio)}${it.profesor ? ' · ' + xe(it.profesor) : ''}${sede}</div></div><div class="avi-acc">${acc}</div></div>`;
+}
+function aviHtml(){
+  const pend = aviPendientes().length, tot = (AVI.items || []).length;
+  const chips = [[1, 'Mañana'], [2, 'Pasado mañana']].map(([n, t]) => `<button type="button" class="srv-chip ${AVI.dias === n && !AVI.fecha ? 'on' : ''}" onclick="aviDia(${n})">${t}</button>`).join('')
+    + `<input type="date" class="avi-fecha" min="${aviFechaDe(0)}" max="${aviFechaDe(7)}" value="${xe(AVI.fecha || '')}" onchange="aviFechaElegida(this.value)" title="Otra fecha">`;
+  const cuando = AVI.fecha ? fechaLegible(AVI.fecha) : fechaLegible(aviFechaDe(AVI.dias));
+  let cuerpo;
+  if (AVI.cargando && !tot) cuerpo = '<div class="muted">Cargando…</div>';
+  else if (AVI.err) cuerpo = `<div class="rpx-ban">⚠️ ${xe(AVI.err)}</div>`;
+  else if (!tot) cuerpo = `<div class="muted">No hay turnos para avisar ${AVI.dias === 1 ? 'mañana' : 'ese día'}. Solo se avisan los servicios que tienen activada la casilla “🔔 Avisar el día anterior” (Mi gimnasio → Servicios).</div>`;
+  else cuerpo = (AVI.items || []).map(aviFila).join('');
+  return `<div class="avi-h"><div><b>📣 Avisar hoy</b> <span class="muted" style="font-size:13px;">· turnos del ${xe(cuando)}</span></div>
+    <div style="display:flex;gap:8px;align-items:center;">${tot ? `<span class="pill ${pend ? 'warn' : ''}">${pend ? pend + ' por avisar' : 'Todo avisado ✓'}</span>` : ''}<button type="button" class="ghost avi-b" onclick="aviCargar(null, true)" title="Actualizar">↻</button></div></div>
+    <div class="avi-chips">${chips}</div><div class="avi-lista">${cuerpo}</div>`;
+}
+function aviRender(){
+  ['aviAgenda', 'aviRecep'].forEach(id => {
+    const el = document.getElementById(id); if (!el) return;
+    const ver = !!(PERFIL_ACTUAL && srvOn() && AVI.ok !== false);
+    el.style.display = ver ? '' : 'none';
+    if (ver) el.innerHTML = aviHtml();
+  });
+}
+(function aviEngancharVistas(){
+  try{
+    const o = window.cambiarSubvista; if (typeof o !== 'function') return;
+    window.cambiarSubvista = function(v){
+      const r = o.apply(this, arguments);
+      try{ if (v === 'agenda' || v === 'recepcion') aviCargar(); }catch(e){}
+      return r;
+    };
+  }catch(e){}
+})();
+
 // ----- Mi gimnasio: lista y alta de servicios + límite de turnos por día -----
 function srvEsAdmin(){ return !!(PERFIL_ACTUAL && PERFIL_ACTUAL.rol === 'admin' && !PERFIL_ACTUAL.sucursal_id); }
 function srvPintar(forzar){
@@ -10556,7 +10680,7 @@ function srvPintar(forzar){
   const tarjetas = lista.map(s => {
     const nombres = srvProfes(s.id).map(p => xe(p.nombre));
     return `<div class="suc-card ${s.activo ? '' : 'off'}">
-      <div class="suc-card-h"><b>${xe(srvEtq(s))}</b><span class="pill">${srvDur(s.duracion_min)}</span>${s.activo ? '' : '<span class="pill warn">Desactivado</span>'}
+      <div class="suc-card-h"><b>${xe(srvEtq(s))}</b><span class="pill">${srvDur(s.duracion_min)}</span>${s.activo ? '' : '<span class="pill warn">Desactivado</span>'}${s.recordar === true ? '<span class="pill" title="Se avisa el día anterior">🔔 Avisa</span>' : ''}
         <span style="flex:1"></span>
         <button type="button" class="ghost" onclick="srvEditar('${s.id}')">Editar</button>
         <button type="button" class="ghost" onclick="srvActivoToggle('${s.id}', ${s.activo ? 'false' : 'true'})">${s.activo ? 'Desactivar' : 'Activar'}</button></div>
@@ -10577,6 +10701,7 @@ function srvPintar(forzar){
         <input id="srvF_dur" type="number" inputmode="numeric" min="5" max="240" step="5" value="${xe(e.duracion_min || '')}" style="max-width:140px;" oninput="srvDurInput()">
         ${e.id ? '<div class="muted" style="font-size:12px;margin-top:4px;">Si cambiás la duración, los turnos ya dados no se mueven: solo cambian los nuevos.</div>' : '<div class="muted" style="font-size:12px;margin-top:4px;">Múltiplo de 5. Los turnos salen cada esa cantidad de minutos desde el inicio del horario del profesional.</div>'}</div>
       <div class="field" style="margin-top:8px;"><label>Descripción (opcional)</label><input id="srvF_desc" maxlength="200" value="${xe(e.descripcion || '')}" placeholder="Se muestra al elegir el servicio"></div>
+      ${srvRecOk() ? `<label class="srv-pro" style="margin-top:12px;display:flex;gap:8px;align-items:flex-start;"><input type="checkbox" id="srvF_rec" ${e.recordar !== false ? 'checked' : ''} onchange="srvProfSet0(this.checked)" style="margin-top:3px;"> <span><b>🔔 Avisar el día anterior</b><br><small class="muted">Aparece en “📣 Avisar hoy” (Agenda y Recepción) para mandarle el WhatsApp, y a quien tiene la app le llega un aviso solo a las 10:00. Apagalo para turnos que se repiten todas las semanas (ej. entrenamiento).</small></span></label>` : ''}
       <div class="field" style="margin-top:8px;"><label>¿Quién lo da?</label>
         ${profes.length ? `<div class="srv-pros">${profes.map(p => `<label class="srv-pro"><input type="checkbox" ${sel.has(p.id) ? 'checked' : ''} onchange="srvProfSet('${p.id}', this.checked)"> ${xe(p.nombre)}</label>`).join('')}</div>`
           : '<div class="muted">Primero cargá a los profesionales en <b>Profesores</b>.</div>'}</div>
@@ -10594,7 +10719,7 @@ function srvPintar(forzar){
 }
 function srvNuevo(i){
   const x = (i != null) ? SRV_EJEMPLOS[i] : null;
-  SRV.edit = { id: null, nombre: x ? x[0] : '', duracion_min: x ? x[1] : 30, icono: x ? x[2] : '', descripcion: '', profs: [] }; srvPintar(true);
+  SRV.edit = { id: null, nombre: x ? x[0] : '', duracion_min: x ? x[1] : 30, icono: x ? x[2] : '', descripcion: '', profs: [], recordar: true }; srvPintar(true);
 }
 function srvEditar(id){ const s = srvPorId(id); if (!s) return; SRV.edit = Object.assign({}, s, { profs: [...(SRV.profs[id] || [])] }); srvPintar(true); }
 function srvCancelar(){ SRV.edit = null; srvPintar(true); }
@@ -10602,7 +10727,10 @@ function srvFormLeer(){
   const e = SRV.edit; if (!e) return;
   const g = id => { const el = document.getElementById(id); return el ? el.value : ''; };
   e.nombre = g('srvF_nombre'); e.icono = g('srvF_ico'); e.descripcion = g('srvF_desc'); e.duracion_min = g('srvF_dur');
+  const rc = document.getElementById('srvF_rec'); if (rc) e.recordar = rc.checked;   // (v152)
 }
+function srvRecOk(){ return (SRV.lista && SRV.lista.length) ? ('recordar' in SRV.lista[0]) : AVI.ok === true; }   // (v152) la columna existe (SQL v152 corrido)
+function srvProfSet0(on){ if (SRV.edit) SRV.edit.recordar = !!on; }
 function srvDurSet(m){ srvFormLeer(); SRV.edit.duracion_min = m; srvPintar(true); }
 function srvDurInput(){ srvFormLeer(); document.querySelectorAll('#gimSrvBody .srv-chip').forEach(b => { b.classList.toggle('on', b.textContent.trim() === srvDur(+SRV.edit.duracion_min)); }); }
 function srvProfSet(id, on){ srvFormLeer(); const e = SRV.edit; const s = new Set(e.profs || []); if (on) s.add(id); else s.delete(id); e.profs = [...s]; }
@@ -10612,6 +10740,7 @@ async function srvGuardar(){
   if (nombre.length < 2){ toast('Poné el nombre del servicio.', true); return; }
   if (!(dur >= 5 && dur <= 240 && dur % 5 === 0)){ toast('La duración tiene que estar entre 5 y 240 minutos, de a 5.', true); return; }
   const fila = { nombre, duracion_min: dur, icono: (e.icono || '').trim() || null, descripcion: (e.descripcion || '').trim() || null };
+  if (srvRecOk()) fila.recordar = e.recordar !== false;   // (v152) avisar el día anterior
   SRV.busy = true; const btn = document.getElementById('srvBtnGuardar'); if (btn){ btn.disabled = true; btn.textContent = 'Guardando…'; }
   try{
     let id = e.id;
