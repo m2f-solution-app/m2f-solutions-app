@@ -382,6 +382,7 @@ if ('serviceWorker' in navigator) window.addEventListener('load', function(){ tr
   .cv-wns{ display:flex; flex-wrap:wrap; gap:4px 6px; margin-top:5px; }
   .cv-wn{ font-size:12.5px; padding:2px 8px; border-radius:999px; background:var(--panel2); border:1px solid var(--border); }
   .cv-wn.x{ color:var(--muted); }
+  .cv-sumar{ margin:0 0 12px; padding:10px 12px; border-radius:12px; border:1px dashed var(--note-bd); background:var(--note-bg); font-size:13.5px; }
   /* (v153) Cuota: desde cuándo cuenta */
   .cuo-vig{ margin-top:12px; padding:12px; border:1px solid var(--border); border-radius:12px; background:var(--panel2); }
   .cuo-line{ font-size:14.5px; margin-bottom:6px; }
@@ -17186,7 +17187,7 @@ function cvFichaMes(n){ if (!CVF) return; CVF.mes = cvMesMas(CVF.mes, n); CVF.se
 function cvFSet(k, v){ if (CVF) CVF[k] = v; }
 function cvFDia(dow, on){
   if (!CVF) return;
-  if (on) CVF.dias[dow] = CVF.dias[dow] || { hora: '', prof: '' }; else delete CVF.dias[dow];
+  if (on) CVF.dias[dow] = CVF.dias[dow] || { hora: '', prof: (typeof cvProfDefault === 'function' ? cvProfDefault() : '') }; else delete CVF.dias[dow];   // (v157c) el profe propuesto es uno mismo si da las clases
   cvFichaPintar(true);
 }
 function cvFDiaSet(dow, k, v){ if (CVF && CVF.dias[dow]) CVF.dias[dow][k] = v; }
@@ -17276,7 +17277,7 @@ function cvFichaPintar(sinScroll){
           ? `<input type="number" inputmode="decimal" min="0" step="0.01" value="${xe(CVF.precio)}" placeholder="Usa el del plan" oninput="cvFSet('precio', this.value)">`
           : `<div class="cv-ro">${q.precio_origen === 'alumno' ? cvMonto(q.precio_clase) : 'El del plan'}</div>`}</div></div>
       ${(admin && !zonasAct.length) ? '<div class="muted" style="font-size:12px;margin:-4px 0 8px;">Todavía no hay zonas: creálas en Mi gimnasio → Cuota variable.</div>' : ''}
-      <div class="field"><label>Días fijos de entrenamiento</label><div class="cv-dias">${diasHtml}</div></div>
+      <div class="field"><label>Días fijos de entrenamiento</label>${typeof cvSumarHtml === 'function' ? cvSumarHtml() : ''}<div class="cv-dias">${diasHtml}</div></div>
       <div class="muted" style="font-size:12px;margin:6px 0 10px;">Con estos días se cuentan las clases de cada mes. Si un día puntual cambia (feriado, no puede ese día) lo resolvés abajo, sin tocar los días fijos.</div>
       <div class="row"><button type="button" id="cvGBtn" onclick="cvFichaGuardar()">Guardar</button></div></div></details>`;
   let cuota;
@@ -17536,7 +17537,7 @@ async function cvAluQuitar(){
 // ---------- (v157) CUOTA VARIABLE · el profe cancela una clase (clase a favor + aviso en la app + WhatsApp armado) ----------
 // SQL: v154 (cv_cancelar_clase, cv_deshacer_cancelacion). Pantalla "Cancelar clase" (menú del personal) y botón en ficha → Cuota.
 // Cada alumno alcanzado recibe 1 clase a favor para el mes siguiente (solo ese mes) + campana en la app. El WhatsApp lo manda el personal con un toque.
-const CVC = { tab: 'semana', abrirKey: null, profs: [], fecha: null, cargando: false, grupos: [], err: '', sel: null, marcados: {}, motivo: '', res: null, busy: false };
+const CVC = { profsOk: false, profsPend: false, sumando: false, tab: 'semana', abrirKey: null, profs: [], fecha: null, cargando: false, grupos: [], err: '', sel: null, marcados: {}, motivo: '', res: null, busy: false };
 const CVC_TPL = 'Hola {nombre}! No vamos a poder dar la clase del {dia} {fecha}{hora}. Te queda 1 clase a favor para el mes que viene. Disculpá las molestias. — {gym}';
 const CV_DIAS_LARGO = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
 function cvcVisible(){ return cvOn() && CV.ok === true && cvStaff(); }
@@ -17549,6 +17550,46 @@ function cvcMiProfe(){
   if (!PERFIL_ACTUAL || PERFIL_ACTUAL.rol !== 'profesor') return null;
   const p = cvcProfs().find(x => x.perfil_id === PERFIL_ACTUAL.id);
   return p ? p.id : null;
+}
+function cvMiProfId(){   // la ficha de profesor de quien está logueado (sea admin o profe), si la tiene
+  if (!PERFIL_ACTUAL) return null;
+  const p = cvcProfs().find(x => x.perfil_id === PERFIL_ACTUAL.id && x.activo !== false);
+  return p ? p.id : null;
+}
+function cvProfDefault(){   // profe que se propone al tildar un día nuevo: yo, si soy profe y soy el único (o si soy profe)
+  const yo = cvMiProfId(); if (!yo) return '';
+  return (PERFIL_ACTUAL.rol === 'profesor' || cvcProfs().filter(x => x.activo !== false).length === 1) ? yo : '';
+}
+async function cvcProfsCargar(){
+  try{ CVC.profs = (await sb('profesores?select=id,nombre,perfil_id,activo')) || []; CVC.profsOk = true; }catch(e){ CVC.profs = []; }
+}
+function cvPuedeSumarme(){
+  if (!cvAdmin() || !PERFIL_ACTUAL || !PERFIL_ACTUAL.id) return false;
+  if (!((PROFESORES_CACHE && PROFESORES_CACHE.length) || CVC.profsOk)){   // todavía no sé si ya figuro: lo averiguo una vez
+    if (!CVC.profsPend){ CVC.profsPend = true; cvcProfsCargar().then(() => { try{ cvcPintar(true); }catch(e){} try{ if (typeof CVF !== 'undefined' && CVF) cvFichaPintar(true); }catch(e){} }); }
+    return false;
+  }
+  return !cvMiProfId();
+}
+function cvSumarHtml(){
+  if (!cvPuedeSumarme()) return '';
+  return `<div class="cv-sumar"><div><b>¿Das las clases vos?</b> Sumate como profe para que tu nombre figure en tus clases y poder filtrarlas. Seguís siendo administrador: no cambia ningún permiso.</div>
+    <div class="row" style="margin-top:8px;"><button type="button" id="cvSumarBtn" onclick="cvSumarme()">➕ Sumarme como profe</button></div></div>`;
+}
+async function cvSumarme(){
+  if (!cvPuedeSumarme() || CVC.sumando) return;
+  CVC.sumando = true; const b = document.getElementById('cvSumarBtn'); if (b){ b.disabled = true; b.textContent = 'Sumándote…'; }
+  try{
+    const n0 = String(PERFIL_ACTUAL.nombre || '').trim(), em = String(PERFIL_ACTUAL.email || '');
+    const nombre = (n0 && !/@/.test(n0)) ? n0 : ((n0 || em || 'Yo').split('@')[0]);
+    await sb('profesores', { method: 'POST', headers: { Prefer: 'return=minimal' }, body: JSON.stringify({ nombre, gimnasio_id: PERFIL_ACTUAL.gimnasio_id, perfil_id: PERFIL_ACTUAL.id }) });
+    try{ await cargarPersonas(); }catch(e){}
+    await cvcProfsCargar();
+    CVC.sumando = false;
+    toast('Listo: ya figurás como profe ✓ (seguís siendo administrador)');
+    if (typeof CVF !== 'undefined' && CVF && CVF.dias){ const yo = cvMiProfId(); if (yo) Object.keys(CVF.dias).forEach(d => { if (!CVF.dias[d].prof) CVF.dias[d].prof = yo; }); try{ cvFichaPintar(true); }catch(e){} }
+    try{ cvcPintar(true); }catch(e){}
+  }catch(e){ CVC.sumando = false; toast('No se pudo sumarte como profe: ' + extraerMensajeError(e), true); if (b){ b.disabled = false; b.textContent = '➕ Sumarme como profe'; } }
 }
 function cvcProfNombre(id){ if (!id) return null; const p = cvcProfs().find(x => x.id === id); return p ? p.nombre : 'Profesor'; }
 function cvcFechaTxt(iso){ return CV_DIAS_LARGO[cvDow(iso)] + ' ' + (+iso.slice(8, 10)) + ' de ' + new Date(iso + 'T12:00:00').toLocaleDateString('es-AR', { month: 'long' }); }
@@ -17576,7 +17617,7 @@ function cvcTabsHtml(){
 }
 // Trae todo lo que hace falta para armar las clases de un rango de fechas
 async function cvcFetch(desde, hasta){
-  if (!cvcProfs().length){ try{ CVC.profs = (await sb('profesores?select=id,nombre,perfil_id,activo')) || []; }catch(e){ CVC.profs = []; } }
+  if (!cvcProfs().length || !CVC.profsOk) await cvcProfsCargar();
   const rng = c => `${c}=gte.${desde}&${c}=lte.${hasta}`;
   const [ag, cam, mov, cre] = await Promise.all([
     sb('cv_agenda?select=alumno_id,hora,profesor_id,dia_semana&activo=eq.true&limit=10000'),
@@ -17705,7 +17746,7 @@ function cvcEstadoTxt(a){
 }
 function cvcPintar(sinScroll){
   const el = document.getElementById('cvcBody'); if (!el) return;
-  if (CVC.tab === 'semana'){ el.innerHTML = cvcTabsHtml() + cvwHtml(); return; }
+  if (CVC.tab === 'semana'){ el.innerHTML = cvcTabsHtml() + cvSumarHtml() + cvwHtml(); return; }
   const r = cvcRango(), f = CVC.fecha || cvIso(new Date()), hoy = cvIso(new Date());
   const fer = (CV.feriados || []).find(x => x.fecha === f);
   const nav = `<div class="cv-mes" style="flex-wrap:wrap;"><button type="button" class="ghost" onclick="cvcDia(-1)" aria-label="Día anterior" ${f <= r.min ? 'disabled' : ''}>‹</button>
@@ -17720,7 +17761,7 @@ function cvcPintar(sinScroll){
   else cuerpo = CVC.grupos.map((g, i) => cvcGrupoHtml(g, i, f)).join('');
   const res = CVC.res ? cvcResHtml() : '';
   const prof = cvcMiProfe();
-  el.innerHTML = `${cvcTabsHtml()}<div class="muted" style="font-size:13px;margin-bottom:10px;">Cuando un profe no puede dar una clase, cada alumno recibe <b>1 clase a favor</b> para el mes que viene (vale solo ese mes) y un aviso en su app. El WhatsApp lo mandás vos con un toque.</div>
+  el.innerHTML = `${cvcTabsHtml()}${cvSumarHtml()}<div class="muted" style="font-size:13px;margin-bottom:10px;">Cuando un profe no puede dar una clase, cada alumno recibe <b>1 clase a favor</b> para el mes que viene (vale solo ese mes) y un aviso en su app. El WhatsApp lo mandás vos con un toque.</div>
     ${nav}${fer ? `<div class="cv-pendfer">🎌 ${xe(f.slice(8, 10) + '/' + f.slice(5, 7))} es feriado${fer.nombre ? ' (' + xe(fer.nombre) + ')' : ''}. Los alumnos deciden por su cuenta si descuentan, dejan a favor o mueven la clase; cancelá solo si de verdad no hay clase.</div>` : ''}
     ${res}${cuerpo}`;
 }
