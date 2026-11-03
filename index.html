@@ -310,6 +310,52 @@ if ('serviceWorker' in navigator) window.addEventListener('load', function(){ tr
   button.avi-wa{ }
   .avi-ok{ color:var(--text); font-weight:600; font-size:13px; }
   .avi-auto{ font-size:12.5px; color:var(--muted); }
+  /* (v155) Cuota variable */
+  .cv-h{ margin:20px 0 8px; font-size:14.5px; }
+  .cv-prow{ display:flex; align-items:center; justify-content:space-between; gap:10px; padding:8px 0; border-bottom:1px solid var(--border); }
+  .cv-pn{ min-width:0; }
+  .cv-pin{ display:flex; align-items:center; gap:6px; }
+  .cv-pin input{ width:150px; max-width:42vw; }
+  .cv-fer{ display:inline-flex; align-items:center; gap:6px; }
+  button.cv-x{ background:none; border:none; color:var(--muted); padding:0 2px; font-size:16px; line-height:1; width:auto; cursor:pointer; }
+  .cv-ferform{ align-items:end; gap:10px; flex-wrap:wrap; }
+  .cv-det{ border:1px solid var(--border); border-radius:14px; background:var(--panel2); margin-bottom:14px; }
+  .cv-det > summary{ cursor:pointer; padding:12px 14px; font-weight:700; font-size:14px; list-style:none; }
+  .cv-det > summary::-webkit-details-marker{ display:none; }
+  .cv-detb{ padding:0 14px 14px; }
+  .cv-dos{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .cv-ro{ padding:10px 12px; border:1px solid var(--border); border-radius:10px; background:var(--panel3); color:var(--muted); font-size:14px; }
+  .cv-dias{ display:flex; flex-direction:column; gap:6px; }
+  .cv-dia{ display:grid; grid-template-columns:78px 1fr 1fr; gap:8px; align-items:center; padding:6px 8px; border:1px solid var(--border); border-radius:10px; background:var(--panel3); }
+  .cv-dia:not(.on){ grid-template-columns:1fr; opacity:.75; }
+  .cv-dia.on{ border-color:var(--note-bd); background:var(--note-bg); }
+  .cv-dchk{ display:flex; align-items:center; gap:6px; cursor:pointer; margin:0; }
+  .cv-dchk input{ width:auto; margin:0; }
+  .cv-dia input[type="time"], .cv-dia select{ min-width:0; width:100%; padding:7px 8px; font-size:13.5px; }
+  .cv-mes{ display:flex; align-items:center; justify-content:center; gap:14px; margin:4px 0 10px; }
+  .cv-mes button{ width:auto; padding:6px 14px; font-size:18px; line-height:1; }
+  .cv-fechas{ display:flex; flex-wrap:wrap; gap:6px; margin-bottom:6px; }
+  button.cv-f{ width:auto; display:flex; flex-direction:column; align-items:center; gap:1px; min-width:58px; padding:7px 10px; border-radius:12px; border:1px solid var(--border); background:var(--panel2); color:var(--text); font-size:13px; font-weight:600; }
+  button.cv-f small{ font-size:11.5px; font-weight:500; color:var(--muted); white-space:nowrap; }
+  button.cv-f.f-falta{ border-color:var(--accent); background:var(--note-bg); }
+  button.cv-f.f-fav{ border-color:var(--accent); border-style:dashed; background:var(--note-bg); }
+  button.cv-f.f-tarde{ border-color:rgba(255,210,61,.55); background:rgba(255,210,61,.1); }
+  button.cv-f.f-mov{ border-color:var(--muted); }
+  button.cv-f.f-pend{ border-color:rgba(255,210,61,.7); border-style:dashed; }
+  button.cv-f.sel{ outline:2px solid var(--accent); outline-offset:1px; }
+  .cv-acc{ border:1px solid var(--note-bd); background:var(--note-bg); border-radius:12px; padding:12px; margin:8px 0 12px; font-size:14px; }
+  .cv-forz{ display:flex; gap:8px; align-items:flex-start; margin-top:8px; font-size:13px; }
+  .cv-forz input{ width:auto; margin-top:3px; }
+  .cv-tot{ margin:10px 0 4px; padding:12px 14px; border-radius:12px; background:var(--panel2); border:1px solid var(--border); }
+  .cv-big{ font-size:24px; font-weight:800; }
+  .cv-tbl{ border:1px solid var(--border); border-radius:12px; overflow:hidden; }
+  .cv-r{ display:flex; justify-content:space-between; align-items:center; gap:12px; padding:9px 12px; font-size:14px; }
+  .cv-tbl .cv-r + .cv-r{ border-top:1px solid var(--border); }
+  .cv-r span:last-child{ text-align:right; }
+  .cv-av{ margin:10px 0 0; padding-left:18px; font-size:13px; color:var(--muted); line-height:1.5; }
+  .cv-cob{ margin-top:12px; padding:11px 14px; border-radius:12px; border:1px solid var(--border); background:var(--panel2); }
+  .cv-cobform{ margin-top:12px; padding:12px; border-radius:12px; border:1px solid var(--border); background:var(--panel2); }
+  @media (max-width:520px){ .cv-dos{ grid-template-columns:1fr; } .cv-dia.on{ grid-template-columns:70px 1fr; } .cv-dia.on select{ grid-column:1 / -1; } }
   /* (v153) Cuota: desde cuándo cuenta */
   .cuo-vig{ margin-top:12px; padding:12px; border:1px solid var(--border); border-radius:12px; background:var(--panel2); }
   .cuo-line{ font-size:14.5px; margin-bottom:6px; }
@@ -3822,6 +3868,8 @@ if ('serviceWorker' in navigator) window.addEventListener('load', function(){ tr
         <details class="plegable card" data-k="gim-adm" id="gimAdmBox" style="display:none;"><summary>👥 Administradores por sede</summary><div class="plg-body" id="gimAdmBody"><div class="muted">Cargando…</div></div></details>
         <!-- (v148) Servicios y turnos con duración -->
         <details class="plegable card" data-k="gim-srv" id="gimSrvBox" style="display:none;"><summary>🩺 Servicios (turnos con duración)</summary><div class="plg-body" id="gimSrvBody"><div class="muted">Cargando…</div></div></details>
+        <!-- (v155) Cuota variable -->
+        <details class="plegable card" data-k="gim-cv" id="gimCvBox" style="display:none;"><summary>🧮 Cuota variable (valor por clase y zonas)</summary><div class="plg-body" id="gimCvBody"><div class="muted">Cargando…</div></div></details>
         <!-- (v103) Reglas de reservas de clases -->
         <details class="plegable card" data-k="gim-clases" id="gimClasesBox" style="display:none;"><summary>Clases y reservas</summary><div class="plg-body">
           <div class="muted" style="margin-bottom:10px;">Reglas para cuando el alumno reserva desde su app. El staff y Recepción pueden anotar, sacar turnos o quitar alumnos a mano sin estas restricciones (salvo el cupo).</div>
@@ -4739,8 +4787,8 @@ const MOD_PRESETS = {
   pro:           { n: 'Pro',           ico: '🚀', on: '*' },
   personal:      { n: 'Personal',      ico: '💪', on: ['seguimiento', 'logros', 'wellness'] },   // (v132) entrena por su cuenta: solo rutinas + progreso
 };
-const MOD_FUERA_PRESET = ['sucursales', 'servicios'];   // módulos que no entran en ningún plan: se prenden aparte, gimnasio por gimnasio
-const MOD_BLOQUEO_SERVIDOR = ['clases', 'evaluaciones', 'alertas', 'finanzas', 'recepcion', 'proyeccion_ingresos', 'servicios', 'wellness'];   // etapa 1 (SQL) + proyección (ya la valida su RPC)
+const MOD_FUERA_PRESET = ['sucursales', 'servicios', 'cuota_variable'];   // módulos que no entran en ningún plan: se prenden aparte, gimnasio por gimnasio
+const MOD_BLOQUEO_SERVIDOR = ['clases', 'evaluaciones', 'alertas', 'finanzas', 'recepcion', 'proyeccion_ingresos', 'servicios', 'wellness', 'cuota_variable'];   // etapa 1 (SQL) + proyección (ya la valida su RPC)
 function wellOn(){ return modOn('wellness'); }   // (v149) Wellness es un módulo por gimnasio
 function modOn(k){
   if (k === 'atletismo') return atlOn();
@@ -4767,6 +4815,7 @@ function modAplicarMenu(){
   try{ rpxCfgPintar(); }catch(e){}   // (v111) y el link de reservas
   try{ sucAplicar(); }catch(e){}   // (v140) sedes
   try{ srvAplicar(); }catch(e){}   // (v148) servicios
+  try{ cvPintar(); }catch(e){}   // (v155) cuota variable
   try{ document.body.classList.toggle('sin-wellness', !wellOn()); }catch(e){}   // (v149)
   const roles = new Set([...(typeof MENU_SOLO_ADMIN !== 'undefined' ? MENU_SOLO_ADMIN : []), ...(typeof BNAV_SOLO_ADMIN !== 'undefined' ? BNAV_SOLO_ADMIN : []), 'menuRecepcion', 'ttRecepcion']);
   Object.keys(MOD_IDS).forEach(k => {
@@ -4787,6 +4836,7 @@ async function modulosCargar(){
   }catch(e){ MOD_MAP = null; }   // SQL todavía sin correr / sin sesión: se ve todo, como antes
   try{ await sucCargar(); }catch(e){ console.error(e); }   // (v140)
   try{ await srvCargar(); }catch(e){ console.error(e); }   // (v148) servicios
+  try{ await cvCargar(); }catch(e){ console.error(e); }   // (v155) cuota variable
   try{ aplicarPermisosPorRol(); }catch(e){ modAplicarMenu(); }
 }
 
@@ -5291,11 +5341,11 @@ function atlIniciarAlu(){
   atlCargarVista('aluAtletismoContenido', id || '');
 }
 
-const APP_VERSION = 153;
+const APP_VERSION = 155;
 let ES_PERSONAL = false;   // (v132) cuenta personal (gimnasios.tipo = 'personal'); se calcula en perAplicar()
 // (v96) Fecha de la última actualización: se cambia junto con APP_VERSION en cada entrega. Se muestra en la
 // pantalla de inicio y en el menú de cuenta ("v94 · actualizada el 5/10/2026").
-const APP_FECHA = '2026-11-01';
+const APP_FECHA = '2026-11-03';
 function appVersionTxt(){ const [y, m, d] = APP_FECHA.split('-'); return `v${APP_VERSION} · actualizada el ${+d}/${+m}/${y}`; }
 (function(){ const el = document.getElementById('lcVersion'); if (el) el.textContent = 'M2F Solutions · ' + appVersionTxt(); })();
 
@@ -16383,6 +16433,7 @@ function renderCobranzas(){
 }
 // Detalle del cobro: ventana emergente con las mismas acciones de siempre (cobrar, QR, historial)
 async function abrirCobroAlumno(id, abrirForm){
+  if (typeof cvManeja === 'function' && cvManeja(id)){ cvFichaIr(id); return; }   // (v155) cuota variable: se cobra desde la pestaña Cuota de la ficha
   FICHA_ALU = null; FICHA_PROF = null; const tok = ++FICHA_TOK;
   const box = document.getElementById('fichaBox');
   box.className = 'modal-box x-box x-ficha x-cobro';
@@ -16884,6 +16935,372 @@ async function cuoAjustesHtml(alumnoId){
     if (!xs || !xs.length) return '';
     return `<div class="muted" style="font-size:12.5px;margin-top:10px;">${xs.map(x => `✏️ Corregido el ${xe(formatearFechaCorta((x.creado_en || '').slice(0, 10)))}: ${xe(formatearFechaCorta(x.desde_antes))}→${xe(formatearFechaCorta(x.hasta_antes))} pasó a ${xe(formatearFechaCorta(x.desde_nuevo))}→${xe(formatearFechaCorta(x.hasta_nuevo))} · “${xe(x.motivo)}”`).join('<br>')}</div>`;
   }catch(e){ return ''; }
+}
+
+// ---------- (v155) CUOTA VARIABLE: valor por clase + zona de distancia, avisos hasta el día límite, clases a favor ----------
+// SQL: v154-cuota-variable.sql. Módulo 'cuota_variable' (apagado por defecto: se prende en 🧩 Accesos, gimnasio por gimnasio).
+// Gimnasio sin el módulo (o sin el SQL) → la app se ve y anda EXACTAMENTE igual que antes (ningún pedido nuevo).
+const CV = { ok: null, cfg: null, zonas: [], planes: [], precios: {}, alumnos: {}, feriados: [], edit: null, busy: false, err: '' };
+const CV_DOW = ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb'];
+const CV_ORDEN = [1, 2, 3, 4, 5, 6, 0];   // la semana empieza el lunes
+const CV_METODOS = { transferencia: 'Transferencia', efectivo: 'Efectivo', tarjeta_debito: 'Tarjeta de débito', tarjeta_credito: 'Tarjeta de crédito' };
+function cvOn(){ return !!(MOD_MAP && MOD_MAP.cuota_variable === true); }
+function cvStaff(){ return !!(PERFIL_ACTUAL && (PERFIL_ACTUAL.rol === 'admin' || PERFIL_ACTUAL.rol === 'profesor')); }
+function cvAdmin(){ return !!(PERFIL_ACTUAL && PERFIL_ACTUAL.rol === 'admin'); }
+function cvManeja(id){ return cvOn() && CV.ok === true && !!CV.alumnos[id]; }
+function cvDiaLimite(){ return (CV.cfg && +CV.cfg.dia_limite) || 10; }
+function cvIso(d){ return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+function cvDMY(iso){ const p = String(iso || '').slice(0, 10).split('-'); return p.length === 3 ? p[2] + '/' + p[1] : ''; }
+function cvDow(iso){ return new Date(iso + 'T12:00:00').getDay(); }
+function cvDiaTxt(iso){ return CV_DOW[cvDow(iso)] + ' ' + (+String(iso).slice(8, 10)); }
+function cvMesTxt(iso){ const t = new Date(iso + 'T12:00:00').toLocaleDateString('es-AR', { month: 'long', year: 'numeric' }); return t.charAt(0).toUpperCase() + t.slice(1); }
+function cvMesMas(iso, n){ const d = new Date(iso + 'T12:00:00'); return cvIso(new Date(d.getFullYear(), d.getMonth() + n, 1)); }
+function cvMonto(n){ if (n == null) return '—'; let v = Math.round((Number(n) || 0) * 100) / 100; if (Object.is(v, -0) || v === 0) v = 0; return (v < 0 ? '-$' : '$') + Math.abs(v).toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 2 }); }
+function cvRecargoTxt(z){
+  if (!z) return '';
+  return z.recargo_tipo === 'fijo_mensual' ? `${cvMonto(z.recargo_monto)} fijo por mes` : `${cvMonto(z.recargo_monto)} por clase`;
+}
+function cvZona(id){ return (CV.zonas || []).find(z => z.id === id) || null; }
+
+async function cvCargar(){
+  CV.ok = null; CV.err = ''; CV.cfg = null; CV.zonas = []; CV.planes = []; CV.precios = {}; CV.alumnos = {}; CV.feriados = [];
+  if (!cvOn() || !cvStaff() || !PERFIL_ACTUAL || !PERFIL_ACTUAL.gimnasio_id){ cvPintar(); return; }
+  try{
+    const hoy = new Date(); const desde = cvIso(new Date(hoy.getFullYear(), hoy.getMonth() - 1, 1));
+    const [cfg, zs, ps, als, ags, fs, pls] = await Promise.all([
+      sb('cv_config?select=*'), sb('cv_zonas?select=*&order=orden.asc,nombre.asc'),
+      sb('cv_precios_plan?select=plan_id,precio_clase'), sb('cv_alumno?select=alumno_id,zona_id,precio_clase&limit=5000'),
+      sb('cv_agenda?select=alumno_id&activo=eq.true&limit=10000'), sb(`cv_feriados?select=fecha,nombre&fecha=gte.${desde}&order=fecha.asc`),
+      sb(`planes?select=*&gimnasio_id=eq.${PERFIL_ACTUAL.gimnasio_id}&order=precio_transferencia.asc`).catch(() => [])]);
+    CV.cfg = (cfg && cfg[0]) || null; CV.zonas = zs || []; CV.planes = pls || [];
+    (ps || []).forEach(p => { CV.precios[p.plan_id] = +p.precio_clase; });
+    (als || []).forEach(x => { CV.alumnos[x.alumno_id] = true; });
+    (ags || []).forEach(x => { CV.alumnos[x.alumno_id] = true; });
+    CV.feriados = fs || []; CV.ok = true;
+  }catch(e){
+    const m = String((e && e.message) || '');
+    CV.ok = /42P01|PGRST205|does not exist|cv_|404/i.test(m) ? false : null; CV.err = extraerMensajeError(e);
+  }
+  cvPintar(true);
+}
+
+// ----- Mi gimnasio → 🧮 Cuota variable (solo admin general) -----
+function cvPintar(forzar){
+  const box = document.getElementById('gimCvBox'); if (!box) return;
+  const ver = srvEsAdmin() && cvOn();
+  box.style.display = ver ? '' : 'none';
+  const body = document.getElementById('gimCvBody'); if (!ver || !body) return;
+  if (!forzar && body.contains(document.activeElement) && /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName)) return;
+  if (CV.ok === false){ body.innerHTML = '<div class="rpx-ban">⚠️ Falta activar esta función en la base de datos. Corré <b>v154-cuota-variable.sql</b> en Supabase (SQL Editor) y recargá la app.</div>'; return; }
+  if (CV.ok !== true){ body.innerHTML = CV.err ? `<div class="rpx-ban">No se pudo cargar: ${xe(CV.err)}</div>` : '<div class="muted">Cargando…</div>'; return; }
+  const e = CV.edit;
+  const zonas = (CV.zonas || []).map(z => `<div class="suc-card ${z.activo ? '' : 'off'}">
+      <div class="suc-card-h"><b>${xe(z.nombre)}</b><span class="pill">${xe(cvRecargoTxt(z))}</span>${z.activo ? '' : '<span class="pill warn">Desactivada</span>'}
+        <span style="flex:1"></span>
+        <button type="button" class="ghost" onclick="cvZonaEditar('${z.id}')">Editar</button>
+        <button type="button" class="ghost" onclick="cvZonaActivo('${z.id}', ${z.activo ? 'false' : 'true'})">${z.activo ? 'Desactivar' : 'Activar'}</button></div></div>`).join('');
+  const form = e ? `<div class="suc-form"><div style="font-weight:700;margin-bottom:10px;">${e.id ? 'Editar zona' : 'Nueva zona'}</div>
+      <div class="suc-grid">
+        <div class="field"><label>Nombre</label><input id="cvZ_nombre" maxlength="60" value="${xe(e.nombre || '')}" placeholder="Ej: Hasta 5 km"></div>
+        <div class="field"><label>Cómo se cobra el recargo</label><select id="cvZ_tipo"><option value="por_clase" ${e.recargo_tipo !== 'fijo_mensual' ? 'selected' : ''}>Por clase</option><option value="fijo_mensual" ${e.recargo_tipo === 'fijo_mensual' ? 'selected' : ''}>Monto fijo por mes</option></select></div>
+        <div class="field"><label>Monto ($)</label><input id="cvZ_monto" type="number" inputmode="decimal" min="0" step="0.01" value="${xe(e.recargo_monto == null ? '' : e.recargo_monto)}" placeholder="0"></div>
+      </div>
+      <div class="muted" style="font-size:12px;margin-top:6px;">Por clase: se suma al valor de cada clase que se cobra. Fijo por mes: se reparte entre las clases del mes, así si el alumno avisa que falta, el recargo baja en proporción. Una zona con $0 sirve para "Centro".</div>
+      <div class="row" style="margin-top:12px;"><button type="button" id="cvZBtn" onclick="cvZonaGuardar()">Guardar zona</button><button type="button" class="ghost" onclick="cvZonaCancelar()">Cancelar</button></div></div>` : '';
+  const planes = (CV.planes || []).filter(p => p.activo !== false).map(p => `<div class="cv-prow"><div class="cv-pn"><b>${xe(p.nombre)}</b>${p.dias_por_semana ? `<span class="muted"> · ${p.dias_por_semana} por semana</span>` : ''}</div>
+      <div class="cv-pin"><span class="muted">$</span><input type="number" inputmode="decimal" min="0" step="0.01" id="cvP_${p.id}" value="${CV.precios[p.id] != null ? xe(CV.precios[p.id]) : ''}" placeholder="Valor de la clase" onchange="cvPrecioGuardar('${p.id}')"></div></div>`).join('');
+  const lim = cvDiaLimite();
+  const limOpts = [5, 7, 8, 10, 12, 15, 20].concat([lim]).filter((v, i, a) => a.indexOf(v) === i).sort((a, b) => a - b).map(n => `<option value="${n}" ${n === lim ? 'selected' : ''}>Hasta el día ${n}</option>`).join('');
+  const hoyIso = cvIso(new Date());
+  const fers = (CV.feriados || []).filter(f => f.fecha >= hoyIso.slice(0, 8) + '01').map(f => `<span class="srv-chip cv-fer">🎌 ${xe(cvDiaTxt(f.fecha))}/${xe(String(f.fecha).slice(5, 7))} · ${xe(f.nombre)} <button type="button" class="cv-x" title="Quitar" onclick="cvFeriadoQuitar('${f.fecha}')">×</button></span>`).join('');
+  const msgDef = 'Hola {nombre}! No vamos a poder dar la clase del {dia} {fecha}{hora}. Te queda 1 clase a favor para el mes que viene. Disculpá las molestias. — {gym}';
+  body.innerHTML = `<div class="muted" style="margin-bottom:12px;">Para gimnasios que cobran según las clases del mes: <b>valor de la clase</b> (por plan o propio de cada alumno) más un recargo por <b>zona de distancia</b>. Las faltas avisadas a tiempo no se cobran y si falta el profe le queda una clase a favor para el mes siguiente. A cada alumno le asignás zona y días desde su ficha, pestaña <b>Cuota</b>.</div>
+    <h3 class="cv-h">Zonas de distancia</h3>
+    <div class="suc-lista">${zonas}</div>
+    ${form || '<div class="row" style="margin-top:12px;"><button type="button" onclick="cvZonaNueva()">＋ Agregar zona</button></div>'}
+    <h3 class="cv-h">Valor de la clase por plan</h3>
+    ${planes || '<div class="muted">Primero creá los planes en <b>Planes</b>.</div>'}
+    <div class="muted" style="font-size:12px;margin-top:6px;">Es el valor de <b>una clase</b>. Si un alumno tiene un valor distinto, se lo cargás en su ficha. Sin valor cargado no se puede cobrar.</div>
+    <h3 class="cv-h">Aviso de faltas</h3>
+    <div class="field" style="max-width:320px;"><label>El alumno puede avisar que falta</label><select id="cvLim" onchange="cvLimiteGuardar()">${limOpts}</select></div>
+    <div class="muted" style="font-size:12px;margin-top:4px;">Pasado ese día del mes, el aviso queda anotado pero no descuenta (vos podés aceptarlo igual desde la ficha).</div>
+    <h3 class="cv-h">Feriados</h3>
+    <div class="muted" style="font-size:12.5px;margin-bottom:8px;">Cargá los feriados que caen en días de clase. El alumno (o vos) elige si mueve la clase, la descuenta o la deja a favor.</div>
+    <div class="srv-chips" style="margin-bottom:10px;">${fers || '<span class="muted">Todavía no cargaste feriados.</span>'}</div>
+    <div class="row cv-ferform"><div class="field"><label>Fecha</label><input type="date" id="cvFerFecha"></div><div class="field"><label>Nombre</label><input id="cvFerNom" maxlength="60" placeholder="Feriado"></div><button type="button" class="secondary" style="align-self:end;" onclick="cvFeriadoAgregar()">Agregar feriado</button></div>
+    <h3 class="cv-h">Mensaje cuando el profe cancela una clase</h3>
+    <div class="field"><textarea id="cvMsg" rows="3" maxlength="400" placeholder="${xe(msgDef)}">${xe((CV.cfg && CV.cfg.msg_cancelacion) || '')}</textarea></div>
+    <div class="muted" style="font-size:12px;margin-top:4px;">Para WhatsApp. Podés usar {nombre} {dia} {fecha} {hora} {gym}. Vacío = mensaje por defecto (el de arriba en gris).</div>
+    <div class="row" style="margin-top:8px;"><button type="button" class="secondary" onclick="cvMsgGuardar()">Guardar mensaje</button></div>`;
+}
+async function cvUpsert(tabla, conflicto, fila){
+  return sb(`${tabla}?on_conflict=${conflicto}`, { method: 'POST', headers: { Prefer: 'resolution=merge-duplicates,return=minimal' }, body: JSON.stringify([fila]) });
+}
+function cvZonaNueva(){ CV.edit = { id: null, nombre: '', recargo_tipo: 'por_clase', recargo_monto: '' }; cvPintar(true); }
+function cvZonaEditar(id){ const z = cvZona(id); if (!z) return; CV.edit = Object.assign({}, z); cvPintar(true); }
+function cvZonaCancelar(){ CV.edit = null; cvPintar(true); }
+async function cvZonaGuardar(){
+  if (CV.busy || !CV.edit) return;
+  const g = id => { const el = document.getElementById(id); return el ? el.value : ''; };
+  const nombre = g('cvZ_nombre').trim(), tipo = g('cvZ_tipo') || 'por_clase', monto = g('cvZ_monto') === '' ? 0 : Number(g('cvZ_monto'));
+  if (nombre.length < 2){ toast('Poné el nombre de la zona.', true); return; }
+  if (!(monto >= 0)){ toast('El monto tiene que ser 0 o más.', true); return; }
+  CV.busy = true; const btn = document.getElementById('cvZBtn'); if (btn){ btn.disabled = true; btn.textContent = 'Guardando…'; }
+  try{
+    const fila = { nombre, recargo_tipo: tipo, recargo_monto: monto };
+    if (CV.edit.id) await sb(`cv_zonas?id=eq.${CV.edit.id}`, { method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: JSON.stringify(fila) });
+    else await sb('cv_zonas', { method: 'POST', headers: { Prefer: 'return=minimal' }, body: JSON.stringify([Object.assign({ gimnasio_id: PERFIL_ACTUAL.gimnasio_id, orden: (CV.zonas || []).length }, fila)]) });
+    const era = !!CV.edit.id; CV.edit = null; await cvCargar(); toast(era ? 'Zona guardada ✓' : 'Zona creada ✓');
+  }catch(err){
+    const m = extraerMensajeError(err);
+    toast(/cv_zonas_nombre_uq|duplicate/i.test(m) ? 'Ya tenés una zona con ese nombre.' : m, true);
+    if (btn){ btn.disabled = false; btn.textContent = 'Guardar zona'; }
+  }
+  CV.busy = false;
+}
+async function cvZonaActivo(id, activo){
+  if (CV.busy) return; CV.busy = true;
+  try{ await sb(`cv_zonas?id=eq.${id}`, { method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: JSON.stringify({ activo }) }); await cvCargar(); toast(activo ? 'Zona activada ✓' : 'Zona desactivada (los alumnos que la tienen la conservan)'); }
+  catch(err){ toast(extraerMensajeError(err), true); }
+  CV.busy = false;
+}
+async function cvPrecioGuardar(planId){
+  const el = document.getElementById('cvP_' + planId); if (!el) return;
+  const v = el.value === '' ? null : Number(el.value);
+  if (v != null && !(v >= 0)){ toast('El valor tiene que ser 0 o más.', true); return; }
+  try{
+    if (v == null){ await sb(`cv_precios_plan?plan_id=eq.${planId}`, { method: 'DELETE', headers: { Prefer: 'return=minimal' } }); delete CV.precios[planId]; }
+    else { await cvUpsert('cv_precios_plan', 'plan_id', { plan_id: planId, gimnasio_id: PERFIL_ACTUAL.gimnasio_id, precio_clase: v }); CV.precios[planId] = v; }
+    toast(v == null ? 'Valor quitado' : 'Valor guardado ✓');
+  }catch(err){ toast(extraerMensajeError(err), true); }
+}
+async function cvLimiteGuardar(){
+  const el = document.getElementById('cvLim'); if (!el) return;
+  try{ await cvUpsert('cv_config', 'gimnasio_id', { gimnasio_id: PERFIL_ACTUAL.gimnasio_id, dia_limite: +el.value }); CV.cfg = Object.assign({}, CV.cfg || {}, { dia_limite: +el.value }); toast('Día límite guardado ✓'); }
+  catch(err){ toast(extraerMensajeError(err), true); }
+}
+async function cvMsgGuardar(){
+  const el = document.getElementById('cvMsg'); if (!el) return;
+  const t = el.value.trim();
+  try{ await cvUpsert('cv_config', 'gimnasio_id', { gimnasio_id: PERFIL_ACTUAL.gimnasio_id, msg_cancelacion: t || null }); CV.cfg = Object.assign({}, CV.cfg || {}, { msg_cancelacion: t || null }); toast('Mensaje guardado ✓'); }
+  catch(err){ toast(extraerMensajeError(err), true); }
+}
+async function cvFeriadoAgregar(){
+  const f = (document.getElementById('cvFerFecha') || {}).value, n = ((document.getElementById('cvFerNom') || {}).value || '').trim() || 'Feriado';
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(f || '')){ toast('Elegí la fecha del feriado.', true); return; }
+  try{
+    await cvUpsert('cv_feriados', 'gimnasio_id,fecha', { gimnasio_id: PERFIL_ACTUAL.gimnasio_id, fecha: f, nombre: n });
+    await cvCargar(); toast('Feriado cargado ✓');
+  }catch(err){ toast(extraerMensajeError(err), true); }
+}
+async function cvFeriadoQuitar(f){
+  try{ await sb(`cv_feriados?gimnasio_id=eq.${PERFIL_ACTUAL.gimnasio_id}&fecha=eq.${f}`, { method: 'DELETE', headers: { Prefer: 'return=minimal' } }); await cvCargar(); toast('Feriado quitado'); }
+  catch(err){ toast(extraerMensajeError(err), true); }
+}
+
+// ----- Ficha del alumno → pestaña "Cuota" (personal) -----
+let CVF = null;
+function cvTabsVis(){
+  if (!(cvOn() && CV.ok === true && cvStaff())) return FICHA_TABS;
+  const t = FICHA_TABS.slice(); const i = t.findIndex(x => x[0] === 'pag'); t.splice(i < 0 ? t.length : i + 1, 0, ['cuo', 'Cuota']); return t;
+}
+function cvFichaIr(id){ cerrarFicha(); abrirFichaAlumno(id, 'cuo'); }
+function cvFichaVivo(){ return !!(CVF && FICHA_ALU && FICHA_ALU.tab === 'cuo' && FICHA_ALU.id === CVF.id && document.getElementById('fichaTabBody')); }
+async function cvQ(id, mes){
+  return sb('rpc/cv_cuota_staff', { method: 'POST', body: JSON.stringify({ p_alumno_id: id, p_periodo: mes }) });
+}
+async function cvFichaCargar(a, tok){
+  const body = document.getElementById('fichaTabBody');
+  if (!(cvOn() && CV.ok === true)){ body.innerHTML = '<div class="rpx-ban">La cuota variable no está disponible. Revisá que el módulo esté prendido y que hayas corrido <b>v154-cuota-variable.sql</b>.</div>'; return; }
+  const mes = (CVF && CVF.id === a.id && CVF.mes) || (() => { const h = new Date(); return cvIso(new Date(h.getFullYear(), h.getMonth(), 1)); })();
+  try{
+    const [al, ag, q] = await Promise.all([
+      sb(`cv_alumno?select=*&alumno_id=eq.${a.id}`), sb(`cv_agenda?select=*&alumno_id=eq.${a.id}&order=dia_semana.asc`), cvQ(a.id, mes)]);
+    if (tok !== FICHA_TOK) return;
+    const dias = {}; (ag || []).filter(x => x.activo).forEach(x => { dias[x.dia_semana] = { hora: x.hora ? String(x.hora).slice(0, 5) : '', prof: x.profesor_id || '' }; });
+    const al0 = (al && al[0]) || null;
+    CVF = { id: a.id, mes, q, sel: null, mover: false, forzar: false, cobrando: false, busy: false,
+      zona: al0 ? (al0.zona_id || '') : '', precio: al0 && al0.precio_clase != null ? al0.precio_clase : '', dias, abierto: null };
+    cvFichaPintar();
+  }catch(e){ if (tok === FICHA_TOK) body.innerHTML = `<div class="rpx-ban">No se pudo cargar la cuota: ${xe(extraerMensajeError(e))}</div>`; }
+}
+async function cvFichaRecargar(){
+  if (!CVF) return;
+  try{ CVF.q = await cvQ(CVF.id, CVF.mes); }catch(e){ toast(extraerMensajeError(e), true); }
+  cvFichaPintar();
+}
+function cvFichaMes(n){ if (!CVF) return; CVF.mes = cvMesMas(CVF.mes, n); CVF.sel = null; CVF.mover = false; CVF.cobrando = false; cvFichaRecargar(); }
+function cvFSet(k, v){ if (CVF) CVF[k] = v; }
+function cvFDia(dow, on){
+  if (!CVF) return;
+  if (on) CVF.dias[dow] = CVF.dias[dow] || { hora: '', prof: '' }; else delete CVF.dias[dow];
+  cvFichaPintar(true);
+}
+function cvFDiaSet(dow, k, v){ if (CVF && CVF.dias[dow]) CVF.dias[dow][k] = v; }
+async function cvFichaGuardar(){
+  if (!CVF || CVF.busy) return;
+  CVF.busy = true; const btn = document.getElementById('cvGBtn'); if (btn){ btn.disabled = true; btn.textContent = 'Guardando…'; }
+  const id = CVF.id;
+  try{
+    if (cvAdmin()){
+      const pr = CVF.precio === '' || CVF.precio == null ? null : Number(CVF.precio);
+      if (pr != null && !(pr >= 0)) throw new Error('El valor propio tiene que ser 0 o más.');
+      await cvUpsert('cv_alumno', 'alumno_id', { alumno_id: id, gimnasio_id: PERFIL_ACTUAL.gimnasio_id, zona_id: CVF.zona || null, precio_clase: pr });
+    }
+    const quedan = Object.keys(CVF.dias).map(Number);
+    const filas = quedan.map(d => ({ gimnasio_id: PERFIL_ACTUAL.gimnasio_id, alumno_id: id, dia_semana: d, hora: CVF.dias[d].hora || null, profesor_id: CVF.dias[d].prof || null, activo: true }));
+    if (filas.length) await sb('cv_agenda?on_conflict=alumno_id,dia_semana', { method: 'POST', headers: { Prefer: 'resolution=merge-duplicates,return=minimal' }, body: JSON.stringify(filas) });
+    const sacar = [0, 1, 2, 3, 4, 5, 6].filter(d => !quedan.includes(d));
+    if (sacar.length) await sb(`cv_agenda?alumno_id=eq.${id}&dia_semana=in.(${sacar.join(',')})`, { method: 'DELETE', headers: { Prefer: 'return=minimal' } });
+    CV.alumnos[id] = true;
+    toast('Guardado ✓');
+    await cvFichaRecargar();
+  }catch(e){ toast(extraerMensajeError(e), true); }
+  if (CVF) CVF.busy = false;
+  if (cvFichaVivo()) cvFichaPintar();
+}
+function cvFSel(f){ if (!CVF) return; CVF.sel = CVF.sel === f ? null : f; CVF.mover = false; cvFichaPintar(true); }
+function cvCambioDe(f){ return ((CVF && CVF.q && CVF.q.cambios) || []).find(c => c.fecha === f) || null; }
+function cvEsFeriado(f){ return (CV.feriados || []).some(x => x.fecha === f); }
+async function cvAccion(accion, fechaNueva){
+  if (!CVF || !CVF.sel || CVF.busy) return;
+  CVF.busy = true;
+  try{
+    const r = await sb('rpc/cv_registrar_cambio', { method: 'POST', body: JSON.stringify({ p_alumno_id: CVF.id, p_fecha: CVF.sel, p_accion: accion, p_fecha_nueva: fechaNueva || null, p_forzar: !!CVF.forzar }) });
+    const ok = r && r.a_tiempo !== false;
+    toast(accion === 'mover' ? 'Clase movida ✓' : ok ? (accion === 'feriado_credito' ? 'Queda 1 clase a favor para el mes que viene ✓' : 'Anotado: esa clase no se cobra ✓') : `Quedó anotado, pero ya pasó el día ${CVF.q.dia_limite}: no descuenta.`, !ok && accion !== 'mover');
+    CVF.sel = null; CVF.mover = false; CVF.forzar = false;
+    CVF.busy = false; await cvFichaRecargar();
+  }catch(e){ CVF.busy = false; toast(extraerMensajeError(e), true); cvFichaPintar(true); }
+}
+async function cvQuitar(){
+  if (!CVF || !CVF.sel || CVF.busy) return;
+  CVF.busy = true;
+  try{
+    await sb('rpc/cv_quitar_cambio', { method: 'POST', body: JSON.stringify({ p_alumno_id: CVF.id, p_fecha: CVF.sel }) });
+    toast('Aviso quitado'); CVF.sel = null; CVF.busy = false; await cvFichaRecargar();
+  }catch(e){ CVF.busy = false; toast(extraerMensajeError(e), true); cvFichaPintar(true); }
+}
+function cvMoverAbrir(){ if (CVF){ CVF.mover = true; cvFichaPintar(true); } }
+function cvMoverOk(){
+  const v = (document.getElementById('cvMovFecha') || {}).value;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(v || '')){ toast('Elegí el día nuevo.', true); return; }
+  cvAccion('mover', v);
+}
+function cvCobrarAbrir(){ if (CVF){ CVF.cobrando = !CVF.cobrando; cvFichaPintar(true); } }
+async function cvCobrarOk(){
+  if (!CVF || CVF.busy) return;
+  const metodo = (document.getElementById('cvMetodo') || {}).value || 'transferencia';
+  CVF.busy = true; const btn = document.getElementById('cvCobBtn'); if (btn){ btn.disabled = true; btn.textContent = 'Registrando…'; }
+  try{
+    const r = await sb('rpc/cv_cobrar_mes', { method: 'POST', body: JSON.stringify({ p_alumno_id: CVF.id, p_periodo: CVF.mes, p_metodo_pago: metodo }) });
+    toast(`Cobro registrado ✓ ${cvMonto(r && r.monto)}`);
+    CVF.cobrando = false; CVF.busy = false;
+    try{ cargarCobranzas(); cargarListaAlumnos(); }catch(e){}
+    await cvFichaRecargar();
+  }catch(e){ CVF.busy = false; toast(extraerMensajeError(e), true); if (btn){ btn.disabled = false; btn.textContent = 'Confirmar cobro'; } }
+}
+function cvFichaPintar(sinScroll){
+  if (!cvFichaVivo()) return;
+  const body = document.getElementById('fichaTabBody'), q = CVF.q || {}, admin = cvAdmin();
+  const scroll = body.scrollTop;
+  const zonasAct = (CV.zonas || []).filter(z => z.activo || z.id === CVF.zona);
+  const planPrecio = null;
+  const abierto = CVF.abierto != null ? CVF.abierto : (!(q.dias_semana || []).length || q.sin_precio);
+  const profes = (PROFESORES_CACHE || []).filter(p => p.activo !== false);
+  const diasHtml = CV_ORDEN.map(d => {
+    const on = !!CVF.dias[d], x = CVF.dias[d] || {};
+    return `<div class="cv-dia ${on ? 'on' : ''}"><label class="cv-dchk"><input type="checkbox" ${on ? 'checked' : ''} onchange="cvFDia(${d}, this.checked)"> <b>${CV_DOW[d]}</b></label>
+      ${on ? `<input type="time" value="${xe(x.hora)}" onchange="cvFDiaSet(${d}, 'hora', this.value)" aria-label="Hora ${CV_DOW[d]}">
+      <select onchange="cvFDiaSet(${d}, 'prof', this.value)" aria-label="Profesor ${CV_DOW[d]}"><option value="">Cualquier profe</option>${profes.map(p => `<option value="${p.id}" ${x.prof === p.id ? 'selected' : ''}>${xe(p.nombre)}</option>`).join('')}</select>` : ''}</div>`;
+  }).join('');
+  const conf = `<details class="cv-det" ${abierto ? 'open' : ''} ontoggle="CVF && (CVF.abierto = this.open)"><summary>⚙️ Zona, valor y días de entrenamiento</summary><div class="cv-detb">
+      <div class="cv-dos">
+        <div class="field"><label>Zona de distancia</label>${admin
+          ? `<select onchange="cvFSet('zona', this.value)"><option value="">Sin zona (sin recargo)</option>${zonasAct.map(z => `<option value="${z.id}" ${CVF.zona === z.id ? 'selected' : ''}>${xe(z.nombre)} · ${xe(cvRecargoTxt(z))}${z.activo ? '' : ' (desactivada)'}</option>`).join('')}</select>`
+          : `<div class="cv-ro">${xe(q.zona || 'Sin zona')}</div>`}</div>
+        <div class="field"><label>Valor propio por clase (opcional)</label>${admin
+          ? `<input type="number" inputmode="decimal" min="0" step="0.01" value="${xe(CVF.precio)}" placeholder="Usa el del plan" oninput="cvFSet('precio', this.value)">`
+          : `<div class="cv-ro">${q.precio_origen === 'alumno' ? cvMonto(q.precio_clase) : 'El del plan'}</div>`}</div></div>
+      ${(admin && !zonasAct.length) ? '<div class="muted" style="font-size:12px;margin:-4px 0 8px;">Todavía no hay zonas: creálas en Mi gimnasio → Cuota variable.</div>' : ''}
+      <div class="field"><label>Días fijos de entrenamiento</label><div class="cv-dias">${diasHtml}</div></div>
+      <div class="muted" style="font-size:12px;margin:6px 0 10px;">Con estos días se cuentan las clases de cada mes. Si un día puntual cambia (feriado, no puede ese día) lo resolvés abajo, sin tocar los días fijos.</div>
+      <div class="row"><button type="button" id="cvGBtn" onclick="cvFichaGuardar()">Guardar</button></div></div></details>`;
+  let cuota;
+  if (!(q.dias_semana || []).length){
+    cuota = '<div class="rpx-ban" style="margin-top:12px;">Elegí los <b>días fijos de entrenamiento</b> para calcular la cuota del mes.</div>';
+  } else {
+    const camb = {}; (q.cambios || []).forEach(c => { camb[c.fecha] = c; });
+    const pend = new Set(q.feriados_pendientes || []);
+    const chips = (q.fechas_clase || []).map(f => {
+      const c = camb[f]; let cl = '', t = '', ic = '';
+      if (c && c.accion === 'falta'){ cl = c.a_tiempo ? 'f-falta' : 'f-tarde'; ic = c.a_tiempo ? '✋' : '⏰'; t = c.a_tiempo ? 'Avisó que falta' : 'Avisó tarde (no descuenta)'; }
+      else if (c && c.accion === 'mover'){ cl = 'f-mov'; ic = '🔁'; t = 'Movida al ' + cvDiaTxt(c.fecha_nueva); }
+      else if (c && c.accion === 'feriado_descuento'){ cl = c.a_tiempo ? 'f-falta' : 'f-tarde'; ic = '🎌'; t = c.a_tiempo ? 'Feriado: se descuenta' : 'Feriado: llegó tarde, no descuenta'; }
+      else if (c && c.accion === 'feriado_credito'){ cl = c.a_tiempo ? 'f-fav' : 'f-tarde'; ic = '🎌'; t = c.a_tiempo ? 'Feriado: queda a favor' : 'Feriado: llegó tarde, no queda a favor'; }
+      else if (pend.has(f)){ cl = 'f-pend'; ic = '🎌'; t = 'Feriado sin decidir'; }
+      return `<button type="button" class="cv-f ${cl} ${CVF.sel === f ? 'sel' : ''}" onclick="cvFSel('${f}')" title="${xe(t)}"><span>${xe(cvDiaTxt(f))}</span>${ic ? `<small>${ic}${c && c.accion === 'mover' ? ' ' + xe(cvDiaTxt(c.fecha_nueva)) : ''}</small>` : ''}</button>`;
+    }).join('');
+    let acc = '';
+    if (CVF.sel){
+      const c = camb[CVF.sel], fer = cvEsFeriado(CVF.sel), cobr = !!q.cobrada;
+      const yaPasoDia = !q.en_plazo && !cobr;
+      const forz = (yaPasoDia && !c) ? `<label class="cv-forz"><input type="checkbox" ${CVF.forzar ? 'checked' : ''} onchange="cvFSet('forzar', this.checked)"> Aceptar aunque pasó el día ${xe(q.dia_limite)} (descuenta igual)</label>` : '';
+      if (c){
+        acc = `<div class="cv-acc"><div><b>${xe(cvDiaTxt(CVF.sel))}</b>: ${xe(({ falta: c.a_tiempo ? 'avisó que falta, no se cobra' : 'avisó tarde, se cobra', mover: 'movida al ' + (c.fecha_nueva ? cvDiaTxt(c.fecha_nueva) : ''), feriado_descuento: c.a_tiempo ? 'feriado descontado del mes' : 'feriado, llegó tarde: se cobra', feriado_credito: c.a_tiempo ? 'feriado a favor para el mes que viene' : 'feriado, llegó tarde: se cobra' })[c.accion] || '')} <span class="muted">· cargó ${c.origen === 'alumno' ? 'el alumno' : 'el gimnasio'}</span></div>
+          ${(cobr && c.accion !== 'mover') ? '<div class="muted" style="font-size:12.5px;">El mes ya está cobrado: para cambiarlo hay que corregir el pago primero.</div>' : '<div class="row" style="margin-top:8px;"><button type="button" class="ghost" onclick="cvQuitar()">Quitar aviso</button></div>'}</div>`;
+      } else if (cobr){
+        acc = `<div class="cv-acc"><div class="muted">El mes ya está cobrado: solo se puede mover la clase de día.</div>
+          <div class="row" style="margin-top:8px;"><button type="button" class="secondary" onclick="cvMoverAbrir()">🔁 Mover a otro día</button></div>${CVF.mover ? cvMoverForm() : ''}</div>`;
+      } else {
+        acc = `<div class="cv-acc"><div><b>${xe(cvDiaTxt(CVF.sel))}</b>${fer ? ' · 🎌 feriado' : ''} · ¿qué pasa con esta clase?</div>${forz}
+          <div class="row" style="margin-top:8px;flex-wrap:wrap;gap:8px;">
+            <button type="button" onclick="cvAccion('falta')">✋ Avisó que falta</button>
+            <button type="button" class="secondary" onclick="cvMoverAbrir()">🔁 Mover a otro día</button>
+            ${fer ? '<button type="button" class="secondary" onclick="cvAccion(\'feriado_descuento\')">🎌 Descontar del mes</button><button type="button" class="secondary" onclick="cvAccion(\'feriado_credito\')">🎌 Dejar a favor</button>' : ''}
+          </div>${CVF.mover ? cvMoverForm() : ''}</div>`;
+      }
+    }
+    const filas = [
+      ['Clases del mes', `${q.clases_mes} <span class="muted">(${(q.dias_semana || []).map(d => CV_DOW[d]).join(' · ')})</span>`],
+      ['Avisadas a tiempo', q.avisadas && q.avisadas.length ? `− ${q.avisadas.length}` : '0'],
+      ['Clases a favor usadas', q.creditos_usados ? `− ${q.creditos_usados}` : '0'],
+      ['Clases a cobrar', `<b>${q.clases_a_cobrar}</b>`],
+      ['Valor de la clase', q.sin_precio ? '<span style="color:var(--warn-text);">⚠ sin valor cargado</span>' : `${cvMonto(q.precio_clase)} <span class="muted">(${q.precio_origen === 'alumno' ? 'valor propio' : 'del plan'})</span>`],
+      ['Zona', q.zona ? `${xe(q.zona)} <span class="muted">· ${xe(cvRecargoTxt({ recargo_tipo: q.recargo_tipo, recargo_monto: q.recargo_monto }))}</span>` : '<span class="muted">Sin zona</span>'],
+      ['Recargo por distancia', q.zona ? cvMonto(q.recargo_total) : '—'],
+    ].map(r => `<div class="cv-r"><span>${r[0]}</span><span>${r[1]}</span></div>`).join('');
+    const avisos = [];
+    if (!q.cobrada) avisos.push(q.en_plazo ? `Avisos de falta hasta el <b>${xe(cvDMY(q.limite_aviso))}</b>.` : `<span style="color:var(--warn-text);">Pasó el día ${xe(q.dia_limite)}: los avisos nuevos no descuentan (podés aceptarlos igual).</span>`);
+    if ((q.feriados_pendientes || []).length) avisos.push(`🎌 Feriado sin decidir: ${q.feriados_pendientes.map(cvDMY).join(', ')}. Tocá la fecha para elegir. Si nadie decide, se cobra.`);
+    if (q.creditos_vencen > 0) avisos.push(`${q.creditos_vencen} clase${q.creditos_vencen === 1 ? '' : 's'} a favor no se pueden usar este mes y se pierden.`);
+    if (q.creditos_para_proximo_mes > 0) avisos.push(`Para el mes que viene le quedan <b>${q.creditos_para_proximo_mes}</b> clase${q.creditos_para_proximo_mes === 1 ? '' : 's'} a favor.`);
+    if (q.avisadas_tarde && q.avisadas_tarde.length) avisos.push(`Avisos fuera de plazo: ${q.avisadas_tarde.map(cvDMY).join(', ')}.`);
+    const cobrar = q.cobrada
+      ? `<div class="cv-cob ok"><b>✓ Mes cobrado</b> · ${cvMonto(q.monto)}</div>`
+      : admin
+        ? (q.sin_precio ? '<div class="rpx-ban">Cargá el valor de la clase (en Mi gimnasio → Cuota variable, o como valor propio arriba) para poder cobrar.</div>'
+          : CVF.cobrando ? `<div class="cv-cobform"><div class="field" style="max-width:260px;"><label>Forma de pago</label><select id="cvMetodo">${Object.keys(CV_METODOS).map(k => `<option value="${k}">${CV_METODOS[k]}</option>`).join('')}</select></div>
+              <div class="muted" style="font-size:12.5px;margin:6px 0 8px;">La cuota queda del 1/${xe(String(CVF.mes).slice(5, 7))} al fin de ${xe(cvMesTxt(CVF.mes).split(' ')[0].toLowerCase())}. Después de cobrar ya no se cargan avisos de falta de ese mes.</div>
+              <div class="row"><button type="button" id="cvCobBtn" onclick="cvCobrarOk()">Confirmar cobro ${xe(cvMonto(q.monto))}</button><button type="button" class="ghost" onclick="cvCobrarAbrir()">Cancelar</button></div></div>`
+          : `<div class="row"><button type="button" onclick="cvCobrarAbrir()" ${q.clases_a_cobrar > 0 ? '' : 'disabled'}>💰 Cobrar ${xe(cvMesTxt(CVF.mes).split(' ')[0].toLowerCase())}</button></div>`)
+        : '';
+    cuota = `<div class="cv-mes"><button type="button" class="ghost" onclick="cvFichaMes(-1)" aria-label="Mes anterior">‹</button><b>${xe(cvMesTxt(CVF.mes))}</b><button type="button" class="ghost" onclick="cvFichaMes(1)" aria-label="Mes siguiente">›</button></div>
+      <div class="cv-fechas">${chips}</div>
+      <div class="muted" style="font-size:12px;margin:2px 0 8px;">Tocá una fecha para avisar que falta, moverla de día o resolver un feriado. ✋ falta · 🔁 movida · 🎌 feriado · ⏰ aviso tarde</div>
+      ${acc}
+      <div class="cv-tot"><div class="cv-r"><span>Total del mes</span><span class="cv-big">${q.sin_precio ? '—' : xe(cvMonto(q.monto))}</span></div></div>
+      <div class="cv-tbl">${filas}</div>
+      ${avisos.length ? `<ul class="cv-av">${avisos.map(a => `<li>${a}</li>`).join('')}</ul>` : ''}
+      ${cobrar}
+      <div class="muted" style="font-size:12px;margin-top:10px;">🔒 El alumno ve las clases y el total, pero no la zona, el recargo ni el valor por clase.</div>`;
+  }
+  body.innerHTML = `${conf}<div class="cv-sec">${cuota}</div>`;
+  if (sinScroll) body.scrollTop = scroll;
+}
+function cvMoverForm(){
+  const mes = CVF.mes, ini = mes, fin = cvIso(new Date(+mes.slice(0, 4), +mes.slice(5, 7), 0));
+  return `<div class="row" style="margin-top:8px;align-items:end;"><div class="field"><label>Nuevo día (del mismo mes)</label><input type="date" id="cvMovFecha" min="${ini}" max="${fin}"></div><button type="button" onclick="cvMoverOk()">Mover</button></div>`;
 }
 
 function previewMontoCobro(alumnoId){
@@ -17424,7 +17841,7 @@ function pintarFichaAlumno(){
   box.className = 'modal-box x-box x-ficha';
   box.innerHTML = `<div class="x-fi-head">${xAv(a.nombre, a.foto_url)}<div class="tt"><div class="x-nm">${xe(a.nombre)}</div><div style="margin-top:4px;display:flex;gap:5px;flex-wrap:wrap;">${pills}</div></div>
     <div class="x-fi-acts">${a.telefono ? '<button onclick="fichaWhatsApp()">💬 WhatsApp</button>' : ''}<button class="ghost" onclick="fichaReporte()">📄 Reporte</button></div><button type="button" class="x-cerrar est" aria-label="Cerrar" title="Cerrar" onclick="cerrarFicha()">✕</button></div>
-    <div class="x-fi-tabs">${FICHA_TABS.map(r => `<span class="x-chip ${F.tab === r[0] ? 'on' : ''}" onclick="fichaTab('${r[0]}')">${r[1]}</span>`).join('')}</div>
+    <div class="x-fi-tabs">${cvTabsVis().map(r => `<span class="x-chip ${F.tab === r[0] ? 'on' : ''}" onclick="fichaTab('${r[0]}')">${r[1]}</span>`).join('')}</div>
     <div class="x-fi-body" id="fichaTabBody"></div>`;
   const body = document.getElementById('fichaTabBody');
   const tok = ++FICHA_TOK;
@@ -17435,6 +17852,7 @@ function pintarFichaAlumno(){
   else if (F.tab === 'asi'){ body.innerHTML = '<div class="muted">Cargando…</div>'; xFichaAsistencia(a, tok); }
   else if (F.tab === 'eva'){ body.innerHTML = '<div class="muted">Cargando…</div>'; xFichaEvaluaciones(a, tok); }
   else if (F.tab === 'car') xFichaCarga(a, tok);
+  else if (F.tab === 'cuo'){ body.innerHTML = '<div class="muted">Cargando…</div>'; cvFichaCargar(a, tok); }   // (v155)
 }
 function xFichaRes(a){
   const cu = xCuota(a), r = RUTINAS_ALUMNO[a.id] || {}, plan = xPlanNombre(a);
