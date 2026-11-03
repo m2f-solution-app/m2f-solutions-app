@@ -356,6 +356,10 @@ if ('serviceWorker' in navigator) window.addEventListener('load', function(){ tr
   .cv-cob{ margin-top:12px; padding:11px 14px; border-radius:12px; border:1px solid var(--border); background:var(--panel2); }
   .cv-cobform{ margin-top:12px; padding:12px; border-radius:12px; border:1px solid var(--border); background:var(--panel2); }
   @media (max-width:520px){ .cv-dos{ grid-template-columns:1fr; } .cv-dia.on{ grid-template-columns:70px 1fr; } .cv-dia.on select{ grid-column:1 / -1; } }
+  /* (v156) Mi cuota (alumno) */
+  .cv-ahome{ cursor:pointer; border-color:var(--note-bd); }
+  .cv-pendfer{ margin-top:8px; padding:8px 10px; border-radius:10px; border:1px dashed rgba(255,210,61,.7); background:rgba(255,210,61,.08); font-size:13px; color:var(--warn-text); }
+  button.cv-f.cv-pas{ opacity:.5; }
   /* (v153) Cuota: desde cuándo cuenta */
   .cuo-vig{ margin-top:12px; padding:12px; border:1px solid var(--border); border-radius:12px; background:var(--panel2); }
   .cuo-line{ font-size:14.5px; margin-bottom:6px; }
@@ -3950,6 +3954,7 @@ if ('serviceWorker' in navigator) window.addEventListener('load', function(){ tr
       <div class="side-item active" id="menuAluInicio" onclick="cambiarSubvistaAlu('inicio')">🏠 Inicio</div>
       <div class="side-item" id="menuAluTurnos" onclick="cambiarSubvistaAlu('turnos')">📅 Turnos</div>
       <div class="side-item" id="menuAluClases" onclick="cambiarSubvistaAlu('clases')">📆 Clases</div>
+      <div class="side-item" id="menuAluCuota" onclick="cambiarSubvistaAlu('cuota')" style="display:none;">💳 Mi cuota</div>   <!-- (v156) solo con Cuota variable -->
       <div class="side-item" id="menuAluAtletismo" onclick="cambiarSubvistaAlu('atletismo')" style="display:none;">🏃 Atletismo</div>
       <div class="side-item" id="menuAluRutinas" onclick="cambiarSubvistaAlu('rutinas')">🗂️ Mis rutinas</div>
       <div class="side-item" id="menuAluHistorial" onclick="cambiarSubvistaAlu('historial')">📜 Historial</div>
@@ -3978,6 +3983,7 @@ if ('serviceWorker' in navigator) window.addEventListener('load', function(){ tr
         </div>
       </div>
       <div id="rpeCardAlu"></div>   <!-- (v137) "Poné tu RPE" cuando el profe cargó el entrenamiento por el alumno -->
+      <div id="cvAluCard"></div>   <!-- (v156) cuota variable: total del mes -->
       <div class="alu-tiles" id="aluInicioTiles"></div>
       <div class="card flush" id="aluPlanCard" style="display:none;">
         <div class="sec-head"><div class="sec-t">Mi plan de entrenamiento</div><button class="sec-link" onclick="cambiarSubvistaAlu('rutinas')">Ver rutinas</button></div>
@@ -4075,6 +4081,11 @@ if ('serviceWorker' in navigator) window.addEventListener('load', function(){ tr
     <div id="subvistaAluAtletismo" style="display:none;">
       <div class="vista-titulo">Atletismo</div>
       <div id="aluAtletismoContenido" class="muted">Cargando...</div>
+    </div>
+
+    <div id="subvistaAluCuota" style="display:none;">   <!-- (v156) -->
+      <div class="vista-titulo">Mi cuota</div>
+      <div id="aluCuotaContenido" class="muted">Cargando...</div>
     </div>
 
     <div id="subvistaAluLogros" style="display:none;">
@@ -5341,7 +5352,7 @@ function atlIniciarAlu(){
   atlCargarVista('aluAtletismoContenido', id || '');
 }
 
-const APP_VERSION = 155;
+const APP_VERSION = 156;
 let ES_PERSONAL = false;   // (v132) cuenta personal (gimnasios.tipo = 'personal'); se calcula en perAplicar()
 // (v96) Fecha de la última actualización: se cambia junto con APP_VERSION en cada entrega. Se muestra en la
 // pantalla de inicio y en el menú de cuenta ("v94 · actualizada el 5/10/2026").
@@ -6969,6 +6980,7 @@ async function subirFotoPropiaAlumno(file){
 }
 
 async function hacerLogoutAlumno(){
+  try{ cvAluResetear(); }catch(e){}   // (v156)
   await supaAuth.auth.signOut();
   SESION_ACTUAL = null;
   PERFIL_ACTUAL = null;
@@ -13578,6 +13590,7 @@ function cambiarSubvistaAlu(v){
   document.getElementById('subvistaAluLogros').style.display = v==='logros' ? '' : 'none';
   document.getElementById('subvistaAluClases').style.display = v==='clases' ? '' : 'none';
   document.getElementById('subvistaAluAtletismo').style.display = v==='atletismo' ? '' : 'none';
+  document.getElementById('subvistaAluCuota').style.display = v==='cuota' ? '' : 'none';   // (v156)
   document.getElementById('menuAluInicio').classList.toggle('active', v==='inicio');
   document.getElementById('menuAluTurnos').classList.toggle('active', v==='turnos');
   document.getElementById('menuAluRutinas').classList.toggle('active', v==='rutinas');
@@ -13587,6 +13600,7 @@ function cambiarSubvistaAlu(v){
   document.getElementById('menuAluLogros').classList.toggle('active', v==='logros');
   document.getElementById('menuAluClases').classList.toggle('active', v==='clases');
   document.getElementById('menuAluAtletismo').classList.toggle('active', v==='atletismo');
+  document.getElementById('menuAluCuota').classList.toggle('active', v==='cuota');   // (v156)
   document.getElementById('bnavInicio').classList.toggle('active', v==='inicio');
   document.getElementById('bnavTurnos').classList.toggle('active', v==='turnos');
   document.getElementById('bnavRutinas').classList.toggle('active', v==='rutinas');
@@ -13602,6 +13616,7 @@ function cambiarSubvistaAlu(v){
   if (v === 'clases') clCargar('aluClasesContenido', true, true);
   if (v === 'turnos') aluTurnosEntrar();   // (v105) pestañas Sala / Clases
   if (v === 'atletismo') atlIniciarAlu();
+  if (v === 'cuota') cvAluEntrar();   // (v156)
   const alumnoId = document.getElementById('aluAlumno')?.value;
   if (alumnoId){
     if (v === 'logros') renderLogros('aluLogrosContenido', alumnoId);
@@ -17301,6 +17316,181 @@ function cvFichaPintar(sinScroll){
 function cvMoverForm(){
   const mes = CVF.mes, ini = mes, fin = cvIso(new Date(+mes.slice(0, 4), +mes.slice(5, 7), 0));
   return `<div class="row" style="margin-top:8px;align-items:end;"><div class="field"><label>Nuevo día (del mismo mes)</label><input type="date" id="cvMovFecha" min="${ini}" max="${fin}"></div><button type="button" onclick="cvMoverOk()">Mover</button></div>`;
+}
+
+// ---------- (v156) CUOTA VARIABLE · pantalla del alumno ("Mi cuota") ----------
+// SQL: v154 (cv_mi_cuota, cv_mi_registrar_cambio, cv_mi_quitar_cambio). El alumno ve clases, avisos, clases a favor y TOTAL.
+// Nunca zona, recargo ni valor por clase (el servidor tampoco se los manda). Sin módulo / sin días fijos / sin SQL: no aparece nada.
+const CVA = { id: '', promesa: null, activo: false, home: null, q: null, mes: null, hoyMes: null, sel: null, mover: false, busy: false, err: '' };
+function cvAluPrimero(iso){ return String(iso).slice(0, 7) + '-01'; }
+async function cvAluFetch(mes){
+  const q = await sb('rpc/cv_mi_cuota', { method: 'POST', body: JSON.stringify({ p_periodo: mes || null }) });
+  return q;
+}
+function cvAluCargar(alumnoId){
+  if (CVA.promesa && CVA.id === alumnoId) return CVA.promesa;
+  CVA.id = alumnoId; CVA.activo = false; CVA.home = null; CVA.q = null; CVA.sel = null; CVA.mover = false; CVA.err = '';
+  CVA.promesa = (async () => {
+    if (!cvOn() || cvStaff() || !PERFIL_ACTUAL || PERFIL_ACTUAL.rol !== 'alumno') return;
+    try{
+      const q = await cvAluFetch(null);
+      if (q && q.activo && (q.dias_semana || []).length){
+        CVA.activo = true; CVA.home = q; CVA.q = q; CVA.mes = String(q.periodo).slice(0, 10); CVA.hoyMes = CVA.mes;
+      }
+    }catch(e){ CVA.activo = false; }   // SQL sin correr / sin permiso: la app queda como antes
+  })();
+  return CVA.promesa;
+}
+async function cvAluInit(alumnoId){
+  await cvAluCargar(alumnoId);
+  const mn = document.getElementById('menuAluCuota'); if (mn) mn.style.display = CVA.activo ? '' : 'none';
+  cvAluHomePintar();
+  if (document.getElementById('subvistaAluCuota') && document.getElementById('subvistaAluCuota').style.display !== 'none') cvAluPintar();
+}
+function cvAluResetear(){ CVA.promesa = null; CVA.activo = false; CVA.home = null; CVA.q = null; CVA.id = ''; const mn = document.getElementById('menuAluCuota'); if (mn) mn.style.display = 'none'; const c = document.getElementById('cvAluCard'); if (c) c.innerHTML = ''; }
+function cvAluMesNombre(iso){ return cvMesTxt(iso).split(' ')[0].toLowerCase(); }
+function cvAluHomePintar(){
+  const el = document.getElementById('cvAluCard'); if (!el) return;
+  const q = CVA.home;
+  if (!CVA.activo || !q){ el.innerHTML = ''; return; }
+  const pend = (q.feriados_pendientes || []).length;
+  const mes = cvAluMesNombre(q.periodo);
+  const monto = q.sin_precio ? 'A confirmar' : cvMonto(q.monto);
+  let sub;
+  if (q.cobrada) sub = '<span style="font-weight:700;">✓ Cuota cobrada</span>';
+  else if (q.en_plazo) sub = `Avisá si faltás hasta el <b>${xe(cvDMY(q.limite_aviso))}</b>`;
+  else sub = `Pasó el día ${xe(q.dia_limite)}: los avisos nuevos ya no descuentan`;
+  el.innerHTML = `<div class="card cv-ahome" onclick="cambiarSubvistaAlu('cuota')" role="button" tabindex="0">
+    <div class="row" style="justify-content:space-between;align-items:center;gap:12px;flex-wrap:nowrap;">
+      <div style="min-width:0;"><div style="font-weight:800;">💳 Mi cuota de ${xe(mes)}</div>
+        <div class="muted" style="font-size:13px;">${xe(q.clases_a_cobrar)} clase${q.clases_a_cobrar === 1 ? '' : 's'} a cobrar de ${xe(q.clases_mes)} · ${sub}</div></div>
+      <div class="cv-big" style="flex-shrink:0;">${xe(monto)}</div></div>
+    ${(pend && !q.cobrada && q.en_plazo) ? `<div class="cv-pendfer">🎌 Tenés ${pend} feriado${pend === 1 ? '' : 's'} sin decidir (${xe(q.feriados_pendientes.map(cvDMY).join(', '))}). Si no avisás, se cobra${pend === 1 ? '' : 'n'}.</div>` : ''}
+    ${(q.creditos_para_proximo_mes > 0) ? `<div class="muted" style="font-size:12.5px;margin-top:6px;">Te quedan ${xe(q.creditos_para_proximo_mes)} clase${q.creditos_para_proximo_mes === 1 ? '' : 's'} a favor para el mes que viene.</div>` : ''}
+  </div>`;
+}
+async function cvAluEntrar(){
+  const cont = document.getElementById('aluCuotaContenido'); if (!cont) return;
+  const id = document.getElementById('aluAlumno') && document.getElementById('aluAlumno').value;
+  if (!CVA.promesa || CVA.id !== id) cvAluResetear();
+  cont.innerHTML = '<div class="muted">Cargando…</div>';
+  await cvAluCargar(id);
+  if (!CVA.activo){ cont.innerHTML = '<div class="muted">Tu cuota todavía no está configurada. Consultá con tu profesor.</div>'; return; }
+  CVA.sel = null; CVA.mover = false;
+  await cvAluMesIr(CVA.hoyMes, true);
+}
+async function cvAluMesIr(mes, silencioso){
+  CVA.err = '';
+  try{ CVA.q = await cvAluFetch(mes); CVA.mes = String(CVA.q.periodo).slice(0, 10); if (CVA.mes === CVA.hoyMes) CVA.home = CVA.q; }
+  catch(e){ CVA.err = extraerMensajeError(e); }
+  cvAluPintar();
+}
+function cvAluMes(n){
+  const m = cvMesMas(CVA.mes, n), base = CVA.hoyMes;
+  if (m < cvMesMas(base, -1) || m > cvMesMas(base, 2)) return;
+  CVA.sel = null; CVA.mover = false; cvAluMesIr(m);
+}
+function cvAluSel(f){ CVA.sel = CVA.sel === f ? null : f; CVA.mover = false; cvAluPintar(); }
+function cvAluMoverAbrir(){ CVA.mover = true; cvAluPintar(); }
+function cvAluTextoCambio(c, q){
+  const sig = cvAluMesNombre(cvMesMas(q.periodo, 1));
+  if (c.accion === 'falta') return c.a_tiempo ? 'Avisaste que faltás: esta clase no se cobra.' : `Avisaste después del día ${q.dia_limite}: esta clase se cobra igual. Si fue un caso especial, hablá con tu profe.`;
+  if (c.accion === 'mover') return `La movés al ${cvDiaTxt(c.fecha_nueva)}: se cobra igual, sin cambio en el total.`;
+  if (c.accion === 'feriado_descuento') return c.a_tiempo ? 'Feriado: se descuenta de este mes.' : `Feriado avisado después del día ${q.dia_limite}: se cobra igual.`;
+  if (c.accion === 'feriado_credito') return c.a_tiempo ? `Feriado: te queda 1 clase a favor para ${sig} (vale solo ese mes).` : `Feriado avisado después del día ${q.dia_limite}: se cobra y no queda a favor.`;
+  return '';
+}
+function cvAluPintar(){
+  const cont = document.getElementById('aluCuotaContenido'); if (!cont) return;
+  const q = CVA.q;
+  if (!q){ cont.innerHTML = CVA.err ? `<div class="rpx-ban">${xe(CVA.err)}</div>` : '<div class="muted">Cargando…</div>'; return; }
+  const hoy = cvIso(new Date()), cobr = !!q.cobrada, plazo = !!q.en_plazo;
+  const camb = {}; (q.cambios || []).forEach(c => { camb[c.fecha] = c; });
+  const pend = new Set(q.feriados_pendientes || []);
+  const esFer = f => pend.has(f) || (camb[f] && /^feriado/.test(camb[f].accion));
+  const chips = (q.fechas_clase || []).map(f => {
+    const c = camb[f]; let cl = '', t = '', ic = '';
+    if (c && c.accion === 'falta'){ cl = c.a_tiempo ? 'f-falta' : 'f-tarde'; ic = c.a_tiempo ? '✋' : '⏰'; t = c.a_tiempo ? 'No va' : 'Aviso tarde'; }
+    else if (c && c.accion === 'mover'){ cl = 'f-mov'; ic = '🔁'; t = '→ ' + cvDiaTxt(c.fecha_nueva); }
+    else if (c && c.accion === 'feriado_descuento'){ cl = c.a_tiempo ? 'f-falta' : 'f-tarde'; ic = '🎌'; t = c.a_tiempo ? 'Se descuenta' : 'Tarde'; }
+    else if (c && c.accion === 'feriado_credito'){ cl = c.a_tiempo ? 'f-fav' : 'f-tarde'; ic = '🎌'; t = c.a_tiempo ? 'A favor' : 'Tarde'; }
+    else if (pend.has(f)){ cl = 'f-pend'; ic = '🎌'; t = 'Sin decidir'; }
+    const pas = f < hoy ? 'cv-pas' : '';
+    return `<button type="button" class="cv-f ${cl} ${pas} ${CVA.sel === f ? 'sel' : ''}" onclick="cvAluSel('${f}')"><span>${xe(cvDiaTxt(f))}</span>${ic ? `<small>${ic} ${xe(t)}</small>` : ''}</button>`;
+  }).join('');
+  let acc = '';
+  if (CVA.sel){
+    const f = CVA.sel, c = camb[f], fer = esFer(f), pasada = f < hoy, finMes = cvIso(new Date(+q.periodo.slice(0, 4), +q.periodo.slice(5, 7), 0));
+    const movForm = CVA.mover ? `<div class="row" style="margin-top:8px;align-items:end;"><div class="field"><label>Nuevo día (del mismo mes)</label><input type="date" id="cvAMov" min="${hoy > q.periodo ? hoy : q.periodo}" max="${finMes}"></div><button type="button" onclick="cvAluMoverOk()">Mover</button></div>` : '';
+    if (pasada){
+      acc = `<div class="cv-acc"><b>${xe(cvDiaTxt(f))}</b>: esa clase ya pasó.${c ? ' ' + xe(cvAluTextoCambio(c, q)) : ''}</div>`;
+    } else if (c){
+      const puedeQuitar = c.accion === 'mover' ? true : (!cobr && plazo);
+      acc = `<div class="cv-acc"><b>${xe(cvDiaTxt(f))}</b>${fer ? ' · 🎌 feriado' : ''}<div style="margin-top:4px;">${xe(cvAluTextoCambio(c, q))}</div>
+        ${puedeQuitar ? `<div class="row" style="margin-top:8px;"><button type="button" class="secondary" onclick="cvAluQuitar()">Deshacer aviso</button></div>` : `<div class="muted" style="font-size:12.5px;margin-top:6px;">${cobr ? 'El mes ya está cobrado: para cambiarlo hablá con tu profe.' : `Pasó el día ${xe(q.dia_limite)}: para cambiarlo hablá con tu profe.`}</div>`}</div>`;
+    } else if (cobr){
+      acc = `<div class="cv-acc"><b>${xe(cvDiaTxt(f))}</b><div class="muted" style="margin-top:4px;">Este mes ya está cobrado: solo podés mover la clase de día.</div>
+        <div class="row" style="margin-top:8px;"><button type="button" class="secondary" onclick="cvAluMoverAbrir()">🔁 Mover a otro día</button></div>${movForm}</div>`;
+    } else if (!plazo){
+      acc = `<div class="cv-acc"><b>${xe(cvDiaTxt(f))}</b><div class="muted" style="margin-top:4px;">Pasó el día ${xe(q.dia_limite)}: si faltás, la clase se cobra igual. Podés <b>moverla a otro día</b> del mes sin cargo.</div>
+        <div class="row" style="margin-top:8px;"><button type="button" class="secondary" onclick="cvAluMoverAbrir()">🔁 Mover a otro día</button></div>${movForm}</div>`;
+    } else {
+      acc = `<div class="cv-acc"><b>${xe(cvDiaTxt(f))}</b>${fer ? ' · 🎌 feriado' : ''} · ¿Qué pasa con esta clase?
+        <div class="row" style="margin-top:8px;flex-wrap:wrap;gap:8px;">
+          ${fer ? `<button type="button" onclick="cvAluAccion('feriado_descuento')">🎌 Descontar del mes</button><button type="button" onclick="cvAluAccion('feriado_credito')">🎌 Dejar a favor</button>` : `<button type="button" onclick="cvAluAccion('falta')">✋ No puedo ir</button>`}
+          <button type="button" class="secondary" onclick="cvAluMoverAbrir()">🔁 Mover a otro día</button>
+        </div>${fer ? `<div class="muted" style="font-size:12.5px;margin-top:6px;"><b>Descontar</b>: no pagás esta clase. <b>A favor</b>: la pagás y te queda 1 para ${xe(cvAluMesNombre(cvMesMas(q.periodo, 1)))} (vale solo ese mes).</div>` : ''}${movForm}</div>`;
+    }
+  }
+  const filas = [
+    ['Clases del mes', `${q.clases_mes} <span class="muted">(${(q.dias_semana || []).map(d => CV_DOW[d]).join(' · ')})</span>`],
+    ['Avisadas a tiempo', q.avisadas && q.avisadas.length ? `− ${q.avisadas.length}` : '0'],
+    ['Clases a favor usadas', q.creditos_usados ? `− ${q.creditos_usados}` : '0'],
+    ['Clases a cobrar', `<b>${q.clases_a_cobrar}</b>`],
+  ].map(r => `<div class="cv-r"><span>${r[0]}</span><span>${r[1]}</span></div>`).join('');
+  const avisos = [];
+  if (!cobr) avisos.push(plazo ? `Podés avisar hasta el <b>${xe(cvDMY(q.limite_aviso))}</b>. Después de esa fecha la clase se cobra aunque faltes.` : `Pasó el día ${xe(q.dia_limite)}: los avisos nuevos ya no descuentan.`);
+  if (!cobr && plazo && (q.feriados_pendientes || []).length) avisos.push(`🎌 Feriado sin decidir: ${q.feriados_pendientes.map(cvDMY).join(', ')}. Tocá la fecha y elegí. Si no avisás, se cobra.`);
+  if (q.creditos_vencen > 0) avisos.push(`Tenés ${q.creditos_vencen} clase${q.creditos_vencen === 1 ? '' : 's'} a favor que no se pueden usar este mes y se pierden.`);
+  if (q.creditos_para_proximo_mes > 0) avisos.push(`Te quedan <b>${q.creditos_para_proximo_mes}</b> clase${q.creditos_para_proximo_mes === 1 ? '' : 's'} a favor para ${xe(cvAluMesNombre(cvMesMas(q.periodo, 1)))}, valen solo ese mes.`);
+  if (q.avisadas_tarde && q.avisadas_tarde.length) avisos.push(`Avisos fuera de plazo (se cobran): ${q.avisadas_tarde.map(cvDMY).join(', ')}.`);
+  const nav = `<div class="cv-mes"><button type="button" class="ghost" onclick="cvAluMes(-1)" aria-label="Mes anterior" ${cvMesMas(q.periodo, 0) <= cvMesMas(CVA.hoyMes, -1) ? 'disabled' : ''}>‹</button><b>${xe(cvMesTxt(q.periodo))}</b><button type="button" class="ghost" onclick="cvAluMes(1)" aria-label="Mes siguiente" ${cvMesMas(q.periodo, 0) >= cvMesMas(CVA.hoyMes, 2) ? 'disabled' : ''}>›</button></div>`;
+  cont.innerHTML = `${nav}${CVA.err ? `<div class="rpx-ban">${xe(CVA.err)}</div>` : ''}
+    <div class="cv-tot"><div class="cv-r"><span>Total del mes</span><span class="cv-big">${q.sin_precio ? 'A confirmar' : xe(cvMonto(q.monto))}</span></div>
+      <div class="muted" style="font-size:12.5px;padding:0 12px 6px;">${cobr ? '<span style="font-weight:700;">✓ Cuota cobrada</span>' : 'Cuota pendiente'}</div></div>
+    <h4 class="cv-h">Tus clases</h4>
+    <div class="cv-fechas">${chips}</div>
+    <div class="muted" style="font-size:12px;margin:2px 0 8px;">Tocá una fecha para avisar que no vas, moverla de día o resolver un feriado. ✋ no va · 🔁 movida · 🎌 feriado · ⏰ aviso tarde</div>
+    ${acc}
+    <details class="cv-det" open><summary>Cómo se calcula</summary><div class="cv-detb"><div class="cv-tbl">${filas}</div></div></details>
+    ${avisos.length ? `<ul class="cv-av">${avisos.map(a => `<li>${a}</li>`).join('')}</ul>` : ''}`;
+}
+async function cvAluAccion(accion, fechaNueva){
+  if (!CVA.sel || CVA.busy) return;
+  CVA.busy = true; const f = CVA.sel;
+  try{
+    const r = await sb('rpc/cv_mi_registrar_cambio', { method: 'POST', body: JSON.stringify({ p_fecha: f, p_accion: accion, p_fecha_nueva: fechaNueva || null }) });
+    const ok = !r || r.a_tiempo !== false;
+    toast(accion === 'mover' ? 'Clase movida ✓' : !ok ? 'Quedó anotado, pero ya pasó el plazo: esa clase se cobra igual.' : accion === 'feriado_credito' ? 'Listo: te queda 1 clase a favor para el mes que viene ✓' : 'Listo: esa clase no se cobra ✓');
+    CVA.sel = null; CVA.mover = false; CVA.busy = false;
+    await cvAluMesIr(CVA.mes); cvAluHomePintar();
+    if (CVA.mes !== CVA.hoyMes){ try{ CVA.home = await cvAluFetch(null); cvAluHomePintar(); }catch(e){} }
+  }catch(e){ CVA.busy = false; toast(extraerMensajeError(e), true); cvAluPintar(); }
+}
+function cvAluMoverOk(){
+  const v = (document.getElementById('cvAMov') || {}).value;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(v || '')){ toast('Elegí el día nuevo.', true); return; }
+  cvAluAccion('mover', v);
+}
+async function cvAluQuitar(){
+  if (!CVA.sel || CVA.busy) return;
+  CVA.busy = true;
+  try{
+    await sb('rpc/cv_mi_quitar_cambio', { method: 'POST', body: JSON.stringify({ p_fecha: CVA.sel }) });
+    toast('Aviso deshecho'); CVA.sel = null; CVA.busy = false;
+    await cvAluMesIr(CVA.mes); cvAluHomePintar();
+    if (CVA.mes !== CVA.hoyMes){ try{ CVA.home = await cvAluFetch(null); cvAluHomePintar(); }catch(e){} }
+  }catch(e){ CVA.busy = false; toast(extraerMensajeError(e), true); cvAluPintar(); }
 }
 
 function previewMontoCobro(alumnoId){
@@ -24646,6 +24836,7 @@ function onCambiarAluAlumno(){
     cargarHistorial(alumnoId);
     poblarFiltroProfesorAlumno(alumnoId);
     cargarBannerCuota(alumnoId);
+    cvAluInit(alumnoId);   // (v156) cuota variable: tarjeta + sección "Mi cuota"
     cargarVigenciaPlanAlu(alumnoId);
     cargarEvaluacionesAlu(alumnoId);
     renderLogros('aluLogrosContenido', alumnoId);
@@ -24699,6 +24890,7 @@ async function cargarVigenciaPlanAlu(alumnoId){
 
 async function cargarBannerCuota(alumnoId){
   const cont = document.getElementById('bannerCuotaAlu');
+  try{ await cvAluCargar(alumnoId); if (CVA.activo){ cont.innerHTML = ''; return; } }catch(e){}   // (v156) con cuota variable el aviso va en la tarjeta (no se cobra el precio del plan)
   try{
     const [plan] = await sb(`v_plan_vigente_alumno?alumno_id=eq.${alumnoId}`);
     if (plan && plan.estado_pago === 'al_dia'){ cont.innerHTML = ''; return; } // nada que avisar
