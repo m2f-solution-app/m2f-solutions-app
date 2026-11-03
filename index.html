@@ -5386,7 +5386,7 @@ function atlIniciarAlu(){
   atlCargarVista('aluAtletismoContenido', id || '');
 }
 
-const APP_VERSION = 157;
+const APP_VERSION = 158;
 let ES_PERSONAL = false;   // (v132) cuenta personal (gimnasios.tipo = 'personal'); se calcula en perAplicar()
 // (v96) Fecha de la última actualización: se cambia junto con APP_VERSION en cada entrega. Se muestra en la
 // pantalla de inicio y en el menú de cuenta ("v94 · actualizada el 5/10/2026").
@@ -17017,15 +17017,17 @@ function cvRecargoTxt(z){
 function cvZona(id){ return (CV.zonas || []).find(z => z.id === id) || null; }
 
 async function cvCargar(){
-  CV.ok = null; CV.err = ''; CV.cfg = null; CV.zonas = []; CV.planes = []; CV.precios = {}; CV.alumnos = {}; CV.feriados = [];
+  CV.ok = null; CV.err = ''; CV.cfg = null; CV.v158 = false; CV.zonas = []; CV.planes = []; CV.precios = {}; CV.alumnos = {}; CV.feriados = [];
   if (!cvOn() || !cvStaff() || !PERFIL_ACTUAL || !PERFIL_ACTUAL.gimnasio_id){ cvPintar(); return; }
   try{
     const hoy = new Date(); const desde = cvIso(new Date(hoy.getFullYear(), hoy.getMonth() - 1, 1));
-    const [cfg, zs, ps, als, ags, fs, pls] = await Promise.all([
+    const [cfg, zs, ps, als, ags, fs, pls, v158] = await Promise.all([
       sb('cv_config?select=*'), sb('cv_zonas?select=*&order=orden.asc,nombre.asc'),
       sb('cv_precios_plan?select=plan_id,precio_clase'), sb('cv_alumno?select=alumno_id,zona_id,precio_clase&limit=5000'),
       sb('cv_agenda?select=alumno_id&activo=eq.true&limit=10000'), sb(`cv_feriados?select=fecha,nombre&fecha=gte.${desde}&order=fecha.asc`),
-      sb(`planes?select=*&gimnasio_id=eq.${PERFIL_ACTUAL.gimnasio_id}&order=precio_transferencia.asc`).catch(() => [])]);
+      sb(`planes?select=*&gimnasio_id=eq.${PERFIL_ACTUAL.gimnasio_id}&order=precio_transferencia.asc`).catch(() => []),
+      sb('cv_config?select=avisos_auto,recordar_dias_antes&limit=1').then(() => true).catch(() => false)]);   // (v158) ¿ya se corrió el SQL de avisos automáticos?
+    CV.v158 = !!v158;
     CV.cfg = (cfg && cfg[0]) || null; CV.zonas = zs || []; CV.planes = pls || [];
     (ps || []).forEach(p => { CV.precios[p.plan_id] = +p.precio_clase; });
     (als || []).forEach(x => { CV.alumnos[x.alumno_id] = true; });
@@ -17078,6 +17080,7 @@ function cvPintar(forzar){
     <h3 class="cv-h">Aviso de faltas</h3>
     <div class="field" style="max-width:320px;"><label>El alumno puede avisar que falta</label><select id="cvLim" onchange="cvLimiteGuardar()">${limOpts}</select></div>
     <div class="muted" style="font-size:12px;margin-top:4px;">Pasado ese día del mes, el aviso queda anotado pero no descuenta (vos podés aceptarlo igual desde la ficha).</div>
+    ${CV.v158 ? cvAvisosHtml() : ''}
     <h3 class="cv-h">Feriados</h3>
     <div class="muted" style="font-size:12.5px;margin-bottom:8px;">Cargá los feriados que caen en días de clase. El alumno (o vos) elige si mueve la clase, la descuenta o la deja a favor.</div>
     <div class="srv-chips" style="margin-bottom:10px;">${fers || '<span class="muted">Todavía no cargaste feriados.</span>'}</div>
@@ -17127,6 +17130,23 @@ async function cvPrecioGuardar(planId){
     else { await cvUpsert('cv_precios_plan', 'plan_id', { plan_id: planId, gimnasio_id: PERFIL_ACTUAL.gimnasio_id, precio_clase: v }); CV.precios[planId] = v; }
     toast(v == null ? 'Valor quitado' : 'Valor guardado ✓');
   }catch(err){ toast(extraerMensajeError(err), true); }
+}
+function cvAvisosHtml(){
+  const on = !(CV.cfg && CV.cfg.avisos_auto === false);
+  const n = (CV.cfg && CV.cfg.recordar_dias_antes != null) ? +CV.cfg.recordar_dias_antes : 3;
+  const ops = [0, 1, 2, 3, 5, 7].concat([n]).filter((v, i, a) => a.indexOf(v) === i).sort((a, b) => a - b)
+    .map(v => `<option value="${v}" ${v === n ? 'selected' : ''}>${v === 0 ? 'Sin recordatorio previo' : v === 1 ? 'Recordatorio 1 día antes' : 'Recordatorio ' + v + ' días antes'}</option>`).join('');
+  return `<h3 class="cv-h">Avisos automáticos al alumno</h3>
+    <label class="cv-forz" style="font-size:14px;text-transform:none;letter-spacing:0;align-items:center;"><input type="checkbox" id="cvAvAuto" ${on ? 'checked' : ''} onchange="cvAvisosGuardar()"> Avisar por la app (todos los días a las 10:00)</label>
+    <div class="field" style="max-width:320px;margin-top:8px;"><select id="cvAvDias" onchange="cvAvisosGuardar()" ${on ? '' : 'disabled'}>${ops}</select></div>
+    <div class="muted" style="font-size:12px;margin-top:4px;">Además del recordatorio, el alumno recibe un aviso el <b>último día</b> para avisar y otro al <b>cerrar el plazo</b> con el total de su cuota (y si le vencieron clases a favor). A vos te llega el resumen del mes. No se avisa a quien ya pagó el mes ni a los que no tienen la app.</div>`;
+}
+async function cvAvisosGuardar(){
+  const a = document.getElementById('cvAvAuto'), d = document.getElementById('cvAvDias'); if (!a || !d) return;
+  d.disabled = !a.checked;
+  const fila = { avisos_auto: a.checked, recordar_dias_antes: +d.value };
+  try{ await cvUpsert('cv_config', 'gimnasio_id', Object.assign({ gimnasio_id: PERFIL_ACTUAL.gimnasio_id }, fila)); CV.cfg = Object.assign({}, CV.cfg || {}, fila); toast('Avisos guardados ✓'); }
+  catch(err){ toast(extraerMensajeError(err), true); }
 }
 async function cvLimiteGuardar(){
   const el = document.getElementById('cvLim'); if (!el) return;
