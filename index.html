@@ -360,6 +360,13 @@ if ('serviceWorker' in navigator) window.addEventListener('load', function(){ tr
   .cv-ahome{ cursor:pointer; border-color:var(--note-bd); }
   .cv-pendfer{ margin-top:8px; padding:8px 10px; border-radius:10px; border:1px dashed rgba(255,210,61,.7); background:rgba(255,210,61,.08); font-size:13px; color:var(--warn-text); }
   button.cv-f.cv-pas{ opacity:.5; }
+  /* (v157) Cancelar clase */
+  .cv-cgrp{ margin-bottom:12px; }
+  .cv-st{ font-size:12px; color:var(--muted); }
+  .cv-st-ok{ color:var(--text); font-weight:700; }
+  .cv-msgprev{ margin-top:4px; padding:10px 12px; border-radius:10px; border:1px solid var(--border); background:var(--panel3); font-size:13px; white-space:pre-wrap; }
+  a.cv-wa{ display:inline-flex; align-items:center; gap:4px; padding:7px 12px; border-radius:999px; background:var(--accent); color:#1a1208; font-weight:700; font-size:13px; text-decoration:none; white-space:nowrap; }
+  button.cv-cp{ width:auto; padding:6px 10px; font-size:12.5px; }
   /* (v153) Cuota: desde cuándo cuenta */
   .cuo-vig{ margin-top:12px; padding:12px; border:1px solid var(--border); border-radius:12px; background:var(--panel2); }
   .cuo-line{ font-size:14.5px; margin-bottom:6px; }
@@ -2449,6 +2456,7 @@ if ('serviceWorker' in navigator) window.addEventListener('load', function(){ tr
     <button class="tt-btn" id="ttRecepcion" onclick="cambiarSubvista('recepcion')" style="display:none;" title="Recepción"><span class="tt-ico">🛎️</span><span class="tt-lbl">Recepción</span></button>
     <button class="tt-btn" id="ttAgenda" onclick="cambiarSubvista('agenda')" title="Agenda"><span class="tt-ico">📋</span><span class="tt-lbl">Agenda</span></button>
     <button class="tt-btn" id="ttClases" onclick="cambiarSubvista('clases')" title="Clases"><span class="tt-ico">📆</span><span class="tt-lbl">Clases</span></button>
+    <button class="tt-btn" id="ttCvClases" onclick="cambiarSubvista('cvclases')" style="display:none;" title="Cancelar clase"><span class="tt-ico">❌</span><span class="tt-lbl">Cancelar clase</span></button>
     <button class="tt-btn" id="ttAtletismo" onclick="cambiarSubvista('atletismo')" style="display:none;" title="Atletismo"><span class="tt-ico">🏃</span><span class="tt-lbl">Atletismo</span></button>
     <button class="tt-btn" id="ttEspeciales" onclick="cambiarSubvista('especiales')" style="display:none;" title="Rutinas especiales por alumno"><span class="tt-ico">⭐</span><span class="tt-lbl">Rutinas especiales</span></button>
     <button class="tt-btn" id="ttEquipo" onclick="cambiarSubvista('equipo')" title="Seguimiento Equipo"><span class="tt-ico">⚽</span><span class="tt-lbl">Seguimiento Equipo</span></button>
@@ -2509,6 +2517,7 @@ if ('serviceWorker' in navigator) window.addEventListener('load', function(){ tr
     <div class="side-item" id="menuRecepcion" onclick="cambiarSubvista('recepcion')" style="display:none;" title="Recepción"><span class="side-ico">🛎️</span><span class="side-label">Recepción</span></div>
     <div class="side-item" id="menuAgenda" onclick="cambiarSubvista('agenda')" title="Agenda"><span class="side-ico">📋</span><span class="side-label">Agenda</span></div>
     <div class="side-item" id="menuClases" onclick="cambiarSubvista('clases')" title="Clases"><span class="side-ico">📆</span><span class="side-label">Clases</span></div>
+    <div class="side-item" id="menuCvClases" onclick="cambiarSubvista('cvclases')" style="display:none;" title="Cancelar clase"><span class="side-ico">❌</span><span class="side-label">Cancelar clase</span></div>   <!-- (v157) -->
     <div class="side-item" id="menuAtletismo" onclick="cambiarSubvista('atletismo')" style="display:none;" title="Atletismo"><span class="side-ico">🏃</span><span class="side-label">Atletismo</span></div>
     <div class="side-item" id="menuEspeciales" onclick="cambiarSubvista('especiales')" style="display:none;" title="Rutinas especiales por alumno"><span class="side-ico">⭐</span><span class="side-label">Rutinas especiales por alumno</span></div>
     <div class="side-item" id="menuEquipo" onclick="cambiarSubvista('equipo')" title="Equipo"><span class="side-ico">⚽</span><span class="side-label">Equipo</span></div>
@@ -3371,6 +3380,14 @@ if ('serviceWorker' in navigator) window.addEventListener('load', function(){ tr
           </div>
         </div>
         <div id="atlContenido"><div class="muted">Elegí un alumno arriba.</div></div>
+      </div>
+
+      <!-- (v157) Cancelar clase (cuota variable) -->
+      <div id="subvistaCvClases" style="display:none;">
+        <div class="card">
+          <h2 style="margin:0 0 6px;">❌ Cancelar clase</h2>
+          <div id="cvcBody" class="muted">Cargando…</div>
+        </div>
       </div>
 
       <!-- (v96) Calendario de clases (staff) -->
@@ -4827,6 +4844,7 @@ function modAplicarMenu(){
   try{ sucAplicar(); }catch(e){}   // (v140) sedes
   try{ srvAplicar(); }catch(e){}   // (v148) servicios
   try{ cvPintar(); }catch(e){}   // (v155) cuota variable
+  try{ cvcMenu(); }catch(e){}   // (v157) cancelar clase
   try{ document.body.classList.toggle('sin-wellness', !wellOn()); }catch(e){}   // (v149)
   const roles = new Set([...(typeof MENU_SOLO_ADMIN !== 'undefined' ? MENU_SOLO_ADMIN : []), ...(typeof BNAV_SOLO_ADMIN !== 'undefined' ? BNAV_SOLO_ADMIN : []), 'menuRecepcion', 'ttRecepcion']);
   Object.keys(MOD_IDS).forEach(k => {
@@ -5352,7 +5370,7 @@ function atlIniciarAlu(){
   atlCargarVista('aluAtletismoContenido', id || '');
 }
 
-const APP_VERSION = 156;
+const APP_VERSION = 157;
 let ES_PERSONAL = false;   // (v132) cuenta personal (gimnasios.tipo = 'personal'); se calcula en perAplicar()
 // (v96) Fecha de la última actualización: se cambia junto con APP_VERSION en cada entrega. Se muestra en la
 // pantalla de inicio y en el menú de cuenta ("v94 · actualizada el 5/10/2026").
@@ -12114,6 +12132,7 @@ function guiaPintarBotonCorreo(email){
 function cambiarSubvista(v){
   if (sucAdminSede() && SEDE_ADMIN_VISTAS_NO.includes(v)){ toast('Esta sección la maneja el administrador general.', true); return; }   // (v145)
   if (!modVistaOk('staff', v)){ modAvisoBloqueada(); return; }   // (v99) sección no incluida en el plan del gimnasio
+  if (v === 'cvclases' && !cvcVisible()){ modAvisoBloqueada(); return; }   // (v157)
   medOk();
   try{ clCerrar(); }catch(e){}
   guiaVisita('staff', v==='armador' ? 'especiales' : v);
@@ -12142,6 +12161,7 @@ function cambiarSubvista(v){
   document.getElementById('subvistaHorarios').style.display = v==='horarios' ? '' : 'none';
   document.getElementById('subvistaClases').style.display = v==='clases' ? '' : 'none';
   document.getElementById('subvistaAtletismo').style.display = v==='atletismo' ? '' : 'none';
+  document.getElementById('subvistaCvClases').style.display = v==='cvclases' ? '' : 'none';   // (v157)
   document.getElementById('subvistaPlanes').style.display = v==='planes' ? '' : 'none';
   document.getElementById('subvistaCobranzas').style.display = v==='cobranzas' ? '' : 'none';
   document.getElementById('subvistaAlertas').style.display = v==='alertas' ? '' : 'none';
@@ -12162,6 +12182,7 @@ function cambiarSubvista(v){
   document.getElementById('menuHorarios').classList.toggle('active', v==='horarios');
   document.getElementById('menuClases').classList.toggle('active', v==='clases');
   document.getElementById('menuAtletismo').classList.toggle('active', v==='atletismo');
+  document.getElementById('menuCvClases').classList.toggle('active', v==='cvclases');   // (v157)
   document.getElementById('menuPlanes').classList.toggle('active', v==='planes');
   document.getElementById('menuCobranzas').classList.toggle('active', v==='cobranzas');
   document.getElementById('menuAlertas').classList.toggle('active', v==='alertas');
@@ -12182,6 +12203,7 @@ function cambiarSubvista(v){
   document.getElementById('ttHorarios').classList.toggle('active', v==='horarios');
   document.getElementById('ttClases').classList.toggle('active', v==='clases');
   document.getElementById('ttAtletismo').classList.toggle('active', v==='atletismo');
+  document.getElementById('ttCvClases').classList.toggle('active', v==='cvclases');   // (v157)
   document.getElementById('ttPlanes').classList.toggle('active', v==='planes');
   document.getElementById('ttCobranzas').classList.toggle('active', v==='cobranzas');
   document.getElementById('ttAlertas').classList.toggle('active', v==='alertas');
@@ -12206,6 +12228,7 @@ function cambiarSubvista(v){
   if (v==='horarios'){ horCambiarTab('editar'); cargarHorarioProfesorActual(); }
   if (v==='clases') clIniciarStaff();
   if (v==='atletismo') atlIniciarStaff();
+  if (v==='cvclases') cvcEntrar();   // (v157)
   if (v==='planes') cargarPlanes();
   if (v==='cobranzas') cargarCobranzas();
   if (v==='alertas') cargarSeguimientoAlumnos();
@@ -17144,7 +17167,7 @@ async function cvFichaRecargar(){
   try{ CVF.q = await cvQ(CVF.id, CVF.mes); }catch(e){ toast(extraerMensajeError(e), true); }
   cvFichaPintar();
 }
-function cvFichaMes(n){ if (!CVF) return; CVF.mes = cvMesMas(CVF.mes, n); CVF.sel = null; CVF.mover = false; CVF.cobrando = false; cvFichaRecargar(); }
+function cvFichaMes(n){ if (!CVF) return; CVF.mes = cvMesMas(CVF.mes, n); CVF.sel = null; CVF.mover = false; CVF.cobrando = false; CVF.wa = null; cvFichaRecargar(); }
 function cvFSet(k, v){ if (CVF) CVF[k] = v; }
 function cvFDia(dow, on){
   if (!CVF) return;
@@ -17266,12 +17289,13 @@ function cvFichaPintar(sinScroll){
           ${(cobr && c.accion !== 'mover') ? '<div class="muted" style="font-size:12.5px;">El mes ya está cobrado: para cambiarlo hay que corregir el pago primero.</div>' : '<div class="row" style="margin-top:8px;"><button type="button" class="ghost" onclick="cvQuitar()">Quitar aviso</button></div>'}</div>`;
       } else if (cobr){
         acc = `<div class="cv-acc"><div class="muted">El mes ya está cobrado: solo se puede mover la clase de día.</div>
-          <div class="row" style="margin-top:8px;"><button type="button" class="secondary" onclick="cvMoverAbrir()">🔁 Mover a otro día</button></div>${CVF.mover ? cvMoverForm() : ''}</div>`;
+          <div class="row" style="margin-top:8px;flex-wrap:wrap;gap:8px;"><button type="button" class="secondary" onclick="cvMoverAbrir()">🔁 Mover a otro día</button><button type="button" class="secondary" onclick="cvFProfeCancela()">❌ Canceló el profe</button></div>${CVF.mover ? cvMoverForm() : ''}</div>`;
       } else {
         acc = `<div class="cv-acc"><div><b>${xe(cvDiaTxt(CVF.sel))}</b>${fer ? ' · 🎌 feriado' : ''} · ¿qué pasa con esta clase?</div>${forz}
           <div class="row" style="margin-top:8px;flex-wrap:wrap;gap:8px;">
             <button type="button" onclick="cvAccion('falta')">✋ Avisó que falta</button>
             <button type="button" class="secondary" onclick="cvMoverAbrir()">🔁 Mover a otro día</button>
+            <button type="button" class="secondary" onclick="cvFProfeCancela()">❌ Canceló el profe</button>
             ${fer ? '<button type="button" class="secondary" onclick="cvAccion(\'feriado_descuento\')">🎌 Descontar del mes</button><button type="button" class="secondary" onclick="cvAccion(\'feriado_credito\')">🎌 Dejar a favor</button>' : ''}
           </div>${CVF.mover ? cvMoverForm() : ''}</div>`;
       }
@@ -17304,6 +17328,7 @@ function cvFichaPintar(sinScroll){
       <div class="cv-fechas">${chips}</div>
       <div class="muted" style="font-size:12px;margin:2px 0 8px;">Tocá una fecha para avisar que falta, moverla de día o resolver un feriado. ✋ falta · 🔁 movida · 🎌 feriado · ⏰ aviso tarde</div>
       ${acc}
+      ${typeof cvcWaBox === 'function' ? cvcWaBox() : ''}
       <div class="cv-tot"><div class="cv-r"><span>Total del mes</span><span class="cv-big">${q.sin_precio ? '—' : xe(cvMonto(q.monto))}</span></div></div>
       <div class="cv-tbl">${filas}</div>
       ${avisos.length ? `<ul class="cv-av">${avisos.map(a => `<li>${a}</li>`).join('')}</ul>` : ''}
@@ -17491,6 +17516,215 @@ async function cvAluQuitar(){
     await cvAluMesIr(CVA.mes); cvAluHomePintar();
     if (CVA.mes !== CVA.hoyMes){ try{ CVA.home = await cvAluFetch(null); cvAluHomePintar(); }catch(e){} }
   }catch(e){ CVA.busy = false; toast(extraerMensajeError(e), true); cvAluPintar(); }
+}
+
+// ---------- (v157) CUOTA VARIABLE · el profe cancela una clase (clase a favor + aviso en la app + WhatsApp armado) ----------
+// SQL: v154 (cv_cancelar_clase, cv_deshacer_cancelacion). Pantalla "Cancelar clase" (menú del personal) y botón en ficha → Cuota.
+// Cada alumno alcanzado recibe 1 clase a favor para el mes siguiente (solo ese mes) + campana en la app. El WhatsApp lo manda el personal con un toque.
+const CVC = { profs: [], fecha: null, cargando: false, grupos: [], err: '', sel: null, marcados: {}, motivo: '', res: null, busy: false };
+const CVC_TPL = 'Hola {nombre}! No vamos a poder dar la clase del {dia} {fecha}{hora}. Te queda 1 clase a favor para el mes que viene. Disculpá las molestias. — {gym}';
+const CV_DIAS_LARGO = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+function cvcVisible(){ return cvOn() && CV.ok === true && cvStaff(); }
+function cvcMenu(){
+  const on = cvcVisible();
+  ['menuCvClases', 'ttCvClases'].forEach(id => { const e = document.getElementById(id); if (e) e.style.display = on ? '' : 'none'; });
+}
+function cvcProfs(){ return (PROFESORES_CACHE && PROFESORES_CACHE.length) ? PROFESORES_CACHE : CVC.profs; }
+function cvcMiProfe(){
+  if (!PERFIL_ACTUAL || PERFIL_ACTUAL.rol !== 'profesor') return null;
+  const p = cvcProfs().find(x => x.perfil_id === PERFIL_ACTUAL.id);
+  return p ? p.id : null;
+}
+function cvcProfNombre(id){ if (!id) return null; const p = cvcProfs().find(x => x.id === id); return p ? p.nombre : 'Profesor'; }
+function cvcFechaTxt(iso){ return CV_DIAS_LARGO[cvDow(iso)] + ' ' + (+iso.slice(8, 10)) + ' de ' + new Date(iso + 'T12:00:00').toLocaleDateString('es-AR', { month: 'long' }); }
+function cvcMas(iso, n){ const d = new Date(iso + 'T12:00:00'); d.setDate(d.getDate() + n); return cvIso(d); }
+function cvcRango(){ const h = cvIso(new Date()); return { min: cvcMas(h, -7), max: cvcMas(h, 60) }; }
+function cvcWaLink(tel, msg){
+  const t = String(tel || '').replace(/\D/g, ''); if (t.length < 8) return '';
+  return 'https://wa.me/' + (t.length === 10 ? '549' + t : t) + '?text=' + encodeURIComponent(msg || '');
+}
+function cvcMensaje(nombre, fecha, hora){
+  const gym = (typeof GIMNASIO_ACTUAL !== 'undefined' && GIMNASIO_ACTUAL && GIMNASIO_ACTUAL.nombre) || '';
+  const tpl = (CV.cfg && CV.cfg.msg_cancelacion && String(CV.cfg.msg_cancelacion).trim()) || CVC_TPL;
+  return tpl.split('{nombre}').join(String(nombre || '').trim().split(' ')[0]).split('{dia}').join(CV_DIAS_LARGO[cvDow(fecha)])
+    .split('{fecha}').join(fecha.slice(8, 10) + '/' + fecha.slice(5, 7)).split('{hora}').join(hora ? ' a las ' + String(hora).slice(0, 5) : '').split('{gym}').join(gym);
+}
+function cvcEntrar(){
+  if (!cvcVisible()){ const c = document.getElementById('cvcBody'); if (c) c.innerHTML = '<div class="muted">Esta sección necesita el módulo Cuota variable.</div>'; return; }
+  if (!CVC.fecha) CVC.fecha = cvIso(new Date());
+  cvcCargar();
+}
+async function cvcCargar(conservar){
+  const f = CVC.fecha; if (!f) return;
+  CVC.cargando = true; CVC.err = ''; CVC.sel = null; if (!conservar) CVC.res = null;
+  cvcPintar();
+  try{
+    const dow = cvDow(f);
+    if (!cvcProfs().length){ try{ CVC.profs = (await sb('profesores?select=id,nombre,perfil_id,activo')) || []; }catch(e){ CVC.profs = []; } }
+    const [ag, cam, mov, cre] = await Promise.all([
+      sb(`cv_agenda?select=alumno_id,hora,profesor_id&activo=eq.true&dia_semana=eq.${dow}&limit=5000`),
+      sb(`cv_cambios?select=alumno_id,accion&fecha=eq.${f}&limit=5000`),
+      sb(`cv_cambios?select=alumno_id&accion=eq.mover&fecha_nueva=eq.${f}&limit=5000`),
+      sb(`cv_creditos?select=alumno_id,cancelacion_id&motivo=eq.profe_falto&fecha_clase=eq.${f}&limit=5000`)]);
+    const ids = [...new Set([...(ag || []).map(x => x.alumno_id), ...(mov || []).map(x => x.alumno_id)])];
+    let als = [];
+    const partes = []; for (let i = 0; i < ids.length; i += 80) partes.push(ids.slice(i, i + 80));
+    (await Promise.all(partes.map(p => sb(`alumnos?select=id,nombre,telefono,perfil_id,activo&id=in.(${p.join(',')})&limit=200`)))).forEach(r => { als = als.concat(r || []); });
+    const A = {}; als.forEach(a => { if (a.activo !== false) A[a.id] = a; });
+    const camb = {}; (cam || []).forEach(c => { camb[c.alumno_id] = c.accion; });
+    const cred = {}; (cre || []).forEach(c => { cred[c.alumno_id] = c.cancelacion_id; });
+    const yo = cvcMiProfe(), G = {};
+    const estadoDe = id => cred[id] !== undefined ? { e: 'cancelada', cid: cred[id] }
+      : camb[id] ? { e: 'avisó', d: ({ falta: 'ya avisó que falta', mover: 'movió su clase a otro día', feriado_descuento: 'feriado: se descuenta', feriado_credito: 'feriado: a favor' })[camb[id]] || 'ya avisó' }
+      : { e: 'ok' };
+    const poner = (key, prof, hora, etiqueta, id) => {
+      if (!G[key]) G[key] = { key, prof, hora, etiqueta, alumnos: [] };
+      if (G[key].alumnos.some(x => x.id === id)) return;
+      G[key].alumnos.push(Object.assign({ id, nombre: A[id].nombre, telefono: A[id].telefono, app: !!A[id].perfil_id }, estadoDe(id)));
+    };
+    const visto = new Set();
+    (ag || []).forEach(x => {
+      if (!A[x.alumno_id]) return;
+      if (yo && x.profesor_id && x.profesor_id !== yo) return;      // el profe ve solo sus clases (y las sin profe fijo)
+      const h = x.hora ? String(x.hora).slice(0, 5) : null;
+      poner((x.profesor_id || '') + '|' + (h || ''), x.profesor_id || null, h, null, x.alumno_id); visto.add(x.alumno_id);
+    });
+    (mov || []).forEach(x => { if (A[x.alumno_id] && !visto.has(x.alumno_id)) poner('mov', null, null, 'Movieron su clase a este día', x.alumno_id); });
+    CVC.grupos = Object.values(G).sort((a, b) => (a.key === 'mov') - (b.key === 'mov') || String(a.hora || '99').localeCompare(String(b.hora || '99')) || String(cvcProfNombre(a.prof) || '').localeCompare(String(cvcProfNombre(b.prof) || '')));
+    CVC.grupos.forEach(g => g.alumnos.sort((a, b) => a.nombre.localeCompare(b.nombre)));
+  }catch(e){ CVC.err = extraerMensajeError(e); CVC.grupos = []; }
+  CVC.cargando = false; cvcPintar();
+}
+function cvcDia(n){
+  const r = cvcRango(), nf = cvcMas(CVC.fecha, n);
+  if (nf < r.min || nf > r.max) return;
+  CVC.fecha = nf; cvcCargar();
+}
+function cvcIr(v){
+  const r = cvcRango();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(v || '')) return;
+  if (v < r.min || v > r.max){ toast('Elegí una fecha entre hace 7 días y 60 días adelante.', true); cvcPintar(); return; }
+  CVC.fecha = v; cvcCargar();
+}
+function cvcHoy(){ CVC.fecha = cvIso(new Date()); cvcCargar(); }
+function cvcAbrir(i){
+  CVC.sel = CVC.sel === i ? null : i; CVC.marcados = {}; CVC.motivo = '';
+  if (CVC.sel !== null) (CVC.grupos[i].alumnos || []).forEach(a => { if (a.e === 'ok') CVC.marcados[a.id] = true; });
+  cvcPintar();
+}
+function cvcMarcar(id, on){ if (on) CVC.marcados[id] = true; else delete CVC.marcados[id]; cvcPintar(true); }
+function cvcMotivo(v){ CVC.motivo = v; }
+function cvcEstadoTxt(a){
+  if (a.e === 'cancelada') return '<span class="cv-st cv-st-ok">✓ Cancelada · 1 a favor</span>';
+  if (a.e === 'avisó') return `<span class="cv-st">${xe(a.d)}</span>`;
+  return '';
+}
+function cvcPintar(sinScroll){
+  const el = document.getElementById('cvcBody'); if (!el) return;
+  const r = cvcRango(), f = CVC.fecha || cvIso(new Date()), hoy = cvIso(new Date());
+  const fer = (CV.feriados || []).find(x => x.fecha === f);
+  const nav = `<div class="cv-mes" style="flex-wrap:wrap;"><button type="button" class="ghost" onclick="cvcDia(-1)" aria-label="Día anterior" ${f <= r.min ? 'disabled' : ''}>‹</button>
+    <input type="date" value="${xe(f)}" min="${r.min}" max="${r.max}" onchange="cvcIr(this.value)" aria-label="Fecha" style="width:auto;">
+    <button type="button" class="ghost" onclick="cvcDia(1)" aria-label="Día siguiente" ${f >= r.max ? 'disabled' : ''}>›</button>
+    ${f !== hoy ? '<button type="button" class="ghost" style="width:auto;" onclick="cvcHoy()">Hoy</button>' : ''}</div>
+    <div style="text-align:center;font-weight:700;margin-bottom:8px;">${xe(cvcFechaTxt(f))}</div>`;
+  let cuerpo = '';
+  if (CVC.cargando) cuerpo = '<div class="muted">Cargando…</div>';
+  else if (CVC.err) cuerpo = `<div class="rpx-ban">${xe(CVC.err)}</div>`;
+  else if (!CVC.grupos.length) cuerpo = `<div class="muted" style="padding:10px 0;">No hay alumnos con clase fija ese día${cvcMiProfe() ? ' a tu cargo' : ''}. Los días fijos se cargan en la ficha del alumno → Cuota.</div>`;
+  else cuerpo = CVC.grupos.map((g, i) => cvcGrupoHtml(g, i, f)).join('');
+  const res = CVC.res ? cvcResHtml() : '';
+  const prof = cvcMiProfe();
+  el.innerHTML = `<div class="muted" style="font-size:13px;margin-bottom:10px;">Cuando un profe no puede dar una clase, cada alumno recibe <b>1 clase a favor</b> para el mes que viene (vale solo ese mes) y un aviso en su app. El WhatsApp lo mandás vos con un toque.</div>
+    ${nav}${fer ? `<div class="cv-pendfer">🎌 ${xe(f.slice(8, 10) + '/' + f.slice(5, 7))} es feriado${fer.nombre ? ' (' + xe(fer.nombre) + ')' : ''}. Los alumnos deciden por su cuenta si descuentan, dejan a favor o mueven la clase; cancelá solo si de verdad no hay clase.</div>` : ''}
+    ${res}${cuerpo}`;
+}
+function cvcGrupoHtml(g, i, f){
+  const sel = CVC.sel === i, ok = g.alumnos.filter(a => a.e === 'ok'), canc = g.alumnos.filter(a => a.e === 'cancelada');
+  const cids = [...new Set(canc.map(a => a.cid).filter(Boolean))];
+  const prof = g.prof ? cvcProfNombre(g.prof) : null;
+  const titulo = g.etiqueta ? xe(g.etiqueta) : `${g.hora ? xe(g.hora) : 'Sin hora fija'}${prof ? ' · ' + xe(prof) : ' · Sin profe fijo'}`;
+  const lista = g.alumnos.map(a => `<div class="cv-r"><span>${sel && a.e === 'ok' ? `<label class="cv-dchk"><input type="checkbox" ${CVC.marcados[a.id] ? 'checked' : ''} onchange="cvcMarcar('${a.id}', this.checked)"> ${xe(a.nombre)}</label>` : xe(a.nombre)}${a.app ? '' : ' <span class="muted" style="font-size:11.5px;">sin app</span>'}</span><span>${cvcEstadoTxt(a)}</span></div>`).join('');
+  let form = '';
+  if (sel){
+    const marc = ok.filter(a => CVC.marcados[a.id]);
+    const prev = marc.length ? cvcMensaje(marc[0].nombre, f, g.hora) : '';
+    form = `<div class="cv-acc" style="margin-top:10px;">
+      <div><b>Cancelar la clase</b> · ${marc.length} alumno${marc.length === 1 ? '' : 's'} marcado${marc.length === 1 ? '' : 's'}</div>
+      <div class="field" style="margin-top:8px;"><label>Motivo (opcional, queda anotado)</label><input type="text" id="cvcMot" value="${xe(CVC.motivo)}" maxlength="120" oninput="cvcMotivo(this.value)" placeholder="Ej: el profe está enfermo"></div>
+      ${prev ? `<div class="muted" style="font-size:12px;margin-top:8px;">Mensaje de WhatsApp (ejemplo):</div><div class="cv-msgprev">${xe(prev)}</div>` : ''}
+      <div class="row" style="margin-top:10px;flex-wrap:wrap;gap:8px;"><button type="button" id="cvcBtn" onclick="cvcCancelar()" ${marc.length && !CVC.busy ? '' : 'disabled'}>❌ Cancelar clase y avisar</button><button type="button" class="ghost" onclick="cvcAbrir(${i})">Volver</button></div></div>`;
+  }
+  return `<div class="card cv-cgrp"><div class="row" style="justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
+      <div style="font-weight:800;">${titulo} <span class="muted" style="font-weight:500;font-size:13px;">· ${g.alumnos.length} alumno${g.alumnos.length === 1 ? '' : 's'}</span></div>
+      <div class="row" style="gap:8px;">${(!sel && ok.length) ? `<button type="button" class="secondary" onclick="cvcAbrir(${i})">❌ Cancelar clase</button>` : ''}${cids.length ? `<button type="button" class="ghost" onclick="cvcDeshacer('${cids.join(',')}')">Deshacer cancelación</button>` : ''}</div></div>
+    <div class="cv-tbl" style="margin-top:8px;">${lista}</div>${form}</div>`;
+}
+function cvcResHtml(){
+  const r = CVC.res;
+  return `<div class="cv-acc"><div><b>✓ Clase cancelada</b> · ${r.items.length} alumno${r.items.length === 1 ? '' : 's'} con 1 clase a favor</div>
+    <div class="muted" style="font-size:12.5px;margin:4px 0 8px;">Los que tienen app ya recibieron el aviso. Mandá el WhatsApp a cada uno:</div>
+    ${r.items.map((it, i) => { const wa = cvcWaLink(it.telefono, it.mensaje); return `<div class="cv-r"><span>${xe(it.nombre)} <span class="muted" style="font-size:11.5px;">${it.tiene_app ? (it.nuevo ? '🔔 avisado en la app' : 'ya tenía el aviso') : 'sin app'}</span></span>
+      <span class="row" style="gap:6px;justify-content:flex-end;">${wa ? `<a class="cv-wa" href="${xe(wa)}" target="_blank" rel="noopener">💬 WhatsApp</a>` : '<span class="muted" style="font-size:12px;">sin teléfono</span>'}<button type="button" class="ghost cv-cp" onclick="cvcCopiar(${i})">Copiar</button></span></div>`; }).join('')}
+    <div class="row" style="margin-top:8px;"><button type="button" class="ghost" onclick="CVC.res=null;cvcPintar(true)">Cerrar</button></div></div>`;
+}
+async function cvcCopiar(i){
+  const it = CVC.res && CVC.res.items[i]; if (!it) return;
+  try{ await navigator.clipboard.writeText(it.mensaje); toast('Mensaje copiado ✓'); }catch(e){ toast('No se pudo copiar.', true); }
+}
+async function cvcCancelar(){
+  if (CVC.busy || CVC.sel === null) return;
+  const g = CVC.grupos[CVC.sel]; if (!g) return;
+  const ids = g.alumnos.filter(a => a.e === 'ok' && CVC.marcados[a.id]).map(a => a.id);
+  if (!ids.length){ toast('Marcá al menos un alumno.', true); return; }
+  CVC.busy = true; const b = document.getElementById('cvcBtn'); if (b){ b.disabled = true; b.textContent = 'Cancelando…'; }
+  try{
+    const r = await sb('rpc/cv_cancelar_clase', { method: 'POST', body: JSON.stringify({ p_fecha: CVC.fecha, p_profesor_id: g.prof || null, p_hora: g.hora || null, p_motivo: (CVC.motivo || '').trim() || null, p_alumnos: ids }) });
+    CVC.busy = false;
+    if (!r || !r.total){ toast('Nadie quedó alcanzado: ya avisaron, ya estaban cancelados o la clase es de otro profe.', true); cvcPintar(true); return; }
+    CVC.res = { cid: r.cancelacion_id, items: r.items || [] };
+    toast('Clase cancelada ✓ Mandá el WhatsApp');
+    await cvcCargar(true);
+  }catch(e){ CVC.busy = false; toast(extraerMensajeError(e), true); cvcPintar(true); }
+}
+async function cvcDeshacer(lista){
+  if (CVC.busy) return;
+  CVC.busy = true;
+  try{
+    for (const id of String(lista).split(',').filter(Boolean)) await sb('rpc/cv_deshacer_cancelacion', { method: 'POST', body: JSON.stringify({ p_cancelacion_id: id }) });
+    CVC.busy = false; CVC.res = null; toast('Cancelación deshecha: se quitaron las clases a favor');
+    await cvcCargar();
+  }catch(e){ CVC.busy = false; toast(extraerMensajeError(e), true); }
+}
+// --- desde la ficha del alumno (pestaña Cuota): "Canceló el profe" para esa fecha, solo para este alumno ---
+async function cvFProfeCancela(){
+  if (!CVF || !CVF.sel || CVF.busy) return;
+  CVF.busy = true; const f = CVF.sel, d = CVF.dias[cvDow(f)] || {};
+  try{
+    const r = await sb('rpc/cv_cancelar_clase', { method: 'POST', body: JSON.stringify({ p_fecha: f, p_profesor_id: d.prof || null, p_hora: d.hora || null, p_motivo: null, p_alumnos: [CVF.id] }) });
+    CVF.busy = false;
+    if (!r || !r.total){ toast('No se pudo: ya avisó ese día, ya tenía la clase a favor o la clase es de otro profe.', true); cvFichaPintar(true); return; }
+    CVF.wa = { item: r.items[0], cid: r.cancelacion_id, fecha: f }; CVF.sel = null; CVF.mover = false;
+    toast('Anotado: 1 clase a favor para el mes que viene ✓');
+    await cvFichaRecargar();
+  }catch(e){ CVF.busy = false; toast(extraerMensajeError(e), true); cvFichaPintar(true); }
+}
+function cvcWaBox(){
+  const w = CVF && CVF.wa; if (!w) return '';
+  const wa = cvcWaLink(w.item.telefono, w.item.mensaje);
+  return `<div class="cv-acc"><div><b>✓ Clase del ${xe(cvDiaTxt(w.fecha))} cancelada por el profe</b>: queda 1 clase a favor para el mes que viene${w.item.tiene_app ? ' y se le avisó en la app' : ''}.</div>
+    <div class="row" style="margin-top:8px;flex-wrap:wrap;gap:8px;">${wa ? `<a class="cv-wa" href="${xe(wa)}" target="_blank" rel="noopener">💬 Avisar por WhatsApp</a>` : '<span class="muted" style="font-size:12.5px;">Sin teléfono cargado.</span>'}
+      <button type="button" class="ghost" onclick="cvFWaCopiar()">Copiar mensaje</button><button type="button" class="ghost" onclick="cvFWaDeshacer()">Deshacer</button><button type="button" class="ghost" onclick="CVF.wa=null;cvFichaPintar(true)">Cerrar</button></div></div>`;
+}
+async function cvFWaCopiar(){ try{ await navigator.clipboard.writeText(CVF.wa.item.mensaje); toast('Mensaje copiado ✓'); }catch(e){ toast('No se pudo copiar.', true); } }
+async function cvFWaDeshacer(){
+  if (!CVF || !CVF.wa || CVF.busy) return;
+  CVF.busy = true;
+  try{
+    const cr = await sb(`cv_creditos?select=id&cancelacion_id=eq.${CVF.wa.cid}`);
+    if ((cr || []).length > 1){ CVF.busy = false; toast('Esa cancelación incluye a otros alumnos: deshacela desde ❌ Cancelar clase (menú).', true); return; }
+    await sb('rpc/cv_deshacer_cancelacion', { method: 'POST', body: JSON.stringify({ p_cancelacion_id: CVF.wa.cid }) }); toast('Cancelación deshecha'); CVF.wa = null; CVF.busy = false; await cvFichaRecargar(); }
+  catch(e){ CVF.busy = false; toast(extraerMensajeError(e), true); }
 }
 
 function previewMontoCobro(alumnoId){
