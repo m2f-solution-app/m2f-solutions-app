@@ -367,6 +367,21 @@ if ('serviceWorker' in navigator) window.addEventListener('load', function(){ tr
   .cv-msgprev{ margin-top:4px; padding:10px 12px; border-radius:10px; border:1px solid var(--border); background:var(--panel3); font-size:13px; white-space:pre-wrap; }
   a.cv-wa{ display:inline-flex; align-items:center; gap:4px; padding:7px 12px; border-radius:999px; background:var(--accent); color:#1a1208; font-weight:700; font-size:13px; text-decoration:none; white-space:nowrap; }
   button.cv-cp{ width:auto; padding:6px 10px; font-size:12.5px; }
+  /* (v157b) Semana */
+  .cv-tabs{ display:flex; gap:8px; margin:0 0 12px; }
+  .cv-tabs button{ flex:1; width:auto; padding:9px 10px; border-radius:999px; border:1px solid var(--border); background:var(--panel2); color:var(--text); font-weight:700; font-size:13.5px; }
+  .cv-tabs button.on{ border-color:var(--accent); background:var(--note-bg); }
+  .cv-wd{ border:1px solid var(--border); border-radius:14px; background:var(--panel2); padding:10px 12px; margin-bottom:10px; }
+  .cv-wd.hoy{ border-color:var(--accent); }
+  .cv-wd.pas{ opacity:.6; }
+  .cv-wh{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:14px; }
+  .cv-hoy{ font-size:11px; font-weight:800; padding:2px 8px; border-radius:999px; background:var(--accent); color:#1a1208; }
+  .cv-wc{ margin-top:8px; padding:9px 11px; border-radius:11px; border:1px solid var(--border); background:var(--panel3); cursor:pointer; }
+  .cv-wc.canc{ border-style:dashed; opacity:.75; }
+  .cv-wt{ display:flex; justify-content:space-between; align-items:baseline; gap:10px; font-size:14px; flex-wrap:wrap; }
+  .cv-wns{ display:flex; flex-wrap:wrap; gap:4px 6px; margin-top:5px; }
+  .cv-wn{ font-size:12.5px; padding:2px 8px; border-radius:999px; background:var(--panel2); border:1px solid var(--border); }
+  .cv-wn.x{ color:var(--muted); }
   /* (v153) Cuota: desde cuándo cuenta */
   .cuo-vig{ margin-top:12px; padding:12px; border:1px solid var(--border); border-radius:12px; background:var(--panel2); }
   .cuo-line{ font-size:14.5px; margin-bottom:6px; }
@@ -2456,7 +2471,7 @@ if ('serviceWorker' in navigator) window.addEventListener('load', function(){ tr
     <button class="tt-btn" id="ttRecepcion" onclick="cambiarSubvista('recepcion')" style="display:none;" title="Recepción"><span class="tt-ico">🛎️</span><span class="tt-lbl">Recepción</span></button>
     <button class="tt-btn" id="ttAgenda" onclick="cambiarSubvista('agenda')" title="Agenda"><span class="tt-ico">📋</span><span class="tt-lbl">Agenda</span></button>
     <button class="tt-btn" id="ttClases" onclick="cambiarSubvista('clases')" title="Clases"><span class="tt-ico">📆</span><span class="tt-lbl">Clases</span></button>
-    <button class="tt-btn" id="ttCvClases" onclick="cambiarSubvista('cvclases')" style="display:none;" title="Cancelar clase"><span class="tt-ico">❌</span><span class="tt-lbl">Cancelar clase</span></button>
+    <button class="tt-btn" id="ttCvClases" onclick="cambiarSubvista('cvclases')" style="display:none;" title="Clases fijas"><span class="tt-ico">🗓️</span><span class="tt-lbl">Clases fijas</span></button>
     <button class="tt-btn" id="ttAtletismo" onclick="cambiarSubvista('atletismo')" style="display:none;" title="Atletismo"><span class="tt-ico">🏃</span><span class="tt-lbl">Atletismo</span></button>
     <button class="tt-btn" id="ttEspeciales" onclick="cambiarSubvista('especiales')" style="display:none;" title="Rutinas especiales por alumno"><span class="tt-ico">⭐</span><span class="tt-lbl">Rutinas especiales</span></button>
     <button class="tt-btn" id="ttEquipo" onclick="cambiarSubvista('equipo')" title="Seguimiento Equipo"><span class="tt-ico">⚽</span><span class="tt-lbl">Seguimiento Equipo</span></button>
@@ -2517,7 +2532,7 @@ if ('serviceWorker' in navigator) window.addEventListener('load', function(){ tr
     <div class="side-item" id="menuRecepcion" onclick="cambiarSubvista('recepcion')" style="display:none;" title="Recepción"><span class="side-ico">🛎️</span><span class="side-label">Recepción</span></div>
     <div class="side-item" id="menuAgenda" onclick="cambiarSubvista('agenda')" title="Agenda"><span class="side-ico">📋</span><span class="side-label">Agenda</span></div>
     <div class="side-item" id="menuClases" onclick="cambiarSubvista('clases')" title="Clases"><span class="side-ico">📆</span><span class="side-label">Clases</span></div>
-    <div class="side-item" id="menuCvClases" onclick="cambiarSubvista('cvclases')" style="display:none;" title="Cancelar clase"><span class="side-ico">❌</span><span class="side-label">Cancelar clase</span></div>   <!-- (v157) -->
+    <div class="side-item" id="menuCvClases" onclick="cambiarSubvista('cvclases')" style="display:none;" title="Clases fijas"><span class="side-ico">🗓️</span><span class="side-label">Clases fijas</span></div>   <!-- (v157) -->
     <div class="side-item" id="menuAtletismo" onclick="cambiarSubvista('atletismo')" style="display:none;" title="Atletismo"><span class="side-ico">🏃</span><span class="side-label">Atletismo</span></div>
     <div class="side-item" id="menuEspeciales" onclick="cambiarSubvista('especiales')" style="display:none;" title="Rutinas especiales por alumno"><span class="side-ico">⭐</span><span class="side-label">Rutinas especiales por alumno</span></div>
     <div class="side-item" id="menuEquipo" onclick="cambiarSubvista('equipo')" title="Equipo"><span class="side-ico">⚽</span><span class="side-label">Equipo</span></div>
@@ -3385,7 +3400,7 @@ if ('serviceWorker' in navigator) window.addEventListener('load', function(){ tr
       <!-- (v157) Cancelar clase (cuota variable) -->
       <div id="subvistaCvClases" style="display:none;">
         <div class="card">
-          <h2 style="margin:0 0 6px;">❌ Cancelar clase</h2>
+          <h2 style="margin:0 0 10px;">🗓️ Clases fijas</h2>
           <div id="cvcBody" class="muted">Cargando…</div>
         </div>
       </div>
@@ -17521,7 +17536,7 @@ async function cvAluQuitar(){
 // ---------- (v157) CUOTA VARIABLE · el profe cancela una clase (clase a favor + aviso en la app + WhatsApp armado) ----------
 // SQL: v154 (cv_cancelar_clase, cv_deshacer_cancelacion). Pantalla "Cancelar clase" (menú del personal) y botón en ficha → Cuota.
 // Cada alumno alcanzado recibe 1 clase a favor para el mes siguiente (solo ese mes) + campana en la app. El WhatsApp lo manda el personal con un toque.
-const CVC = { profs: [], fecha: null, cargando: false, grupos: [], err: '', sel: null, marcados: {}, motivo: '', res: null, busy: false };
+const CVC = { tab: 'semana', abrirKey: null, profs: [], fecha: null, cargando: false, grupos: [], err: '', sel: null, marcados: {}, motivo: '', res: null, busy: false };
 const CVC_TPL = 'Hola {nombre}! No vamos a poder dar la clase del {dia} {fecha}{hora}. Te queda 1 clase a favor para el mes que viene. Disculpá las molestias. — {gym}';
 const CV_DIAS_LARGO = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
 function cvcVisible(){ return cvOn() && CV.ok === true && cvStaff(); }
@@ -17552,61 +17567,130 @@ function cvcMensaje(nombre, fecha, hora){
 function cvcEntrar(){
   if (!cvcVisible()){ const c = document.getElementById('cvcBody'); if (c) c.innerHTML = '<div class="muted">Esta sección necesita el módulo Cuota variable.</div>'; return; }
   if (!CVC.fecha) CVC.fecha = cvIso(new Date());
-  cvcCargar();
+  if (!CVW.lunes) CVW.lunes = cvwLunes(cvIso(new Date()));
+  if (CVC.tab === 'dia') cvcCargar(); else cvwCargar();
+}
+function cvcTab(t){ CVC.tab = t; if (t === 'dia') cvcCargar(); else cvwCargar(); }
+function cvcTabsHtml(){
+  return `<div class="cv-tabs"><button type="button" class="${CVC.tab === 'semana' ? 'on' : ''}" onclick="cvcTab('semana')">📅 Semana</button><button type="button" class="${CVC.tab === 'dia' ? 'on' : ''}" onclick="cvcTab('dia')">❌ Día y cancelar</button></div>`;
+}
+// Trae todo lo que hace falta para armar las clases de un rango de fechas
+async function cvcFetch(desde, hasta){
+  if (!cvcProfs().length){ try{ CVC.profs = (await sb('profesores?select=id,nombre,perfil_id,activo')) || []; }catch(e){ CVC.profs = []; } }
+  const rng = c => `${c}=gte.${desde}&${c}=lte.${hasta}`;
+  const [ag, cam, mov, cre] = await Promise.all([
+    sb('cv_agenda?select=alumno_id,hora,profesor_id,dia_semana&activo=eq.true&limit=10000'),
+    sb(`cv_cambios?select=alumno_id,accion,fecha&${rng('fecha')}&limit=10000`),
+    sb(`cv_cambios?select=alumno_id,fecha_nueva&accion=eq.mover&${rng('fecha_nueva')}&limit=10000`),
+    sb(`cv_creditos?select=alumno_id,cancelacion_id,fecha_clase&motivo=eq.profe_falto&${rng('fecha_clase')}&limit=10000`)]);
+  const ids = [...new Set([...(ag || []).map(x => x.alumno_id), ...(mov || []).map(x => x.alumno_id)])];
+  let als = [];
+  const partes = []; for (let i = 0; i < ids.length; i += 80) partes.push(ids.slice(i, i + 80));
+  (await Promise.all(partes.map(p => sb(`alumnos?select=id,nombre,telefono,perfil_id,activo&id=in.(${p.join(',')})&limit=200`)))).forEach(r => { als = als.concat(r || []); });
+  const A = {}; als.forEach(a => { if (a.activo !== false) A[a.id] = a; });
+  return { ag: ag || [], cam: cam || [], mov: mov || [], cre: cre || [], A };
+}
+// Arma los grupos (profe + hora) de UN día a partir de los datos traídos
+function cvcGruposDe(f, D){
+  const dow = cvDow(f), A = D.A, yo = cvcMiProfe(), G = {};
+  const camb = {}; D.cam.forEach(c => { if (c.fecha === f) camb[c.alumno_id] = c.accion; });
+  const cred = {}; D.cre.forEach(c => { if (c.fecha_clase === f) cred[c.alumno_id] = c.cancelacion_id; });
+  const estadoDe = id => cred[id] !== undefined ? { e: 'cancelada', cid: cred[id] }
+    : camb[id] ? { e: 'avisó', d: ({ falta: 'ya avisó que falta', mover: 'movió su clase a otro día', feriado_descuento: 'feriado: se descuenta', feriado_credito: 'feriado: a favor' })[camb[id]] || 'ya avisó', ic: ({ falta: '✋', mover: '🔁', feriado_descuento: '🎌', feriado_credito: '🎌' })[camb[id]] || '✋' }
+    : { e: 'ok' };
+  const poner = (key, prof, hora, etiqueta, id) => {
+    if (!G[key]) G[key] = { key, prof, hora, etiqueta, alumnos: [] };
+    if (G[key].alumnos.some(x => x.id === id)) return;
+    G[key].alumnos.push(Object.assign({ id, nombre: A[id].nombre, telefono: A[id].telefono, app: !!A[id].perfil_id }, estadoDe(id)));
+  };
+  const visto = new Set();
+  D.ag.forEach(x => {
+    if (x.dia_semana !== dow || !A[x.alumno_id]) return;
+    if (yo && x.profesor_id && x.profesor_id !== yo) return;      // el profe ve solo sus clases (y las sin profe fijo)
+    const h = x.hora ? String(x.hora).slice(0, 5) : null;
+    poner((x.profesor_id || '') + '|' + (h || ''), x.profesor_id || null, h, null, x.alumno_id); visto.add(x.alumno_id);
+  });
+  D.mov.forEach(x => { if (x.fecha_nueva === f && A[x.alumno_id] && !visto.has(x.alumno_id)) poner('mov', null, null, 'Movieron su clase a este día', x.alumno_id); });
+  const gr = Object.values(G).sort((a, b) => (a.key === 'mov') - (b.key === 'mov') || String(a.hora || '99').localeCompare(String(b.hora || '99')) || String(cvcProfNombre(a.prof) || '').localeCompare(String(cvcProfNombre(b.prof) || '')));
+  gr.forEach(g => g.alumnos.sort((a, b) => a.nombre.localeCompare(b.nombre)));
+  return gr;
 }
 async function cvcCargar(conservar){
   const f = CVC.fecha; if (!f) return;
   CVC.cargando = true; CVC.err = ''; CVC.sel = null; if (!conservar) CVC.res = null;
   cvcPintar();
-  try{
-    const dow = cvDow(f);
-    if (!cvcProfs().length){ try{ CVC.profs = (await sb('profesores?select=id,nombre,perfil_id,activo')) || []; }catch(e){ CVC.profs = []; } }
-    const [ag, cam, mov, cre] = await Promise.all([
-      sb(`cv_agenda?select=alumno_id,hora,profesor_id&activo=eq.true&dia_semana=eq.${dow}&limit=5000`),
-      sb(`cv_cambios?select=alumno_id,accion&fecha=eq.${f}&limit=5000`),
-      sb(`cv_cambios?select=alumno_id&accion=eq.mover&fecha_nueva=eq.${f}&limit=5000`),
-      sb(`cv_creditos?select=alumno_id,cancelacion_id&motivo=eq.profe_falto&fecha_clase=eq.${f}&limit=5000`)]);
-    const ids = [...new Set([...(ag || []).map(x => x.alumno_id), ...(mov || []).map(x => x.alumno_id)])];
-    let als = [];
-    const partes = []; for (let i = 0; i < ids.length; i += 80) partes.push(ids.slice(i, i + 80));
-    (await Promise.all(partes.map(p => sb(`alumnos?select=id,nombre,telefono,perfil_id,activo&id=in.(${p.join(',')})&limit=200`)))).forEach(r => { als = als.concat(r || []); });
-    const A = {}; als.forEach(a => { if (a.activo !== false) A[a.id] = a; });
-    const camb = {}; (cam || []).forEach(c => { camb[c.alumno_id] = c.accion; });
-    const cred = {}; (cre || []).forEach(c => { cred[c.alumno_id] = c.cancelacion_id; });
-    const yo = cvcMiProfe(), G = {};
-    const estadoDe = id => cred[id] !== undefined ? { e: 'cancelada', cid: cred[id] }
-      : camb[id] ? { e: 'avisó', d: ({ falta: 'ya avisó que falta', mover: 'movió su clase a otro día', feriado_descuento: 'feriado: se descuenta', feriado_credito: 'feriado: a favor' })[camb[id]] || 'ya avisó' }
-      : { e: 'ok' };
-    const poner = (key, prof, hora, etiqueta, id) => {
-      if (!G[key]) G[key] = { key, prof, hora, etiqueta, alumnos: [] };
-      if (G[key].alumnos.some(x => x.id === id)) return;
-      G[key].alumnos.push(Object.assign({ id, nombre: A[id].nombre, telefono: A[id].telefono, app: !!A[id].perfil_id }, estadoDe(id)));
-    };
-    const visto = new Set();
-    (ag || []).forEach(x => {
-      if (!A[x.alumno_id]) return;
-      if (yo && x.profesor_id && x.profesor_id !== yo) return;      // el profe ve solo sus clases (y las sin profe fijo)
-      const h = x.hora ? String(x.hora).slice(0, 5) : null;
-      poner((x.profesor_id || '') + '|' + (h || ''), x.profesor_id || null, h, null, x.alumno_id); visto.add(x.alumno_id);
-    });
-    (mov || []).forEach(x => { if (A[x.alumno_id] && !visto.has(x.alumno_id)) poner('mov', null, null, 'Movieron su clase a este día', x.alumno_id); });
-    CVC.grupos = Object.values(G).sort((a, b) => (a.key === 'mov') - (b.key === 'mov') || String(a.hora || '99').localeCompare(String(b.hora || '99')) || String(cvcProfNombre(a.prof) || '').localeCompare(String(cvcProfNombre(b.prof) || '')));
-    CVC.grupos.forEach(g => g.alumnos.sort((a, b) => a.nombre.localeCompare(b.nombre)));
-  }catch(e){ CVC.err = extraerMensajeError(e); CVC.grupos = []; }
-  CVC.cargando = false; cvcPintar();
+  try{ CVC.grupos = cvcGruposDe(f, await cvcFetch(f, f)); }
+  catch(e){ CVC.err = extraerMensajeError(e); CVC.grupos = []; }
+  CVC.cargando = false;
+  if (CVC.abrirKey){ const i = CVC.grupos.findIndex(g => g.key === CVC.abrirKey); CVC.abrirKey = null; if (i >= 0){ cvcAbrir(i); return; } }
+  cvcPintar();
 }
 function cvcDia(n){
   const r = cvcRango(), nf = cvcMas(CVC.fecha, n);
   if (nf < r.min || nf > r.max) return;
-  CVC.fecha = nf; cvcCargar();
+  CVC.fecha = nf; CVC.tab = 'dia'; cvcCargar();
 }
 function cvcIr(v){
   const r = cvcRango();
   if (!/^\d{4}-\d{2}-\d{2}$/.test(v || '')) return;
   if (v < r.min || v > r.max){ toast('Elegí una fecha entre hace 7 días y 60 días adelante.', true); cvcPintar(); return; }
-  CVC.fecha = v; cvcCargar();
+  CVC.fecha = v; CVC.tab = 'dia'; cvcCargar();
 }
-function cvcHoy(){ CVC.fecha = cvIso(new Date()); cvcCargar(); }
+function cvcHoy(){ CVC.fecha = cvIso(new Date()); CVC.tab = 'dia'; cvcCargar(); }
+// ---------- Semana: todas las clases fijas de lunes a domingo ----------
+const CVW = { lunes: null, filtro: '', dias: [], cargando: false, err: '' };
+function cvwLunes(iso){ const d = cvDow(iso); return cvcMas(iso, d === 0 ? -6 : 1 - d); }
+function cvwSem(n){
+  const h = cvIso(new Date()), min = cvwLunes(cvcMas(h, -14)), max = cvwLunes(cvcMas(h, 60)), nl = cvcMas(CVW.lunes, 7 * n);
+  if (nl < min || nl > max) return;
+  CVW.lunes = nl; cvwCargar();
+}
+function cvwHoy(){ CVW.lunes = cvwLunes(cvIso(new Date())); cvwCargar(); }
+function cvwFiltro(v){ CVW.filtro = v; cvcPintar(true); }
+async function cvwCargar(){
+  CVW.cargando = true; CVW.err = ''; cvcPintar();
+  try{
+    const dom = cvcMas(CVW.lunes, 6), D = await cvcFetch(CVW.lunes, dom);
+    CVW.dias = [0, 1, 2, 3, 4, 5, 6].map(i => { const f = cvcMas(CVW.lunes, i); return { fecha: f, grupos: cvcGruposDe(f, D) }; });
+  }catch(e){ CVW.err = extraerMensajeError(e); CVW.dias = []; }
+  CVW.cargando = false; cvcPintar();
+}
+function cvwIrDia(f, key){
+  const r = cvcRango(); CVC.fecha = f; CVC.tab = 'dia'; CVC.abrirKey = (f >= r.min && f <= r.max) ? key : null; cvcCargar();
+}
+function cvwHtml(){
+  const hoy = cvIso(new Date()), r = cvcRango(), lun = CVW.lunes, dom = cvcMas(lun, 6);
+  const h0 = cvIso(new Date()), min = cvwLunes(cvcMas(h0, -14)), max = cvwLunes(cvcMas(h0, 60));
+  const admin = !cvcMiProfe();
+  const profs = cvcProfs().filter(p => p.activo !== false);
+  const filtro = admin ? `<div class="field" style="margin:0 0 10px;"><label>Profesor</label><select onchange="cvwFiltro(this.value)"><option value="">Todos los profesores</option>${profs.map(p => `<option value="${xe(p.id)}" ${CVW.filtro === p.id ? 'selected' : ''}>${xe(p.nombre)}</option>`).join('')}<option value="_none" ${CVW.filtro === '_none' ? 'selected' : ''}>Sin profe fijo</option></select></div>` : '';
+  const nav = `<div class="cv-mes" style="flex-wrap:wrap;"><button type="button" class="ghost" onclick="cvwSem(-1)" aria-label="Semana anterior" ${lun <= min ? 'disabled' : ''}>‹</button>
+    <b>${xe(cvDiaTxt(lun))}/${xe(lun.slice(5, 7))} al ${xe(cvDiaTxt(dom))}/${xe(dom.slice(5, 7))}</b>
+    <button type="button" class="ghost" onclick="cvwSem(1)" aria-label="Semana siguiente" ${lun >= max ? 'disabled' : ''}>›</button>
+    ${lun !== cvwLunes(hoy) ? '<button type="button" class="ghost" style="width:auto;" onclick="cvwHoy()">Esta semana</button>' : ''}</div>`;
+  let cuerpo;
+  if (CVW.cargando) cuerpo = '<div class="muted">Cargando…</div>';
+  else if (CVW.err) cuerpo = `<div class="rpx-ban">${xe(CVW.err)}</div>`;
+  else {
+    const pasa = g => !CVW.filtro || (CVW.filtro === '_none' ? !g.prof : g.prof === CVW.filtro);
+    let total = 0, cupos = 0;
+    const dias = CVW.dias.map(d => {
+      const gr = d.grupos.filter(pasa), fer = (CV.feriados || []).find(x => x.fecha === d.fecha);
+      const n = gr.reduce((s, g) => s + g.alumnos.length, 0); total += gr.length; cupos += n;
+      const clic = d.fecha >= r.min && d.fecha <= r.max;
+      const cards = gr.map(g => {
+        const prof = g.prof ? cvcProfNombre(g.prof) : null;
+        const tit = g.etiqueta ? xe(g.etiqueta) : `${g.hora ? xe(g.hora) : 'Sin hora'}${prof ? ' · ' + xe(prof) : ' · Sin profe fijo'}`;
+        const canc = g.alumnos.length && g.alumnos.every(a => a.e === 'cancelada');
+        const nombres = g.alumnos.map(a => `<span class="cv-wn ${a.e !== 'ok' ? 'x' : ''}">${xe(a.nombre.split(' ').slice(0, 2).join(' '))}${a.e === 'cancelada' ? ' ✓' : a.e === 'avisó' ? ' ' + a.ic : ''}</span>`).join('');
+        return `<div class="cv-wc ${canc ? 'canc' : ''}" ${clic ? `onclick="cvwIrDia('${d.fecha}', '${xe(g.key)}')" role="button" tabindex="0"` : ''}><div class="cv-wt"><b>${tit}</b><span class="muted">${g.alumnos.length} alumno${g.alumnos.length === 1 ? '' : 's'}${canc ? ' · Cancelada' : ''}</span></div><div class="cv-wns">${nombres}</div></div>`;
+      }).join('');
+      return `<div class="cv-wd ${d.fecha === hoy ? 'hoy' : ''} ${d.fecha < hoy ? 'pas' : ''}"><div class="cv-wh"><b>${xe(cvDiaTxt(d.fecha))}</b> <span class="muted">${xe(d.fecha.slice(8, 10) + '/' + d.fecha.slice(5, 7))}</span>${d.fecha === hoy ? ' <span class="cv-hoy">Hoy</span>' : ''}${fer ? ` <span title="${xe(fer.nombre || 'Feriado')}">🎌 ${xe(fer.nombre || 'Feriado')}</span>` : ''}<span class="muted" style="margin-left:auto;">${gr.length ? `${gr.length} clase${gr.length === 1 ? '' : 's'} · ${n} alumno${n === 1 ? '' : 's'}` : 'Sin clases'}</span></div>${cards}</div>`;
+    }).join('');
+    cuerpo = `<div class="muted" style="font-size:12.5px;margin:0 0 8px;">${total} clase${total === 1 ? '' : 's'} · ${cupos} lugar${cupos === 1 ? '' : 'es'} esta semana. Tocá una clase para cancelarla o ver el detalle. ✓ cancelada · ✋ avisó · 🔁 movió · 🎌 feriado</div>${dias}`;
+  }
+  return `${filtro}${nav}${cuerpo}`;
+}
 function cvcAbrir(i){
   CVC.sel = CVC.sel === i ? null : i; CVC.marcados = {}; CVC.motivo = '';
   if (CVC.sel !== null) (CVC.grupos[i].alumnos || []).forEach(a => { if (a.e === 'ok') CVC.marcados[a.id] = true; });
@@ -17621,6 +17705,7 @@ function cvcEstadoTxt(a){
 }
 function cvcPintar(sinScroll){
   const el = document.getElementById('cvcBody'); if (!el) return;
+  if (CVC.tab === 'semana'){ el.innerHTML = cvcTabsHtml() + cvwHtml(); return; }
   const r = cvcRango(), f = CVC.fecha || cvIso(new Date()), hoy = cvIso(new Date());
   const fer = (CV.feriados || []).find(x => x.fecha === f);
   const nav = `<div class="cv-mes" style="flex-wrap:wrap;"><button type="button" class="ghost" onclick="cvcDia(-1)" aria-label="Día anterior" ${f <= r.min ? 'disabled' : ''}>‹</button>
@@ -17635,7 +17720,7 @@ function cvcPintar(sinScroll){
   else cuerpo = CVC.grupos.map((g, i) => cvcGrupoHtml(g, i, f)).join('');
   const res = CVC.res ? cvcResHtml() : '';
   const prof = cvcMiProfe();
-  el.innerHTML = `<div class="muted" style="font-size:13px;margin-bottom:10px;">Cuando un profe no puede dar una clase, cada alumno recibe <b>1 clase a favor</b> para el mes que viene (vale solo ese mes) y un aviso en su app. El WhatsApp lo mandás vos con un toque.</div>
+  el.innerHTML = `${cvcTabsHtml()}<div class="muted" style="font-size:13px;margin-bottom:10px;">Cuando un profe no puede dar una clase, cada alumno recibe <b>1 clase a favor</b> para el mes que viene (vale solo ese mes) y un aviso en su app. El WhatsApp lo mandás vos con un toque.</div>
     ${nav}${fer ? `<div class="cv-pendfer">🎌 ${xe(f.slice(8, 10) + '/' + f.slice(5, 7))} es feriado${fer.nombre ? ' (' + xe(fer.nombre) + ')' : ''}. Los alumnos deciden por su cuenta si descuentan, dejan a favor o mueven la clase; cancelá solo si de verdad no hay clase.</div>` : ''}
     ${res}${cuerpo}`;
 }
