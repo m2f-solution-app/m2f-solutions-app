@@ -2588,12 +2588,24 @@ if ('serviceWorker' in navigator) window.addEventListener('load', function(){ tr
                 <option value="">-- sin definir --</option>
               </select>
             </div>
-            <button onclick="crearAlumno()" id="btnCrearAlumno" style="align-self:end;">Agregar alumno</button>
           </div>
           <div class="muted" style="margin-top:6px;">
             El DNI se usa para generar el acceso a la app del alumno (usuario y contraseña inicial). Es opcional al crearlo, pero necesario para darle acceso.
           </div>
 
+          <div id="nuevoAlumnoPlanBloque" style="margin-top:10px;">
+            <div class="row">
+              <div class="field" style="flex:1; min-width:180px;">
+                <label>Plan</label>
+                <select id="nuevoAlumnoPlan">
+                  <option value="">-- sin plan por ahora --</option>
+                </select>
+              </div>
+              <div class="field" id="nuevoAlumnoSedeWrap" style="flex:1; min-width:160px; display:none;"><label>📍 Sede</label><select id="nuevoAlumnoSede"></select></div>
+              <div class="muted" style="align-self:end; padding-bottom:10px;">La forma de pago y el monto se cargan aparte, en "💰 Finanzas", el día que el alumno pague.</div>
+            </div>
+            <div id="nuevoAlumnoCv" style="display:none;"></div>   <!-- (v167) cuota variable: zona y días -->
+          </div>
           <div style="margin-top:10px;">
             <span class="muted" style="cursor:pointer; text-decoration:underline;" onclick="toggleDatosNuevoAlumno()" id="toggleDatosNuevoAlumno">+ Agregar datos de contacto y físicos (opcional)</span>
           </div>
@@ -2624,18 +2636,8 @@ if ('serviceWorker' in navigator) window.addEventListener('load', function(){ tr
               <div class="field" style="flex:1; min-width:200px;"><label>Email</label><input type="email" id="nuevoAlumnoEmail" placeholder="alumno@mail.com"></div>
               <div class="field" style="flex:2; min-width:220px;"><label>Dirección</label><input id="nuevoAlumnoDireccion" placeholder="Calle, número, ciudad"></div>
             </div>
-            <hr>
-            <div class="row">
-              <div class="field" style="flex:1; min-width:180px;">
-                <label>Plan</label>
-                <select id="nuevoAlumnoPlan">
-                  <option value="">-- sin plan por ahora --</option>
-                </select>
-              </div>
-              <div class="field" id="nuevoAlumnoSedeWrap" style="flex:1; min-width:160px; display:none;"><label>📍 Sede</label><select id="nuevoAlumnoSede"></select></div>
-              <div class="muted" style="align-self:end; padding-bottom:10px;">La forma de pago y el monto se cargan aparte, en "💰 Finanzas", el día que el alumno pague.</div>
-            </div>
           </div>
+          <div class="row" style="margin-top:14px;"><button onclick="crearAlumno()" id="btnCrearAlumno" style="flex:1;">Agregar alumno</button></div>   <!-- (v167) al final: primero plan, zona y días -->
           </div>
 
     </div>
@@ -3378,6 +3380,7 @@ if ('serviceWorker' in navigator) window.addEventListener('load', function(){ tr
       <div id="subvistaAgenda">
         <div class="vista-eyebrow" id="agendaEyebrow"></div>
         <div class="vista-titulo">Agenda</div>
+        <div id="agSwitchA"></div>   <!-- (v167) Turnos | Clases fijas -->
         <div class="card">
           <div class="row">
             <div class="field" style="flex:1; min-width:200px;">
@@ -3412,8 +3415,11 @@ if ('serviceWorker' in navigator) window.addEventListener('load', function(){ tr
 
       <!-- (v157) Cancelar clase (cuota variable) -->
       <div id="subvistaCvClases" style="display:none;">
+        <div class="vista-titulo">Agenda</div>
+        <div id="agSwitchC"></div>   <!-- (v167) Turnos | Clases fijas -->
         <div class="card">
-          <h2 style="margin:0 0 10px;">🗓️ Clases fijas</h2>
+          <h2 style="margin:0 0 4px;">🗓️ Clases fijas de la semana</h2>
+          <div class="muted" style="font-size:13px;margin-bottom:12px;">Alumnos que entrenan los <b>mismos días todas las semanas</b> (cuota variable). Acá ves a quién le toca clase cada día y, si un profe no puede dar una clase, la cancelás y cada alumno recibe aviso y 1 clase a favor.</div>
           <div id="cvcBody" class="muted">Cargando…</div>
         </div>
       </div>
@@ -5403,7 +5409,7 @@ function atlIniciarAlu(){
   atlCargarVista('aluAtletismoContenido', id || '');
 }
 
-const APP_VERSION = 165;
+const APP_VERSION = 167;
 let ES_PERSONAL = false;   // (v132) cuenta personal (gimnasios.tipo = 'personal'); se calcula en perAplicar()
 // (v96) Fecha de la última actualización: se cambia junto con APP_VERSION en cada entrega. Se muestra en la
 // pantalla de inicio y en el menú de cuenta ("v94 · actualizada el 5/10/2026").
@@ -12212,7 +12218,7 @@ function cambiarSubvista(v){
   document.getElementById('menuSeguimiento').classList.toggle('active', v==='seguimiento');
   document.getElementById('menuLogros').classList.toggle('active', v==='logros');
   document.getElementById('menuProfesores').classList.toggle('active', v==='profesores');
-  document.getElementById('menuAgenda').classList.toggle('active', v==='agenda');
+  document.getElementById('menuAgenda').classList.toggle('active', v==='agenda' || v==='cvclases');   // (v167)
   document.getElementById('menuHorarios').classList.toggle('active', v==='horarios');
   document.getElementById('menuClases').classList.toggle('active', v==='clases');
   document.getElementById('menuAtletismo').classList.toggle('active', v==='atletismo');
@@ -12233,7 +12239,7 @@ function cambiarSubvista(v){
   document.getElementById('ttSeguimiento').classList.toggle('active', v==='seguimiento');
   document.getElementById('ttLogros').classList.toggle('active', v==='logros');
   document.getElementById('ttProfesores').classList.toggle('active', v==='profesores');
-  document.getElementById('ttAgenda').classList.toggle('active', v==='agenda');
+  document.getElementById('ttAgenda').classList.toggle('active', v==='agenda' || v==='cvclases');   // (v167)
   document.getElementById('ttHorarios').classList.toggle('active', v==='horarios');
   document.getElementById('ttClases').classList.toggle('active', v==='clases');
   document.getElementById('ttAtletismo').classList.toggle('active', v==='atletismo');
@@ -16508,7 +16514,7 @@ function renderCobranzas(){
 }
 // Detalle del cobro: ventana emergente con las mismas acciones de siempre (cobrar, QR, historial)
 async function abrirCobroAlumno(id, abrirForm){
-  if (typeof cvManeja === 'function' && cvManeja(id)){ cvFichaIr(id); return; }   // (v155) cuota variable: se cobra desde la pestaña Cuota de la ficha
+  if (typeof cvManeja === 'function' && cvManeja(id)){ cvFichaIr(id); return; }   // (v155) cuota variable: se cobra desde la pestaña Plan de la ficha
   FICHA_ALU = null; FICHA_PROF = null; const tok = ++FICHA_TOK;
   const box = document.getElementById('fichaBox');
   box.className = 'modal-box x-box x-ficha x-cobro';
@@ -17840,15 +17846,22 @@ async function cvAluQuitar(){
 }
 
 // ---------- (v157) CUOTA VARIABLE · el profe cancela una clase (clase a favor + aviso en la app + WhatsApp armado) ----------
-// SQL: v154 (cv_cancelar_clase, cv_deshacer_cancelacion). Pantalla "Cancelar clase" (menú del personal) y botón en ficha → Cuota.
+// SQL: v154 (cv_cancelar_clase, cv_deshacer_cancelacion). Pantalla "Cancelar clase" (menú del personal) y botón en ficha → Plan.
 // Cada alumno alcanzado recibe 1 clase a favor para el mes siguiente (solo ese mes) + campana en la app. El WhatsApp lo manda el personal con un toque.
 const CVC = { profsOk: false, profsPend: false, sumando: false, tab: 'semana', abrirKey: null, profs: [], fecha: null, cargando: false, grupos: [], err: '', sel: null, marcados: {}, motivo: '', res: null, busy: false };
 const CVC_TPL = 'Hola {nombre}! No vamos a poder dar la clase del {dia} {fecha}{hora}. Te queda 1 clase a favor para el mes que viene. Disculpá las molestias. — {gym}';
 const CV_DIAS_LARGO = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
 function cvcVisible(){ return cvOn() && CV.ok === true && cvStaff(); }
 function cvcMenu(){
+  ['menuCvClases', 'ttCvClases'].forEach(id => { const e = document.getElementById(id); if (e) e.style.display = 'none'; });   // (v167) ahora vive dentro de Agenda
+  cvcSwitchPintar();
+}
+function cvcSwitchPintar(){   // (v167) selector "Turnos | Clases fijas" arriba de Agenda
   const on = cvcVisible();
-  ['menuCvClases', 'ttCvClases'].forEach(id => { const e = document.getElementById(id); if (e) e.style.display = on ? '' : 'none'; });
+  const h = a => `<div class="cv-tabs" style="max-width:420px;"><button type="button" class="${a === 'a' ? 'on' : ''}" onclick="cambiarSubvista('agenda')">📋 Turnos</button><button type="button" class="${a === 'c' ? 'on' : ''}" onclick="cambiarSubvista('cvclases')">🗓️ Clases fijas</button></div>`;
+  const a = document.getElementById('agSwitchA'), c = document.getElementById('agSwitchC');
+  if (a) a.innerHTML = on ? h('a') : '';
+  if (c) c.innerHTML = on ? h('c') : '';
 }
 function cvcProfs(){ return (PROFESORES_CACHE && PROFESORES_CACHE.length) ? PROFESORES_CACHE : CVC.profs; }
 function cvcMiProfe(){
@@ -18062,7 +18075,7 @@ function cvcPintar(sinScroll){
   let cuerpo = '';
   if (CVC.cargando) cuerpo = '<div class="muted">Cargando…</div>';
   else if (CVC.err) cuerpo = `<div class="rpx-ban">${xe(CVC.err)}</div>`;
-  else if (!CVC.grupos.length) cuerpo = `<div class="muted" style="padding:10px 0;">No hay alumnos con clase fija ese día${cvcMiProfe() ? ' a tu cargo' : ''}. Los días fijos se cargan en la ficha del alumno → Cuota.</div>`;
+  else if (!CVC.grupos.length) cuerpo = `<div class="muted" style="padding:10px 0;">No hay alumnos con clase fija ese día${cvcMiProfe() ? ' a tu cargo' : ''}. Los días fijos se cargan en la ficha del alumno → Plan.</div>`;
   else cuerpo = CVC.grupos.map((g, i) => cvcGrupoHtml(g, i, f)).join('');
   const res = CVC.res ? cvcResHtml() : '';
   const prof = cvcMiProfe();
@@ -18389,9 +18402,53 @@ async function cargarPlanesEnSelectAlumno(){
   const planes = await sb(`planes?gimnasio_id=eq.${gimId}&activo=eq.true&order=precio_transferencia.asc`);
   PLANES_CACHE = planes;
   const opts = '<option value="">-- sin plan por ahora --</option>' +
-    planes.map(p => `<option value="${p.id}">${p.nombre}${Number(p.precio_transferencia) > 0 ? ' — $' + p.precio_transferencia : ''}</option>`).join('');   // (v163) un plan de cuota variable no tiene precio fijo: no mostrar $0
+    planes.map(p => { const vc = (typeof CV !== 'undefined' && CV.precios) ? CV.precios[p.id] : null; return `<option value="${p.id}">${p.nombre}${Number(p.precio_transferencia) > 0 ? ' — $' + p.precio_transferencia : (vc != null ? ' · ' + cvMonto(vc) + ' por clase' : '')}</option>`; }).join('');   // (v163) un plan de cuota variable no tiene precio fijo: no mostrar $0
   const sel = document.getElementById('nuevoAlumnoPlan');
   if (sel) sel.innerHTML = opts;
+}
+
+// ----- (v167) Alta de alumno: plan, zona y días de entrenamiento en el mismo formulario (cuota variable) -----
+const NACV = { zona: '', dias: {} };
+function naCvVisible(){ return typeof cvcVisible === 'function' && cvcVisible(); }
+function naCvReset(){ NACV.zona = ''; NACV.dias = {}; }
+function naCvPintar(){
+  const w = document.getElementById('nuevoAlumnoCv'); if (!w) return;
+  if (!naCvVisible()){ w.style.display = 'none'; w.innerHTML = ''; return; }
+  w.style.display = '';
+  const admin = cvAdmin();
+  const zonas = (CV.zonas || []).filter(z => z.activo);
+  const profes = (PROFESORES_CACHE || []).filter(p => p.activo !== false);
+  const dias = CV_ORDEN.map(d => {
+    const on = !!NACV.dias[d], x = NACV.dias[d] || {};
+    return `<div class="cv-dia ${on ? 'on' : ''}"><label class="cv-dchk"><input type="checkbox" ${on ? 'checked' : ''} onchange="naCvDia(${d}, this.checked)"> <b>${CV_DOW[d]}</b></label>
+      ${on ? `<input type="time" value="${xe(x.hora)}" onchange="naCvDiaSet(${d}, 'hora', this.value)" aria-label="Hora ${CV_DOW[d]}">
+      <select onchange="naCvDiaSet(${d}, 'prof', this.value)" aria-label="Profesor ${CV_DOW[d]}"><option value="">Cualquier profe</option>${profes.map(p => `<option value="${p.id}" ${x.prof === p.id ? 'selected' : ''}>${xe(p.nombre)}</option>`).join('')}</select>` : ''}</div>`;
+  }).join('');
+  w.innerHTML = `<hr><h4 style="margin:6px 0 4px;">🧮 Cuota variable <span class="muted" style="font-weight:400;font-size:12.5px;">· opcional, también lo podés hacer después en su ficha → Plan</span></h4>
+    ${admin ? `<div class="field" style="max-width:380px;"><label>Zona de distancia</label><select onchange="NACV.zona = this.value"><option value="">Sin zona (sin recargo)</option>${zonas.map(z => `<option value="${z.id}" ${NACV.zona === z.id ? 'selected' : ''}>${xe(z.nombre)} · ${xe(cvRecargoTxt(z))}</option>`).join('')}</select>
+      ${zonas.length ? '' : '<div class="muted" style="font-size:12px;margin-top:4px;">Todavía no hay zonas: creálas en Mi gimnasio → Cuota variable.</div>'}</div>` : ''}
+    <div class="field"><label>Días y horarios de entrenamiento</label><div class="cv-dias">${dias}</div>
+      <div class="muted" style="font-size:12px;margin-top:6px;">Con estos días se cuentan las clases de cada mes.</div></div>`;
+}
+function naCvDia(dow, on){
+  if (on) NACV.dias[dow] = NACV.dias[dow] || { hora: '', prof: (typeof cvProfDefault === 'function' ? cvProfDefault() : '') }; else delete NACV.dias[dow];
+  naCvPintar();
+}
+function naCvDiaSet(dow, k, v){ if (NACV.dias[dow]) NACV.dias[dow][k] = v; }
+async function naCvGuardar(alumnoId){   // se llama justo después de crear al alumno
+  if (!naCvVisible() || !alumnoId) return true;
+  const quedan = Object.keys(NACV.dias).map(Number);
+  const zona = cvAdmin() ? (NACV.zona || null) : null;
+  if (!zona && !quedan.length) return true;
+  try{
+    if (zona) await cvUpsert('cv_alumno', 'alumno_id', { alumno_id: alumnoId, gimnasio_id: PERFIL_ACTUAL.gimnasio_id, zona_id: zona, precio_clase: null });
+    if (quedan.length){
+      const filas = quedan.map(d => ({ gimnasio_id: PERFIL_ACTUAL.gimnasio_id, alumno_id: alumnoId, dia_semana: d, hora: NACV.dias[d].hora || null, profesor_id: NACV.dias[d].prof || null, activo: true }));
+      await sb('cv_agenda?on_conflict=alumno_id,dia_semana', { method: 'POST', headers: { Prefer: 'resolution=merge-duplicates,return=minimal' }, body: JSON.stringify(filas) });
+    }
+    CV.alumnos[alumnoId] = true;
+    return true;
+  }catch(e){ toast('El alumno se creó, pero no se pudo guardar la zona o los días: ' + extraerMensajeError(e) + ' Cargalos desde su ficha → Plan.', true); return false; }
 }
 
 async function crearAlumno(){
@@ -18435,6 +18492,8 @@ async function crearAlumno(){
     document.getElementById('nuevoAlumnoEmail').value = '';
     document.getElementById('nuevoAlumnoDireccion').value = '';
     document.getElementById('nuevoAlumnoPlan').value = '';
+    const nuevoId = (Array.isArray(creado) && creado[0] && creado[0].id) || null;
+    await naCvGuardar(nuevoId); naCvReset();   // (v167)
     toast('Alumno agregado ✓' + (planId ? ' con plan asignado (falta registrar el primer pago en Finanzas).' : '.'));
     cerrarModalNuevoAlumno();
     await cargarPersonas();
@@ -18645,7 +18704,7 @@ function renderListaAlumnos(){
 }
 
 // ---------- Alta: formulario corto en ventana emergente (el resto se completa desde la ficha) ----------
-function toggleFormNuevoAlumno(){ try{ sucAltaAlumnoPintar(); }catch(e){} xAbrirModal('modalNuevoAlumno'); setTimeout(() => document.getElementById('nuevoAlumnoNombre')?.focus(), 60); }
+function toggleFormNuevoAlumno(){ try{ sucAltaAlumnoPintar(); }catch(e){} try{ naCvReset(); naCvPintar(); if (naCvVisible()) cargarPlanesEnSelectAlumno(); }catch(e){} xAbrirModal('modalNuevoAlumno'); setTimeout(() => document.getElementById('nuevoAlumnoNombre')?.focus(), 60); }
 function cerrarModalNuevoAlumno(){ xCerrarModal('modalNuevoAlumno'); }
 function toggleFormNuevoProfesor(){ xAbrirModal('modalNuevoProfesor'); setTimeout(() => document.getElementById('nuevoProfesorNombre')?.focus(), 60); }
 function cerrarModalNuevoProfesor(){ xCerrarModal('modalNuevoProfesor'); }
