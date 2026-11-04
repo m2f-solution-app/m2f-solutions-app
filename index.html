@@ -5397,7 +5397,7 @@ function atlIniciarAlu(){
   atlCargarVista('aluAtletismoContenido', id || '');
 }
 
-const APP_VERSION = 162;
+const APP_VERSION = 163;
 let ES_PERSONAL = false;   // (v132) cuenta personal (gimnasios.tipo = 'personal'); se calcula en perAplicar()
 // (v96) Fecha de la última actualización: se cambia junto con APP_VERSION en cada entrega. Se muestra en la
 // pantalla de inicio y en el menú de cuenta ("v94 · actualizada el 5/10/2026").
@@ -17093,7 +17093,7 @@ function cvPintar(forzar){
     <div class="suc-lista">${zonas}</div>
     ${form || '<div class="row" style="margin-top:12px;"><button type="button" onclick="cvZonaNueva()">＋ Agregar zona</button></div>'}
     <h3 class="cv-h">Valor de la clase por plan</h3>
-    ${planes || '<div class="muted">Primero creá los planes en <b>Planes</b>.</div>'}
+    ${planes}${cvPlanNuevoHtml()}
     <div class="muted" style="font-size:12px;margin-top:6px;">Es el valor de <b>una clase</b>. Si un alumno tiene un valor distinto, se lo cargás en su ficha. Sin valor cargado no se puede cobrar.</div>
     <h3 class="cv-h">Aviso de faltas</h3>
     <div class="field" style="max-width:320px;"><label>El alumno puede avisar que falta</label><select id="cvLim" onchange="cvLimiteGuardar()">${limOpts}</select></div>
@@ -17112,6 +17112,42 @@ function cvPintar(forzar){
 }
 async function cvUpsert(tabla, conflicto, fila){
   return sb(`${tabla}?on_conflict=${conflicto}`, { method: 'POST', headers: { Prefer: 'resolution=merge-duplicates,return=minimal' }, body: JSON.stringify([fila]) });
+}
+// ----- (v163) Crear un plan desde acá (valor por clase), sin ir a "Planes" -----
+function cvPlanNuevoHtml(){
+  const hay = (CV.planes || []).filter(p => p.activo !== false).length;
+  if (hay && !CV.planNuevo) return '<div class="row" style="margin-top:10px;"><button type="button" class="secondary" onclick="cvPlanNuevoAbrir(true)">＋ Agregar plan</button></div>';
+  const intro = hay ? '' : '<div class="muted" style="margin-bottom:8px;">Todavía no tenés planes. Creá el primero acá (por ejemplo <b>Plan mensual</b>) y poné cuánto vale cada clase.</div>';
+  return `${intro}<div class="suc-form" style="margin-top:10px;"><div style="font-weight:700;margin-bottom:10px;">Nuevo plan</div>
+    <div class="suc-grid"><div class="field"><label>Nombre del plan</label><input id="cvPN_nombre" maxlength="60" placeholder="Ej: Plan mensual"></div>
+    <div class="field"><label>Valor de la clase ($)</label><input id="cvPN_valor" type="number" inputmode="decimal" min="0" step="0.01" placeholder="Ej: 12000"></div></div>
+    <div class="row" style="margin-top:12px;"><button type="button" id="cvPNBtn" onclick="cvPlanCrear()">Crear plan</button>${hay ? '<button type="button" class="ghost" onclick="cvPlanNuevoAbrir(false)">Cancelar</button>' : ''}</div></div>`;
+}
+function cvPlanNuevoAbrir(v){ CV.planNuevo = !!v; cvPintar(true); }
+async function cvPlanCrear(){
+  if (CV.busy) return;
+  const nombre = ((document.getElementById('cvPN_nombre') || {}).value || '').trim();
+  const valor = Number((document.getElementById('cvPN_valor') || {}).value);
+  if (nombre.length < 2){ toast('Poné el nombre del plan.', true); return; }
+  if (!(valor > 0)){ toast('Poné cuánto vale cada clase.', true); return; }
+  if (!PERFIL_ACTUAL || !PERFIL_ACTUAL.gimnasio_id) return;
+  CV.busy = true; const btn = document.getElementById('cvPNBtn'); if (btn){ btn.disabled = true; btn.textContent = 'Creando…'; }
+  try{
+    const r = await sb('planes', { method: 'POST', headers: { Prefer: 'return=representation' }, body: JSON.stringify([{ gimnasio_id: PERFIL_ACTUAL.gimnasio_id, nombre, precio_transferencia: 0 }]) });
+    const id = r && r[0] && r[0].id; if (!id) throw new Error('No se pudo crear el plan.');
+    await cvUpsert('cv_precios_plan', 'plan_id', { plan_id: id, gimnasio_id: PERFIL_ACTUAL.gimnasio_id, precio_clase: valor });
+    CV.planNuevo = false; CV.busy = false;
+    await cvCargar();
+    try{ cargarPlanesEnSelectAlumno(); }catch(e){}
+    try{ if (typeof cargarPlanes === 'function') cargarPlanes(); }catch(e){}
+    toast('Plan creado ✓');
+    return;
+  }catch(err){
+    const m = extraerMensajeError(err);
+    toast(/duplicate|unique/i.test(m) ? 'Ya tenés un plan con ese nombre.' : m, true);
+    if (btn){ btn.disabled = false; btn.textContent = 'Crear plan'; }
+  }
+  CV.busy = false;
 }
 function cvZonaNueva(){ CV.edit = { id: null, nombre: '', recargo_tipo: 'por_clase', recargo_monto: '' }; cvPintar(true); }
 function cvZonaEditar(id){ const z = cvZona(id); if (!z) return; CV.edit = Object.assign({}, z); cvPintar(true); }
@@ -18311,7 +18347,7 @@ async function cargarPlanesEnSelectAlumno(){
   const planes = await sb(`planes?gimnasio_id=eq.${gimId}&activo=eq.true&order=precio_transferencia.asc`);
   PLANES_CACHE = planes;
   const opts = '<option value="">-- sin plan por ahora --</option>' +
-    planes.map(p => `<option value="${p.id}">${p.nombre} — $${p.precio_transferencia}</option>`).join('');
+    planes.map(p => `<option value="${p.id}">${p.nombre}${Number(p.precio_transferencia) > 0 ? ' — $' + p.precio_transferencia : ''}</option>`).join('');   // (v163) un plan de cuota variable no tiene precio fijo: no mostrar $0
   const sel = document.getElementById('nuevoAlumnoPlan');
   if (sel) sel.innerHTML = opts;
 }
