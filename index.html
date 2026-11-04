@@ -323,6 +323,9 @@ if ('serviceWorker' in navigator) window.addEventListener('load', function(){ tr
   .cv-det > summary{ cursor:pointer; padding:12px 14px; font-weight:700; font-size:14px; list-style:none; }
   .cv-det > summary::-webkit-details-marker{ display:none; }
   .cv-detb{ padding:0 14px 14px; }
+  .cv-trcard{ border-left:3px solid var(--accent); }
+  .cv-trrow{ padding:10px 0; border-top:1px solid var(--border); }
+  .cv-trrow:first-of-type{ border-top:0; }
   .cv-dos{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
   .cv-ro{ padding:10px 12px; border:1px solid var(--border); border-radius:10px; background:var(--panel3); color:var(--muted); font-size:14px; }
   .cv-dias{ display:flex; flex-direction:column; gap:6px; }
@@ -3532,6 +3535,7 @@ if ('serviceWorker' in navigator) window.addEventListener('load', function(){ tr
         </div>
 
         <div id="cobTabCobros">
+          <div id="cvtCobranzas"></div>
           <div class="x-kpis" id="cobKpis"></div>
           <div class="card" style="padding:0;">
             <div class="x-toolbar" style="padding:12px 14px; margin:0;">
@@ -5386,7 +5390,7 @@ function atlIniciarAlu(){
   atlCargarVista('aluAtletismoContenido', id || '');
 }
 
-const APP_VERSION = 158;
+const APP_VERSION = 160;
 let ES_PERSONAL = false;   // (v132) cuenta personal (gimnasios.tipo = 'personal'); se calcula en perAplicar()
 // (v96) Fecha de la última actualización: se cambia junto con APP_VERSION en cada entrega. Se muestra en la
 // pantalla de inicio y en el menú de cuenta ("v94 · actualizada el 5/10/2026").
@@ -16429,6 +16433,7 @@ function xCobTexto(p){
 function xCobEstado(p){ return (!p || !p.plan_id) ? 'sin_plan' : (p.estado_pago || 'al_dia'); }
 async function cargarCobranzas(){
   const cont = document.getElementById('listaCobranzas');
+  if (typeof cvtRefrescar === 'function') cvtRefrescar();   // (v160) transferencias por confirmar
   cont.innerHTML = 'Cargando...';
   try{
     const gimId = PERFIL_ACTUAL?.gimnasio_id;
@@ -17017,22 +17022,26 @@ function cvRecargoTxt(z){
 function cvZona(id){ return (CV.zonas || []).find(z => z.id === id) || null; }
 
 async function cvCargar(){
-  CV.ok = null; CV.err = ''; CV.cfg = null; CV.v158 = false; CV.zonas = []; CV.planes = []; CV.precios = {}; CV.alumnos = {}; CV.feriados = [];
+  CV.ok = null; CV.err = ''; CV.cfg = null; CV.v158 = false; CV.v159 = false; CV.v160 = false; CV.alias = {}; CVT.lista = []; CVT.ok = null; CV.zonas = []; CV.planes = []; CV.precios = {}; CV.alumnos = {}; CV.feriados = [];
   if (!cvOn() || !cvStaff() || !PERFIL_ACTUAL || !PERFIL_ACTUAL.gimnasio_id){ cvPintar(); return; }
   try{
     const hoy = new Date(); const desde = cvIso(new Date(hoy.getFullYear(), hoy.getMonth() - 1, 1));
-    const [cfg, zs, ps, als, ags, fs, pls, v158] = await Promise.all([
+    const [cfg, zs, ps, als, ags, fs, pls, v158, v159, v160] = await Promise.all([
       sb('cv_config?select=*'), sb('cv_zonas?select=*&order=orden.asc,nombre.asc'),
       sb('cv_precios_plan?select=plan_id,precio_clase'), sb('cv_alumno?select=alumno_id,zona_id,precio_clase&limit=5000'),
       sb('cv_agenda?select=alumno_id&activo=eq.true&limit=10000'), sb(`cv_feriados?select=fecha,nombre&fecha=gte.${desde}&order=fecha.asc`),
       sb(`planes?select=*&gimnasio_id=eq.${PERFIL_ACTUAL.gimnasio_id}&order=precio_transferencia.asc`).catch(() => []),
-      sb('cv_config?select=avisos_auto,recordar_dias_antes&limit=1').then(() => true).catch(() => false)]);   // (v158) ¿ya se corrió el SQL de avisos automáticos?
-    CV.v158 = !!v158;
+      sb('cv_config?select=avisos_auto,recordar_dias_antes&limit=1').then(() => true).catch(() => false),   // (v158) ¿ya se corrió el SQL de avisos automáticos?
+      sb('cv_config?select=mp_antes_cierre&limit=1').then(() => true).catch(() => false),   // (v159) ¿ya se corrió el SQL de pago online?
+      sb('cv_alias?select=profesor_id,alias,titular&limit=500').then(r => r || []).catch(() => null)]);   // (v160) alias de transferencia; null = todavía no se corrió el SQL
+    CV.v158 = !!v158; CV.v159 = !!v159; CV.v160 = Array.isArray(v160);
+    (v160 || []).forEach(x => { CV.alias[x.profesor_id] = x; });
     CV.cfg = (cfg && cfg[0]) || null; CV.zonas = zs || []; CV.planes = pls || [];
     (ps || []).forEach(p => { CV.precios[p.plan_id] = +p.precio_clase; });
     (als || []).forEach(x => { CV.alumnos[x.alumno_id] = true; });
     (ags || []).forEach(x => { CV.alumnos[x.alumno_id] = true; });
     CV.feriados = fs || []; CV.ok = true;
+    if (CV.v160) cvtRefrescar();
   }catch(e){
     const m = String((e && e.message) || '');
     CV.ok = /42P01|PGRST205|does not exist|cv_|404/i.test(m) ? false : null; CV.err = extraerMensajeError(e);
@@ -17081,6 +17090,8 @@ function cvPintar(forzar){
     <div class="field" style="max-width:320px;"><label>El alumno puede avisar que falta</label><select id="cvLim" onchange="cvLimiteGuardar()">${limOpts}</select></div>
     <div class="muted" style="font-size:12px;margin-top:4px;">Pasado ese día del mes, el aviso queda anotado pero no descuenta (vos podés aceptarlo igual desde la ficha).</div>
     ${CV.v158 ? cvAvisosHtml() : ''}
+    ${CV.v159 ? cvPagoOnlineHtml() : ''}
+    ${CV.v160 ? cvAliasAdminHtml() : ''}
     <h3 class="cv-h">Feriados</h3>
     <div class="muted" style="font-size:12.5px;margin-bottom:8px;">Cargá los feriados que caen en días de clase. El alumno (o vos) elige si mueve la clase, la descuenta o la deja a favor.</div>
     <div class="srv-chips" style="margin-bottom:10px;">${fers || '<span class="muted">Todavía no cargaste feriados.</span>'}</div>
@@ -17131,6 +17142,159 @@ async function cvPrecioGuardar(planId){
     toast(v == null ? 'Valor quitado' : 'Valor guardado ✓');
   }catch(err){ toast(extraerMensajeError(err), true); }
 }
+// ---------- (v160) Cuota variable: cobro presencial con QR + pago por transferencia con confirmación ----------
+const CVT = { lista: [], ok: null, busy: false };
+function cvtMes(iso){ return cvMesTxt(iso).split(' ')[0].toLowerCase(); }
+function cvtNum(v){ const s = String(v == null ? '' : v).trim().replace(/\$/g, '').replace(/\s/g, ''); if (!s) return NaN; return Number(s.indexOf(',') >= 0 ? s.replace(/\./g, '').replace(',', '.') : (/^\d{1,3}(\.\d{3})+$/.test(s) ? s.replace(/\./g, '') : s)); }
+function cvtHace(iso){
+  const m = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 60000));
+  if (m < 2) return 'recién'; if (m < 60) return `hace ${m} min`; const h = Math.round(m / 60); if (h < 24) return `hace ${h} h`; const d = Math.round(h / 24); return `hace ${d} día${d === 1 ? '' : 's'}`;
+}
+// --- Personal: lista de transferencias por confirmar ---
+async function cvtRefrescar(){
+  if (!cvOn() || !cvStaff() || CV.v160 !== true){ CVT.lista = []; CVT.ok = null; cvtPintar(); return; }
+  try{ CVT.lista = (await sb('rpc/cv_transferencias_pendientes', { method: 'POST', body: '{}' })) || []; CVT.ok = true; }
+  catch(e){ CVT.lista = []; CVT.ok = false; }
+  cvtPintar();
+}
+function cvtPintar(){
+  const el = document.getElementById('cvtCobranzas'); if (el) el.innerHTML = cvtCardHtml();
+  try{ if (document.getElementById('cvcBody') && typeof cvcPintar === 'function') cvcPintar(true); }catch(e){}
+}
+function cvtCardHtml(){
+  const L = CVT.lista || []; if (!L.length) return '';
+  const filas = L.map(t => {
+    const dif = t.cambio ? `<div class="muted" style="font-size:12px;margin-top:2px;color:var(--warn-text);">La cuota hoy da ${xe(cvMonto(t.monto_actual))} (el alumno vio ${xe(cvMonto(t.monto))}).</div>` : '';
+    const ya = t.cobrada ? '<div class="muted" style="font-size:12px;margin-top:2px;">Ese mes ya figura cobrado: marcalo como "no llegó".</div>' : '';
+    const acciones = (t.puede_confirmar && !t.cobrada ? `<button type="button" onclick="cvtConfirmar('${t.id}')">✅ Llegó · confirmar ${xe(cvMonto(t.monto))}</button>` : (!t.cobrada ? '<span class="muted" style="font-size:12.5px;">La cuota cambió: la confirma un administrador.</span>' : ''))
+      + (t.es_admin && !t.cobrada ? `<button type="button" class="secondary" onclick="cvtOtroMonto('${t.id}')">Otro monto…</button>` : '')
+      + `<button type="button" class="ghost" onclick="cvtNoLlego('${t.id}')">No llegó</button>`;
+    return `<div class="cv-trrow"><div><b>${xe(t.alumno)}</b> · cuota de ${xe(cvtMes(t.periodo))} · <b>${xe(cvMonto(t.monto))}</b><div class="muted" style="font-size:12.5px;">A ${xe(t.destinatario)} (${xe(t.alias)}) · ${xe(cvtHace(t.creado_en))}</div>${dif}${ya}</div>
+      <div class="row" style="flex-wrap:wrap;gap:8px;margin-top:8px;">${acciones}</div></div>`;
+  }).join('');
+  return `<div class="card cv-trcard"><h3 style="margin:0 0 8px;">🏦 Transferencias por confirmar (${L.length})</h3>
+    <div class="muted" style="font-size:12.5px;margin-bottom:8px;">El alumno avisó que transfirió. Mirá en tu cuenta si llegó y confirmalo: se carga el cobro del mes y le avisamos.</div>${filas}</div>`;
+}
+async function cvtAccion(fn, args, okMsg){
+  if (CVT.busy) return false; CVT.busy = true;
+  try{
+    const r = await sb('rpc/' + fn, { method: 'POST', body: JSON.stringify(args) });
+    toast(okMsg); CVT.busy = false;
+    try{ if (document.getElementById('listaCobranzas')) Promise.resolve(cargarCobranzas()).catch(() => {}); Promise.resolve(cargarListaAlumnos()).catch(() => {}); }catch(e){}
+    try{ if (typeof cvFichaVivo === 'function' && cvFichaVivo()) cvFichaRecargar(); }catch(e){}
+    await cvtRefrescar(); return r || true;
+  }catch(e){ CVT.busy = false; toast(extraerMensajeError(e), true); await cvtRefrescar(); return false; }
+}
+function cvtItem(id){ return (CVT.lista || []).find(x => x.id === id); }
+async function cvtConfirmar(id){
+  const t = cvtItem(id); if (!t) return;
+  if (!confirm(`¿Te llegaron ${cvMonto(t.monto)} de ${t.alumno}? Se registra el cobro de ${cvtMes(t.periodo)} y se le avisa.`)) return;
+  await cvtAccion('cv_confirmar_transferencia', { p_id: id }, 'Cobro registrado ✓');
+}
+async function cvtOtroMonto(id){
+  const t = cvtItem(id); if (!t) return;
+  const v = prompt(`Monto que realmente recibiste de ${t.alumno} ($):`, String(t.monto));
+  if (v === null) return;
+  const n = cvtNum(v); if (!(n > 0)){ toast('Ingresá un monto válido.', true); return; }
+  if (!confirm(`¿Registrar el cobro de ${cvtMes(t.periodo)} de ${t.alumno} por ${cvMonto(n)}?`)) return;
+  await cvtAccion('cv_confirmar_transferencia', { p_id: id, p_monto: n }, 'Cobro registrado ✓');
+}
+async function cvtNoLlego(id){
+  const t = cvtItem(id); if (!t) return;
+  const m = prompt(`Mensaje para ${t.alumno} (opcional). Se le avisa que no encontraste la transferencia:`, '');
+  if (m === null) return;
+  await cvtAccion('cv_rechazar_transferencia', { p_id: id, p_motivo: m.trim() || null }, 'Listo, se le avisó al alumno');
+}
+// --- Alias de transferencia ---
+async function cvtAliasGuardar(profId, aliasId, titId){
+  const a = (document.getElementById(aliasId) || {}).value || '', t = (document.getElementById(titId) || {}).value || '';
+  if (a.trim() && !/^[A-Za-z0-9._-]{6,30}$/.test(a.trim())){ toast('El alias tiene que tener entre 6 y 30 caracteres: letras, números, punto o guion (sin espacios). También sirve el CBU/CVU.', true); return; }
+  try{
+    await sb('rpc/cv_set_alias', { method: 'POST', body: JSON.stringify({ p_alias: a.trim() || null, p_titular: t.trim() || null, p_profesor_id: profId || null }) });
+    const pid = profId || (typeof cvMiProfId === 'function' ? cvMiProfId() : null);
+    if (pid){ if (a.trim()) CV.alias[pid] = { profesor_id: pid, alias: a.trim(), titular: t.trim() || null }; else delete CV.alias[pid]; }
+    toast(a.trim() ? 'Alias guardado ✓' : 'Alias borrado');
+  }catch(e){ toast(extraerMensajeError(e), true); }
+}
+async function cvtAliasGymGuardar(){
+  const a = ((document.getElementById('cvAliasGym') || {}).value || '').trim(), t = ((document.getElementById('cvTitGym') || {}).value || '').trim();
+  if (a && !/^[A-Za-z0-9._-]{6,30}$/.test(a)){ toast('El alias tiene que tener entre 6 y 30 caracteres: letras, números, punto o guion (sin espacios). También sirve el CBU/CVU.', true); return; }
+  try{ await cvUpsert('cv_config', 'gimnasio_id', { gimnasio_id: PERFIL_ACTUAL.gimnasio_id, alias_gym: a || null, titular_gym: t || null }); CV.cfg = Object.assign({}, CV.cfg || {}, { alias_gym: a || null, titular_gym: t || null }); toast('Guardado ✓'); }
+  catch(err){ toast(extraerMensajeError(err), true); }
+}
+function cvAliasAdminHtml(){
+  const profs = (cvcProfs() || []).filter(p => p.activo !== false);
+  if (!profs.length && !CVC.profsOk && !CVC.profsPend){ CVC.profsPend = true; cvcProfsCargar().then(() => { try{ cvPintar(true); }catch(e){} }); }
+  const filas = profs.map(p => { const a = CV.alias[p.id] || {};
+    return `<div class="cv-prow"><div class="cv-pn"><b>${xe(p.nombre)}</b></div><div class="cv-pin" style="gap:6px;flex-wrap:wrap;"><input id="cvAli_${p.id}" value="${xe(a.alias || '')}" placeholder="alias o CBU" maxlength="30" style="min-width:140px;" onchange="cvtAliasGuardar('${p.id}','cvAli_${p.id}','cvAliT_${p.id}')"><input id="cvAliT_${p.id}" value="${xe(a.titular || '')}" placeholder="Titular (opcional)" maxlength="60" style="min-width:140px;" onchange="cvtAliasGuardar('${p.id}','cvAli_${p.id}','cvAliT_${p.id}')"></div></div>`; }).join('');
+  const g = CV.cfg || {};
+  return `<h3 class="cv-h">Alias para cobrar por transferencia</h3>
+    <div class="muted" style="font-size:12.5px;margin-bottom:8px;">El alumno ve el alias de <b>su profe</b> (el que tiene más días fijos con él). Si ese profe no cargó alias, ve el del gimnasio. Cuando el alumno toca "Ya pagué", le llega el aviso al profe y a los administradores para confirmarlo.</div>
+    <div class="cv-prow"><div class="cv-pn"><b>Gimnasio</b><span class="muted"> · general</span></div><div class="cv-pin" style="gap:6px;flex-wrap:wrap;"><input id="cvAliasGym" value="${xe(g.alias_gym || '')}" placeholder="alias o CBU" maxlength="30" style="min-width:140px;" onchange="cvtAliasGymGuardar()"><input id="cvTitGym" value="${xe(g.titular_gym || '')}" placeholder="Titular (opcional)" maxlength="60" style="min-width:140px;" onchange="cvtAliasGymGuardar()"></div></div>
+    ${filas || '<div class="muted">Todavía no hay profesores cargados.</div>'}`;
+}
+function cvtAliasHtml(){   // en "Clases fijas": cada profe carga el suyo
+  if (CVT.ok !== true || typeof cvMiProfId !== 'function') return '';
+  const pid = cvMiProfId(); if (!pid) return '';
+  const a = (CV.alias && CV.alias[pid]) || {};
+  return `<details class="cv-det" ${a.alias ? '' : 'open'} style="margin-bottom:10px;"><summary>🏦 Mi alias para cobrar por transferencia${a.alias ? ' · ' + xe(a.alias) : ' · sin cargar'}</summary><div class="cv-detb">
+    <div class="muted" style="font-size:12.5px;margin-bottom:8px;">Tus alumnos con más días fijos con vos ven este alias en "Mi cuota". Cuando avisan que transfirieron, te llega el aviso para confirmarlo.</div>
+    <div class="row" style="gap:8px;flex-wrap:wrap;align-items:end;"><div class="field"><label>Alias o CBU</label><input id="cvMiAlias" value="${xe(a.alias || '')}" maxlength="30" placeholder="mi.alias.mp"></div>
+    <div class="field"><label>Titular (opcional)</label><input id="cvMiTit" value="${xe(a.titular || '')}" maxlength="60" placeholder="Nombre y apellido"></div>
+    <button type="button" onclick="cvtAliasGuardar(null,'cvMiAlias','cvMiTit').then(()=>cvtPintar())">Guardar</button></div></div></details>`;
+}
+// --- Ficha: botón de QR presencial ---
+function cvtQrHtml(q){
+  if (!q || q.cobrada || q.sin_precio || !(q.clases_a_cobrar > 0) || !(Number(q.monto) > 0) || CV.v160 !== true || !(GIMNASIO_ACTUAL && GIMNASIO_ACTUAL.mp_conectado)) return '';
+  return `<div class="row" style="margin-top:8px;"><button type="button" class="secondary" onclick="abrirModalCobrarQR('${CVF.id}', '${CVF.mes}', ${Number(q.monto)})">📲 Cobrar con QR ${xe(cvMonto(q.monto))}</button></div>`;
+}
+// --- Alumno: pagar por transferencia ---
+async function cvaTrCargar(per){
+  CVA.trPer = per; CVA.trId = CVA.id;
+  try{ CVA.tr = await sb('rpc/cv_mi_transferencia', { method: 'POST', body: JSON.stringify({ p_periodo: per }) }); }
+  catch(e){ CVA.tr = { disponible: false, error: true }; }
+  if (CVA.q && String(CVA.q.periodo).slice(0, 10) === String(per).slice(0, 10)) cvAluPintar();
+}
+function cvaTrHtml(q){
+  const t = CVA.tr; if (!t || q.cobrada || CVA.trPer !== String(q.periodo).slice(0, 10) || CVA.trId !== CVA.id) return '';
+  const mpOk = !!(GIMNASIO_ACTUAL && GIMNASIO_ACTUAL.mp_conectado);
+  if (t.pendiente){
+    return `<div class="cv-acc" style="margin:10px 0;"><b>⏳ Avisaste que transferiste ${xe(cvMonto(t.pendiente.monto))}</b>
+      <div class="muted" style="margin-top:4px;font-size:13px;">${xe(t.destinatario || 'Tu profe')} lo tiene que confirmar. Apenas lo haga, tu cuota queda al día y te llega un aviso.</div>
+      <div class="row" style="margin-top:8px;"><button type="button" class="secondary" onclick="cvaTrCancelar('${t.pendiente.id}')">Cancelar aviso</button></div></div>`;
+  }
+  const rech = t.rechazada ? `<div class="rpx-ban" style="margin:10px 0;">❌ No pudimos confirmar tu última transferencia${t.rechazada.motivo ? ': ' + xe(t.rechazada.motivo) : ''}. Revisá el alias o hablá con tu profe.</div>` : '';
+  if (!t.disponible){
+    return rech + ((!mpOk && q.en_plazo && t.motivo && /^Vas a poder/.test(t.motivo)) ? `<div class="muted" style="font-size:12.5px;margin:8px 0 2px;">🏦 ${xe(t.motivo)}</div>` : '');
+  }
+  const abierto = !!CVA.trOpen;
+  return rech + `<div style="margin:10px 0 4px;"><button type="button" class="${mpOk ? 'secondary' : ''}" onclick="cvaTrToggle()">🏦 Pagar por transferencia</button></div>` + (abierto ? `<div class="cv-acc" style="margin:8px 0;">
+      <div>Transferí <b>${xe(cvMonto(t.monto))}</b> a:</div>
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:6px 0;"><span class="cv-big" style="font-size:20px;word-break:break-all;">${xe(t.alias)}</span><button type="button" class="ghost" style="width:auto;" onclick="cvaTrCopiar()">Copiar</button></div>
+      <div class="muted" style="font-size:13px;">${t.titular ? 'Titular: ' + xe(t.titular) + ' · ' : ''}Para: ${xe(t.destinatario || 'tu profe')}</div>
+      <div class="muted" style="font-size:12.5px;margin:8px 0;">Cuando hayas transferido, tocá "Ya pagué". ${xe(t.destinatario || 'Tu profe')} lo verifica y confirma; ahí tu cuota queda al día.</div>
+      <div class="row"><button type="button" id="cvaTrBtn" onclick="cvaTrAvisar()">✅ Ya pagué ${xe(cvMonto(t.monto))}</button></div></div>` : '');
+}
+function cvaTrToggle(){ CVA.trOpen = !CVA.trOpen; cvAluPintar(); }
+async function cvaTrCopiar(){
+  const a = CVA.tr && CVA.tr.alias; if (!a) return;
+  try{ await navigator.clipboard.writeText(a); toast('Alias copiado ✓'); }catch(e){ toast('Copialo a mano: ' + a); }
+}
+async function cvaTrAvisar(){
+  const q = CVA.q, t = CVA.tr; if (!q || !t) return;
+  if (!confirm(`¿Ya transferiste ${cvMonto(t.monto)} a ${t.alias}? Le vamos a avisar a ${t.destinatario || 'tu profe'} para que lo confirme.`)) return;
+  const btn = document.getElementById('cvaTrBtn'); if (btn) btn.disabled = true;
+  try{
+    await sb('rpc/cv_mi_avisar_transferencia', { method: 'POST', body: JSON.stringify({ p_periodo: q.periodo }) });
+    toast('Listo, le avisamos para que lo confirme ✓'); CVA.trOpen = false;
+    await cvaTrCargar(String(q.periodo).slice(0, 10));
+  }catch(e){ toast(extraerMensajeError(e), true); if (btn) btn.disabled = false; }
+}
+async function cvaTrCancelar(id){
+  if (!confirm('¿Cancelar el aviso? Si ya transferiste, mejor avisale a tu profe.')) return;
+  try{ await sb('rpc/cv_mi_cancelar_transferencia', { method: 'POST', body: JSON.stringify({ p_id: id }) }); toast('Aviso cancelado'); await cvaTrCargar(String(CVA.q.periodo).slice(0, 10)); }
+  catch(e){ toast(extraerMensajeError(e), true); }
+}
 function cvAvisosHtml(){
   const on = !(CV.cfg && CV.cfg.avisos_auto === false);
   const n = (CV.cfg && CV.cfg.recordar_dias_antes != null) ? +CV.cfg.recordar_dias_antes : 3;
@@ -17147,6 +17311,36 @@ async function cvAvisosGuardar(){
   const fila = { avisos_auto: a.checked, recordar_dias_antes: +d.value };
   try{ await cvUpsert('cv_config', 'gimnasio_id', Object.assign({ gimnasio_id: PERFIL_ACTUAL.gimnasio_id }, fila)); CV.cfg = Object.assign({}, CV.cfg || {}, fila); toast('Avisos guardados ✓'); }
   catch(err){ toast(extraerMensajeError(err), true); }
+}
+function cvPagoOnlineHtml(){
+  const antes = !!(CV.cfg && CV.cfg.mp_antes_cierre);
+  const mp = !!(GIMNASIO_ACTUAL && GIMNASIO_ACTUAL.mp_conectado);
+  return `<h3 class="cv-h">Pago online de la cuota</h3>
+    <div class="muted" style="font-size:12.5px;margin-bottom:8px;">${mp ? 'El alumno paga el mes desde <b>Mi cuota</b> con Mercado Pago, por el monto que calcula el sistema (nunca puede cambiarlo). Cuando se acredita, el mes queda cobrado solo y vos lo ves en Cobranzas.' : 'Para que el alumno pueda pagar desde la app, conectá Mercado Pago en <b>Cobros online</b> (más arriba).'}</div>
+    <label class="cv-forz" style="font-size:14px;text-transform:none;letter-spacing:0;align-items:center;"><input type="checkbox" id="cvMpAntes" ${antes ? 'checked' : ''} onchange="cvPagoOnlineGuardar()"> Permitir pagar también antes de que cierre el plazo de avisos</label>
+    <div class="muted" style="font-size:12px;margin-top:4px;">Apagado (recomendado): el alumno puede pagar desde el día siguiente al límite, cuando el total ya es final. Prendido: puede pagar antes, pero al pagar ya no puede descontar faltas.</div>`;
+}
+async function cvPagoOnlineGuardar(){
+  const a = document.getElementById('cvMpAntes'); if (!a) return;
+  const fila = { mp_antes_cierre: a.checked };
+  try{ await cvUpsert('cv_config', 'gimnasio_id', Object.assign({ gimnasio_id: PERFIL_ACTUAL.gimnasio_id }, fila)); CV.cfg = Object.assign({}, CV.cfg || {}, fila); toast('Guardado ✓'); }
+  catch(err){ toast(extraerMensajeError(err), true); }
+}
+async function cvAluPagarMP(){
+  const q = CVA.q; if (!q) return;
+  const btn = document.getElementById('cvAluMPBtn'); if (btn) btn.disabled = true;
+  try{
+    const data = await sbFn('mp-crear-preferencia', { periodo: q.periodo });   // el monto lo calcula el servidor: acá solo se pide el mes
+    if (!data || !data.init_point) throw new Error('Mercado Pago no devolvió un link de pago.');
+    const aviso = data.recargo > 0
+      ? `Vas a pagar ${cvMonto(data.monto)} con Mercado Pago (cuota ${cvMonto(data.monto_base)} + recargo ${cvMonto(data.recargo)}). ¿Continuar?`
+      : `Vas a pagar ${cvMonto(data.monto)} con Mercado Pago. ¿Continuar?`;
+    if (!confirm(aviso)){ if (btn) btn.disabled = false; return; }
+    window.location.href = data.init_point;
+  }catch(e){
+    toast('No se pudo iniciar el pago: ' + extraerMensajeError(e), true);
+    if (btn) btn.disabled = false;
+  }
 }
 async function cvLimiteGuardar(){
   const el = document.getElementById('cvLim'); if (!el) return;
@@ -17369,6 +17563,7 @@ function cvFichaPintar(sinScroll){
       <div class="cv-tbl">${filas}</div>
       ${avisos.length ? `<ul class="cv-av">${avisos.map(a => `<li>${a}</li>`).join('')}</ul>` : ''}
       ${cobrar}
+      ${cvtQrHtml(q)}
       <div class="muted" style="font-size:12px;margin-top:10px;">🔒 El alumno ve las clases y el total, pero no la zona, el recargo ni el valor por clase.</div>`;
   }
   body.innerHTML = `${conf}<div class="cv-sec">${cuota}</div>`;
@@ -17408,7 +17603,7 @@ async function cvAluInit(alumnoId){
   cvAluHomePintar();
   if (document.getElementById('subvistaAluCuota') && document.getElementById('subvistaAluCuota').style.display !== 'none') cvAluPintar();
 }
-function cvAluResetear(){ CVA.promesa = null; CVA.activo = false; CVA.home = null; CVA.q = null; CVA.id = ''; const mn = document.getElementById('menuAluCuota'); if (mn) mn.style.display = 'none'; const c = document.getElementById('cvAluCard'); if (c) c.innerHTML = ''; }
+function cvAluResetear(){ CVA.promesa = null; CVA.activo = false; CVA.home = null; CVA.q = null; CVA.tr = null; CVA.trOpen = false; CVA.id = ''; const mn = document.getElementById('menuAluCuota'); if (mn) mn.style.display = 'none'; const c = document.getElementById('cvAluCard'); if (c) c.innerHTML = ''; }
 function cvAluMesNombre(iso){ return cvMesTxt(iso).split(' ')[0].toLowerCase(); }
 function cvAluHomePintar(){
   const el = document.getElementById('cvAluCard'); if (!el) return;
@@ -17420,7 +17615,7 @@ function cvAluHomePintar(){
   let sub;
   if (q.cobrada) sub = '<span style="font-weight:700;">✓ Cuota cobrada</span>';
   else if (q.en_plazo) sub = `Avisá si faltás hasta el <b>${xe(cvDMY(q.limite_aviso))}</b>`;
-  else sub = `Pasó el día ${xe(q.dia_limite)}: los avisos nuevos ya no descuentan`;
+  else sub = (q.pago_online && GIMNASIO_ACTUAL && GIMNASIO_ACTUAL.mp_conectado) ? 'Ya podés pagarla desde acá' : `Pasó el día ${xe(q.dia_limite)}: los avisos nuevos ya no descuentan`;
   el.innerHTML = `<div class="card cv-ahome" onclick="cambiarSubvistaAlu('cuota')" role="button" tabindex="0">
     <div class="row" style="justify-content:space-between;align-items:center;gap:12px;flex-wrap:nowrap;">
       <div style="min-width:0;"><div style="font-weight:800;">💳 Mi cuota de ${xe(mes)}</div>
@@ -17445,6 +17640,7 @@ async function cvAluMesIr(mes, silencioso){
   try{ CVA.q = await cvAluFetch(mes); CVA.mes = String(CVA.q.periodo).slice(0, 10); if (CVA.mes === CVA.hoyMes) CVA.home = CVA.q; }
   catch(e){ CVA.err = extraerMensajeError(e); }
   cvAluPintar();
+  if (CVA.q && !CVA.err && !CVA.q.cobrada) cvaTrCargar(String(CVA.q.periodo).slice(0, 10));   // (v160) ¿puede pagar por transferencia?
 }
 function cvAluMes(n){
   const m = cvMesMas(CVA.mes, n), base = CVA.hoyMes;
@@ -17519,6 +17715,8 @@ function cvAluPintar(){
   cont.innerHTML = `${nav}${CVA.err ? `<div class="rpx-ban">${xe(CVA.err)}</div>` : ''}
     <div class="cv-tot"><div class="cv-r"><span>Total del mes</span><span class="cv-big">${q.sin_precio ? 'A confirmar' : xe(cvMonto(q.monto))}</span></div>
       <div class="muted" style="font-size:12.5px;padding:0 12px 6px;">${cobr ? '<span style="font-weight:700;">✓ Cuota cobrada</span>' : 'Cuota pendiente'}</div></div>
+    ${(!cobr && GIMNASIO_ACTUAL && GIMNASIO_ACTUAL.mp_conectado) ? (q.pago_online ? `<div class="row" style="margin:10px 0 4px;"><button type="button" id="cvAluMPBtn" onclick="cvAluPagarMP()">💳 Pagar ${xe(cvMonto(q.monto))} con Mercado Pago</button></div>` : ((q.pago_online_motivo && plazo) ? `<div class="muted" style="font-size:12.5px;margin:8px 0 2px;">💳 ${xe(q.pago_online_motivo)}</div>` : '')) : ''}
+    ${cvaTrHtml(q)}
     <h4 class="cv-h">Tus clases</h4>
     <div class="cv-fechas">${chips}</div>
     <div class="muted" style="font-size:12px;margin:2px 0 8px;">Tocá una fecha para avisar que no vas, moverla de día o resolver un feriado. ✋ no va · 🔁 movida · 🎌 feriado · ⏰ aviso tarde</div>
@@ -17766,7 +17964,7 @@ function cvcEstadoTxt(a){
 }
 function cvcPintar(sinScroll){
   const el = document.getElementById('cvcBody'); if (!el) return;
-  if (CVC.tab === 'semana'){ el.innerHTML = cvcTabsHtml() + cvSumarHtml() + cvwHtml(); return; }
+  if (CVC.tab === 'semana'){ el.innerHTML = cvcTabsHtml() + cvtCardHtml() + cvtAliasHtml() + cvSumarHtml() + cvwHtml(); return; }
   const r = cvcRango(), f = CVC.fecha || cvIso(new Date()), hoy = cvIso(new Date());
   const fer = (CV.feriados || []).find(x => x.fecha === f);
   const nav = `<div class="cv-mes" style="flex-wrap:wrap;"><button type="button" class="ghost" onclick="cvcDia(-1)" aria-label="Día anterior" ${f <= r.min ? 'disabled' : ''}>‹</button>
@@ -17781,7 +17979,7 @@ function cvcPintar(sinScroll){
   else cuerpo = CVC.grupos.map((g, i) => cvcGrupoHtml(g, i, f)).join('');
   const res = CVC.res ? cvcResHtml() : '';
   const prof = cvcMiProfe();
-  el.innerHTML = `${cvcTabsHtml()}${cvSumarHtml()}<div class="muted" style="font-size:13px;margin-bottom:10px;">Cuando un profe no puede dar una clase, cada alumno recibe <b>1 clase a favor</b> para el mes que viene (vale solo ese mes) y un aviso en su app. El WhatsApp lo mandás vos con un toque.</div>
+  el.innerHTML = `${cvcTabsHtml()}${cvtCardHtml()}${cvSumarHtml()}<div class="muted" style="font-size:13px;margin-bottom:10px;">Cuando un profe no puede dar una clase, cada alumno recibe <b>1 clase a favor</b> para el mes que viene (vale solo ese mes) y un aviso en su app. El WhatsApp lo mandás vos con un toque.</div>
     ${nav}${fer ? `<div class="cv-pendfer">🎌 ${xe(f.slice(8, 10) + '/' + f.slice(5, 7))} es feriado${fer.nombre ? ' (' + xe(fer.nombre) + ')' : ''}. Los alumnos deciden por su cuenta si descuentan, dejan a favor o mueven la clase; cancelá solo si de verdad no hay clase.</div>` : ''}
     ${res}${cuerpo}`;
 }
@@ -17925,7 +18123,7 @@ let QR_COBRO_POLL_TIMER = null;
 let QR_COBRO_ALUMNO_ID = null;
 let QR_COBRO_DESDE = null;
 
-async function abrirModalCobrarQR(alumnoId){
+async function abrirModalCobrarQR(alumnoId, periodo, montoEsperado){
   QR_COBRO_ALUMNO_ID = alumnoId;
   QR_COBRO_DESDE = new Date().toISOString();
   document.getElementById('modalCobrarQR').classList.add('show');
@@ -17934,7 +18132,9 @@ async function abrirModalCobrarQR(alumnoId){
   document.getElementById('qrCobroContenido').style.display = 'none';
   clearInterval(QR_COBRO_POLL_TIMER);
   try{
-    const r = await sbFn('mp-generar-qr', { alumno_id: alumnoId });
+    const r = await sbFn('mp-generar-qr', periodo ? { alumno_id: alumnoId, periodo } : { alumno_id: alumnoId });
+    if (periodo && (r.cuota_variable !== true || Math.abs(Number(r.monto) - Number(montoEsperado)) > 0.01))   // (v160) si la función del QR no está actualizada, nunca mostrar un monto que no es el de la cuota
+      throw new Error('el QR no coincide con la cuota del mes. Avisale al administrador: falta actualizar la función del QR.');
     document.getElementById('qrCobroEstado').style.display = 'none';
     document.getElementById('qrCobroContenido').style.display = '';
     document.getElementById('qrCobroAlumno').textContent = `${r.alumno_nombre} · ${r.plan_nombre}`;
@@ -17968,6 +18168,7 @@ async function chequearPagoQR(alumnoId){
           <button onclick='descargarReciboPago(${JSON.stringify(ultimo)}, ${JSON.stringify(alumnoNombre)}, ${JSON.stringify(planNombre)})'>🧾 Descargar recibo</button>
         </div>`;
       toast('¡Pago con QR recibido! ✓');
+      try{ if (typeof cvFichaVivo === 'function' && cvFichaVivo()) cvFichaRecargar(); }catch(e){}
       cargarCobranzas();
       cargarListaAlumnos();
     }
@@ -25916,7 +26117,9 @@ async function revisarNotificacionesStaff(){
   try{
     const gimId = GIMNASIO_ACTUAL?.id;
     if (!gimId) return;
-    const pendientes = await sb(`notificaciones_staff?gimnasio_id=eq.${gimId}&leida=eq.false&order=creado_en.asc`);
+    const pendientes0 = await sb(`notificaciones_staff?gimnasio_id=eq.${gimId}&leida=eq.false&order=creado_en.asc`);
+    const miId = PERFIL_ACTUAL && PERFIL_ACTUAL.id, miRol = PERFIL_ACTUAL && PERFIL_ACTUAL.rol;   // (v160) los avisos de cuota variable solo los ve a quien van dirigidos
+    const pendientes = (pendientes0 || []).filter(n => !/^cv_/.test(n.tipo || '') || (n.para_roles || []).includes(miRol) || (n.para_perfiles || []).includes(miId));
     const cumHoyK = 'cumple_' + fechaLocalISO().replace(/-/g, '');   // (v101)
     const cumViejas = (pendientes || []).filter(n => (/^cumple_/.test(n.tipo || '') && n.tipo !== cumHoyK) || n.tipo === 'partido_reloj');   // (v138) los avisos del reloj del partido solo son push: no se muestran como cartel al entrar
     if (cumViejas.length) sb(`notificaciones_staff?id=in.(${cumViejas.map(n => n.id).join(',')})`, { method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: JSON.stringify({ leida: true }) }).catch(() => {});
