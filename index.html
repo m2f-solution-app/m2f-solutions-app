@@ -323,6 +323,11 @@ if ('serviceWorker' in navigator) window.addEventListener('load', function(){ tr
   .cv-det > summary{ cursor:pointer; padding:12px 14px; font-weight:700; font-size:14px; list-style:none; }
   .cv-det > summary::-webkit-details-marker{ display:none; }
   .cv-detb{ padding:0 14px 14px; }
+  .cv-res{ font-weight:500; font-size:12.5px; color:var(--muted); margin-top:4px; display:flex; flex-wrap:wrap; gap:4px 6px; }
+  .cv-paso{ display:flex; align-items:center; gap:8px; font-weight:700; font-size:13.5px; margin:14px 0 6px; }
+  .cv-paso b{ display:inline-flex; width:22px; height:22px; border-radius:50%; background:var(--accent); color:#fff; align-items:center; justify-content:center; font-size:12px; }
+  .cv-av2{ margin-top:12px; font-size:13px; }
+  .cv-av2 > summary{ cursor:pointer; color:var(--muted); }
   .cv-trcard{ border-left:3px solid var(--accent); }
   .cv-trrow{ padding:10px 0; border-top:1px solid var(--border); }
   .cv-trrow:first-of-type{ border-top:0; }
@@ -3507,6 +3512,7 @@ if ('serviceWorker' in navigator) window.addEventListener('load', function(){ tr
 
       <!-- ---- SUBVISTA: PLANES DE ENTRENAMIENTO (precio + vigencia) ---- -->
       <div id="subvistaPlanes" style="display:none;">
+        <div id="cvPlanesAviso"></div>
         <div class="card">
           <h2 style="margin-top:0" id="tituloFormPlan">Nuevo plan</h2>
           <input type="hidden" id="planEditandoId" value="">
@@ -5397,7 +5403,7 @@ function atlIniciarAlu(){
   atlCargarVista('aluAtletismoContenido', id || '');
 }
 
-const APP_VERSION = 163;
+const APP_VERSION = 165;
 let ES_PERSONAL = false;   // (v132) cuenta personal (gimnasios.tipo = 'personal'); se calcula en perAplicar()
 // (v96) Fecha de la última actualización: se cambia junto con APP_VERSION en cada entrega. Se muestra en la
 // pantalla de inicio y en el menú de cuenta ("v94 · actualizada el 5/10/2026").
@@ -16343,6 +16349,7 @@ function previewPrecioEfectivoPlan(){
 }
 
 async function cargarPlanes(){
+  try{ cvPlanesAvisoPintar(); }catch(e){}   // (v164)
   const cont = document.getElementById('listaPlanes');
   cont.innerHTML = 'Cargando...';
   try{
@@ -17063,6 +17070,7 @@ function cvPintar(forzar){
   const box = document.getElementById('gimCvBox'); if (!box) return;
   const ver = srvEsAdmin() && cvOn();
   box.style.display = ver ? '' : 'none';
+  if (ver && CV.ok === true && !CV.autoAbierto && (!(CV.zonas || []).length || !Object.keys(CV.precios || {}).length)){ CV.autoAbierto = true; box.open = true; }   // (v164) sin zonas o sin valor por clase: la sección se abre sola
   const body = document.getElementById('gimCvBody'); if (!ver || !body) return;
   if (!forzar && body.contains(document.activeElement) && /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName)) return;
   if (CV.ok === false){ body.innerHTML = '<div class="rpx-ban">⚠️ Falta activar esta función en la base de datos. Corré <b>v154-cuota-variable.sql</b> en Supabase (SQL Editor) y recargá la app.</div>'; return; }
@@ -17088,7 +17096,7 @@ function cvPintar(forzar){
   const hoyIso = cvIso(new Date());
   const fers = (CV.feriados || []).filter(f => f.fecha >= hoyIso.slice(0, 8) + '01').map(f => `<span class="srv-chip cv-fer">🎌 ${xe(cvDiaTxt(f.fecha))}/${xe(String(f.fecha).slice(5, 7))} · ${xe(f.nombre)} <button type="button" class="cv-x" title="Quitar" onclick="cvFeriadoQuitar('${f.fecha}')">×</button></span>`).join('');
   const msgDef = 'Hola {nombre}! No vamos a poder dar la clase del {dia} {fecha}{hora}. Te queda 1 clase a favor para el mes que viene. Disculpá las molestias. — {gym}';
-  body.innerHTML = `<div class="muted" style="margin-bottom:12px;">Para gimnasios que cobran según las clases del mes: <b>valor de la clase</b> (por plan o propio de cada alumno) más un recargo por <b>zona de distancia</b>. Las faltas avisadas a tiempo no se cobran y si falta el profe le queda una clase a favor para el mes siguiente. A cada alumno le asignás zona y días desde su ficha, pestaña <b>Cuota</b>.</div>
+  body.innerHTML = `<div class="muted" style="margin-bottom:12px;">Para gimnasios que cobran según las clases del mes: <b>valor de la clase</b> (por plan o propio de cada alumno) más un recargo por <b>zona de distancia</b>. Las faltas avisadas a tiempo no se cobran y si falta el profe le queda una clase a favor para el mes siguiente. A cada alumno le asignás plan, zona y días desde su ficha, pestaña <b>Plan</b>.</div>
     <h3 class="cv-h">Zonas de distancia</h3>
     <div class="suc-lista">${zonas}</div>
     ${form || '<div class="row" style="margin-top:12px;"><button type="button" onclick="cvZonaNueva()">＋ Agregar zona</button></div>'}
@@ -17148,6 +17156,18 @@ async function cvPlanCrear(){
     if (btn){ btn.disabled = false; btn.textContent = 'Crear plan'; }
   }
   CV.busy = false;
+}
+// ----- (v164) Atajo: "Planes" avisa dónde se carga el valor por clase y las zonas -----
+function cvIrAConfig(){
+  cambiarSubvista('gimnasio');
+  setTimeout(() => { const b = document.getElementById('gimCvBox'); if (b){ b.open = true; b.scrollIntoView({ behavior: 'smooth', block: 'start' }); } }, 350);
+}
+function cvPlanesAvisoPintar(){
+  const el = document.getElementById('cvPlanesAviso'); if (!el) return;
+  if (!(cvOn() && srvEsAdmin())){ el.innerHTML = ''; return; }
+  el.innerHTML = `<div class="card" style="border-color:var(--accent);"><h3 style="margin:0 0 6px;">🧮 Este gimnasio cobra por clase</h3>
+    <div class="muted" style="font-size:13px;margin-bottom:10px;">El <b>valor de cada clase</b> y el <b>recargo por zona</b> se cargan en <b>Mi gimnasio → Cuota variable</b> (ahí mismo podés crear el plan). Esta pantalla es para los planes de precio fijo.</div>
+    <button type="button" onclick="cvIrAConfig()">Ir a Cuota variable</button></div>`;
 }
 function cvZonaNueva(){ CV.edit = { id: null, nombre: '', recargo_tipo: 'por_clase', recargo_monto: '' }; cvPintar(true); }
 function cvZonaEditar(id){ const z = cvZona(id); if (!z) return; CV.edit = Object.assign({}, z); cvPintar(true); }
@@ -17415,7 +17435,7 @@ async function cvFeriadoQuitar(f){
 let CVF = null;
 function cvTabsVis(){
   if (!(cvOn() && CV.ok === true && cvStaff())) return FICHA_TABS;
-  const t = FICHA_TABS.slice(); const i = t.findIndex(x => x[0] === 'pag'); t.splice(i < 0 ? t.length : i + 1, 0, ['cuo', 'Cuota']); return t;
+  const t = FICHA_TABS.slice(); const i = t.findIndex(x => x[0] === 'pag'); t.splice(i < 0 ? t.length : i + 1, 0, ['cuo', 'Plan']); return t;
 }
 function cvFichaIr(id){ cerrarFicha(); abrirFichaAlumno(id, 'cuo'); }
 function cvFichaVivo(){ return !!(CVF && FICHA_ALU && FICHA_ALU.tab === 'cuo' && FICHA_ALU.id === CVF.id && document.getElementById('fichaTabBody')); }
@@ -17433,7 +17453,7 @@ async function cvFichaCargar(a, tok){
     const dias = {}; (ag || []).filter(x => x.activo).forEach(x => { dias[x.dia_semana] = { hora: x.hora ? String(x.hora).slice(0, 5) : '', prof: x.profesor_id || '' }; });
     const al0 = (al && al[0]) || null;
     CVF = { id: a.id, mes, q, sel: null, mover: false, forzar: false, cobrando: false, busy: false,
-      zona: al0 ? (al0.zona_id || '') : '', precio: al0 && al0.precio_clase != null ? al0.precio_clase : '', dias, abierto: null };
+      plan: a.plan_id || '', plan0: a.plan_id || '', zona: al0 ? (al0.zona_id || '') : '', precio: al0 && al0.precio_clase != null ? al0.precio_clase : '', dias, abierto: null };
     cvFichaPintar();
   }catch(e){ if (tok === FICHA_TOK) body.innerHTML = `<div class="rpx-ban">No se pudo cargar la cuota: ${xe(extraerMensajeError(e))}</div>`; }
 }
@@ -17444,6 +17464,7 @@ async function cvFichaRecargar(){
 }
 function cvFichaMes(n){ if (!CVF) return; CVF.mes = cvMesMas(CVF.mes, n); CVF.sel = null; CVF.mover = false; CVF.cobrando = false; CVF.wa = null; cvFichaRecargar(); }
 function cvFSet(k, v){ if (CVF) CVF[k] = v; }
+function cvFPlan(v){ if (!CVF) return; CVF.plan = v || ''; cvFichaPintar(true); }   // (v165)
 function cvFDia(dow, on){
   if (!CVF) return;
   if (on) CVF.dias[dow] = CVF.dias[dow] || { hora: '', prof: (typeof cvProfDefault === 'function' ? cvProfDefault() : '') }; else delete CVF.dias[dow];   // (v157c) el profe propuesto es uno mismo si da las clases
@@ -17456,6 +17477,12 @@ async function cvFichaGuardar(){
   const id = CVF.id;
   try{
     if (cvAdmin()){
+      if ((CVF.plan || '') !== (CVF.plan0 || '')){   // (v165) el plan se asigna acá mismo
+        await sb(`alumnos?id=eq.${id}`, { method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: JSON.stringify({ plan_id: CVF.plan || null }) });
+        const ac = (typeof ALUMNOS_CACHE !== 'undefined' ? ALUMNOS_CACHE : []).find(x => x.id === id); if (ac) ac.plan_id = CVF.plan || null;
+        if (FICHA_ALU && FICHA_ALU.a) FICHA_ALU.a.plan_id = CVF.plan || null;
+        CVF.plan0 = CVF.plan || ''; CVF.planCambio = true;
+      }
       const pr = CVF.precio === '' || CVF.precio == null ? null : Number(CVF.precio);
       if (pr != null && !(pr >= 0)) throw new Error('El valor propio tiene que ser 0 o más.');
       await cvUpsert('cv_alumno', 'alumno_id', { alumno_id: id, gimnasio_id: PERFIL_ACTUAL.gimnasio_id, zona_id: CVF.zona || null, precio_clase: pr });
@@ -17468,6 +17495,7 @@ async function cvFichaGuardar(){
     CV.alumnos[id] = true;
     toast('Guardado ✓');
     await cvFichaRecargar();
+    if (CVF && CVF.planCambio){ CVF.planCambio = false; try{ cargarListaAlumnos(); }catch(e){} }   // (v165) la lista se refresca recién al terminar
   }catch(e){ toast(extraerMensajeError(e), true); }
   if (CVF) CVF.busy = false;
   if (cvFichaVivo()) cvFichaPintar();
@@ -17518,8 +17546,6 @@ function cvFichaPintar(sinScroll){
   const body = document.getElementById('fichaTabBody'), q = CVF.q || {}, admin = cvAdmin();
   const scroll = body.scrollTop;
   const zonasAct = (CV.zonas || []).filter(z => z.activo || z.id === CVF.zona);
-  const planPrecio = null;
-  const abierto = CVF.abierto != null ? CVF.abierto : (!(q.dias_semana || []).length || q.sin_precio);
   const profes = (PROFESORES_CACHE || []).filter(p => p.activo !== false);
   const diasHtml = CV_ORDEN.map(d => {
     const on = !!CVF.dias[d], x = CVF.dias[d] || {};
@@ -17527,21 +17553,35 @@ function cvFichaPintar(sinScroll){
       ${on ? `<input type="time" value="${xe(x.hora)}" onchange="cvFDiaSet(${d}, 'hora', this.value)" aria-label="Hora ${CV_DOW[d]}">
       <select onchange="cvFDiaSet(${d}, 'prof', this.value)" aria-label="Profesor ${CV_DOW[d]}"><option value="">Cualquier profe</option>${profes.map(p => `<option value="${p.id}" ${x.prof === p.id ? 'selected' : ''}>${xe(p.nombre)}</option>`).join('')}</select>` : ''}</div>`;
   }).join('');
-  const conf = `<details class="cv-det" ${abierto ? 'open' : ''} ontoggle="CVF && (CVF.abierto = this.open)"><summary>⚙️ Zona, valor y días de entrenamiento</summary><div class="cv-detb">
-      <div class="cv-dos">
-        <div class="field"><label>Zona de distancia</label>${admin
-          ? `<select onchange="cvFSet('zona', this.value)"><option value="">Sin zona (sin recargo)</option>${zonasAct.map(z => `<option value="${z.id}" ${CVF.zona === z.id ? 'selected' : ''}>${xe(z.nombre)} · ${xe(cvRecargoTxt(z))}${z.activo ? '' : ' (desactivada)'}</option>`).join('')}</select>`
-          : `<div class="cv-ro">${xe(q.zona || 'Sin zona')}</div>`}</div>
-        <div class="field"><label>Valor propio por clase (opcional)</label>${admin
-          ? `<input type="number" inputmode="decimal" min="0" step="0.01" value="${xe(CVF.precio)}" placeholder="Usa el del plan" oninput="cvFSet('precio', this.value)">`
-          : `<div class="cv-ro">${q.precio_origen === 'alumno' ? cvMonto(q.precio_clase) : 'El del plan'}</div>`}</div></div>
-      ${(admin && !zonasAct.length) ? '<div class="muted" style="font-size:12px;margin:-4px 0 8px;">Todavía no hay zonas: creálas en Mi gimnasio → Cuota variable.</div>' : ''}
-      <div class="field"><label>Días fijos de entrenamiento</label>${typeof cvSumarHtml === 'function' ? cvSumarHtml() : ''}<div class="cv-dias">${diasHtml}</div></div>
-      <div class="muted" style="font-size:12px;margin:6px 0 10px;">Con estos días se cuentan las clases de cada mes. Si un día puntual cambia (feriado, no puede ese día) lo resolvés abajo, sin tocar los días fijos.</div>
-      <div class="row"><button type="button" id="cvGBtn" onclick="cvFichaGuardar()">Guardar</button></div></div></details>`;
+  const planes = (typeof PLANES_CACHE !== 'undefined' ? PLANES_CACHE : []) || [];
+  const planSel = planes.find(p => p.id === CVF.plan) || null;
+  const planPr = CVF.plan && CV.precios ? CV.precios[CVF.plan] : null;
+  const zonaSel = (CV.zonas || []).find(z => z.id === CVF.zona) || null;
+  const diasSel = CV_ORDEN.filter(d => CVF.dias[d]);
+  const completo = !!CVF.plan && diasSel.length > 0;
+  const abierto = CVF.abierto != null ? CVF.abierto : (!completo || q.sin_precio);
+  const resumen = `<span>📋 ${xe(planSel ? planSel.nombre : 'Sin plan')}</span> · <span>📍 ${xe(zonaSel ? zonaSel.nombre : 'Sin zona')}</span> · <span>📅 ${diasSel.length ? diasSel.map(d => CV_DOW[d]).join(' ') : 'Sin días'}</span>`;
+  const planOpts = planes.map(p => { const v = CV.precios ? CV.precios[p.id] : null; return `<option value="${p.id}" ${CVF.plan === p.id ? 'selected' : ''}>${xe(p.nombre)}${v != null ? ' · ' + xe(cvMonto(v)) + ' por clase' : ''}</option>`; }).join('');
+  const conf = `<details class="cv-det" ${abierto ? 'open' : ''} ontoggle="CVF && (CVF.abierto = this.open)"><summary>Plan del alumno<div class="cv-res">${resumen}</div></summary><div class="cv-detb">
+      <div class="cv-paso"><b>1</b> Plan</div>
+      <div class="field">${admin
+        ? `<select onchange="cvFPlan(this.value)"><option value="">-- Elegí el plan --</option>${planOpts}</select>`
+        : `<div class="cv-ro">${xe(planSel ? planSel.nombre : 'Sin plan asignado')}</div>`}
+        ${(admin && !planes.length) ? '<div class="muted" style="font-size:12px;margin-top:4px;">Todavía no hay planes: creálos en Mi gimnasio → Cuota variable.</div>' : ''}
+        ${(CVF.plan && planPr == null && CVF.precio === '') ? '<div class="muted" style="font-size:12px;margin-top:4px;color:var(--warn-text);">⚠ Este plan no tiene valor por clase: cargalo en Mi gimnasio → Cuota variable, o poné un valor propio abajo.</div>' : ''}</div>
+      <div class="cv-paso"><b>2</b> Zona de distancia</div>
+      <div class="field">${admin
+        ? `<select onchange="cvFSet('zona', this.value); cvFichaPintar(true)"><option value="">Sin zona (sin recargo)</option>${zonasAct.map(z => `<option value="${z.id}" ${CVF.zona === z.id ? 'selected' : ''}>${xe(z.nombre)} · ${xe(cvRecargoTxt(z))}${z.activo ? '' : ' (desactivada)'}</option>`).join('')}</select>`
+        : `<div class="cv-ro">${xe(q.zona || 'Sin zona')}</div>`}
+        ${(admin && !zonasAct.length) ? '<div class="muted" style="font-size:12px;margin-top:4px;">Todavía no hay zonas: creálas en Mi gimnasio → Cuota variable.</div>' : ''}</div>
+      <div class="cv-paso"><b>3</b> Días y horarios fijos</div>
+      <div class="field">${typeof cvSumarHtml === 'function' ? cvSumarHtml() : ''}<div class="cv-dias">${diasHtml}</div>
+        <div class="muted" style="font-size:12px;margin-top:6px;">Con estos días se cuentan las clases de cada mes. Si un día puntual cambia (feriado, no puede ese día) lo resolvés abajo, sin tocar los días fijos.</div></div>
+      ${admin ? `<details class="cv-av2" ${(CVF.precio !== '' && CVF.precio != null) ? 'open' : ''}><summary>Valor propio por clase (opcional)</summary><div class="field" style="max-width:260px;margin-top:8px;"><input type="number" inputmode="decimal" min="0" step="0.01" value="${xe(CVF.precio)}" placeholder="Usa el del plan" oninput="cvFSet('precio', this.value)"></div></details>` : (q.precio_origen === 'alumno' ? `<div class="muted" style="font-size:12px;">Tiene un valor propio por clase.</div>` : '')}
+      <div class="row" style="margin-top:12px;"><button type="button" id="cvGBtn" onclick="cvFichaGuardar()">Guardar plan</button></div></div></details>`;
   let cuota;
   if (!(q.dias_semana || []).length){
-    cuota = '<div class="rpx-ban" style="margin-top:12px;">Elegí los <b>días fijos de entrenamiento</b> para calcular la cuota del mes.</div>';
+    cuota = '<div class="rpx-ban" style="margin-top:12px;">Elegí el <b>plan</b> y los <b>días fijos de entrenamiento</b> y tocá <b>Guardar plan</b> para calcular la cuota del mes.</div>';
   } else {
     const camb = {}; (q.cambios || []).forEach(c => { camb[c.fecha] = c; });
     const pend = new Set(q.feriados_pendientes || []);
@@ -17593,7 +17633,7 @@ function cvFichaPintar(sinScroll){
     const cobrar = q.cobrada
       ? `<div class="cv-cob ok"><b>✓ Mes cobrado</b> · ${cvMonto(q.monto)}</div>`
       : admin
-        ? (q.sin_precio ? '<div class="rpx-ban">Cargá el valor de la clase (en Mi gimnasio → Cuota variable, o como valor propio arriba) para poder cobrar.</div>'
+        ? (q.sin_precio ? '<div class="rpx-ban">Cargá el valor de la clase (en Mi gimnasio → Cuota variable, o como valor propio en «Plan del alumno») para poder cobrar.</div>'
           : CVF.cobrando ? `<div class="cv-cobform"><div class="field" style="max-width:260px;"><label>Forma de pago</label><select id="cvMetodo">${Object.keys(CV_METODOS).map(k => `<option value="${k}">${CV_METODOS[k]}</option>`).join('')}</select></div>
               <div class="muted" style="font-size:12.5px;margin:6px 0 8px;">La cuota queda del 1/${xe(String(CVF.mes).slice(5, 7))} al fin de ${xe(cvMesTxt(CVF.mes).split(' ')[0].toLowerCase())}. Después de cobrar ya no se cargan avisos de falta de ese mes.</div>
               <div class="row"><button type="button" id="cvCobBtn" onclick="cvCobrarOk()">Confirmar cobro ${xe(cvMonto(q.monto))}</button><button type="button" class="ghost" onclick="cvCobrarAbrir()">Cancelar</button></div></div>`
