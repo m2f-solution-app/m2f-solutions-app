@@ -2080,6 +2080,7 @@ if ('serviceWorker' in navigator) window.addEventListener('load', function(){ tr
   .nr-res{ display:flex; align-items:center; gap:10px; justify-content:space-between; flex-wrap:wrap; background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:10px 14px; margin-bottom:10px; }
   .nr-res .l{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
   .nr-explica{ font-size:12.5px; color:var(--muted); margin-top:10px; }
+  #espBaseLimpiar{ display:none !important; }
   .nr-sbar{ position:sticky; bottom:0; z-index:30; background:var(--panel); border:1px solid var(--border); border-radius:14px; padding:10px 14px; display:flex; gap:10px; justify-content:space-between; align-items:center; flex-wrap:wrap; box-shadow:0 -6px 18px rgba(0,0,0,.22); margin-top:10px; }
   .nr-sbar .info{ display:flex; gap:6px; flex-wrap:wrap; align-items:center; flex:1; min-width:0; }
   .nr-sbar button[disabled]{ opacity:.45; cursor:not-allowed; }
@@ -2976,7 +2977,7 @@ if ('serviceWorker' in navigator) window.addEventListener('load', function(){ tr
           </div>
           <div class="muted" id="espCopiaBannerSub" style="margin:6px 0 10px;"></div>
           <div style="display:flex; gap:8px; flex-wrap:wrap;">
-            <button type="button" onclick="guardarRutinaEspecial()">💾 Guardar ahora</button>
+            <button type="button" onclick="nrGuardar()">💾 Guardar ahora</button>
             <button type="button" class="secondary" onclick="document.getElementById('diasContainerEsp').scrollIntoView({ behavior:'smooth', block:'start' })">Ver / editar los días ↓</button>
           </div>
         </div>
@@ -3034,14 +3035,36 @@ if ('serviceWorker' in navigator) window.addEventListener('load', function(){ tr
           <div id="nrVolver2" class="row" style="display:none; margin-top:12px; gap:10px; align-items:center;"><button type="button" class="ghost" onclick="nrListo()">← Volver sin cambiar</button><span class="muted">Tus días y ejercicios se conservan.</span></div>
         </div>
 
-        <!-- Paso 3 · Datos -->
+        <!-- (v161) Paso 3: desde dónde empezás -->
+        <div id="nrRes3" class="nr-res" style="display:none;"></div>
+        <div class="card" id="espBaseCard" style="display:none;">
+          <h2 style="margin-top:0">3 · ¿Desde dónde empezás?</h2>
+          <div class="muted" style="font-size:12.5px; margin:0 0 10px;">Elegí una rutina que ya existe (del gimnasio o una especial de otro alumno) y se copia para que la ajustes, o armala desde cero. La original no se toca.</div>
+          <div style="font-weight:700; font-size:13.5px; margin-bottom:6px;">📋 Empezar desde una rutina existente</div>
+          <input id="espBaseBuscar" placeholder="Buscá por nombre: Gimnasio 4 semanas, Fuerza, Recovery…" autocomplete="off" onfocus="espBaseBuscar()" oninput="espBaseBuscar()" />
+          <div id="espBaseResultados" style="display:none; max-height:260px; overflow:auto; margin-top:8px;"></div>
+          <div id="espBaseEstado" class="muted" style="font-size:12px; margin-top:8px; display:none;"></div>
+          <div class="row" style="margin-top:14px; gap:10px; align-items:center; flex-wrap:wrap;">
+            <button type="button" class="secondary" id="espBaseCero" onclick="nrBaseCero()">✏️ Armarla desde cero</button>
+            <button type="button" class="ghost" id="espBaseLimpiar" style="display:none;" onclick="espBaseEmpezarDeCero()">Empezar de cero</button>
+            <button type="button" class="ghost" id="nrBaseVolver" style="display:none;" onclick="nrListo()">← Volver sin cambiar</button>
+          </div>
+        </div>
+
+        <div class="nr-explica" id="nrExplica" style="margin:0 4px 10px;"></div>
+        <div class="card">
+          <div class="row" style="justify-content:space-between;">
+            <h2 style="margin:0">Días planificados</h2>
+            <button class="secondary" onclick="agregarDiaEsp()">+ Agregar día</button>
+          </div>
+          <div id="diasContainerEsp"></div>
+        </div>
+
+        <!-- (v161) Ajustes del ciclo mensual: va después de los días -->
         <div class="card" id="nrPaso3" style="display:none;">
-          <h2 style="margin-top:0">3 · Datos</h2>
+          <h2 style="margin-top:0">🔁 Ajustes del ciclo mensual <span class="muted" style="font-size:12px; font-weight:400;">(opcional)</span></h2>
           <div class="row">
-            <div class="field" style="flex:1; min-width:220px;">
-              <label id="nrNombreLbl">Nombre de la rutina</label>
-              <input id="espNombreRutina" placeholder="Ej: Plan especial - Semana 1" />
-            </div>
+            <input id="espNombreRutina" type="hidden" />   <!-- (v161) el nombre se pide al guardar -->
             <div class="field" id="espDiasObjetivoWrap" style="display:none;">
               <label>Días por semana (objetivo)</label>
               <select id="espDiasObjetivo" onchange="CONS['esp'].estado.diasPorSemanaObjetivo=this.value||null">
@@ -3059,33 +3082,12 @@ if ('serviceWorker' in navigator) window.addEventListener('load', function(){ tr
             </div>
           </div>
           <div class="muted" id="espModoDiasHint" style="font-size:12px; margin-top:6px; display:none;">Mensual: no hace falta cargar fecha en los días. Sirve tanto para el que también usa turno (por cupo/aforo) como para el que entrena a distancia sin reservar nada — el turno es un tema aparte.</div>
-          <div class="nr-explica" id="nrExplica"></div>
-        </div>
-
-        <!-- (v84) Empezar desde una rutina que ya existe -->
-        <div class="card" id="espBaseCard">
-          <div class="row" style="justify-content:space-between; align-items:center;">
-            <h2 style="margin:0">Empezar desde una rutina existente <span class="muted" style="font-size:12px; font-weight:400;">(opcional)</span></h2>
-            <button type="button" class="ghost" id="espBaseLimpiar" style="display:none;" onclick="espBaseEmpezarDeCero()">Empezar de cero</button>
-          </div>
-          <div class="muted" style="font-size:12px; margin:6px 0 8px;">Buscá una rutina del gimnasio (o una especial de otro alumno) y se copia acá abajo para que la ajustes antes de guardarla para este alumno o equipo. La original no se toca.</div>
-          <input id="espBaseBuscar" placeholder="Buscá por nombre: Gimnasio 4 semanas, Fuerza, Recovery…" autocomplete="off" onfocus="espBaseBuscar()" oninput="espBaseBuscar()" />
-          <div id="espBaseResultados" style="display:none; max-height:260px; overflow:auto; margin-top:8px;"></div>
-          <div id="espBaseEstado" class="muted" style="font-size:12px; margin-top:8px; display:none;"></div>
-        </div>
-
-        <div class="card">
-          <div class="row" style="justify-content:space-between;">
-            <h2 style="margin:0">Días planificados</h2>
-            <button class="secondary" onclick="agregarDiaEsp()">+ Agregar día</button>
-          </div>
-          <div id="diasContainerEsp"></div>
         </div>
 
         <div class="nr-sbar" id="nrSbar">
           <button type="button" class="ghost" id="nrAtras" onclick="nrAtras()">← Atrás</button>
           <div class="info" id="nrSbarInfo"></div>
-          <button onclick="guardarRutinaEspecial()" id="btnGuardarEspecial">💾 Guardar rutina</button>
+          <button onclick="nrGuardar()" id="btnGuardarEspecial">💾 Guardar rutina</button>
         </div>
 
         <div id="nrAlumnoExtra">
@@ -5390,7 +5392,7 @@ function atlIniciarAlu(){
   atlCargarVista('aluAtletismoContenido', id || '');
 }
 
-const APP_VERSION = 160;
+const APP_VERSION = 161;
 let ES_PERSONAL = false;   // (v132) cuenta personal (gimnasios.tipo = 'personal'); se calcula en perAplicar()
 // (v96) Fecha de la última actualización: se cambia junto con APP_VERSION en cada entrega. Se muestra en la
 // pantalla de inicio y en el menú de cuenta ("v94 · actualizada el 5/10/2026").
@@ -11741,7 +11743,7 @@ function guiaPasosBase(rol){
   const alu = { id:'alu', ico:'👤', t:'Agregá a tus alumnos', d:'Con nombre y DNI alcanza; el resto se completa después desde su ficha.', ir:{ s:'alumnos' }, auto:c => c.alumnos > 0,
     det:['Menú ☰ → Alumnos → ＋ Nuevo alumno.','Cargá nombre y DNI (el DNI habilita su acceso).','Desde su ficha: asignale plan y tocá 🔑 Acceso para darle usuario y contraseña temporal.'] };
   const rut = { id:'rut', ico:'🏋️', t:'Armá tu primera rutina', d:'Una pantalla guiada en 4 pasos: para quién, cómo se repite, datos y ejercicios.', ir:{ s:'especiales' }, auto:c => c.rutinas > 0,
-    det:['Menú ☰ → Nueva rutina.','Paso 1: para quién es (alumno, tipo de entrenamiento, equipo o plantilla).','Paso 2 y 3: fecha fija o mensual, y nombre.','Paso 4: sumá días y ejercicios con series, reps, carga, pausa y RIR. Guardá.'] };
+    det:['Menú ☰ → Nueva rutina.','Paso 1: para quién es (alumno, tipo de entrenamiento, equipo o plantilla).','Paso 2: fecha fija o mensual.','Paso 3: empezá desde una rutina que ya existe o armala de cero.','Paso 4: sumá días y ejercicios con series, reps, carga, pausa y RIR. Al guardar te pide el nombre (o se genera solo).'] };
   const mp = { id:'mp', ico:'💸', t:'Conectá Mercado Pago para cobrar online', d:'Tus alumnos pagan la cuota desde la app y la vigencia se actualiza sola.', ir:{ s:'gimnasio' }, opc:true, auto:c => !!(c.g && c.g.mp_conectado),
     det:['Menú ☰ → Mi gimnasio → Cobros online.','Conectá tu cuenta de Mercado Pago y aceptá los permisos.','Sin esto igual podés registrar pagos en efectivo o transferencia.'] };
   const prof = { id:'prof', ico:'🧑‍🏫', t:'Sumá a tus profesores', d:'Alta con nombre y DNI; la app genera una contraseña temporal.', ir:{ s:'profesores' }, opc:true, auto:c => c.profesores > 1,
@@ -11784,7 +11786,7 @@ function guiaPasosBase(rol){
 function guiaFaq(rol){ return guiaFaqBase(rol).filter(modGuiaOk); }   // (v99)
 function guiaFaqBase(rol){
   const staff = [
-    { q:'¿Cómo creo una rutina?', r:['Menú ☰ → 🏋️ Nueva rutina.','Paso 1: elegí para quién es (un alumno, un tipo de entrenamiento, un equipo o una plantilla).','Paso 2: fecha fija o mensual. Paso 3: nombre (y días por semana si es mensual).','Paso 4: agregá días y ejercicios con el buscador; cargá series, reps, carga, pausa y RIR.','Tocá 💾 Guardar rutina: el alumno la ve al instante.'], ir:{ s:'especiales' } },
+    { q:'¿Cómo creo una rutina?', r:['Menú ☰ → 🏋️ Nueva rutina.','Paso 1: elegí para quién es (un alumno, un tipo de entrenamiento, un equipo o una plantilla).','Paso 2: fecha fija o mensual. Paso 3: empezar desde una rutina existente o de cero.','Paso 4: agregá días y ejercicios con el buscador; cargá series, reps, carga, pausa y RIR.','Tocá 💾 Guardar rutina: te pide el nombre (ya sugerido, o lo generás automático) y el alumno la ve al instante.'], ir:{ s:'especiales' } },
     { q:'¿Cómo le asigno una rutina a un alumno?', r:['Al crearla, en el paso 1 elegí “Un alumno”: tiene prioridad sobre la de biblioteca.','Si es por tipo de entrenamiento, se engancha sola cuando el alumno reserva turno ese día.','Una rutina mensual la ve el alumno en “Mis rutinas” aunque no tenga turno.'], ir:{ s:'especiales' } },
     { q:'¿Cómo cambio la rutina de un alumno solo por hoy?', r:['Menú ☰ → Agenda y tocá al alumno.','Elegí 🔄 Cambiar por otra sesión, o ✏️ Ajustar la rutina.','Escribí el motivo: el cambio vale para ese turno y el alumno lo ve al instante.'], ir:{ s:'agenda' } },
     { adm:true, q:'¿Cómo doy de alta a un alumno y le doy acceso?', r:['Menú ☰ → Alumnos → ＋ Nuevo alumno: nombre y DNI.','Abrí su ficha y asignale un plan.','Tocá 🔑 Acceso: se crea su usuario (su DNI) y una contraseña temporal que se muestra una sola vez.','El alumno entra por la pestaña Alumno y elige su contraseña.'], ir:{ s:'alumnos' } },
@@ -21878,7 +21880,7 @@ function agregarDiaEsp(){ CONS['esp'].agregarDia(); }
 // Reusa por completo el motor de Especiales (CONS['esp'], espModoDestino/espAlumno/espEquipo/espModoDias,
 // espCargarDesdeRutina, copiar rutina, turno→rutina nueva): el asistente solo ordena la pantalla en pasos
 // y suma los destinos "Un tipo de entrenamiento" y "Plantilla" (que antes vivían en el Armador).
-const NR = { paraTocado:false, modoTocado:false, edit:0 };
+const NR = { paraTocado:false, modoTocado:false, edit:0, baseTocada:false, baseTxt:'', autoUsado:null };
 const nrEl = id => document.getElementById(id);
 const nrValDestino = () => (nrEl('espModoDestino') || {}).value || 'alumno';
 
@@ -21903,6 +21905,8 @@ function nrPaso1Ok(){
 function nrPara(){ return (NR.paraTocado || nrPaso1Ok()) ? nrValDestino() : null; }
 function nrCantDias(){ return Object.keys(CONS['esp'].estado.dias).length; }
 function nrCantEj(){ return Object.values(CONS['esp'].estado.dias).reduce((a, d) => a + d.ejercicios.length, 0); }
+function nrBaseOk(){ return NR.baseTocada || nrCantDias() > 0; }   // (v161) paso 3: ya eligió desde dónde empieza
+function nrBaseTxt(){ return NR.baseTxt || (nrCantDias() ? '📝 Lo que ya cargaste' : '✏️ Desde cero'); }
 function nrModoOk(){ const p = nrPara(); return !!p && nrPaso1Ok() && (p === 'plantilla' || NR.modoTocado || nrCantDias() > 0); }
 
 function nrDestinoTxt(){
@@ -21955,13 +21959,17 @@ function nrRender(){
   r2.innerHTML = `<div class="l"><b>2 · Cómo se repite:</b><span class="pill">${nrModoTxt()}</span></div><button type="button" class="ghost" style="padding:4px 12px; font-size:12px;" onclick="nrCambiar(2)">Cambiar</button>`;
   ['fecha_fija', 'rotativa'].forEach(m => nrEl('nrOptM-' + m).classList.toggle('on', modoOk && modoMotor === m));
   nrEl('nrVolver2').style.display = nrCantDias() ? '' : 'none';
-  // pasos 3 y 4
+  // (v161) paso 3 = desde dónde empieza; paso 4 = días y ejercicios (solo cuando ya eligió); ajustes del ciclo mensual al final
   const ver34 = ok1 && modoOk;
-  nrEl('nrPaso3').style.display = ver34 ? '' : 'none';
-  const base = nrEl('espBaseCard'); if (base) base.style.display = ver34 ? '' : 'none';
-  const p4 = nrEl('nrPaso4'); if (p4) p4.style.display = ver34 ? '' : 'none';
-  const lbl = nrEl('nrNombreLbl');
-  if (lbl) lbl.textContent = plant ? 'Nombre de la plantilla' : 'Nombre de la rutina';
+  const baseOk = ver34 && nrBaseOk();
+  const abre3 = ver34 && (!baseOk || NR.edit === 3);
+  const base = nrEl('espBaseCard'); if (base) base.style.display = abre3 ? '' : 'none';
+  const bv = nrEl('nrBaseVolver'); if (bv) bv.style.display = (abre3 && baseOk) ? '' : 'none';
+  const r3 = nrEl('nrRes3');
+  r3.style.display = (ver34 && !abre3) ? '' : 'none';
+  r3.innerHTML = `<div class="l"><b>3 · Punto de partida:</b><span class="pill">${escaparHtml(nrBaseTxt())}</span></div><button type="button" class="ghost" style="padding:4px 12px; font-size:12px;" onclick="nrCambiar(3)">Cambiar</button>`;
+  nrEl('nrPaso3').style.display = (baseOk && modoMotor === 'rotativa') ? '' : 'none';
+  const p4 = nrEl('nrPaso4'); if (p4) p4.style.display = baseOk ? '' : 'none';
   const inp = nrEl('espNombreRutina');
   if (inp && !inp.dataset.nrTocado){
     inp.placeholder = plant ? 'Ej: Recovery - tren inferior' : d === 'tipo' ? (modoMotor === 'rotativa' ? 'Ej: Gimnasio 4 semanas - Fuerza' : 'Si lo dejás vacío se arma solo: tipo + fecha') : 'Ej: Plan especial - Semana 1';
@@ -21970,9 +21978,9 @@ function nrRender(){
   // extras del alumno (rutina asignada + especiales ya creadas)
   const ex = nrEl('nrAlumnoExtra'); if (ex) ex.style.display = (para === 'alumno' && ok1) ? '' : 'none';
   // stepper
-  const done = [ok1, modoOk, ver34, ver34 && nrCantEj() > 0];
-  const cur = !done[0] ? 0 : !done[1] ? 1 : 3;
-  const L = ['Para quién', 'Cómo se repite', 'Datos', 'Días y ejercicios'];
+  const done = [ok1, modoOk, baseOk, baseOk && nrCantEj() > 0];
+  const cur = !done[0] ? 0 : !done[1] ? 1 : !done[2] ? 2 : 3;
+  const L = ['Para quién', 'Cómo se repite', 'Punto de partida', 'Días y ejercicios'];
   const clk = i => done[i] || i === cur;
   nrEl('nrStepper').innerHTML = L.map((t, i) => `<span class="s ${done[i] && i !== cur ? 'done' : ''} ${i === cur ? 'on' : ''} ${clk(i) ? 'clk' : ''}" ${clk(i) ? `onclick="nrIrPaso(${i})"` : ''}><span class="n">${done[i] && i !== cur ? '✓' : i + 1}</span>${t}</span>${i < 3 ? '<span class="ln"></span>' : ''}`).join('');
   // barra fija de abajo
@@ -21987,12 +21995,15 @@ function nrListo(){ NR.edit = 0; nrRender(); }
 function nrIrPaso(i){
   if (i === 0) return nrCambiar(1);
   if (i === 1) return nrCambiar(2);
+  if (i === 2) return nrCambiar(3);
   NR.edit = 0; nrRender();
-  const el = nrEl(i === 2 ? 'nrPaso3' : 'nrPaso4'); if (el) el.scrollIntoView({ behavior:'smooth', block:'start' });
+  const el = nrEl('nrPaso4'); if (el) el.scrollIntoView({ behavior:'smooth', block:'start' });
 }
 function nrAtras(){
   if (NR.edit === 2) return nrCambiar(1);
   if (NR.edit === 1) return;
+  if (NR.edit === 3) return nrPara() === 'plantilla' ? nrCambiar(1) : nrCambiar(2);
+  if (nrBaseOk() && nrModoOk()) return nrCambiar(3);
   if (nrModoOk() && nrPara() !== 'plantilla') return nrCambiar(2);
   if (nrPara()) return nrCambiar(1);
 }
@@ -22011,7 +22022,7 @@ function nrSetModo(m){
 }
 // después de guardar: alumno se queda (para ver sus rutinas); el resto vuelve a empezar
 function nrDespuesDeGuardar(destino){
-  NR.modoTocado = false; NR.edit = 0;
+  NR.modoTocado = false; NR.edit = 0; NR.baseTocada = false; NR.baseTxt = ''; NR.autoUsado = null;
   const inp = nrEl('espNombreRutina'); if (inp) delete inp.dataset.nrTocado;
   if (destino !== 'alumno'){
     NR.paraTocado = false;
@@ -22036,6 +22047,56 @@ function nrInit(){
   let t = null;
   new MutationObserver(() => { clearTimeout(t); t = setTimeout(nrRender, 80); }).observe(cont, { childList:true, subtree:false });
   nrPoblarTipos(); nrRender();
+}
+
+// ---------- (v161) Paso 3 "armarla desde cero" y guardado con nombre ----------
+function nrBaseCero(){
+  const cons = CONS['esp'], modo = cons.estado.modoDias;
+  if (nrCantEj() > 0){
+    if (!confirm('¿Descartar lo que hay armado y empezar de cero?')) return;
+    cons.limpiar(); cons.setModoDias(modo);   // limpiar() vuelve a fecha fija: se restaura el modo que ya había elegido
+    const inp = nrEl('espNombreRutina'); if (inp) inp.value = '';
+    ESP_NOMBRE_AUTO = null;
+    const est = nrEl('espBaseEstado'); if (est){ est.style.display = 'none'; est.textContent = ''; }
+  }
+  NR.baseTocada = true; NR.baseTxt = '✏️ Desde cero'; NR.edit = 0;
+  nrRender();
+  setTimeout(() => { const el = nrEl('nrPaso4'); if (el) el.scrollIntoView({ behavior:'smooth', block:'start' }); }, 60);
+}
+function nrFechaCorta(iso){ const p = String(iso || '').split('-'); return p.length === 3 ? `${+p[2]}/${+p[1]}` : ''; }
+function nrNombreAutoTxt(){
+  const cons = CONS['esp'], modo = cons.estado.modoDias, d = nrValDestino(), hoy = nrFechaCorta(fechaLocalISO()), nd = nrCantDias();
+  if (d === 'plantilla') return `Plantilla · ${nd} día${nd === 1 ? '' : 's'} · ${hoy}`;
+  const quien = (nrDestinoTxt() || '').replace(/^\S+\s/, '').trim() || 'Rutina';
+  let cuando;
+  if (modo === 'rotativa') cuando = 'Mensual';
+  else {
+    const f = Object.values(cons.estado.dias).map(x => x.fecha).filter(Boolean).sort();
+    cuando = !f.length ? hoy : (f[0] === f[f.length - 1] ? nrFechaCorta(f[0]) : `${nrFechaCorta(f[0])} al ${nrFechaCorta(f[f.length - 1])}`);
+  }
+  return `${quien} · ${cuando}`;
+}
+function nrGuardar(){
+  const b = nrEl('btnGuardarEspecial'); if (b && b.disabled) return;
+  const plant = nrPara() === 'plantilla', inp = nrEl('espNombreRutina'), actual = (inp.value || '').trim();
+  const usarAuto = !actual || (NR.autoUsado && actual === NR.autoUsado);   // un nombre que se generó solo se recalcula (por si cambió el alumno o las fechas)
+  nrEl('nrNombreInput').value = usarAuto ? nrNombreAutoTxt() : actual;
+  nrEl('nrNombreTitulo').textContent = plant ? '💾 Guardar plantilla' : '💾 Guardar rutina';
+  nrEl('nrNombreLbl2').textContent = plant ? 'Nombre de la plantilla' : 'Nombre de la rutina';
+  const nd = nrCantDias(), ej = nrCantEj();
+  nrEl('nrNombreResumen').innerHTML = `${escaparHtml(nrDestinoTxt())} · ${nrModoTxt()} · ${nd} día${nd === 1 ? '' : 's'} · ${ej} ejercicio${ej === 1 ? '' : 's'}<br>Dejá este nombre, cambialo o generá otro automático.`;
+  nrEl('modalNombreRutina').classList.add('show');
+  setTimeout(() => { const i = nrEl('nrNombreInput'); i.focus(); i.select(); }, 60);
+}
+function nrNombreAuto(){ const i = nrEl('nrNombreInput'); i.value = nrNombreAutoTxt(); i.focus(); i.select(); }
+function nrNombreCerrar(){ nrEl('modalNombreRutina').classList.remove('show'); }
+async function nrNombreOk(){
+  const v = (nrEl('nrNombreInput').value || '').trim();
+  if (!v){ toast('Poné un nombre o tocá "Generar nombre automático".', true); return; }
+  NR.autoUsado = (v === nrNombreAutoTxt()) ? v : null;
+  nrEl('espNombreRutina').value = v;
+  nrNombreCerrar();
+  await guardarRutinaEspecial();
 }
 
 function nrTarget(){ NR.edit = 0; nrRender(); }
@@ -22305,6 +22366,7 @@ async function espCargarDesdeRutina(rutinaId, opts){
     if (sinEjercicio) avisos.push(`${sinEjercicio} ejercicio${sinEjercicio === 1 ? '' : 's'} ya no existe${sinEjercicio === 1 ? '' : 'n'} en el catálogo y no se copiaron`);
     est.style.display = '';
     est.textContent = `✓ Copiada "${rutina.nombre}" (${dias.length} día${dias.length === 1 ? '' : 's'}). Ajustala abajo` + (avisos.length ? ' — ' + avisos.join('; ') : '') + '. La original no cambia.';
+    NR.baseTocada = true; NR.baseTxt = '📋 Desde «' + rutina.nombre + '»'; NR.edit = 0;
     nrRender();
     if (!(opts && opts.sinScroll)){
       toast('Rutina copiada: ajustala y guardala ✓');
@@ -28839,6 +28901,17 @@ function perCargaAguda(alumnoId){
 </div>
 
 <!-- Cobro presencial con QR de Mercado Pago (28/9, pedido de Martin) -->
+<div class="modal-overlay" id="modalNombreRutina">
+  <div class="modal-box">
+    <div class="x-wrap "><button type="button" class="x-cerrar" aria-label="Cerrar" title="Cerrar" onclick="nrNombreCerrar()">✕</button></div>
+    <h3 style="margin-top:0;" id="nrNombreTitulo">💾 Guardar rutina</h3>
+    <div id="nrNombreResumen" class="muted" style="font-size:13px; margin-bottom:12px;"></div>
+    <div class="field"><label id="nrNombreLbl2">Nombre de la rutina</label>
+      <input id="nrNombreInput" maxlength="120" autocomplete="off" onkeydown="if(event.key==='Enter'){ event.preventDefault(); nrNombreOk(); }"></div>
+    <div class="row" style="margin-top:4px;"><button type="button" class="ghost" onclick="nrNombreAuto()">✨ Generar nombre automático</button></div>
+    <div class="row" style="margin-top:14px; gap:8px; flex-wrap:wrap;"><button type="button" id="nrNombreBtn" onclick="nrNombreOk()">✓ Guardar</button><button type="button" class="ghost" onclick="nrNombreCerrar()">Seguir editando</button></div>
+  </div>
+</div>
 <div class="modal-overlay" id="modalCobrarQR">
   <div class="modal-box" style="text-align:center;">
     <div class="x-wrap "><button type="button" class="x-cerrar" aria-label="Cerrar" title="Cerrar" onclick="cerrarModalCobrarQR()">✕</button></div>
