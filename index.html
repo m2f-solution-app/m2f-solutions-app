@@ -5409,11 +5409,11 @@ function atlIniciarAlu(){
   atlCargarVista('aluAtletismoContenido', id || '');
 }
 
-const APP_VERSION = 167;
+const APP_VERSION = 169;
 let ES_PERSONAL = false;   // (v132) cuenta personal (gimnasios.tipo = 'personal'); se calcula en perAplicar()
 // (v96) Fecha de la última actualización: se cambia junto con APP_VERSION en cada entrega. Se muestra en la
 // pantalla de inicio y en el menú de cuenta ("v94 · actualizada el 5/10/2026").
-const APP_FECHA = '2026-11-03';
+const APP_FECHA = '2026-11-04';
 function appVersionTxt(){ const [y, m, d] = APP_FECHA.split('-'); return `v${APP_VERSION} · actualizada el ${+d}/${+m}/${y}`; }
 (function(){ const el = document.getElementById('lcVersion'); if (el) el.textContent = 'M2F Solutions · ' + appVersionTxt(); })();
 
@@ -17127,6 +17127,19 @@ function cvPintar(forzar){
 async function cvUpsert(tabla, conflicto, fila){
   return sb(`${tabla}?on_conflict=${conflicto}`, { method: 'POST', headers: { Prefer: 'resolution=merge-duplicates,return=minimal' }, body: JSON.stringify([fila]) });
 }
+// ----- (v168) Asignar la zona de un alumno: el admin general escribe directo; el admin de una sede lo hace por una función segura -----
+async function cvAsignarZona(alumnoId, zonaId, conPrecio, precio){
+  if (typeof sucAdminSede === 'function' && sucAdminSede()){
+    try{ await sb('rpc/cv_asignar_zona', { method: 'POST', body: JSON.stringify({ p_alumno_id: alumnoId, p_zona_id: zonaId || null }) }); }
+    catch(e){
+      const m = String((e && e.message) || e);
+      if (/cv_asignar_zona|PGRST202|404/.test(m) && !/sede|administrador|zona no existe/i.test(m)) throw new Error('Falta correr v168-zona-por-quien-carga.sql en Supabase para poder asignar la zona.');
+      throw e;
+    }
+    return;
+  }
+  await cvUpsert('cv_alumno', 'alumno_id', Object.assign({ alumno_id: alumnoId, gimnasio_id: PERFIL_ACTUAL.gimnasio_id, zona_id: zonaId || null }, conPrecio ? { precio_clase: precio } : {}));
+}
 // ----- (v163) Crear un plan desde acá (valor por clase), sin ir a "Planes" -----
 function cvPlanNuevoHtml(){
   const hay = (CV.planes || []).filter(p => p.activo !== false).length;
@@ -17304,7 +17317,8 @@ function cvAliasAdminHtml(){
     <div class="cv-prow"><div class="cv-pn"><b>Gimnasio</b><span class="muted"> · general</span></div><div class="cv-pin" style="gap:6px;flex-wrap:wrap;"><input id="cvAliasGym" value="${xe(g.alias_gym || '')}" placeholder="alias o CBU" maxlength="30" style="min-width:140px;" onchange="cvtAliasGymGuardar()"><input id="cvTitGym" value="${xe(g.titular_gym || '')}" placeholder="Titular (opcional)" maxlength="60" style="min-width:140px;" onchange="cvtAliasGymGuardar()"></div></div>
     ${filas || '<div class="muted">Todavía no hay profesores cargados.</div>'}`;
 }
-function cvtAliasHtml(){   // en "Clases fijas": cada profe carga el suyo
+function cvtAliasHtml(){   // (v169) el alias se carga SOLO en Mi gimnasio; acá ya no se muestra
+  return '';
   if (CVT.ok !== true || typeof cvMiProfId !== 'function') return '';
   const pid = cvMiProfId(); if (!pid) return '';
   const a = (CV.alias && CV.alias[pid]) || {};
@@ -17459,7 +17473,7 @@ async function cvFichaCargar(a, tok){
     const dias = {}; (ag || []).filter(x => x.activo).forEach(x => { dias[x.dia_semana] = { hora: x.hora ? String(x.hora).slice(0, 5) : '', prof: x.profesor_id || '' }; });
     const al0 = (al && al[0]) || null;
     CVF = { id: a.id, mes, q, sel: null, mover: false, forzar: false, cobrando: false, busy: false,
-      plan: a.plan_id || '', plan0: a.plan_id || '', zona: al0 ? (al0.zona_id || '') : '', precio: al0 && al0.precio_clase != null ? al0.precio_clase : '', dias, abierto: null };
+      plan: a.plan_id || '', plan0: a.plan_id || '', zona: al0 ? (al0.zona_id || '') : '', zona0: al0 ? (al0.zona_id || '') : '', precio: al0 && al0.precio_clase != null ? al0.precio_clase : '', dias, abierto: null };
     cvFichaPintar();
   }catch(e){ if (tok === FICHA_TOK) body.innerHTML = `<div class="rpx-ban">No se pudo cargar la cuota: ${xe(extraerMensajeError(e))}</div>`; }
 }
@@ -17489,9 +17503,13 @@ async function cvFichaGuardar(){
         if (FICHA_ALU && FICHA_ALU.a) FICHA_ALU.a.plan_id = CVF.plan || null;
         CVF.plan0 = CVF.plan || ''; CVF.planCambio = true;
       }
-      const pr = CVF.precio === '' || CVF.precio == null ? null : Number(CVF.precio);
-      if (pr != null && !(pr >= 0)) throw new Error('El valor propio tiene que ser 0 o más.');
-      await cvUpsert('cv_alumno', 'alumno_id', { alumno_id: id, gimnasio_id: PERFIL_ACTUAL.gimnasio_id, zona_id: CVF.zona || null, precio_clase: pr });
+      if (sucAdminSede()){   // (v168) el admin de una sede asigna la zona, pero el valor propio por clase es solo del admin general
+        if ((CVF.zona || '') !== (CVF.zona0 || '')){ await cvAsignarZona(id, CVF.zona || null, false); CVF.zona0 = CVF.zona || ''; }
+      } else {
+        const pr = CVF.precio === '' || CVF.precio == null ? null : Number(CVF.precio);
+        if (pr != null && !(pr >= 0)) throw new Error('El valor propio tiene que ser 0 o más.');
+        await cvAsignarZona(id, CVF.zona || null, true, pr); CVF.zona0 = CVF.zona || '';
+      }
     }
     const quedan = Object.keys(CVF.dias).map(Number);
     const filas = quedan.map(d => ({ gimnasio_id: PERFIL_ACTUAL.gimnasio_id, alumno_id: id, dia_semana: d, hora: CVF.dias[d].hora || null, profesor_id: CVF.dias[d].prof || null, activo: true }));
@@ -17585,7 +17603,7 @@ function cvFichaPintar(sinScroll){
       <div class="cv-paso"><b>3</b> Días y horarios fijos</div>
       <div class="field">${typeof cvSumarHtml === 'function' ? cvSumarHtml() : ''}<div class="cv-dias">${diasHtml}</div>
         <div class="muted" style="font-size:12px;margin-top:6px;">Con estos días se cuentan las clases de cada mes. Si un día puntual cambia (feriado, no puede ese día) lo resolvés abajo, sin tocar los días fijos.</div></div>
-      ${admin ? `<details class="cv-av2" ${(CVF.precio !== '' && CVF.precio != null) ? 'open' : ''}><summary>Valor propio por clase (opcional)</summary><div class="field" style="max-width:260px;margin-top:8px;"><input type="number" inputmode="decimal" min="0" step="0.01" value="${xe(CVF.precio)}" placeholder="Usa el del plan" oninput="cvFSet('precio', this.value)"></div></details>` : (q.precio_origen === 'alumno' ? `<div class="muted" style="font-size:12px;">Tiene un valor propio por clase.</div>` : '')}
+      ${(admin && !sucAdminSede()) ? `<details class="cv-av2" ${(CVF.precio !== '' && CVF.precio != null) ? 'open' : ''}><summary>Valor propio por clase (opcional)</summary><div class="field" style="max-width:260px;margin-top:8px;"><input type="number" inputmode="decimal" min="0" step="0.01" value="${xe(CVF.precio)}" placeholder="Usa el del plan" oninput="cvFSet('precio', this.value)"></div></details>` : (q.precio_origen === 'alumno' ? `<div class="muted" style="font-size:12px;">Tiene un valor propio por clase.</div>` : '')}
       <div class="row" style="margin-top:12px;"><button type="button" id="cvGBtn" onclick="cvFichaGuardar()">Guardar plan</button></div></div></details>`;
   let cuota;
   if (!(q.dias_semana || []).length){
@@ -18441,7 +18459,7 @@ async function naCvGuardar(alumnoId){   // se llama justo después de crear al a
   const zona = cvAdmin() ? (NACV.zona || null) : null;
   if (!zona && !quedan.length) return true;
   try{
-    if (zona) await cvUpsert('cv_alumno', 'alumno_id', { alumno_id: alumnoId, gimnasio_id: PERFIL_ACTUAL.gimnasio_id, zona_id: zona, precio_clase: null });
+    if (zona) await cvAsignarZona(alumnoId, zona, true, null);   // (v168) también funciona para el admin de una sede
     if (quedan.length){
       const filas = quedan.map(d => ({ gimnasio_id: PERFIL_ACTUAL.gimnasio_id, alumno_id: alumnoId, dia_semana: d, hora: NACV.dias[d].hora || null, profesor_id: NACV.dias[d].prof || null, activo: true }));
       await sb('cv_agenda?on_conflict=alumno_id,dia_semana', { method: 'POST', headers: { Prefer: 'resolution=merge-duplicates,return=minimal' }, body: JSON.stringify(filas) });
@@ -25817,7 +25835,7 @@ function pftAliasPintar(){
   const el = document.getElementById('pftAlias');
   if (el){
     if (PFT.ok === true && !cvOn() && !(cvcProfs() || []).length && !CVC.profsOk && !CVC.profsPend){ CVC.profsPend = true; cvcProfsCargar().then(() => { try{ pftAliasPintar(); }catch(e){} }); }   // el profe no tiene la lista de profesores cargada: la pide una vez
-    const pid = (PFT.ok === true && !cvOn() && typeof cvMiProfId === 'function') ? cvMiProfId() : null;
+    const pid = null;   // (v169) el alias se carga SOLO en Mi gimnasio; en Inicio ya no se muestra la tarjeta
     if (!pid){ el.innerHTML = ''; }
     else {
       const a = PFT.alias[pid] || {};
