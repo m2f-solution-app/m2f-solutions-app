@@ -17494,8 +17494,10 @@ async function cvFichaGuardar(){
     if (sacar.length) await sb(`cv_agenda?alumno_id=eq.${id}&dia_semana=in.(${sacar.join(',')})`, { method: 'DELETE', headers: { Prefer: 'return=minimal' } });
     CV.alumnos[id] = true;
     toast('Guardado ✓');
+    if (CVF) CVF.abierto = false;   // (v165) al guardar, la tarjeta se pliega en su resumen
+    try{ const pp = document.getElementById('fichaPlanPill'), pn = (PLANES_CACHE || []).find(x => x.id === CVF.plan); if (pp) pp.textContent = pn ? 'Plan ' + pn.nombre : 'Sin plan'; }catch(e){}   // (v165) la etiqueta de arriba acompaña el cambio
     await cvFichaRecargar();
-    if (CVF && CVF.planCambio){ CVF.planCambio = false; try{ cargarListaAlumnos(); }catch(e){} }   // (v165) la lista se refresca recién al terminar
+    if (CVF && CVF.planCambio){ CVF.planCambio = false; CV.listaSucia = true; }   // (v165) la lista se refresca al cerrar la ficha (sin parpadeo)
   }catch(e){ toast(extraerMensajeError(e), true); }
   if (CVF) CVF.busy = false;
   if (cvFichaVivo()) cvFichaPintar();
@@ -18497,7 +18499,7 @@ function xQuien(nombre, sub, big, foto){
 }
 function xAbrirModal(id){ document.getElementById(id).classList.add('show'); }
 function xCerrarModal(id){ document.getElementById(id).classList.remove('show'); }
-function cerrarFicha(){ xCerrarModal('modalFicha'); FICHA_ALU = null; FICHA_PROF = null; FICHA_TOK++; HOR_FICHA = false; }
+function cerrarFicha(){ xCerrarModal('modalFicha'); FICHA_ALU = null; FICHA_PROF = null; FICHA_TOK++; HOR_FICHA = false; try{ if (typeof CV !== 'undefined' && CV.listaSucia){ CV.listaSucia = false; setTimeout(() => { try{ cargarListaAlumnos(); }catch(e){} }, 60); } }catch(e){} }
 document.addEventListener('keydown', e => { if (e.key === 'Escape'){ ['modalFicha', 'modalNuevoAlumno', 'modalNuevoProfesor', 'modalGuia', 'modalGuiaBienvenida'].forEach(id => { const m = document.getElementById(id); if (m && m.classList.contains('show')) m.classList.remove('show'); }); FICHA_ALU = null; FICHA_PROF = null; } });
 const XEXTRA_ALU = {}; // alumnos traídos solo para la ficha (p. ej. dados de baja desde Alertas)
 
@@ -18692,7 +18694,7 @@ function fichaRecibo(i){ const p = FICHA_PAGOS[i]; if (!p || !FICHA_ALU?.a) retu
 function pintarFichaAlumno(){
   const F = FICHA_ALU; if (!F || !F.a) return;
   const a = F.a, tipo = xTipoNombre(a), plan = xPlanNombre(a);
-  const pills = `<span class="pill ${a.activo === false ? '' : 'ok'}">${a.activo === false ? 'Inactivo' : 'Activo'}</span> ${tipo ? `<span class="pill">${xe(tipo)}</span>` : ''} <span class="pill">${plan ? 'Plan ' + xe(plan) : 'Sin plan'}</span> ${a.equipos?.nombre ? `<span class="pill">⚽ ${xe(a.equipos.nombre)}</span>` : ''}`;
+  const pills = `<span class="pill ${a.activo === false ? '' : 'ok'}">${a.activo === false ? 'Inactivo' : 'Activo'}</span> ${tipo ? `<span class="pill">${xe(tipo)}</span>` : ''} <span class="pill" id="fichaPlanPill">${plan ? 'Plan ' + xe(plan) : 'Sin plan'}</span> ${a.equipos?.nombre ? `<span class="pill">⚽ ${xe(a.equipos.nombre)}</span>` : ''}`;
   const box = document.getElementById('fichaBox');
   box.className = 'modal-box x-box x-ficha';
   box.innerHTML = `<div class="x-fi-head">${xAv(a.nombre, a.foto_url)}<div class="tt"><div class="x-nm">${xe(a.nombre)}</div><div style="margin-top:4px;display:flex;gap:5px;flex-wrap:wrap;">${pills}</div></div>
