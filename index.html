@@ -5409,7 +5409,7 @@ function atlIniciarAlu(){
   atlCargarVista('aluAtletismoContenido', id || '');
 }
 
-const APP_VERSION = 169;
+const APP_VERSION = 170;
 let ES_PERSONAL = false;   // (v132) cuenta personal (gimnasios.tipo = 'personal'); se calcula en perAplicar()
 // (v96) Fecha de la última actualización: se cambia junto con APP_VERSION en cada entrega. Se muestra en la
 // pantalla de inicio y en el menú de cuenta ("v94 · actualizada el 5/10/2026").
@@ -16451,6 +16451,8 @@ function xCobTexto(p){
   if (p.estado_pago === 'sin_pagos') return 'Nunca pagó';
   return `Vence el ${formatearFechaCorta(p.vigencia_hasta)}`;
 }
+// (v170) Un plan de cuota variable no tiene precio fijo ($0): en Finanzas se muestra lo que efectivamente pagó el mes (último cobro)
+function xCobMonto(p){ if (!p) return 0; const f = Number(p.precio_transferencia) || 0; return f > 0 ? f : (Number(p.monto) || 0); }
 function xCobEstado(p){ return (!p || !p.plan_id) ? 'sin_plan' : (p.estado_pago || 'al_dia'); }
 async function cargarCobranzas(){
   const cont = document.getElementById('listaCobranzas');
@@ -16487,7 +16489,7 @@ function renderCobranzas(){
   const F = COBRANZAS_FILAS;
   const q = xNorm(document.getElementById('cobBuscar')?.value || '');
   const cuenta = k => F.filter(f => xCobEstado(f.plan) === k).length;
-  const suma = k => F.filter(f => xCobEstado(f.plan) === k).reduce((a, f) => a + (Number(f.plan?.precio_transferencia) || 0), 0);
+  const suma = k => F.filter(f => xCobEstado(f.plan) === k).reduce((a, f) => a + xCobMonto(f.plan), 0);
   const kp = document.getElementById('cobKpis');
   if (kp) kp.innerHTML = `<div class="x-kpi"><div class="k">Cobrado este mes</div><div class="v t-ok">${COB_COBRADO_MES == null ? '—' : xe(formatearMonto(COB_COBRADO_MES))}</div></div>
     <div class="x-kpi"><div class="k">Por vencer · ${cuenta('por_vencer')}</div><div class="v t-warn">${xe(formatearMonto(suma('por_vencer')))}</div></div>
@@ -16502,12 +16504,12 @@ function renderCobranzas(){
   const filas = L.map(f => {
     const est = xCobEstado(f.plan), e = COB_ESTADOS[est], p = f.plan;
     return `<div class="x-frow" onclick="${abrir(f)}"><div>${xQuien(f.alumno.nombre, p && p.plan_id ? p.plan_nombre : 'Sin plan asignado', true, f.alumno.foto_url)}</div>
-      <div class="money">${p && p.plan_id ? xe(formatearMonto(p.precio_transferencia)) : '—'}</div><div class="x-sub" style="font-size:13px;">${xe(xCobTexto(p))}</div>
+      <div class="money">${p && p.plan_id && xCobMonto(p) > 0 ? xe(formatearMonto(xCobMonto(p))) : '—'}</div><div class="x-sub" style="font-size:13px;">${xe(xCobTexto(p))}</div>
       <div><span class="pill ${e[1]}">${e[0]}</span></div><div>${p && p.plan_id ? `<button class="${est === 'vencido' || est === 'por_vencer' || est === 'sin_pagos' ? '' : 'ghost'}" onclick="event.stopPropagation();abrirCobroAlumno('${f.alumno.id}', true)">💰 Cobrar</button>` : ''}</div></div>`;
   }).join('');
   const lista = L.map(f => {
     const est = xCobEstado(f.plan), e = COB_ESTADOS[est], p = f.plan;
-    return `<div class="x-li" onclick="${abrir(f)}">${xAv(f.alumno.nombre, f.alumno.foto_url)}<div class="mid"><div class="x-nm">${xe(f.alumno.nombre)}</div><div class="x-sub">${xe(p && p.plan_id ? p.plan_nombre + ' · ' + xCobTexto(p) : 'Sin plan asignado')}</div></div><div class="end"><div style="font-weight:800;">${p && p.plan_id ? xe(formatearMonto(p.precio_transferencia)) : ''}</div><div style="margin-top:3px;"><span class="pill ${e[1]}">${e[0]}</span></div></div><span class="go">›</span></div>`;
+    return `<div class="x-li" onclick="${abrir(f)}">${xAv(f.alumno.nombre, f.alumno.foto_url)}<div class="mid"><div class="x-nm">${xe(f.alumno.nombre)}</div><div class="x-sub">${xe(p && p.plan_id ? p.plan_nombre + ' · ' + xCobTexto(p) : 'Sin plan asignado')}</div></div><div class="end"><div style="font-weight:800;">${p && p.plan_id && xCobMonto(p) > 0 ? xe(formatearMonto(xCobMonto(p))) : ''}</div><div style="margin-top:3px;"><span class="pill ${e[1]}">${e[0]}</span></div></div><span class="go">›</span></div>`;
   }).join('');
   cont.className = '';
   cont.innerHTML = `<div class="x-tbl-wrap"><div class="x-frow h"><div>Alumno</div><div style="text-align:right">Cuota</div><div>Vencimiento</div><div>Estado</div><div></div></div>${filas}</div><div class="x-lst" style="border:0;border-radius:0;">${lista}</div>`;
@@ -18256,7 +18258,7 @@ async function abrirModalCobrarQR(alumnoId, periodo, montoEsperado){
     document.getElementById('qrCobroEstado').style.display = 'none';
     document.getElementById('qrCobroContenido').style.display = '';
     document.getElementById('qrCobroAlumno').textContent = `${r.alumno_nombre} · ${r.plan_nombre}`;
-    document.getElementById('qrCobroMonto').textContent = `$${Number(r.monto).toFixed(2)}`;
+    document.getElementById('qrCobroMonto').textContent = formatearMonto(Number(r.monto));   // (v170) con puntos de miles, como en el resto de la app
     document.getElementById('qrCobroEsperando').style.display = '';
     if (window.QRCode && window.QRCode.toCanvas){
       window.QRCode.toCanvas(document.getElementById('qrCobroCanvas'), r.qr_data, { width: 220, margin: 1 }, (err) => {
