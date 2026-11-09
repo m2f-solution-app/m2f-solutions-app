@@ -5409,7 +5409,7 @@ function atlIniciarAlu(){
   atlCargarVista('aluAtletismoContenido', id || '');
 }
 
-const APP_VERSION = 171;
+const APP_VERSION = 172;
 let ES_PERSONAL = false;   // (v132) cuenta personal (gimnasios.tipo = 'personal'); se calcula en perAplicar()
 // (v96) Fecha de la última actualización: se cambia junto con APP_VERSION en cada entrega. Se muestra en la
 // pantalla de inicio y en el menú de cuenta ("v94 · actualizada el 5/10/2026").
@@ -7718,7 +7718,7 @@ async function cargarRotativasPorTerminar(hoy){
     const gym = PERFIL_ACTUAL && PERFIL_ACTUAL.gimnasio_id; if (!gym) return [];
     const rs = await sb(`rutinas?select=id,nombre,fecha_inicio,duracion_semanas&gimnasio_id=eq.${gym}&modo_dias=eq.rotativa&activa=eq.true&fecha_inicio=not.is.null&duracion_semanas=not.is.null`);
     const aviso = rs.map(r => ({ ...r, fin: finCicloRotativa(r.fecha_inicio, r.duracion_semanas) }))
-      .filter(r => r.fecha_inicio <= hoy && r.fin <= ipSumarDias(hoy, 7) && r.fin >= ipSumarDias(hoy, -14));
+      .filter(r => r.fecha_inicio <= hoy && r.fin <= ipSumarDias(hoy, 7) && r.fin >= ipSumarDias(hoy, -90));   // (v175) las asignadas a un alumno siguen avisando hasta que se cierren (tope 90 d)
     if (!aviso.length) return [];
     const asig = await sb(`rutina_asignaciones?select=rutina_id,alumno_id,alumnos(nombre)&rutina_id=in.(${aviso.map(r => r.id).join(',')})`);
     const alIds = [...new Set(asig.map(a => a.alumno_id))];
@@ -7726,13 +7726,15 @@ async function cargarRotativasPorTerminar(hoy){
     const out = [];
     aviso.forEach(r => {
       const duenos = asig.filter(a => a.rutina_id === r.id);
-      if (!duenos.length){ out.push({ rutinaId: r.id, rutina: r.nombre, alumnoId: null, alumno: null, fin: r.fin }); return; }
+      if (!duenos.length){ if (r.fin >= ipSumarDias(hoy, -14)) out.push({ rutinaId: r.id, rutina: r.nombre, alumnoId: null, alumno: null, fin: r.fin }); return; }
       duenos.forEach(a => {
         const hayLaSiguiente = otras.some(o => o.alumno_id === a.alumno_id && o.rutina_id !== r.id && o.rutinas && o.rutinas.modo_dias === 'rotativa' && o.rutinas.activa !== false && o.rutinas.fecha_inicio && o.rutinas.fecha_inicio > r.fecha_inicio);
         if (!hayLaSiguiente) out.push({ rutinaId: r.id, rutina: r.nombre, alumnoId: a.alumno_id, alumno: (a.alumnos && a.alumnos.nombre) || 'Alumno', fin: r.fin });
       });
     });
-    return out.sort((p, q) => p.fin.localeCompare(q.fin));
+    let pedidos = []; try{ pedidos = await sb('mensual_pedidos?select=alumno_id,rutina_id'); }catch(e){}   // (v175)
+    out.forEach(o => { o.pidio = pedidos.some(p => p.alumno_id === o.alumnoId && p.rutina_id === o.rutinaId); });
+    return out.sort((p, q) => (q.pidio ? 1 : 0) - (p.pidio ? 1 : 0) || p.fin.localeCompare(q.fin));
   }catch(e){ return []; } // columna fecha_inicio inexistente (falta el SQL) u otro error: sin alerta
 }
 
@@ -7904,7 +7906,7 @@ function ipRenderAlertas(){
     const alumnosUnicos = [...new Set(d.rotFin.map(x => x.alumnoId).filter(Boolean))];
     items.push(['⏳', 'var(--warn)',
       unico ? `${unico.alumno || 'Mensual general'}: la rutina mensual ${cuando(unico)}` : `${d.rotFin.length} rutinas mensuales por terminar`,
-      (unico ? `${unico.rutina} · falta cargar la siguiente` : d.rotFin.slice(0, 3).map(x => `${x.alumno || x.rutina} (${cuando(x)})`).join(', ') + (d.rotFin.length > 3 ? ` y ${d.rotFin.length - 3} más` : '')),
+      (unico ? `${unico.rutina} · ${unico.pidio ? 'pidió la nueva' : 'falta cargar la siguiente'}` : d.rotFin.slice(0, 3).map(x => `${x.alumno || x.rutina} (${cuando(x)}${x.pidio ? ' · pidió la nueva' : ''})`).join(', ') + (d.rotFin.length > 3 ? ` y ${d.rotFin.length - 3} más` : '')),
       alumnosUnicos.length === 1 ? `irAAsignarEspecialDesdeModal('${alumnosUnicos[0]}')` : "cambiarSubvista('especiales')"]);
   }
   if (d.records && d.records.length){
@@ -25523,6 +25525,41 @@ async function guardarEdicionDia(diaId){
 // por turno, así que sin esto no aparecían en ningún lado para un alumno que
 // entrena a distancia. Devuelve, por cada una, el día que le toca AHORA según el
 // cursor de rotación (resolverDiaRutinaRotativa).
+// (v175) Mensual vencida (pasó su fecha de fin): el alumno puede seguir con ella por ahora o pedirle la nueva al profe.
+// Nada se cierra solo: el profe/admin la cierra, la extiende o asigna la siguiente desde la ficha del alumno.
+function mensualSnoozeKey(rutinaId){ return 'm2f_mensual_seguir_' + rutinaId; }
+function mensualSnoozeActivo(rutinaId){
+  try{ const v = localStorage.getItem(mensualSnoozeKey(rutinaId)); return !!v && v >= fechaLocalISO(); }catch(e){ return false; }
+}
+function mensualSeguirCon(rutinaId){
+  try{ localStorage.setItem(mensualSnoozeKey(rutinaId), ipSumarDias(fechaLocalISO(), 3)); }catch(e){}
+  const alumnoId = document.getElementById('aluAlumno').value;
+  if (alumnoId) cargarRutinasDeAlumno('aluAlumno', 'listaRutinasAlu');
+}
+async function mensualPedirNueva(rutinaId, alumnoId){
+  try{
+    await sb('rpc/mensual_pedir_nueva', { method: 'POST', body: JSON.stringify({ p_rutina: rutinaId }) });
+    toast('Listo, le avisamos a tu profe ✓ Mientras tanto podés seguir con esta.');
+    cargarRutinasDeAlumno('aluAlumno', 'listaRutinasAlu');
+  }catch(e){
+    const m = String((e && e.message) || e);
+    toast(/mensual_pedir_nueva|PGRST202|404/.test(m) ? 'Todavía no está disponible: avisale a tu profe.' : 'No se pudo avisar: ' + m, true);
+  }
+}
+function mensualAvisoAlumnoHtml(x, alumnoId, pedidos){
+  const fin = finCicloRotativa(x.rutina.fecha_inicio, x.rutina.duracion_semanas);
+  if (!fin || fechaLocalISO() <= fin || x.empieza) return '';
+  if (mensualSnoozeActivo(x.rutina.id)) return '';
+  const pidio = (pedidos || []).some(p => p.rutina_id === x.rutina.id);
+  return `<div class="card" style="border-left:4px solid var(--warn); margin-bottom:8px;">
+    <div style="font-weight:800;">⏳ Terminó tu mensual</div>
+    <div class="muted" style="font-size:13px; margin:4px 0 10px;">«${escaparHtml(x.rutina.nombre)}» era hasta el ${fechaCortaISO(fin)}. Podés seguir con esta por ahora o pedirle la nueva a tu profe.</div>
+    ${pidio
+      ? `<div style="font-size:13px; font-weight:700;">✓ Ya le avisaste a tu profe. Seguí con esta hasta que te cargue la nueva.</div>`
+      : `<div class="row" style="gap:8px;"><button onclick="mensualPedirNueva('${x.rutina.id}','${alumnoId}')">Pedirle la nueva al profe</button><button class="ghost" onclick="mensualSeguirCon('${x.rutina.id}')">Seguir con esta por ahora</button></div>`}
+  </div>`;
+}
+
 async function listarRutinasRotativasDeAlumno(alumnoId){
   const resultado = [];
   try{
@@ -25530,7 +25567,7 @@ async function listarRutinasRotativasDeAlumno(alumnoId){
     const asignaciones = await sb(`rutina_asignaciones?select=rutina_id&alumno_id=eq.${alumnoId}`);
     const rutinaIdsAlumno = asignaciones.map(a => a.rutina_id);
     if (rutinaIdsAlumno.length){
-      const rutinas = await sb(`rutinas?select=id,nombre&id=in.(${rutinaIdsAlumno.join(',')})&modo_dias=eq.rotativa&activa=eq.true`);
+      const rutinas = await sb(`rutinas?select=id,nombre,fecha_inicio,duracion_semanas&id=in.(${rutinaIdsAlumno.join(',')})&modo_dias=eq.rotativa&activa=eq.true`);
       for (const r of rutinas){
         const diaCursor = await resolverDiaRutinaRotativa(r.id, alumnoId);
         if (!diaCursor){
@@ -25554,7 +25591,7 @@ async function listarRutinasRotativasDeAlumno(alumnoId){
         ? [`tipo_alumno_id=eq.${tipoAlumnoId}`, `tipo_alumno_id=is.null`]
         : [`tipo_alumno_id=is.null`];
       for (const filtroTipo of filtrosTipo){
-        const candidatas = await sb(`rutinas?select=id,nombre&gimnasio_id=eq.${gimnasioIdAlumno}&modo_dias=eq.rotativa&activa=eq.true&${filtroTipo}`);
+        const candidatas = await sb(`rutinas?select=id,nombre,fecha_inicio,duracion_semanas&gimnasio_id=eq.${gimnasioIdAlumno}&modo_dias=eq.rotativa&activa=eq.true&${filtroTipo}`);
         for (const r of candidatas){
           if (idsConAsignacion.has(r.id) || idsYaListados.has(r.id)) continue;
           const diaCursor = await resolverDiaRutinaRotativa(r.id, alumnoId);
@@ -25592,11 +25629,12 @@ async function cargarRutinasDeAlumno(selectId, contenedorId){
   cont.innerHTML = 'Cargando...';
   try{
     const hoy = fechaLocalISO();
-    const [rows, rotativas, ejecFinalizadas, pregRot] = await Promise.all([
+    const [rows, rotativas, ejecFinalizadas, pregRot, pedidosMens] = await Promise.all([
       sb(`turnos?select=id,fecha,hora,rutina_dia_id,rutina_dias(id,nombre_dia,rutinas(nombre))&alumno_id=eq.${alumnoId}&estado=neq.cancelado&rutina_dia_id=not.is.null&order=fecha.desc,hora.desc&limit=30`),
       listarRutinasRotativasDeAlumno(alumnoId),
       sb(`ejecuciones?select=rutina_dia_id&alumno_id=eq.${alumnoId}&estado=eq.finalizada&limit=500`),
       rotPreguntaHtml(alumnoId),   // (v118)
+      sb(`mensual_pedidos?select=rutina_id&alumno_id=eq.${alumnoId}`).catch(() => []),   // (v175)
     ]);
     const diasCompletados = new Set(ejecFinalizadas.map(e => e.rutina_dia_id));
     // Sin ninguna rutina enganchada (ni por turno ni rotativa): ocultamos la sección del menú.
@@ -25605,14 +25643,14 @@ async function cargarRutinasDeAlumno(selectId, contenedorId){
 
     // Rotativas primero: no dependen de turno, son la rutina "de fondo" del alumno.
     const esc1 = (x) => String(x || '').replace(/'/g, '&apos;');
-    const htmlRotativas = rotativas.map(x => x.empieza ? tcardHtml({
+    const htmlRotativas = rotativas.map(x => mensualAvisoAlumnoHtml(x, alumnoId, pedidosMens) + (x.empieza ? tcardHtml({
       titulo: x.rutina.nombre, sub: `Tu ciclo arranca el ${fechaLegible(x.empieza)}`,
       estadoCls: '', estadoTxt: 'Próximo', acciones: '',
     }) : tcardHtml({
       titulo: x.rutina.nombre, sub: `Te toca: ${x.diaCursor.nombre_dia} (día ${(x.diaCursor.orden ?? 0) + 1} de ${x.totalDias})` + (x.diaCursor._manual ? ` · ${escaparHtml(rotOrigenTxt(x.diaCursor._manual))}` : ''),
       estadoCls: '', estadoTxt: 'Mensual',
       acciones: `<button onclick="comenzarEntrenamiento('${x.diaCursor.id}','${alumnoId}','${esc1(x.diaCursor.nombre_dia)}')">Ver / Empezar</button>`,
-    })).join('');
+    }))).join('');
 
     const htmlTurnos = rows.map(t => {
       // (v54, 24/9) Un turno futuro no ofrece "Ver / Empezar", solo la fecha en la que va a estar
@@ -27123,13 +27161,54 @@ async function rotInfoAgenda(turnos, fecha){
   }catch(e){ console.error('No se pudo revisar las rotativas de la Agenda:', e); ok = false; }
   return { rotDe, rotDia, ok };
 }
+// (v175) Staff: cerrar o extender una mensual vencida desde la ficha del alumno.
+async function rotMensualCerrar(alumnoId, rutinaId, nombre){
+  try{
+    const asig = await sb(`rutina_asignaciones?select=alumno_id&rutina_id=eq.${rutinaId}`);
+    const otros = (asig || []).length > 1 ? `\n\nLa comparten ${(asig || []).length} alumnos: se cierra para todos.` : '';
+    if (!confirm(`¿Cerrar la mensual «${nombre}»?\nQueda archivada (el historial se conserva) y deja de aparecerle al alumno.${otros}`)) return;
+    await sb(`rutinas?id=eq.${rutinaId}`, { method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: JSON.stringify({ activa: false }) });
+    toast('Mensual cerrada ✓ Ya no le aparece al alumno.');
+    const el = document.getElementById('fichaRotDia'); if (el) el.innerHTML = '';
+    rotFichaResumen(alumnoId, FICHA_TOK);
+  }catch(e){ toast('No se pudo cerrar: ' + ((e && e.message) || e), true); }
+}
+async function rotMensualExtender(alumnoId, rutinaId, duracionActual){
+  const v = prompt(`¿Cuántas semanas más? (hoy dura ${duracionActual})`, '4');
+  const n = parseInt(v, 10);
+  if (!n || n < 1 || n > 52) return;
+  try{
+    await sb(`rutinas?id=eq.${rutinaId}`, { method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: JSON.stringify({ duracion_semanas: (Number(duracionActual) || 0) + n }) });
+    toast(`Extendida ${n} semana${n === 1 ? '' : 's'} ✓`);
+    const el = document.getElementById('fichaRotDia'); if (el) el.innerHTML = '';
+    rotFichaResumen(alumnoId, FICHA_TOK);
+  }catch(e){ toast('No se pudo extender: ' + ((e && e.message) || e), true); }
+}
+
 async function rotFichaResumen(alumnoId, tok){
   try{
     const x = await rotActualDeAlumno(alumnoId);
     const el = document.getElementById('fichaRotDia');
     if (!x || !el || tok !== FICHA_TOK) return;
+    // (v175) mensual vencida: cerrar / extender / asignar la siguiente
+    const fin = finCicloRotativa(x.rutina.fecha_inicio, x.rutina.duracion_semanas);
+    let venc = '';
+    if (fin && fechaLocalISO() > fin){
+      const ped = await sb(`mensual_pedidos?select=rutina_id&alumno_id=eq.${alumnoId}&rutina_id=eq.${x.rutina.id}`).catch(() => []);
+      if (tok !== FICHA_TOK) return;
+      const propia = x.origen === 'especial';
+      const nom = String(x.rutina.nombre || '').replace(/'/g, '&apos;');
+      venc = `<div class="x-item" style="margin:10px 0 0; border-left:3px solid var(--warn);"><div>
+        <b>⏳ Terminó el ${xe(fechaCortaISO(fin))}</b>${ped.length ? ' <span class="x-sub">· pidió la nueva</span>' : ''}
+        <div class="x-sub">${propia ? 'El alumno puede seguir con ella hasta que la cierres o le cargues la siguiente.' : 'Es una mensual general del gimnasio: se cierra desde Rutinas.'}</div>
+        <div class="x-btns" style="margin-top:6px;">
+          <button type="button" class="ghost" onclick="irAAsignarEspecialDesdeModal('${alumnoId}')">Asignar la siguiente</button>
+          ${propia ? `<button type="button" class="ghost" onclick="rotMensualExtender('${alumnoId}', '${x.rutina.id}', ${Number(x.rutina.duracion_semanas) || 0})">Extender</button>
+          <button type="button" class="ghost" onclick="rotMensualCerrar('${alumnoId}', '${x.rutina.id}', '${nom}')">Cerrar mensual</button>` : ''}
+        </div></div></div>`;
+    }
     el.innerHTML = `<div style="margin-top:6px;">Le toca: <b>${xe(rotNombreDia(x.diaCursor))}</b> <span class="x-sub">(día ${(x.diaCursor.orden ?? 0) + 1} de ${x.totalDias})${x.diaCursor._manual ? ' ✎' : ''}</span></div>
-      <button type="button" class="ghost" style="margin-top:6px; padding:4px 10px; font-size:12.5px;" onclick="rotAbrirCambiarDia('${alumnoId}', '${x.rutina.id}', '')">✎ Cambiar día</button>`;
+      <button type="button" class="ghost" style="margin-top:6px; padding:4px 10px; font-size:12.5px;" onclick="rotAbrirCambiarDia('${alumnoId}', '${x.rutina.id}', '')">✎ Cambiar día</button>${venc}`;
   }catch(e){ /* sin esto la ficha se ve igual que antes */ }
 }
 
