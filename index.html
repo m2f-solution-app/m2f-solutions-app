@@ -5409,11 +5409,11 @@ function atlIniciarAlu(){
   atlCargarVista('aluAtletismoContenido', id || '');
 }
 
-const APP_VERSION = 170;
+const APP_VERSION = 171;
 let ES_PERSONAL = false;   // (v132) cuenta personal (gimnasios.tipo = 'personal'); se calcula en perAplicar()
 // (v96) Fecha de la última actualización: se cambia junto con APP_VERSION en cada entrega. Se muestra en la
 // pantalla de inicio y en el menú de cuenta ("v94 · actualizada el 5/10/2026").
-const APP_FECHA = '2026-11-04';
+const APP_FECHA = '2026-11-09';
 function appVersionTxt(){ const [y, m, d] = APP_FECHA.split('-'); return `v${APP_VERSION} · actualizada el ${+d}/${+m}/${y}`; }
 (function(){ const el = document.getElementById('lcVersion'); if (el) el.textContent = 'M2F Solutions · ' + appVersionTxt(); })();
 
@@ -28927,11 +28927,62 @@ async function perPickerCrear(){
 // ---------- Durante el entrenamiento ----------
 // (a) Wellness ANTES de empezar (si todavía no lo hizo hoy) y bloqueo por plan vencido.
 // (b) Cronómetro de sesión (arranca con la primera serie, igual que el "inicio real" de v130) + botón para sumar un ejercicio en vivo.
+
+// (v174) Un entrenamiento que quedó "en curso" de un día anterior NO se retoma ni se empieza de cero: antes de arrancar el de hoy
+// se cierra. Si está vacío (no llegó a cargar ningún ejercicio) se descarta solo; si tiene ejercicios cargados, se le avisa al
+// alumno y lo cierra con un toque (queda guardado en su día de origen, sin sumar asistencia de hoy). Nunca frena el entrenamiento
+// si algo falla o si todavía no se corrió v174-cerrar-entrenamiento-viejo.sql.
+async function ejecViejaResolver(alumnoId){
+  try{
+    const d0 = new Date(); d0.setHours(0, 0, 0, 0);
+    const viejas = await sb(`ejecuciones?select=id,fecha,rutina_dia_id&alumno_id=eq.${alumnoId}&estado=neq.finalizada&fecha=lt.${encodeURIComponent(d0.toISOString())}&order=fecha.asc`);
+    if (!viejas || !viejas.length) return false;
+    const ids = viejas.map(v => v.id);
+    const conEj = await sb(`ejecucion_ejercicios?select=ejecucion_id&ejecucion_id=in.(${ids.join(',')})&finalizado=eq.true`);
+    const conProgreso = new Set((conEj || []).map(x => x.ejecucion_id));
+    const vacias = viejas.filter(v => !conProgreso.has(v.id)).map(v => v.id);
+    if (vacias.length){ try{ await sb(`ejecuciones?id=in.(${vacias.join(',')})`, { method: 'DELETE', headers: { Prefer: 'return=minimal' } }); }catch(e){ console.error(e); } }
+    const pend = viejas.filter(v => conProgreso.has(v.id));
+    if (!pend.length) return false;
+    const dias = await sb(`rutina_dias?select=id,nombre_dia,orden&id=in.(${[...new Set(pend.map(p => p.rutina_dia_id).filter(Boolean))].join(',') || '00000000-0000-0000-0000-000000000000'})`).catch(() => []);
+    const nom = {}; (dias || []).forEach(d => { nom[d.id] = d.nombre_dia || ('Día ' + (((d.orden) ?? 0) + 1)); });
+    const lista = pend.map(p => `«${escaparHtml(nom[p.rutina_dia_id] || 'Entrenamiento')}» del ${formatearFechaCorta(String(p.fecha).slice(0, 10))}`).join(' · ');
+    return await new Promise(resolve => {
+      let ov = document.getElementById('modalEjecVieja');
+      if (!ov){ ov = document.createElement('div'); ov.id = 'modalEjecVieja'; ov.className = 'modal-overlay'; ov.style.zIndex = '1002'; document.body.appendChild(ov); }
+      ov.innerHTML = `<div class="modal-box" style="max-width:400px; text-align:left;">
+        <h3 style="margin-top:0;">Tenés un entrenamiento sin cerrar</h3>
+        <p style="margin:0 0 10px;">${lista} quedó abierto.</p>
+        <p class="muted" style="margin:0 0 14px;">Para arrancar el de hoy primero hay que cerrarlo. Lo que ya cargaste queda guardado.</p>
+        <button id="btnEjecViejaOk" style="width:100%;">Cerrarlo y seguir</button>
+        <button class="ghost" id="btnEjecViejaNo" style="width:100%; margin-top:8px;">Ahora no</button></div>`;
+      ov.classList.add('show');
+      const cerrar = (v) => { ov.classList.remove('show'); resolve(v); };
+      document.getElementById('btnEjecViejaNo').onclick = () => cerrar(true);
+      document.getElementById('btnEjecViejaOk').onclick = async () => {
+        const b = document.getElementById('btnEjecViejaOk'); b.disabled = true; b.textContent = 'Cerrando…';
+        try{
+          for (const p of pend) await sb('rpc/ejecucion_cerrar_vieja', { method: 'POST', body: JSON.stringify({ p_ejecucion: p.id }) });
+        }catch(e){
+          const m = String((e && e.message) || e);
+          if (/ejecucion_cerrar_vieja|PGRST202|404/.test(m)){ cerrar(false); return; }   // SQL v174 sin correr: sigue como antes
+          toast('No se pudo cerrar: ' + m, true); b.disabled = false; b.textContent = 'Cerrarlo y seguir'; return;
+        }
+        cerrar(true);
+        toast('Listo, entrenamiento cerrado ✓ Tocá el de hoy para empezar.');
+        try{ cargarRutinasDeAlumno('aluAlumno', 'listaRutinasAlu'); cargarTurnos(alumnoId); }catch(e){}
+      };
+    });
+  }catch(e){ console.error('ejecViejaResolver:', e); return false; }
+}
 const _comenzarEntrenamientoOrig = comenzarEntrenamiento;
 comenzarEntrenamiento = async function(rutinaDiaId, alumnoId, nombreDia){
   if (!ES_PERSONAL){
     // (v135) Wellness al tocar "Empezar entrenamiento" (con o sin turno hoy). Se puede saltear; el staff que carga por el alumno no lo responde.
-    if (!EJEC_STAFF) await wellnessAntesDeEmpezar(rutinaDiaId, alumnoId);
+    if (!EJEC_STAFF){
+      if (await ejecViejaResolver(alumnoId)) return;   // (v174) quedó un entrenamiento viejo sin cerrar: se avisa y no arranca todavía
+      await wellnessAntesDeEmpezar(rutinaDiaId, alumnoId);
+    }
     return _comenzarEntrenamientoOrig(rutinaDiaId, alumnoId, nombreDia);
   }
   if (GIMNASIO_ACTUAL_BLOQUEADO){ perPaywall(); return; }
