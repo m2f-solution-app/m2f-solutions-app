@@ -5409,7 +5409,7 @@ function atlIniciarAlu(){
   atlCargarVista('aluAtletismoContenido', id || '');
 }
 
-const APP_VERSION = 172;
+const APP_VERSION = 173;
 let ES_PERSONAL = false;   // (v132) cuenta personal (gimnasios.tipo = 'personal'); se calcula en perAplicar()
 // (v96) Fecha de la última actualización: se cambia junto con APP_VERSION en cada entrega. Se muestra en la
 // pantalla de inicio y en el menú de cuenta ("v94 · actualizada el 5/10/2026").
@@ -19161,30 +19161,106 @@ function valorAnterior(porMetrica, metrica, fecha){
   return prev;
 }
 
+// (v176) Historial de evaluaciones: desplegable (cerrado por defecto) y más claro.
+//  · Fechas en texto ("30 nov 2026"), decimales con coma, mediciones agrupadas por categoría.
+//  · Los tests de fuerza guardados como "X - Peso" + "X - Reps" se muestran juntos: "X · 90 kg × 1 rep".
+//  · Cada medición muestra contra qué se compara: "▲ +2 cm · antes 38,5 (27 nov)".
+//  · Cada evaluación también se abre y se cierra; la más reciente viene abierta. El estado se recuerda al recargar.
+//  · "Historial y contexto" y "Plan de acción" solo los ve el staff (y solo cuando cambiaron respecto de la evaluación anterior).
+const EVAL_HIST_ABIERTO = {};
+function evalHistToggle(id){
+  const c = document.getElementById(id), k = document.getElementById('caret-' + id);
+  if (!c) return;
+  const abierta = c.style.display !== 'none';
+  c.style.display = abierta ? 'none' : '';
+  if (k) k.textContent = abierta ? '▸' : '▾';
+  EVAL_HIST_ABIERTO[id] = !abierta;
+}
+function evalNum(v){
+  const n = Number(v);
+  if (!isFinite(n)) return String(v);
+  return String(Math.round(n * 100) / 100).replace('.', ',');
+}
+function evalFechaTxt(iso){
+  const [y, m, d] = String(iso).slice(0, 10).split('-');
+  return `${+d} ${['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'][+m - 1] || ''} ${y}`;
+}
+function evalFilasEvaluacion(e, porMetrica){
+  // Une "X - Peso" con "X - Reps" en una sola fila; el resto va una fila por medición.
+  const usados = new Set(), filas = [];
+  const reps = {}; e.metricas.forEach(m => { const r = String(m.metrica).match(/^(.*) - Reps$/i); if (r) reps[r[1].toLowerCase()] = m; });
+  e.metricas.forEach(m => {
+    if (usados.has(m.id)) return;
+    const pm = String(m.metrica).match(/^(.*) - Peso$/i);
+    let nombre = m.metrica, valorTxt = `${evalNum(m.valor)}${m.unidad ? ' ' + m.unidad : ''}`;
+    if (pm && reps[pm[1].toLowerCase()]){
+      const r = reps[pm[1].toLowerCase()]; usados.add(r.id);
+      nombre = pm[1];
+      valorTxt += ` × ${evalNum(r.valor)} rep${Number(r.valor) === 1 ? '' : 's'}`;
+    } else if (/ - Reps$/i.test(String(m.metrica)) && e.metricas.some(x => new RegExp('^' + String(m.metrica).replace(/ - Reps$/i, '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ' - Peso$', 'i').test(String(x.metrica)))){
+      return;   // ya la mostró la fila del peso
+    }
+    usados.add(m.id);
+    const prev = valorAnterior(porMetrica, m.metrica, e.fecha);
+    let delta = '';
+    if (prev){
+      const diff = Number(m.valor) - prev.valor;
+      delta = diff === 0
+        ? `= igual que el ${evalFechaTxt(prev.fecha)}`
+        : `${diff > 0 ? '▲ +' : '▼ −'}${evalNum(Math.abs(diff))}${m.unidad ? ' ' + m.unidad : ''} · antes ${evalNum(prev.valor)} (${evalFechaTxt(prev.fecha)})`;
+    } else delta = 'primera medición';
+    filas.push({ cat: m.categoria || 'Otras', nombre, valorTxt, delta });
+  });
+  return filas;
+}
 function renderHistorialEvaluaciones(contId, evaluaciones){
   const cont = document.getElementById(contId);
+  if (!cont) return;
   if (!evaluaciones.length){ cont.innerHTML = '<div class="empty">Todavía no hay evaluaciones cargadas.</div>'; return; }
+  const staff = contId === 'evalHistorial';
   const porMetrica = construirHistorialMetricas(evaluaciones);
-  const ordenadas = [...evaluaciones].sort((a,b) => b.fecha.localeCompare(a.fecha));
-  cont.innerHTML = ordenadas.map(e => {
-    const filas = e.metricas.map(m => {
-      const prev = valorAnterior(porMetrica, m.metrica, e.fecha);
-      let delta = '';
-      if (prev && prev.valor !== Number(m.valor)){
-        const diff = Number(m.valor) - prev.valor;
-        delta = ` <span class="muted">(${diff>0?'+':''}${diff.toFixed(1)}${m.unidad?(' '+m.unidad):''} vs. anterior)</span>`;
-      }
-      return `<div style="padding:2px 0;">${m.metrica}: <strong>${m.valor}${m.unidad?(' '+m.unidad):''}</strong>${delta}</div>`;
-    }).join('') || '<div class="muted">Sin métricas cargadas.</div>';
+  const ordenadas = [...evaluaciones].sort((a, b) => b.fecha.localeCompare(a.fecha));
+  const idTodo = 'evh-' + contId;
+  const abiertoTodo = !!EVAL_HIST_ABIERTO[idTodo];
+  const cuerpo = ordenadas.map((e, i) => {
+    const filas = evalFilasEvaluacion(e, porMetrica);
+    const cats = [...new Set(filas.map(f => f.cat))];
+    const id = `${idTodo}-${i}`;
+    const abierta = (id in EVAL_HIST_ABIERTO) ? EVAL_HIST_ABIERTO[id] : i === 0;
+    const grupos = cats.map(c => `
+      <div style="margin-top:10px;">
+        <div class="muted" style="font-size:11px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; margin-bottom:2px;">${escaparHtml(c)}</div>
+        ${filas.filter(f => f.cat === c).map(f => `
+          <div style="display:flex; justify-content:space-between; align-items:baseline; gap:12px; padding:7px 0; border-top:1px solid var(--border);">
+            <div style="min-width:0;"><div style="font-weight:600;">${escaparHtml(f.nombre)}</div><div class="muted" style="font-size:12px;">${escaparHtml(f.delta)}</div></div>
+            <div style="font-weight:800; font-size:16px; white-space:nowrap;">${escaparHtml(f.valorTxt)}</div>
+          </div>`).join('')}
+      </div>`).join('') || '<div class="muted" style="margin-top:8px;">Sin mediciones cargadas.</div>';
+    const ant = ordenadas[i + 1];
+    const textoNuevo = (campo) => { const v = (e[campo] || '').trim(); return v && (!ant || v !== String(ant[campo] || '').trim()) ? v : ''; };
+    const ctx = staff ? textoNuevo('historial_contexto') : '', plan = staff ? textoNuevo('plan_accion') : '';
+    const extra = (e.notas ? `<div style="margin-top:10px; font-size:13px;">📝 ${escaparHtml(e.notas)}</div>` : '')
+      + (ctx ? `<div style="margin-top:10px;"><div class="muted" style="font-size:11px; font-weight:700; text-transform:uppercase;">Historial y contexto</div><div style="white-space:pre-wrap; font-size:13px;">${escaparHtml(ctx)}</div></div>` : '')
+      + (plan ? `<div style="margin-top:10px;"><div class="muted" style="font-size:11px; font-weight:700; text-transform:uppercase;">Plan de acción</div><div style="white-space:pre-wrap; font-size:13px;">${escaparHtml(plan)}</div></div>` : '');
     return `
-    <div style="padding:10px 0; border-bottom:1px solid var(--border);">
-      <div class="row" style="justify-content:space-between; gap:10px;">
-        <div style="font-weight:600;">${e.fecha}</div>
-        ${e.notas ? `<div class="muted" style="font-style:italic;">${e.notas}</div>` : ''}
+    <div style="border-top:1px solid var(--border);">
+      <div class="bloque-titulo bloque-titulo-clickable" style="margin:0; padding:10px 0; text-transform:none; letter-spacing:0; font-size:14px;" onclick="evalHistToggle('${id}')">
+        <span class="bloque-caret" id="caret-${id}">${abierta ? '▾' : '▸'}</span>
+        <span style="font-weight:700; color:var(--text); white-space:nowrap;">${evalFechaTxt(e.fecha)}</span>
+        <span class="muted" style="margin-left:auto; font-size:12px; font-weight:400; text-align:right;">${filas.length === 1 ? '1 medición' : filas.length + ' mediciones'}</span>
       </div>
-      <div style="margin-top:6px;">${filas}</div>
+      <div id="${id}" style="${abierta ? '' : 'display:none;'} padding:0 0 12px 22px;">${grupos}${extra}</div>
     </div>`;
   }).join('');
+  cont.innerHTML = `
+    <div class="bloque-seccion">
+      <div class="bloque-titulo bloque-titulo-clickable" style="margin:0; text-transform:none; letter-spacing:0; font-size:15px; font-weight:700;" onclick="evalHistToggle('${idTodo}')">
+        <span class="bloque-caret" id="caret-${idTodo}">${abiertoTodo ? '▾' : '▸'}</span>
+        <span style="white-space:nowrap;">Ver historial</span>
+        <span class="muted" style="margin-left:auto; font-size:12px; font-weight:400; text-align:right;">${ordenadas.length === 1 ? '1 evaluación' : ordenadas.length + ' evaluaciones'}</span>
+      </div>
+      <div id="${idTodo}" style="${abiertoTodo ? '' : 'display:none;'}">${cuerpo}</div>
+    </div>`;
 }
 
 function poblarSelectMetricas(selectId, evaluaciones){
