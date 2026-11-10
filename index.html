@@ -5409,11 +5409,11 @@ function atlIniciarAlu(){
   atlCargarVista('aluAtletismoContenido', id || '');
 }
 
-const APP_VERSION = 173;
+const APP_VERSION = 174;
 let ES_PERSONAL = false;   // (v132) cuenta personal (gimnasios.tipo = 'personal'); se calcula en perAplicar()
 // (v96) Fecha de la última actualización: se cambia junto con APP_VERSION en cada entrega. Se muestra en la
 // pantalla de inicio y en el menú de cuenta ("v94 · actualizada el 5/10/2026").
-const APP_FECHA = '2026-11-09';
+const APP_FECHA = '2026-11-10';
 function appVersionTxt(){ const [y, m, d] = APP_FECHA.split('-'); return `v${APP_VERSION} · actualizada el ${+d}/${+m}/${y}`; }
 (function(){ const el = document.getElementById('lcVersion'); if (el) el.textContent = 'M2F Solutions · ' + appVersionTxt(); })();
 
@@ -6496,7 +6496,30 @@ function chequearBloqueoEscrituraStaff(path, opts){
   throw new Error('Tu período de prueba venció. Activá tu suscripción para poder crear o editar — mientras tanto podés seguir viendo todo.');
 }
 
+// (v177) Lecturas idénticas en vuelo: si dos partes de la app piden EXACTAMENTE lo mismo a la vez (pasa al abrir:
+// Inicio, Rutinas y Turnos consultan las mismas rutinas/ejecuciones), se hace UN solo pedido y cada una recibe su copia.
+// Solo GET sin cuerpo y solo mientras el pedido está en vuelo (nada se guarda): sin riesgo de datos viejos.
+// Cualquier escritura vacía la lista, así una lectura posterior a un guardado siempre sale fresca.
+const _SB_VUELO = new Map();
+function _sbCopia(r){
+  if (r === null || typeof r !== 'object') return r;
+  try{ return typeof structuredClone === 'function' ? structuredClone(r) : JSON.parse(JSON.stringify(r)); }catch(e){ return r; }
+}
 async function sb(path, opts = {}, _retry, _redReintento){
+  const metodo = String((opts && opts.method) || 'GET').toUpperCase();
+  if (metodo !== 'GET'){ _SB_VUELO.clear(); return _sbCrudo(path, opts, _retry, _redReintento); }
+  if (typeof path !== 'string' || (opts && opts.body) || _retry || _redReintento) return _sbCrudo(path, opts, _retry, _redReintento);
+  const k = path + '|' + ((SESION_ACTUAL && SESION_ACTUAL.access_token) || '') + '|' + JSON.stringify((opts && opts.headers) || {});
+  let p = _SB_VUELO.get(k);
+  if (!p){
+    p = _sbCrudo(path, opts, _retry, _redReintento);
+    _SB_VUELO.set(k, p);
+    const limpiar = () => { if (_SB_VUELO.get(k) === p) _SB_VUELO.delete(k); };
+    p.then(limpiar, limpiar);
+  }
+  return _sbCopia(await p);
+}
+async function _sbCrudo(path, opts = {}, _retry, _redReintento){
   chequearBloqueoEscrituraStaff(path, opts);
   if (typeof path === 'string' && path.startsWith('wellness_respuestas') && !wellOn()) return [];   // (v149) gimnasio sin Wellness: no se lee ni se guarda
   // Si hay sesión real (login del profesor/admin), mandamos su token en vez del
@@ -13641,8 +13664,22 @@ async function cargarInicioAlu(alumnoId){
   }
 }
 
+let ALU_SUBVISTA = 'inicio';   // (v177) pestaña del alumno que se está viendo
+// (v177) Al abrir la app / cambiar de alumno / volver de entrenar, solo se cargan los paneles que SE VEN.
+// Historial, Evolución, Logros y Seguimiento se piden recién al entrar a esa pestaña (cambiarSubvistaAlu ya lo hace).
+function aluCargarPanelesPesados(alumnoId){
+  const ids = { historial: 'historialAlu', evolucion: 'aluEvalHistorial', logros: 'aluLogrosContenido', seguimiento: 'aluSeguimientoContenido' };
+  if (ALU_SUBVISTA === 'historial') cargarHistorial(alumnoId);
+  else if (ALU_SUBVISTA === 'evolucion') cargarEvaluacionesAlu(alumnoId);
+  else if (ALU_SUBVISTA === 'logros') renderLogros('aluLogrosContenido', alumnoId);
+  else if (ALU_SUBVISTA === 'seguimiento') cargarSeguimiento('aluSeguimientoContenido', alumnoId);
+  // los que no se ven: se vacían para que, al entrar, no asome nada del alumno anterior mientras carga
+  Object.keys(ids).forEach(k => { if (k !== ALU_SUBVISTA){ const el = document.getElementById(ids[k]); if (el) el.innerHTML = k === 'evolucion' ? '' : '<div class="muted">Cargando...</div>'; } });
+  if (ALU_SUBVISTA !== 'evolucion'){ const c = document.getElementById('aluEvalChartCont'); if (c) c.innerHTML = ''; }
+}
 function cambiarSubvistaAlu(v){
   if (!modVistaOk('alu', v)){ modAvisoBloqueada(); return; }   // (v99)
+  ALU_SUBVISTA = v;   // (v177)
   guiaVisita('alu', v);
   if (v==='inicio') guiaRenderCards();
   if (v==='inicio') qrAluBoton();   // (v110)
@@ -25754,14 +25791,11 @@ function onCambiarAluAlumno(){
   cargarRutinasDeAlumno('aluAlumno','listaRutinasAlu');
   if (alumnoId){
     cargarTurnos(alumnoId);
-    cargarHistorial(alumnoId);
     poblarFiltroProfesorAlumno(alumnoId);
     cargarBannerCuota(alumnoId);
     cvAluInit(alumnoId);   // (v156) cuota variable: tarjeta + sección "Mi cuota"
     cargarVigenciaPlanAlu(alumnoId);
-    cargarEvaluacionesAlu(alumnoId);
-    renderLogros('aluLogrosContenido', alumnoId);
-    cargarSeguimiento('aluSeguimientoContenido', alumnoId);
+    aluCargarPanelesPesados(alumnoId);   // (v177) historial/evolución/logros/seguimiento: solo el que se ve
   } else {
     document.getElementById('listaTurnosAlu').innerHTML = 'Elegí tu nombre arriba.';
     document.getElementById('aluInicioHero').innerHTML = '';
@@ -26925,10 +26959,7 @@ function salirEjecucion(){
   // que tiene que aparecer de una en la pestaña Evolución sin que haga falta salir y reentrar.
   if (alumnoId){
     cargarTurnos(alumnoId);
-    cargarHistorial(alumnoId);
-    cargarEvaluacionesAlu(alumnoId);
-    renderLogros('aluLogrosContenido', alumnoId);
-    cargarSeguimiento('aluSeguimientoContenido', alumnoId);
+    aluCargarPanelesPesados(alumnoId);   // (v177) solo el panel que se ve; los demás se piden al entrar a su pestaña
     // (v117) Mis rutinas: refrescar el "Te toca" de la rotativa. Antes quedaba la tarjeta vieja (Día 1) y al tocarla se reabría el mismo día en vez de pasar al siguiente.
     cargarRutinasDeAlumno('aluAlumno','listaRutinasAlu');
   }
