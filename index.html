@@ -5409,7 +5409,7 @@ function atlIniciarAlu(){
   atlCargarVista('aluAtletismoContenido', id || '');
 }
 
-const APP_VERSION = 175;
+const APP_VERSION = 177;
 let ES_PERSONAL = false;   // (v132) cuenta personal (gimnasios.tipo = 'personal'); se calcula en perAplicar()
 // (v96) Fecha de la última actualización: se cambia junto con APP_VERSION en cada entrega. Se muestra en la
 // pantalla de inicio y en el menú de cuenta ("v94 · actualizada el 5/10/2026").
@@ -19250,6 +19250,17 @@ function evalFilasEvaluacion(e, porMetrica){
   });
   return filas;
 }
+// (v179) El staff puede eliminar una evaluación completa (con sus mediciones). Queda registro de quién la borró.
+async function evalEliminar(evalId){
+  const e = (EVAL_CACHE_PROF || []).find(x => x.id === evalId); if (!e) return;
+  if (!confirm(`¿Eliminar la evaluación del ${evalFechaTxt(e.fecha)}?\n\nSe borran sus ${e.metricas.length} medición${e.metricas.length === 1 ? '' : 'es'} y deja de verse en los gráficos y el historial del alumno. Queda un registro de que la eliminaste.`)) return;
+  try{
+    const r = await sb(`evaluaciones?id=eq.${evalId}`, { method: 'DELETE', headers: { Prefer: 'return=representation' } });
+    if (!r || !r.length) throw new Error('No tenés permiso para eliminar esta evaluación.');
+    toast('Evaluación eliminada ✓');
+    onCambiarEvalAlumno();
+  }catch(err){ toast('No se pudo eliminar: ' + extraerMensajeError(err), true); }
+}
 function renderHistorialEvaluaciones(contId, evaluaciones){
   const cont = document.getElementById(contId);
   if (!cont) return;
@@ -19286,7 +19297,7 @@ function renderHistorialEvaluaciones(contId, evaluaciones){
         <span style="font-weight:700; color:var(--text); white-space:nowrap;">${evalFechaTxt(e.fecha)}</span>
         <span class="muted" style="margin-left:auto; font-size:12px; font-weight:400; text-align:right;">${filas.length === 1 ? '1 medición' : filas.length + ' mediciones'}</span>
       </div>
-      <div id="${id}" style="${abierta ? '' : 'display:none;'} padding:0 0 12px 22px;">${grupos}${extra}</div>
+      <div id="${id}" style="${abierta ? '' : 'display:none;'} padding:0 0 12px 22px;">${grupos}${extra}${staff && e.id ? `<div style="margin-top:12px;"><button class="secondary" style="padding:5px 10px; font-size:12.5px; color:var(--danger, #ff5d5d);" onclick="evalEliminar('${e.id}')">Eliminar evaluación</button></div>` : ''}</div>
     </div>`;
   }).join('');
   cont.innerHTML = `
@@ -20263,6 +20274,62 @@ async function cargarSeguimiento(contId, alumnoId){
   }catch(e){ cont.innerHTML = `<div class="empty">Error: ${e.message}</div>`; }
 }
 
+// (v179) El staff puede quitar el RPE o eliminar un entrenamiento desde el detalle de la sesión (solo en el Seguimiento del staff).
+// Requiere el SQL v179 (permiso de borrado + registro de quién borró qué). Todo queda en `auditoria_borrados`.
+function segStaffAccionesHtml(contId, i, ses){
+  if (contId !== 'seguimientoContenido' || !ses || !ses.id) return '';
+  const bs = 'padding:5px 10px; font-size:12.5px;';
+  const opciones = Array.from({ length: 10 }, (_, k) => k + 1).map(n => `<option value="${n}"${ses.rpe === n ? ' selected' : ''}>${n} · ${xe((typeof RPE_TXT !== 'undefined' && RPE_TXT[n]) || '')}</option>`).join('');
+  // (v180) Cambiar / cargar el RPE (1 a 10) en la misma sesión; solo en sesiones finalizadas.
+  const rpeEditar = ses.estado === 'finalizada' ? `<button class="secondary" style="${bs}" onclick="event.stopPropagation(); segStaffRpeEditar(${i})">${ses.rpe != null ? 'Cambiar RPE (' + xe(ses.rpe) + ')' : 'Cargar RPE'}</button>` : '';
+  const rpeEd = ses.estado === 'finalizada' ? `<span id="segRpeEd-${i}" class="row" style="display:none; gap:6px; align-items:center;" onclick="event.stopPropagation()"><select id="segRpeSel-${i}" style="width:auto;">${opciones}</select><button style="${bs}" onclick="segStaffRpeGuardar(${i})">Guardar</button><button class="secondary" style="${bs}" onclick="segStaffRpeEditar(${i})">Cancelar</button></span>` : '';
+  const rpe = ses.rpe != null ? `<button class="secondary" style="${bs}" onclick="event.stopPropagation(); segStaffQuitarRpe(${i})">Quitar RPE</button>` : '';
+  return `<div class="row" style="gap:8px; flex-wrap:wrap; padding:8px 0;">${rpeEditar}${rpeEd}${rpe}<button class="secondary" style="padding:5px 10px; font-size:12.5px; color:var(--danger, #ff5d5d);" onclick="event.stopPropagation(); segStaffEliminar(${i})">Eliminar entrenamiento</button></div>`;
+}
+function segStaffInfo(i){
+  const ses = (SEGUIMIENTO_CACHE['seguimientoContenido'] || [])[i];
+  if (!ses) return null;
+  const series = (ses.ejecucion_ejercicios || []).reduce((a, ee) => a + (ee.series_registradas || []).length, 0);
+  const f = new Date(ses.fecha);
+  return { ses, series, alumnoId: document.getElementById('seguimientoAlumno').value,
+    txt: `${f.toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' })} · ${ses.rutina_dias?.rutinas?.nombre || '-'} · ${ses.rutina_dias?.nombre_dia || '-'}` };
+}
+function segStaffRpeEditar(i){
+  const ed = document.getElementById('segRpeEd-' + i); if (!ed) return;
+  ed.style.display = ed.style.display === 'none' ? 'flex' : 'none';
+}
+async function segStaffRpeGuardar(i){
+  const d = segStaffInfo(i); if (!d) return;
+  const sel = document.getElementById('segRpeSel-' + i); const n = sel ? parseInt(sel.value, 10) : NaN;
+  if (!(n >= 1 && n <= 10)){ toast('Elegí un RPE de 1 a 10.', true); return; }
+  if (d.ses.rpe === n){ toast('Ya tiene RPE ' + n + '.'); segStaffRpeEditar(i); return; }
+  try{
+    const r = await sb(`ejecuciones?id=eq.${d.ses.id}`, { method: 'PATCH', headers: { Prefer: 'return=representation' }, body: JSON.stringify({ rpe: n }) });
+    if (!r || !r.length) throw new Error('No tenés permiso para modificar esta sesión.');
+    toast(d.ses.rpe != null ? `RPE actualizado ✓ (${d.ses.rpe} → ${n})` : `RPE cargado ✓ (${n})`);
+    cargarSeguimiento('seguimientoContenido', d.alumnoId);
+  }catch(e){ toast('No se pudo guardar el RPE: ' + extraerMensajeError(e), true); }
+}
+async function segStaffQuitarRpe(i){
+  const d = segStaffInfo(i); if (!d) return;
+  if (!confirm(`¿Quitar el RPE (${d.ses.rpe}) de esta sesión?\n\n${d.txt}\n\nEl entrenamiento se conserva, pero esa sesión deja de contar en la carga aguda. El alumno no recibe ningún aviso.`)) return;
+  try{
+    const r = await sb(`ejecuciones?id=eq.${d.ses.id}`, { method: 'PATCH', headers: { Prefer: 'return=representation' }, body: JSON.stringify({ rpe: null }) });
+    if (!r || !r.length) throw new Error('No tenés permiso para modificar esta sesión.');
+    toast('RPE quitado ✓');
+    cargarSeguimiento('seguimientoContenido', d.alumnoId);
+  }catch(e){ toast('No se pudo quitar el RPE: ' + extraerMensajeError(e), true); }
+}
+async function segStaffEliminar(i){
+  const d = segStaffInfo(i); if (!d) return;
+  if (!confirm(`¿Eliminar este entrenamiento?\n\n${d.txt}\n${d.series} serie${d.series === 1 ? '' : 's'} registrada${d.series === 1 ? '' : 's'}${d.ses.rpe != null ? ' · RPE ' + d.ses.rpe : ''}\n\nSe borra definitivamente (queda un registro de que lo eliminaste). La carga aguda, la racha, la constancia, los récords y la evolución de peso se recalculan sin esta sesión. La asistencia que ya se marcó en el turno no se modifica.`)) return;
+  try{
+    const r = await sb(`ejecuciones?id=eq.${d.ses.id}`, { method: 'DELETE', headers: { Prefer: 'return=representation' } });
+    if (!r || !r.length) throw new Error('No tenés permiso para eliminar esta sesión (falta correr el SQL v179).');
+    toast('Entrenamiento eliminado ✓');
+    cargarSeguimiento('seguimientoContenido', d.alumnoId);
+  }catch(e){ toast('No se pudo eliminar: ' + extraerMensajeError(e), true); }
+}
 function toggleSeguimientoSesion(contId, i){
   const div = document.getElementById(`seguimientoDetalle-${contId}-${i}`);
   const yaAbierto = div.dataset.open === '1';
@@ -20272,10 +20339,11 @@ function toggleSeguimientoSesion(contId, i){
   div.dataset.armado = '1';
 
   const sesion = SEGUIMIENTO_CACHE[contId][i];
+  const accStaff = segStaffAccionesHtml(contId, i, sesion);   // (v179)
   const ejercicios = (sesion.ejecucion_ejercicios||[]).filter(ee => ee.ejercicios);
-  if (!ejercicios.length){ div.innerHTML = '<div class="muted">Sin ejercicios registrados en esta sesión.</div>'; return; }
+  if (!ejercicios.length){ div.innerHTML = accStaff + '<div class="muted">Sin ejercicios registrados en esta sesión.</div>'; return; }
 
-  div.innerHTML = ejercicios.map(ee => {
+  div.innerHTML = accStaff + ejercicios.map(ee => {
     if (ee.omitido){
       return `<div class="muted" style="padding:6px 0; border-top:1px solid var(--border);">
         ${ee.ejercicios.nombre} — <em>omitido${ee.motivo_omision ? ' ('+ee.motivo_omision+')' : ''}</em>
