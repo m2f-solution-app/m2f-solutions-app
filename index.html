@@ -5409,11 +5409,11 @@ function atlIniciarAlu(){
   atlCargarVista('aluAtletismoContenido', id || '');
 }
 
-const APP_VERSION = 177;
+const APP_VERSION = 181;
 let ES_PERSONAL = false;   // (v132) cuenta personal (gimnasios.tipo = 'personal'); se calcula en perAplicar()
 // (v96) Fecha de la última actualización: se cambia junto con APP_VERSION en cada entrega. Se muestra en la
 // pantalla de inicio y en el menú de cuenta ("v94 · actualizada el 5/10/2026").
-const APP_FECHA = '2026-11-10';
+const APP_FECHA = '2026-11-19';
 function appVersionTxt(){ const [y, m, d] = APP_FECHA.split('-'); return `v${APP_VERSION} · actualizada el ${+d}/${+m}/${y}`; }
 (function(){ const el = document.getElementById('lcVersion'); if (el) el.textContent = 'M2F Solutions · ' + appVersionTxt(); })();
 
@@ -28148,7 +28148,10 @@ function bloqueHtml(b, idx){
     } else {
       pesoDefault = registrada ? (registrada.peso_realizado ?? '') : ((prev && prev.peso != null) ? prev.peso : (p.peso_sugerido ?? ''));
     }
-    const repsDefault = registrada ? (registrada.repeticiones_realizadas ?? '') : ((prev && prev.reps != null) ? prev.reps : '');
+    // (v181) Las repeticiones también se precargan con las prescriptas (como el peso y el RIR) cuando son un número exacto;
+    // antes quedaban vacías (solo placeholder), se guardaban en null y el tonelaje (peso × reps) daba 0. Si es un rango ("8-10") queda vacío.
+    const repsPresc = /^\d+$/.test(String(p.repeticiones ?? '').trim()) ? String(p.repeticiones).trim() : '';
+    const repsDefault = registrada ? (registrada.repeticiones_realizadas ?? '') : ((prev && prev.reps != null) ? prev.reps : repsPresc);
     const rirDefault = registrada ? (registrada.rir_realizado ?? '') : ((prev && prev.rir != null) ? prev.rir : (p.rir ?? ''));
     const tiempoDefault = registrada ? (registrada.tiempo_realizado_seg ?? '') : '';
     const hecha = !!registrada;
