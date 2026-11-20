@@ -5000,21 +5000,11 @@ const ATL_TIPOS = {
   intermitente: { ico: '⚡', n: 'Intermitente' },
   pasadas:      { ico: '🔁', n: 'Pasadas' },
 };
-let ATL_OK = null, ATL_P = null, ATL_ACT = false, ATL_EST = null, ATL_KEY = '';
+// (v182) Las columnas de atletismo ya existen en la base: se asumen presentes y NO se prueban al abrir cada pantalla.
+// Antes 3 consultas de prueba por carga (sobre tablas con RLS pesada) retrasaban 'Comenzar entrenamiento' hasta 1,5 min.
+let ATL_OK = true, ATL_P = Promise.resolve(true), ATL_ACT = false, ATL_EST = null, ATL_KEY = '';
 const ATL_DATA = {};
-function atlOk(){
-  if (ATL_P) return ATL_P;
-  ATL_P = Promise.all([
-    sb('ejercicios?select=tipo_trabajo&limit=1'),
-    sb('rutina_ejercicios?select=carrera&limit=1'),
-    sb('series_registradas?select=distancia_m,tiempo_exacto_seg&limit=1'),
-  ]).then(() => { ATL_OK = true; return true; })
-    .catch(e => {
-      if (/42703|does not exist/i.test(String((e && e.message) || ''))){ ATL_OK = false; return false; }
-      ATL_P = null; return false;   // error de red / permisos: se reintenta la próxima vez
-    });
-  return ATL_P;
-}
+function atlOk(){ return ATL_P; }
 async function atlF(t){
   await atlOk();
   if (ATL_OK !== true) return '';
@@ -5409,11 +5399,11 @@ function atlIniciarAlu(){
   atlCargarVista('aluAtletismoContenido', id || '');
 }
 
-const APP_VERSION = 181;
+const APP_VERSION = 182;
 let ES_PERSONAL = false;   // (v132) cuenta personal (gimnasios.tipo = 'personal'); se calcula en perAplicar()
 // (v96) Fecha de la última actualización: se cambia junto con APP_VERSION en cada entrega. Se muestra en la
 // pantalla de inicio y en el menú de cuenta ("v94 · actualizada el 5/10/2026").
-const APP_FECHA = '2026-11-19';
+const APP_FECHA = '2026-11-20';
 function appVersionTxt(){ const [y, m, d] = APP_FECHA.split('-'); return `v${APP_VERSION} · actualizada el ${+d}/${+m}/${y}`; }
 (function(){ const el = document.getElementById('lcVersion'); if (el) el.textContent = 'M2F Solutions · ' + appVersionTxt(); })();
 
@@ -21490,17 +21480,9 @@ const MAT_UNI = {
   kettlebell:{ u:'kg', s:2, def:12 }, disco:{ u:'kg', s:2.5, def:10 }, banda:{ u:'cm de ancho', s:0.5, def:3 },
   pelota:{ u:'kg', s:1, def:4 }, cajon:{ u:'cm', s:5, def:40 },
 };
-let MED_OK = null, MED_P = null;
-function medOk(){
-  if (MED_P) return MED_P;
-  MED_P = Promise.all([sb('rutina_ejercicios?select=material_medidas&limit=1'), sb('rutina_ejercicio_semanas?select=medidas&limit=1')])
-    .then(() => { MED_OK = true; medRefrescarUI(); return true; })
-    .catch(e => {
-      if (/42703|does not exist/i.test(String((e && e.message) || ''))){ MED_OK = false; return false; }
-      MED_P = null; return false;   // error de red / permisos: se reintenta la próxima vez
-    });
-  return MED_P;
-}
+// (v182) Idem: medidas de material ya existe en la base; sin consultas de prueba por carga.
+let MED_OK = true, MED_P = Promise.resolve(true);
+function medOk(){ return MED_P; }
 async function medF(t){ await medOk(); return MED_OK === true ? (t === 's' ? ',medidas' : ',material_medidas') : ''; }
 function medRefrescarUI(){
   try{ Object.keys(CONS).forEach(a => { try{ CONS[a].render(); }catch(e){} }); }catch(e){}
