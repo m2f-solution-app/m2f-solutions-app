@@ -81,6 +81,49 @@ if ('serviceWorker' in navigator) window.addEventListener('load', function(){ tr
   }
   :root[data-tema="claro"] input[type="date"]::-webkit-calendar-picker-indicator{ filter:none; }
 
+  /* ---- (v183) Test de Bosco ---- */
+  .bs-wrap{ --bq1:rgba(61,220,132,.13); --bq2:rgba(61,139,242,.13); --bq3:rgba(255,93,93,.11); --bq4:rgba(255,210,61,.13); }
+  .bs-sub{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px; }
+  .bs-opts{ display:flex; gap:10px; flex-wrap:wrap; align-items:end; }
+  .bs-opts .field{ min-width:170px; }
+  .bs-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; }
+  .bs-att{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+  .bs-att input{ width:100%; }
+  .bs-kpis{ display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:10px; margin:10px 0; }
+  .bs-kpi{ background:var(--panel2); border:1px solid var(--border); border-radius:14px; padding:10px 12px; }
+  .bs-kpi b{ display:block; font-size:22px; line-height:1.1; }
+  .bs-kpi small{ color:var(--muted); font-size:12px; }
+  .bs-kpi .z{ display:block; font-size:12px; color:var(--muted); margin-top:2px; }
+  .bs-res{ background:var(--note-bg); border:1px solid var(--note-bd); border-radius:14px; padding:12px 14px; margin:10px 0; }
+  .bs-res h3{ margin:0 0 4px; font-size:16px; }
+  .bs-res p{ margin:4px 0 0; font-size:13.5px; color:var(--text); }
+  .bs-chart{ position:relative; width:100%; max-width:720px; margin:6px auto 0; }
+  .bs-chart svg{ width:100%; height:auto; display:block; }
+  .bs-chart text{ font-family:inherit; }
+  .bs-tbl{ width:100%; border-collapse:collapse; font-size:13.5px; }
+  .bs-tbl th, .bs-tbl td{ padding:7px 8px; border-bottom:1px solid var(--border); text-align:right; white-space:nowrap; }
+  .bs-tbl th:first-child, .bs-tbl td:first-child{ text-align:left; }
+  .bs-tbl th{ color:var(--muted); font-weight:700; font-size:12px; position:sticky; top:0; background:var(--panel); }
+  .bs-tbl th[data-c]{ cursor:pointer; user-select:none; }
+  .bs-tbl td small{ display:block; font-size:11px; color:var(--muted); }
+  .bs-tbl td.g{ background:rgba(61,220,132,.16); }
+  .bs-tbl td.r{ background:rgba(255,93,93,.16); }
+  .bs-tbl tr.avg td{ font-weight:800; border-top:2px solid var(--border); }
+  .bs-tbl td.q{ text-align:left; white-space:normal; min-width:130px; }
+  .bs-leg{ display:flex; gap:12px; flex-wrap:wrap; font-size:12px; color:var(--muted); margin:6px 0; }
+  .bs-qsum{ display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:10px; margin-top:10px; }
+  .bs-qc{ border:1px solid var(--border); border-radius:12px; padding:10px 12px; font-size:13px; }
+  .bs-qc b{ display:block; margin-bottom:3px; }
+  .bs-qc p{ margin:2px 0; color:var(--muted); }
+  .bs-qc.q1{ background:var(--bq1); } .bs-qc.q2{ background:var(--bq2); } .bs-qc.q3{ background:var(--bq3); } .bs-qc.q4{ background:var(--bq4); }
+  .bs-norm{ display:grid; grid-template-columns:110px 1fr 1fr; gap:8px; align-items:center; margin-bottom:6px; }
+  .bs-norm label{ font-weight:700; font-size:13px; }
+  .bs-warn{ background:rgba(255,210,61,.14); border:1px solid rgba(255,210,61,.45); color:var(--text); border-radius:12px; padding:10px 12px; font-size:13px; margin:8px 0; }
+  .bs-carga td input{ width:78px; }
+  .bs-range{ display:flex; align-items:center; gap:8px; font-size:13px; }
+  .bs-range input{ width:140px; }
+  @media(max-width:760px){ .bs-norm{ grid-template-columns:80px 1fr 1fr; } .bs-chart{ overflow-x:auto; } .bs-chart svg{ min-width:560px; } }
+
   /* ---- (v85) Recepción ---- */
   .rc-grid{display:grid; grid-template-columns:340px 1fr; gap:14px; align-items:start;}
   @media(max-width:800px){ .rc-grid{grid-template-columns:1fr;} }
@@ -3225,6 +3268,7 @@ if ('serviceWorker' in navigator) window.addEventListener('load', function(){ tr
           <div class="row" style="gap:8px; align-items:center;">
             <span class="chip-toggle active" id="emSegAlumno" onclick="emModo('alumno')">👤 Un alumno</span>
             <span class="chip-toggle" id="emSegEquipo" onclick="emModo('equipo')">⚽ Por equipo</span>
+            <span class="chip-toggle" id="emSegBosco" style="display:none;" onclick="boscoAbrir()">⚡ Bosco</span>
           </div>
         </div>
         <div id="evalPanelAlumno">
@@ -3293,6 +3337,7 @@ if ('serviceWorker' in navigator) window.addEventListener('load', function(){ tr
           </div>
           <div class="em-bar" id="emBar"></div>
         </div>
+        <div id="evalPanelBosco" style="display:none;"></div>
       </div>
 
       <!-- ---- SUBVISTA: LOGROS / GAMIFICACIÓN ---- -->
@@ -4114,6 +4159,11 @@ if ('serviceWorker' in navigator) window.addEventListener('load', function(){ tr
         <h2 style="margin-top:0">Mis evaluaciones</h2>
         <div id="aluEvalHistorial" class="muted">Elegí tu nombre arriba.</div>
       </div>
+
+      <div class="card" id="aluBoscoCard" style="display:none;">
+        <h2 style="margin-top:0">⚡ Mi test de Bosco</h2>
+        <div id="aluBoscoCont" class="bs-wrap"></div>
+      </div>
     </div>
 
     <!-- (25/9) Pedido de Martin: "no me gustó cómo quedó el seguimiento dentro de la
@@ -4853,8 +4903,8 @@ const MOD_PRESETS = {
   pro:           { n: 'Pro',           ico: '🚀', on: '*' },
   personal:      { n: 'Personal',      ico: '💪', on: ['seguimiento', 'logros', 'wellness'] },   // (v132) entrena por su cuenta: solo rutinas + progreso
 };
-const MOD_FUERA_PRESET = ['sucursales', 'servicios', 'cuota_variable'];   // módulos que no entran en ningún plan: se prenden aparte, gimnasio por gimnasio
-const MOD_BLOQUEO_SERVIDOR = ['clases', 'evaluaciones', 'alertas', 'finanzas', 'recepcion', 'proyeccion_ingresos', 'servicios', 'wellness', 'cuota_variable'];   // etapa 1 (SQL) + proyección (ya la valida su RPC)
+const MOD_FUERA_PRESET = ['sucursales', 'servicios', 'cuota_variable', 'bosco'];   // módulos que no entran en ningún plan: se prenden aparte, gimnasio por gimnasio
+const MOD_BLOQUEO_SERVIDOR = ['clases', 'evaluaciones', 'alertas', 'finanzas', 'recepcion', 'proyeccion_ingresos', 'servicios', 'wellness', 'cuota_variable', 'bosco'];   // etapa 1 (SQL) + proyección (ya la valida su RPC)
 function wellOn(){ return modOn('wellness'); }   // (v149) Wellness es un módulo por gimnasio
 function modOn(k){
   if (k === 'atletismo') return atlOn();
@@ -4883,6 +4933,7 @@ function modAplicarMenu(){
   try{ srvAplicar(); }catch(e){}   // (v148) servicios
   try{ cvPintar(); }catch(e){}   // (v155) cuota variable
   try{ cvcMenu(); }catch(e){}   // (v157) cancelar clase
+  try{ boscoChip(); }catch(e){}   // (v183) Bosco
   try{ document.body.classList.toggle('sin-wellness', !wellOn()); }catch(e){}   // (v149)
   const roles = new Set([...(typeof MENU_SOLO_ADMIN !== 'undefined' ? MENU_SOLO_ADMIN : []), ...(typeof BNAV_SOLO_ADMIN !== 'undefined' ? BNAV_SOLO_ADMIN : []), 'menuRecepcion', 'ttRecepcion']);
   Object.keys(MOD_IDS).forEach(k => {
@@ -5399,11 +5450,11 @@ function atlIniciarAlu(){
   atlCargarVista('aluAtletismoContenido', id || '');
 }
 
-const APP_VERSION = 182;
+const APP_VERSION = 183;
 let ES_PERSONAL = false;   // (v132) cuenta personal (gimnasios.tipo = 'personal'); se calcula en perAplicar()
 // (v96) Fecha de la última actualización: se cambia junto con APP_VERSION en cada entrega. Se muestra en la
 // pantalla de inicio y en el menú de cuenta ("v94 · actualizada el 5/10/2026").
-const APP_FECHA = '2026-11-20';
+const APP_FECHA = '2026-11-22';
 function appVersionTxt(){ const [y, m, d] = APP_FECHA.split('-'); return `v${APP_VERSION} · actualizada el ${+d}/${+m}/${y}`; }
 (function(){ const el = document.getElementById('lcVersion'); if (el) el.textContent = 'M2F Solutions · ' + appVersionTxt(); })();
 
@@ -19153,6 +19204,7 @@ function nivelPorPesoCorporal(pct){
 }
 
 function iniciarEvaluaciones(){
+  try{ boscoChip(); }catch(e){}   // (v183) muestra la pestaña ⚡ Bosco solo si el módulo está prendido
   const sel = document.getElementById('evalAlumno');
   sel.innerHTML = '<option value="">-- elegir --</option>' + ALUMNOS_CACHE.map(a=>`<option value="${a.id}">${a.nombre}</option>`).join('');
   armarComboBuscable('evalAlumno', 'Buscar alumno por nombre...');
@@ -19751,6 +19803,7 @@ async function cargarEvaluacionesAlu(alumnoId){
   poblarSelectMetricas('aluEvalMetricaChart', EVAL_CACHE_ALU);
   renderAluEvalChart();
   renderHistorialEvaluaciones('aluEvalHistorial', EVAL_CACHE_ALU);
+  try{ boscoCargarAlu(alumnoId); }catch(e){}   // (v183) tarjeta de Bosco (solo si el módulo está prendido)
 }
 
 function renderAluEvalChart(){
@@ -21240,6 +21293,412 @@ window.addEventListener('resize', () => {
 });
 
 // ---------- Evaluación por equipo (carga masiva) ----------
+// =====================================================================
+// (v183) TEST DE BOSCO — módulo opcional por gimnasio ('bosco'), vive dentro de Evaluaciones.
+// SQL: v183-bosco.sql (tablas bosco_grupos y bosco_tests). Sin ese SQL o con el módulo apagado
+// (MOD_MAP.bosco !== true) NADA de esto aparece ni consulta la base: la app queda como antes.
+//  · IE (índice de elasticidad) = (CMJ − SJ) / SJ × 100 · RSI = (DJ cm / 100) / (contacto ms / 1000), en m/s.
+//  · z = (valor − media) / DE contra el grupo de referencia (media y DE los carga cada gimnasio).
+//  · Cuadrantes: X = z de SJ (fuerza explosiva), Y = z de IE (elasticidad). Semáforo: z ≥ +1 verde ▲, z ≤ −1 rojo ▼.
+// =====================================================================
+function boscoOn(){ return !!(MOD_MAP && MOD_MAP.bosco === true && MOD_MAP.evaluaciones !== false); }
+const BS_T = [   // tests: clave, nombre, unidad, decimales
+  { k: 'sj', n: 'SJ', u: 'cm', d: 1 }, { k: 'cmj', n: 'CMJ', u: 'cm', d: 1 }, { k: 'ie', n: 'IE', u: '%', d: 1 },
+  { k: 'dj', n: 'DJ', u: 'cm', d: 0 }, { k: 'rsi', n: 'RSI', u: 'm/s', d: 2 },
+];
+const BS_Q = {
+  '++': { t: 'SJ alto + IE alto', p: 'Perfil completo', r: 'Mantener la base de fuerza y progresar pliometría de alta intensidad y especificidad de la disciplina.', c: 'q1' },
+  '+-': { t: 'SJ alto + IE bajo', p: 'Fuerte, poco elástico', r: 'Priorizar pliometría y trabajo reactivo; técnica de contramovimiento y rigidez de tobillo/tendón.', c: 'q4' },
+  '-+': { t: 'SJ bajo + IE alto', p: 'Elástico, con poca fuerza base', r: 'Priorizar fuerza máxima y fuerza-velocidad (sentadilla, tirones, trabajo con carga) y sostener la pliometría.', c: 'q2' },
+  '--': { t: 'SJ bajo + IE bajo', p: 'Déficit en ambos', r: 'Construir base de fuerza general y luego incorporar pliometría de forma progresiva.', c: 'q3' },
+};
+const BS_EJEMPLO = [   // VALORES DE EJEMPLO: cada gimnasio los reemplaza por los de su libro / protocolo
+  { nombre: '(EJEMPLO) Hombres 18–25 · deportistas', normas: { sj: [33.0, 4.5], cmj: [36.5, 4.8], ie: [10.5, 4.0], dj: [34.0, 5.0], rsi: [1.70, 0.35] } },
+  { nombre: '(EJEMPLO) Mujeres 18–25 · deportistas', normas: { sj: [25.5, 3.6], cmj: [28.0, 3.9], ie: [9.5, 4.0], dj: [26.0, 4.0], rsi: [1.40, 0.30] } },
+  { nombre: '(EJEMPLO) Hombres 25–40 · recreativos', normas: { sj: [28.0, 4.5], cmj: [30.5, 4.8], ie: [9.0, 4.5], dj: [28.0, 5.0], rsi: [1.30, 0.30] } },
+];
+const BS = { grupos: [], grupoId: '', modo: 'mejor', neut: 0.5, tab: 'alumno', alumnoId: '', tests: [], eqId: '', eqRows: [], eqSin: 0, ref: 'libro', sort: { k: 'n', dir: 1 }, cargaAbierta: false, cargaVals: {}, grupoEdit: '', cargado: false };
+
+// ---------- utilidades ----------
+const bsN = v => { if (v === null || v === undefined || v === '') return null; const x = parseFloat(String(v).replace(',', '.')); return isFinite(x) ? x : null; };
+const bsFmt = (v, d) => v === null || v === undefined || !isFinite(v) ? '–' : (v < 0 ? '−' : '') + Math.abs(v).toFixed(d === undefined ? 1 : d).replace('.', ',');
+const bsZf = z => z === null || z === undefined || !isFinite(z) ? '–' : (z >= 0 ? '+' : '−') + Math.abs(z).toFixed(2).replace('.', ',');
+const bsFechaTxt = f => { const p = String(f || '').slice(0, 10).split('-'); return p.length === 3 ? `${+p[2]}/${+p[1]}/${p[0]}` : ''; };
+const bsGrupo = () => BS.grupos.find(g => g.id === BS.grupoId) || null;
+function bsAgg(arr, modo){ const a = arr.map(bsN).filter(v => v !== null && v > 0); if (!a.length) return null; return modo === 'prom' ? Math.round(a.reduce((s, v) => s + v, 0) / a.length * 10) / 10 : Math.max(...a); }
+function bsZ(k, v, g){ const n = g && g.normas && g.normas[k]; if (v === null || v === undefined || !n || !(Number(n[1]) > 0)) return null; return (v - Number(n[0])) / Number(n[1]); }
+function bsFila(t, g){   // un test de la base → fila con IE, RSI y puntajes z
+  const sj = bsN(t.sj), cmj = bsN(t.cmj), dj = bsN(t.dj), tc = bsN(t.dj_tc_ms);
+  const ie = (sj > 0 && cmj !== null) ? (cmj - sj) / sj * 100 : null;
+  const rsi = (dj > 0 && tc > 0) ? (dj / 100) / (tc / 1000) : null;
+  return { id: t.id, f: String(t.fecha || '').slice(0, 10), sj, cmj, dj, tc, ie, rsi, zsj: bsZ('sj', sj, g), zcmj: bsZ('cmj', cmj, g), zie: bsZ('ie', ie, g), zdj: bsZ('dj', dj, g), zrsi: bsZ('rsi', rsi, g), grupo_id: t.grupo_id || null };
+}
+function bsCuad(zx, zy, cx, cy, e){
+  if (zx === null || zy === null) return { k: null, t: 'Sin datos (faltan SJ o CMJ)', p: '', r: '' };
+  const dx = zx - cx, dy = zy - cy;
+  if (Math.abs(dx) < e && Math.abs(dy) < e) return { k: '0', t: 'Zona media', p: 'Cerca del promedio del grupo', r: 'Sin desequilibrio marcado entre fuerza explosiva y elasticidad. Orientar según objetivo y deporte.' };
+  const k = (dx >= 0 ? '+' : '-') + (dy >= 0 ? '+' : '-');
+  return Object.assign({ k }, BS_Q[k]);
+}
+function bsErf(x){ const s = Math.sign(x); x = Math.abs(x); const t = 1 / (1 + 0.3275911 * x); return s * (1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-x * x)); }
+const bsPct = z => Math.round(50 * (1 + bsErf(z / Math.SQRT2)));
+
+// ---------- datos ----------
+async function bsCargarGrupos(){
+  try{ BS.grupos = (await sb('bosco_grupos?select=id,nombre,normas&activo=eq.true&order=creado_en.asc')) || []; }
+  catch(e){ BS.grupos = []; console.error(e); }
+  if (!BS.grupos.find(g => g.id === BS.grupoId)) BS.grupoId = (BS.grupos[0] || {}).id || '';
+  BS.cargado = true;
+}
+
+// ---------- gráfico de cuadrantes (individual y equipo) ----------
+const BSW = 640, BSH = 610, BSL = 64, BSR = 64, BST = 20, BSB = 76, BSPW = BSW - BSL - BSR, BSPH = BSH - BST - BSB, BSZM = 3;
+const bsX = z => BSL + (z + BSZM) / (2 * BSZM) * BSPW, bsY = z => BST + (BSZM - z) / (2 * BSZM) * BSPH;
+const bsClamp = z => Math.max(-BSZM + .12, Math.min(BSZM - .12, z));
+function bsChart(pts, g, o){   // pts: [{zx,zy,lab,tip,cls:'prev'|'cur'|'eq'}]; o: {cx,cy,e,linea,refTxt}
+  o = o || {}; const cx = o.cx || 0, cy = o.cy || 0, e = o.e === undefined ? BS.neut : o.e;
+  const n = (g && g.normas) || {}, nsj = n.sj, nie = n.ie;
+  let s = `<svg viewBox="0 0 ${BSW} ${BSH}" role="img" aria-label="Gráfico de cuadrantes: SJ contra índice de elasticidad">`;
+  s += `<rect x="${bsX(cx)}" y="${bsY(BSZM)}" width="${bsX(BSZM) - bsX(cx)}" height="${bsY(cy) - bsY(BSZM)}" fill="var(--bq1)"/>`;
+  s += `<rect x="${bsX(-BSZM)}" y="${bsY(BSZM)}" width="${bsX(cx) - bsX(-BSZM)}" height="${bsY(cy) - bsY(BSZM)}" fill="var(--bq2)"/>`;
+  s += `<rect x="${bsX(cx)}" y="${bsY(cy)}" width="${bsX(BSZM) - bsX(cx)}" height="${bsY(-BSZM) - bsY(cy)}" fill="var(--bq4)"/>`;
+  s += `<rect x="${bsX(-BSZM)}" y="${bsY(cy)}" width="${bsX(cx) - bsX(-BSZM)}" height="${bsY(-BSZM) - bsY(cy)}" fill="var(--bq3)"/>`;
+  for (let z = -BSZM; z <= BSZM; z++){
+    s += `<line x1="${bsX(z)}" y1="${BST}" x2="${bsX(z)}" y2="${BST + BSPH}" stroke="var(--border)" stroke-width="1"/><line x1="${BSL}" y1="${bsY(z)}" x2="${BSL + BSPW}" y2="${bsY(z)}" stroke="var(--border)" stroke-width="1"/>`;
+    const sg = z > 0 ? '+' : z < 0 ? '−' : '';
+    s += `<text x="${bsX(z)}" y="${BST + BSPH + 16}" text-anchor="middle" font-size="11.5" fill="var(--muted)">${sg}${Math.abs(z)}</text>`;
+    s += `<text x="${BSL - 8}" y="${bsY(z) + 4}" text-anchor="end" font-size="11.5" fill="var(--muted)">${sg}${Math.abs(z)}</text>`;
+    if (nsj && nsj[1] > 0) s += `<text x="${bsX(z)}" y="${BST + BSPH + 30}" text-anchor="middle" font-size="10.5" fill="var(--muted)">${bsFmt(Number(nsj[0]) + z * Number(nsj[1]), 1)} cm</text>`;
+    if (nie && nie[1] > 0) s += `<text x="${BSL + BSPW + 8}" y="${bsY(z) + 4}" font-size="10.5" fill="var(--muted)">${bsFmt(Number(nie[0]) + z * Number(nie[1]), 0)}%</text>`;
+  }
+  s += `<line x1="${bsX(cx)}" y1="${BST}" x2="${bsX(cx)}" y2="${BST + BSPH}" stroke="var(--muted)" stroke-width="1.5" stroke-dasharray="6 4"/><line x1="${BSL}" y1="${bsY(cy)}" x2="${BSL + BSPW}" y2="${bsY(cy)}" stroke="var(--muted)" stroke-width="1.5" stroke-dasharray="6 4"/>`;
+  if (e > 0) s += `<rect x="${bsX(cx - e)}" y="${bsY(cy + e)}" width="${bsX(cx + e) - bsX(cx - e)}" height="${bsY(cy - e) - bsY(cy + e)}" fill="none" stroke="var(--muted)" stroke-width="1.1" stroke-dasharray="2 3"/>`;
+  const lab = (x, y, a, q) => `<text x="${x}" y="${y}" text-anchor="${a}" font-size="12.5" font-weight="700" fill="var(--text)">${q.t}</text><text x="${x}" y="${y + 15}" text-anchor="${a}" font-size="11.5" fill="var(--muted)">${q.p}</text>`;
+  s += lab(BSL + BSPW - 10, BST + 20, 'end', BS_Q['++']) + lab(BSL + 10, BST + 20, 'start', BS_Q['-+']) + lab(BSL + BSPW - 10, BST + BSPH - 24, 'end', BS_Q['+-']) + lab(BSL + 10, BST + BSPH - 24, 'start', BS_Q['--']);
+  s += `<text x="${BSL + BSPW / 2}" y="${BSH - 12}" text-anchor="middle" font-size="12.5" fill="var(--muted)">SJ · fuerza explosiva (puntaje z)</text>`;
+  s += `<text transform="translate(16 ${BST + BSPH / 2}) rotate(-90)" text-anchor="middle" font-size="12.5" fill="var(--muted)">IE · elasticidad (puntaje z)</text>`;
+  if (o.refTxt) s += `<text x="${bsX(cx) + 6}" y="${BST + BSPH - 6}" font-size="10.5" fill="var(--muted)">${o.refTxt}</text>`;
+  if (o.linea && pts.length > 1) s += `<polyline fill="none" stroke="var(--muted)" stroke-width="1.5" stroke-dasharray="3 3" points="${pts.map(p => bsX(bsClamp(p.zx)) + ',' + bsY(bsClamp(p.zy))).join(' ')}"/>`;
+  const placed = [], hit = (a, b) => !(a.x2 < b.x1 || a.x1 > b.x2 || a.y2 < b.y1 || a.y1 > b.y2);
+  pts.forEach(p => {
+    const px = bsX(bsClamp(p.zx)), py = bsY(bsClamp(p.zy)), cur = p.cls === 'cur', w = String(p.lab).length * 6.4 + 4, r = cur ? 9 : p.cls === 'prev' ? 6 : 6.5;
+    const cands = [[px + 12, py + 4, 'start', px + 12, px + 12 + w, py - 8, py + 4], [px - 12, py + 4, 'end', px - 12 - w, px - 12, py - 8, py + 4], [px, py - 12, 'middle', px - w / 2, px + w / 2, py - 22, py - 10], [px, py + 21, 'middle', px - w / 2, px + w / 2, py + 11, py + 23]];
+    const c = cands.find(c => !placed.some(q => hit({ x1: c[3], x2: c[4], y1: c[5], y2: c[6] }, q))) || cands[0];
+    placed.push({ x1: c[3], x2: c[4], y1: c[5], y2: c[6] });
+    s += `<g><title>${ejEsc(p.tip || p.lab)}</title><circle cx="${px}" cy="${py}" r="14" fill="transparent"/><circle cx="${px}" cy="${py}" r="${r}" fill="${p.cls === 'prev' ? 'var(--panel)' : 'var(--accent)'}" stroke="${p.cls === 'prev' ? 'var(--muted)' : 'var(--panel)'}" stroke-width="2.2"/><text x="${c[0]}" y="${c[1]}" text-anchor="${c[2]}" font-size="${cur ? 12 : 11.5}" font-weight="${cur ? 800 : 500}" fill="${p.cls === 'prev' ? 'var(--muted)' : 'var(--text)'}">${ejEsc(p.lab)}</text></g>`;
+  });
+  return s + '</svg>';
+}
+
+// ---------- vista individual (la usa el staff y la tarjeta del alumno) ----------
+function bsIndHtml(rows, cur, g, idp){
+  const todas = rows.slice(); if (cur) todas.push(cur);
+  if (!todas.length) return '<div class="empty">Todavía no hay tests cargados.</div>';
+  const conIE = todas.filter(r => r.ie !== null), u = cur || conIE[conIE.length - 1] || todas[todas.length - 1], rDj = todas.slice().reverse().find(r => r.dj !== null) || null, tieneNorm = !!(g && g.normas && (g.normas.sj || g.normas.ie));
+  const q = bsCuad(u.zsj, u.zie, 0, 0, BS.neut);
+  const kp = (t, v, z, d) => `<div class="bs-kpi"><small>${t}</small><b>${v === null ? '–' : bsFmt(v, d)}${v === null ? '' : ' <span style="font-size:12px;font-weight:600;color:var(--muted);">' + (t === 'IE' ? '%' : t === 'RSI' ? 'm/s' : 'cm') + '</span>'}</b>${z !== null ? `<span class="z">z ${bsZf(z)} · P${bsPct(z)}</span>` : ''}</div>`;
+  let h = '';
+  if (tieneNorm && q.k !== null) h += `<div class="bs-res"><h3>${q.t}${q.p ? ' · ' + q.p : ''}</h3><p>SJ ${bsFmt(u.sj)} cm (z ${bsZf(u.zsj)}) · IE ${bsFmt(u.ie)}% (z ${bsZf(u.zie)})</p>${q.r ? `<p><b>Foco sugerido:</b> ${q.r}</p>` : ''}</div>`;
+  else if (!tieneNorm) h += '<div class="bs-warn">Elegí un grupo de referencia con valores cargados (pestaña “Grupos de referencia”) para ver cuadrantes y puntajes z.</div>';
+  else h += '<div class="bs-warn">Para ubicar el cuadrante hacen falta SJ y CMJ.</div>';
+  h += `<div class="bs-kpis">${kp('SJ', u.sj, u.zsj, 1)}${kp('CMJ', u.cmj, u.zcmj, 1)}${kp('IE', u.ie, u.zie, 1)}${rDj ? kp('DJ', rDj.dj, rDj.zdj, 0) : ''}${rDj && rDj.rsi !== null ? kp('RSI', rDj.rsi, rDj.zrsi, 2) : ''}</div>`;
+  if (tieneNorm){
+    const pts = todas.filter(r => r.zsj !== null && r.zie !== null).map((r, i, a) => ({ zx: r.zsj, zy: r.zie, cls: r === u ? 'cur' : 'prev', lab: (r === cur ? 'Hoy' : bsFechaTxt(r.f).slice(0, -5)), tip: `${r === cur ? 'Hoy' : bsFechaTxt(r.f)}: SJ ${bsFmt(r.sj)} cm (z ${bsZf(r.zsj)}) · IE ${bsFmt(r.ie)}% (z ${bsZf(r.zie)})` }));
+    if (pts.length) h += `<div class="bs-chart">${bsChart(pts, g, { linea: true })}</div><div class="bs-leg"><span>Centro = promedio del grupo de referencia</span><span>Línea punteada: tu recorrido en el tiempo</span><span>Recuadro: zona media ±${String(BS.neut).replace('.', ',')} DE</span></div>`;
+  }
+  h += `<div class="x-scroll" style="overflow-x:auto;margin-top:8px;"><table class="bs-tbl"><tr><th>Fecha</th><th>SJ</th><th>CMJ</th><th>IE</th><th>DJ</th><th>RSI</th><th>z SJ</th><th>z IE</th><th class="q" style="text-align:left;">Cuadrante</th>${idp === 'staff' ? '<th></th>' : ''}</tr>` +
+    todas.slice().reverse().map(r => { const c = bsCuad(r.zsj, r.zie, 0, 0, BS.neut); return `<tr><td>${r === cur ? 'Hoy (sin guardar)' : bsFechaTxt(r.f)}</td><td>${bsFmt(r.sj)}</td><td>${bsFmt(r.cmj)}</td><td>${r.ie === null ? '–' : bsFmt(r.ie) + '%'}</td><td>${r.dj === null ? '–' : bsFmt(r.dj, 0)}</td><td>${r.rsi === null ? '–' : bsFmt(r.rsi, 2)}</td><td>${bsZf(r.zsj)}</td><td>${bsZf(r.zie)}</td><td class="q">${tieneNorm ? c.t : '–'}</td>${idp === 'staff' ? `<td>${r.id ? `<button type="button" class="ghost" style="padding:3px 9px;" title="Borrar este test" onclick="bsBorrarTest('${r.id}')">🗑</button>` : ''}</td>` : ''}</tr>`; }).join('') + '</table></div>';
+  return h;
+}
+
+// ---------- panel principal (staff) ----------
+function boscoChip(){
+  const ch = document.getElementById('emSegBosco'); if (!ch) return;
+  const on = boscoOn();
+  ch.style.display = on ? '' : 'none';
+  if (!on){
+    const p = document.getElementById('evalPanelBosco'), estaba = p && p.style.display !== 'none';
+    boscoSalir();
+    if (estaba) emModo('alumno');   // el módulo se apagó con el panel abierto: volver a lo de siempre
+  }
+}
+function boscoSalir(){   // solo oculta el panel Bosco (lo llama emModo al cambiar de pestaña)
+  const p = document.getElementById('evalPanelBosco'), ch = document.getElementById('emSegBosco');
+  if (p) p.style.display = 'none';
+  if (ch) ch.classList.remove('active');
+}
+async function boscoAbrir(){
+  if (!boscoOn()) return;
+  EM.activo = false;
+  document.getElementById('evalPanelAlumno').style.display = 'none';
+  document.getElementById('evalPanelEquipo').style.display = 'none';
+  document.getElementById('emSegAlumno').classList.remove('active');
+  document.getElementById('emSegEquipo').classList.remove('active');
+  document.getElementById('emSegBosco').classList.add('active');
+  const p = document.getElementById('evalPanelBosco'); p.style.display = '';
+  p.innerHTML = '<div class="card"><div class="muted">Cargando…</div></div>';
+  await bsCargarGrupos();
+  bsRender();
+}
+function bsTab(t){ BS.tab = t; bsRender(); }
+function bsRender(){
+  const p = document.getElementById('evalPanelBosco'); if (!p) return;
+  const tabs = [['alumno', '👤 Un alumno'], ['equipo', '⚽ Equipo'], ['grupos', '📚 Grupos de referencia']];
+  const sub = `<div class="card bs-wrap" style="padding:10px 14px;"><div class="bs-sub" style="margin:0;">${tabs.map(([k, n]) => `<span class="chip-toggle ${BS.tab === k ? 'active' : ''}" onclick="bsTab('${k}')">${n}</span>`).join('')}</div></div>`;
+  p.innerHTML = `<div class="bs-wrap">${sub}<div id="bsBody"></div></div>`;
+  if (BS.tab === 'alumno') bsRenderAlumno(); else if (BS.tab === 'equipo') bsRenderEquipo(); else bsRenderGrupos();
+}
+function bsGrupoSel(extra){
+  if (!BS.grupos.length) return `<div class="field"><label>Grupo de referencia</label><div class="muted" style="padding:9px 0;">Todavía no hay grupos. <a href="#" onclick="bsTab('grupos');return false;">Crearlos</a></div></div>`;
+  return `<div class="field" style="flex:1;min-width:220px;"><label>Grupo de referencia (media y DE)</label><select id="bsGrupo" onchange="bsCambiarGrupo(this.value)">${BS.grupos.map(g => `<option value="${g.id}" ${g.id === BS.grupoId ? 'selected' : ''}>${ejEsc(g.nombre)}</option>`).join('')}</select></div>`;
+}
+function bsCambiarGrupo(v){ BS.grupoId = v; if (BS.tab === 'alumno') bsPintarAlumno(); else if (BS.tab === 'equipo') bsPintarEquipo(); }
+function bsModoHtml(){ return `<div class="field"><label>Resumir intentos</label><div class="bs-sub" style="margin:0;"><span class="chip-toggle ${BS.modo === 'mejor' ? 'active' : ''}" onclick="bsSetModo('mejor')">Mejor intento</span><span class="chip-toggle ${BS.modo === 'prom' ? 'active' : ''}" onclick="bsSetModo('prom')">Promedio</span></div></div>`; }
+function bsSetModo(m){ BS.modo = m; if (BS.tab === 'alumno') bsRenderAlumno(true); }
+function bsNeutHtml(id){ return `<div class="field"><label>Zona media ±<b id="${id}V">${String(BS.neut).replace('.', ',')}</b> DE</label><div class="bs-range"><input type="range" min="0" max="1" step="0.1" value="${BS.neut}" oninput="bsSetNeut(this.value)" aria-label="Ancho de la zona media en desvíos estándar"></div></div>`; }
+function bsSetNeut(v){ BS.neut = parseFloat(v); document.querySelectorAll('[id$="NeutV"]').forEach(e => e.textContent = String(BS.neut).replace('.', ',')); if (BS.tab === 'alumno') bsPintarAlumno(); else if (BS.tab === 'equipo') bsPintarEquipo(); }
+
+// ----- pestaña: un alumno -----
+function bsRenderAlumno(conservar){
+  const body = document.getElementById('bsBody'); if (!body) return;
+  const keep = conservar ? bsLeerForm() : null;
+  body.innerHTML = `<div class="card"><div class="bs-opts">
+      <div class="field" style="flex:1;min-width:220px;"><label>Alumno</label><select id="bsAlumno" onchange="bsElegirAlumno(this.value)"></select></div>
+      ${bsGrupoSel()}${bsNeutHtml('bsAluNeut')}
+    </div></div><div id="bsAluBody"></div>`;
+  const sel = document.getElementById('bsAlumno');
+  sel.innerHTML = '<option value="">-- elegir --</option>' + (ALUMNOS_CACHE || []).map(a => `<option value="${a.id}">${ejEsc(a.nombre)}</option>`).join('');
+  armarComboBuscable('bsAlumno', 'Buscar alumno por nombre...');
+  if (BS.alumnoId){ sel.value = BS.alumnoId; sincronizarComboBuscable('bsAlumno'); bsPintarFormAlumno(keep); }
+  else document.getElementById('bsAluBody').innerHTML = '<div class="card"><div class="empty">Elegí un alumno para cargar o ver su Bosco.</div></div>';
+}
+async function bsElegirAlumno(id){
+  BS.alumnoId = id; BS.tests = [];
+  if (!id){ document.getElementById('bsAluBody').innerHTML = '<div class="card"><div class="empty">Elegí un alumno para cargar o ver su Bosco.</div></div>'; return; }
+  document.getElementById('bsAluBody').innerHTML = '<div class="card"><div class="muted">Cargando…</div></div>';
+  try{ BS.tests = (await sb(`bosco_tests?alumno_id=eq.${id}&select=id,fecha,sj,cmj,dj,dj_tc_ms,grupo_id,notas&order=fecha.asc,creado_en.asc&limit=500`)) || []; }
+  catch(e){ console.error(e); toast('No se pudieron cargar los tests: ' + (e.message || e), true); }
+  if (BS.alumnoId !== id) return;
+  const last = BS.tests[BS.tests.length - 1];
+  if (last && last.grupo_id && BS.grupos.find(g => g.id === last.grupo_id)){ BS.grupoId = last.grupo_id; const gs = document.getElementById('bsGrupo'); if (gs) gs.value = last.grupo_id; }
+  bsPintarFormAlumno();
+}
+function bsAtt(id, label){ return `<div class="field"><label>${label}</label><div class="bs-att">${[1, 2, 3].map(i => `<input id="${id}${i}" inputmode="decimal" placeholder="${i}º" oninput="bsLive()">`).join('')}</div></div>`; }
+function bsPintarFormAlumno(keep){
+  const b = document.getElementById('bsAluBody'); if (!b) return;
+  b.innerHTML = `<div class="card"><h2 style="margin-top:0">Nueva medición</h2>
+    <div class="bs-grid">
+      <div class="field"><label>Fecha</label><input type="date" id="bsFecha" value="${fechaLocalISO()}"></div>
+      ${bsModoHtml()}
+    </div>
+    <div class="bs-grid" style="margin-top:8px;">
+      ${bsAtt('bsSj', 'SJ · salto sin contramovimiento (cm)')}${bsAtt('bsCmj', 'CMJ · salto con contramovimiento (cm)')}
+      <div class="field"><label>DJ · drop jump</label><div class="bs-att" style="grid-template-columns:1fr 1fr;"><input id="bsDj" inputmode="decimal" placeholder="Altura cm" oninput="bsLive()"><input id="bsTc" inputmode="decimal" placeholder="Contacto ms" oninput="bsLive()"></div><small class="muted">Opcional. Con altura y contacto se calcula el RSI.</small></div>
+    </div>
+    <div class="field" style="margin-top:8px;"><label>Notas</label><input id="bsNotas" maxlength="500" placeholder="Opcional"></div>
+    <div class="row" style="margin-top:10px;"><button onclick="bsGuardar()">💾 Guardar test</button></div></div>
+    <div class="card"><div id="bsLive"></div></div>`;
+  if (keep) bsEscribirForm(keep);
+  bsLive();
+}
+function bsLeerForm(){
+  const v = id => { const e = document.getElementById(id); return e ? e.value : ''; };
+  return { fecha: v('bsFecha'), sj: [1, 2, 3].map(i => v('bsSj' + i)), cmj: [1, 2, 3].map(i => v('bsCmj' + i)), dj: v('bsDj'), tc: v('bsTc'), notas: v('bsNotas') };
+}
+function bsEscribirForm(f){
+  const s = (id, x) => { const e = document.getElementById(id); if (e) e.value = x || ''; };
+  s('bsFecha', f.fecha || fechaLocalISO()); [1, 2, 3].forEach(i => { s('bsSj' + i, f.sj[i - 1]); s('bsCmj' + i, f.cmj[i - 1]); }); s('bsDj', f.dj); s('bsTc', f.tc); s('bsNotas', f.notas);
+}
+function bsActual(){   // lo que hay escrito en el formulario → fila (o null si no hay nada)
+  const f = bsLeerForm(), sj = bsAgg(f.sj, BS.modo), cmj = bsAgg(f.cmj, BS.modo), dj = bsN(f.dj), tc = bsN(f.tc);
+  if (sj === null && cmj === null && dj === null) return null;
+  const r = bsFila({ sj, cmj, dj, dj_tc_ms: tc, fecha: f.fecha }, bsGrupo()); r.f = f.fecha || fechaLocalISO(); return r;
+}
+function bsLive(){ bsPintarAlumno(); }
+function bsPintarAlumno(){
+  const el = document.getElementById('bsLive'); if (!el) return;
+  const g = bsGrupo(), rows = BS.tests.map(t => bsFila(t, g));
+  el.innerHTML = '<h2 style="margin-top:0">Resultado y evolución</h2>' + bsIndHtml(rows, bsActual(), g, 'staff');
+}
+async function bsGuardar(){
+  const f = bsLeerForm();
+  const intentos = { sj: f.sj.map(bsN).filter(v => v !== null), cmj: f.cmj.map(bsN).filter(v => v !== null) };
+  const sj = bsAgg(f.sj, BS.modo), cmj = bsAgg(f.cmj, BS.modo), dj = bsN(f.dj), tc = bsN(f.tc);
+  if (!BS.alumnoId){ toast('Elegí un alumno.', true); return; }
+  if (sj === null && cmj === null && dj === null){ toast('Cargá al menos un valor (SJ, CMJ o DJ).', true); return; }
+  if ((dj === null) !== (tc === null) && (dj !== null || tc !== null) && !confirm('Cargaste solo la altura o solo el contacto del DJ: no se podrá calcular el RSI. ¿Guardar igual?')) return;
+  if ([sj, cmj, dj].some(v => v !== null && (v <= 0 || v > 120)) || (tc !== null && (tc <= 0 || tc > 2000))){ toast('Revisá los valores: saltos entre 0 y 120 cm, contacto entre 0 y 2000 ms.', true); return; }
+  try{
+    await sb('bosco_tests', { method: 'POST', headers: { Prefer: 'return=minimal' }, body: JSON.stringify({ gimnasio_id: PERFIL_ACTUAL.gimnasio_id, alumno_id: BS.alumnoId, fecha: f.fecha || fechaLocalISO(), sj, cmj, dj, dj_tc_ms: tc, intentos, modo: BS.modo, grupo_id: BS.grupoId || null, notas: (f.notas || '').trim() || null, profesor_id: document.getElementById('profActual')?.value || null }) });
+    toast('Test guardado ✔');
+    await bsElegirAlumno(BS.alumnoId);
+  }catch(e){ console.error(e); toast('No se pudo guardar: ' + (e.message || e), true); }
+}
+async function bsBorrarTest(id){
+  if (!confirm('¿Borrar este test? No se puede deshacer.')) return;
+  try{ await sb(`bosco_tests?id=eq.${id}`, { method: 'DELETE', headers: { Prefer: 'return=minimal' } }); toast('Test borrado'); BS.tests = BS.tests.filter(t => t.id !== id); bsPintarAlumno(); }
+  catch(e){ toast('No se pudo borrar: ' + (e.message || e), true); }
+}
+
+// ----- pestaña: equipo -----
+function bsRenderEquipo(){
+  const body = document.getElementById('bsBody'); if (!body) return;
+  body.innerHTML = `<div class="card"><div class="bs-opts">
+      <div class="field" style="min-width:200px;"><label>Equipo</label><select id="bsEquipo" onchange="bsElegirEquipo(this.value)"><option value="">-- elegir equipo --</option>${(EQUIPOS_CACHE || []).map(e => `<option value="${e.id}" ${e.id === BS.eqId ? 'selected' : ''}>${ejEsc(e.nombre)}</option>`).join('')}</select></div>
+      ${bsGrupoSel()}${bsNeutHtml('bsEqNeut')}
+      <div class="field"><label>Cruz del gráfico</label><div class="bs-sub" style="margin:0;"><span class="chip-toggle ${BS.ref === 'libro' ? 'active' : ''}" onclick="bsSetRef('libro')">Media del libro</span><span class="chip-toggle ${BS.ref === 'plantel' ? 'active' : ''}" onclick="bsSetRef('plantel')">Media del plantel</span></div></div>
+    </div></div><div id="bsEqBody"></div>`;
+  if (BS.eqId) bsElegirEquipo(BS.eqId); else document.getElementById('bsEqBody').innerHTML = '<div class="card"><div class="empty">Elegí un equipo para ver su Bosco.</div></div>';
+}
+function bsSetRef(r){ BS.ref = r; bsRenderEquipo(); }
+const bsJugadores = () => (ALUMNOS_CACHE || []).filter(a => a.equipo_id === BS.eqId).sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
+async function bsElegirEquipo(id){
+  BS.eqId = id; BS.eqRows = []; BS.cargaVals = {};
+  const cont = document.getElementById('bsEqBody'); if (!cont) return;
+  if (!id){ cont.innerHTML = '<div class="card"><div class="empty">Elegí un equipo para ver su Bosco.</div></div>'; return; }
+  const js = bsJugadores();
+  if (!js.length){ cont.innerHTML = '<div class="card"><div class="empty">Este equipo todavía no tiene jugadores asignados (asignalos desde “👤 Alumnos”).</div></div>'; return; }
+  cont.innerHTML = '<div class="card"><div class="muted">Cargando…</div></div>';
+  let tests = [];
+  try{ tests = (await sb(`bosco_tests?alumno_id=in.(${js.map(j => j.id).join(',')})&select=id,alumno_id,fecha,sj,cmj,dj,dj_tc_ms,grupo_id&order=fecha.desc,creado_en.desc&limit=3000`)) || []; }
+  catch(e){ console.error(e); toast('No se pudieron cargar los tests: ' + (e.message || e), true); }
+  if (BS.eqId !== id) return;
+  const ult = {}; tests.forEach(t => { if (!ult[t.alumno_id]) ult[t.alumno_id] = t; });   // el más reciente de cada uno
+  BS.eqRows = js.map(j => ({ a: j, t: ult[j.id] || null }));
+  bsPintarEquipo();
+}
+function bsPintarEquipo(){
+  const cont = document.getElementById('bsEqBody'); if (!cont || !BS.eqId) return;
+  const g = bsGrupo(), e = BS.neut, tieneNorm = !!(g && g.normas && (g.normas.sj || g.normas.ie));
+  const P = BS.eqRows.filter(r => r.t).map(r => Object.assign({ n: r.a.nombre, aid: r.a.id }, bsFila(r.t, g)));
+  const sin = BS.eqRows.filter(r => !r.t).map(r => r.a.nombre);
+  let h = `<div class="card"><div class="row" style="justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;"><div class="muted">${P.length} de ${BS.eqRows.length} jugadores con test${sin.length ? ' · sin test: ' + ejEsc(sin.join(', ')) : ''}. Se usa el test más reciente de cada uno.</div><button class="ghost" onclick="bsToggleCarga()">${BS.cargaAbierta ? '✕ Cerrar carga' : '＋ Cargar tests del equipo'}</button></div>${BS.cargaAbierta ? bsCargaHtml() : ''}</div>`;
+  if (!P.length){ cont.innerHTML = h + '<div class="card"><div class="empty">Todavía no hay tests de Bosco en este equipo. Cargalos con “＋ Cargar tests del equipo” o desde “👤 Un alumno”.</div></div>'; return; }
+  if (!tieneNorm) h += '<div class="card"><div class="bs-warn">Elegí un grupo de referencia con valores cargados (pestaña “Grupos de referencia”) para ver cuadrantes y semáforo.</div></div>';
+  const mean = a => a.reduce((s, v) => s + v, 0) / a.length;
+  const conZ = P.filter(p => p.zsj !== null && p.zie !== null);
+  const cx = BS.ref === 'libro' || !conZ.length ? 0 : mean(conZ.map(p => p.zsj)), cy = BS.ref === 'libro' || !conZ.length ? 0 : mean(conZ.map(p => p.zie));
+  if (tieneNorm && conZ.length){
+    const pts = conZ.map(p => ({ zx: p.zsj, zy: p.zie, cls: 'eq', lab: p.n.split(' ')[0], tip: `${p.n} (${bsFechaTxt(p.f)}): SJ ${bsFmt(p.sj)} cm (z ${bsZf(p.zsj)}) · IE ${bsFmt(p.ie)}% (z ${bsZf(p.zie)}) · ${bsCuad(p.zsj, p.zie, cx, cy, e).t}` }));
+    const grp = { '++': [], '-+': [], '+-': [], '--': [], '0': [] }; conZ.forEach(p => grp[bsCuad(p.zsj, p.zie, cx, cy, e).k].push(p.n));
+    const qc = (k, c, t, r) => `<div class="bs-qc ${c}"><b>${t} · ${grp[k].length}</b><p>${grp[k].length ? ejEsc(grp[k].join(', ')) : '—'}</p>${r ? `<p><small>${r}</small></p>` : ''}</div>`;
+    h += `<div class="card"><h2 style="margin-top:0">Cuadrantes del plantel</h2><div class="bs-chart">${bsChart(pts, g, { cx, cy, e, refTxt: BS.ref === 'plantel' ? 'media del plantel' : '' })}</div>
+      <div class="bs-qsum">${qc('++', 'q1', BS_Q['++'].t, 'Mantener y progresar pliometría de alta intensidad')}${qc('-+', 'q2', BS_Q['-+'].t, 'Fuerza máxima y fuerza-velocidad')}${qc('+-', 'q4', BS_Q['+-'].t, 'Pliometría y trabajo reactivo')}${qc('--', 'q3', BS_Q['--'].t, 'Base de fuerza general, luego pliometría')}${grp['0'].length ? qc('0', '', 'Zona media', 'Cerca del promedio de referencia') : ''}</div>
+      ${conZ.length < P.length ? `<div class="muted" style="margin-top:6px;">${P.length - conZ.length} jugador(es) sin SJ o CMJ no aparecen en el gráfico.</div>` : ''}</div>`;
+  }
+  // semáforo
+  const cols = [['n', 'Jugador'], ['sj', 'SJ (cm)'], ['cmj', 'CMJ (cm)'], ['ie', 'IE (%)'], ['dj', 'DJ (cm)'], ['rsi', 'RSI (m/s)'], ['q', 'Cuadrante SJ×IE'], ['f', 'Fecha']];
+  const zk = { sj: 'zsj', cmj: 'zcmj', ie: 'zie', dj: 'zdj', rsi: 'zrsi' };
+  const rows = P.map(p => Object.assign({}, p, { q: tieneNorm ? bsCuad(p.zsj, p.zie, cx, cy, e).t : '–' }));
+  const { k, dir } = BS.sort;
+  const val = (r, kk) => kk === 'n' || kk === 'q' || kk === 'f' ? r[kk] : (tieneNorm ? r[zk[kk]] : r[kk]);
+  rows.sort((a, b) => { const va = val(a, k), vb = val(b, k); if (va === null || va === undefined) return 1; if (vb === null || vb === undefined) return -1; return (typeof va === 'string' ? va.localeCompare(vb, 'es') : va - vb) * dir; });
+  const cell = (v, z, d) => { const c = z !== null && z >= 1 ? 'g' : z !== null && z <= -1 ? 'r' : ''; const a = z !== null && z >= 1 ? '▲' : z !== null && z <= -1 ? '▼' : ''; return `<td class="${c}">${v === null ? '–' : bsFmt(v, d)}${z !== null ? `<small>${a} ${bsZf(z)}</small>` : ''}</td>`; };
+  const avgOf = key => { const a = P.map(p => p[key]).filter(v => v !== null); return a.length ? mean(a) : null; };
+  const avg = (key, zkey, d) => cell(avgOf(key), tieneNorm ? bsZ(key, avgOf(key), g) : null, d);
+  h += `<div class="card"><h2 style="margin-top:0">Semáforo del plantel</h2><div class="bs-leg"><span>▲ z ≥ +1 (verde)</span><span>▼ z ≤ −1 (rojo)</span><span>Tocá un encabezado para ordenar</span></div><div class="x-scroll" style="overflow-x:auto;"><table class="bs-tbl"><tr>${cols.map(([c, t]) => `<th data-c="${c}" onclick="bsOrdenar('${c}')">${t}${BS.sort.k === c ? (BS.sort.dir > 0 ? ' ↑' : ' ↓') : ''}</th>`).join('')}</tr>` +
+    rows.map(p => `<tr><td>${ejEsc(p.n)}</td>${cell(p.sj, p.zsj, 1)}${cell(p.cmj, p.zcmj, 1)}${cell(p.ie, p.zie, 1)}${cell(p.dj, p.zdj, 0)}${cell(p.rsi, p.zrsi, 2)}<td class="q">${ejEsc(p.q)}</td><td>${bsFechaTxt(p.f)}</td></tr>`).join('') +
+    `<tr class="avg"><td>Media del plantel</td>${avg('sj', 'zsj', 1)}${avg('cmj', 'zcmj', 1)}${avg('ie', 'zie', 1)}${avg('dj', 'zdj', 0)}${avg('rsi', 'zrsi', 2)}<td></td><td></td></tr></table></div></div>`;
+  cont.innerHTML = h;
+}
+function bsOrdenar(c){ BS.sort = BS.sort.k === c ? { k: c, dir: -BS.sort.dir } : { k: c, dir: (c === 'n' || c === 'q') ? 1 : -1 }; bsPintarEquipo(); }
+// carga masiva por equipo
+function bsToggleCarga(){ BS.cargaAbierta = !BS.cargaAbierta; bsPintarEquipo(); }
+function bsCargaHtml(){
+  const js = bsJugadores();
+  const cell = (a, k, ph) => `<td><input data-a="${a}" data-k="${k}" inputmode="decimal" placeholder="${ph}" value="${ejEsc((BS.cargaVals[a] || {})[k] || '')}" oninput="bsCargaSet(this)" onkeydown="bsCargaEnter(event,this)"></td>`;
+  return `<div style="margin-top:10px;border-top:1px solid var(--border);padding-top:10px;"><div class="row" style="align-items:end;gap:10px;flex-wrap:wrap;"><div class="field"><label>Fecha del test</label><input type="date" id="bsCargaFecha" value="${fechaLocalISO()}"></div><div class="muted" style="flex:1;min-width:220px;font-size:13px;">Cargá el mejor valor de cada jugador (Enter pasa al siguiente). Los que no tengan nada no se guardan.</div></div>
+    <div class="x-scroll" style="overflow-x:auto;margin-top:8px;"><table class="bs-tbl bs-carga"><tr><th>Jugador</th><th>SJ (cm)</th><th>CMJ (cm)</th><th>DJ (cm)</th><th>Contacto DJ (ms)</th></tr>${js.map(j => `<tr><td>${ejEsc(j.nombre)}</td>${cell(j.id, 'sj', '—')}${cell(j.id, 'cmj', '—')}${cell(j.id, 'dj', '—')}${cell(j.id, 'tc', '—')}</tr>`).join('')}</table></div>
+    <div class="row" style="margin-top:10px;"><button onclick="bsCargaGuardar()">💾 Guardar tests del equipo</button></div></div>`;
+}
+function bsCargaSet(inp){ (BS.cargaVals[inp.dataset.a] = BS.cargaVals[inp.dataset.a] || {})[inp.dataset.k] = inp.value; }
+function bsCargaEnter(e, inp){ if (e.key !== 'Enter') return; e.preventDefault(); const all = [...document.querySelectorAll(`.bs-carga input[data-k="${inp.dataset.k}"]`)]; const n = all[all.indexOf(inp) + 1]; if (n){ n.focus(); n.select(); } }
+async function bsCargaGuardar(){
+  const fecha = (document.getElementById('bsCargaFecha') || {}).value || fechaLocalISO(), filas = [];
+  for (const j of bsJugadores()){
+    const v = BS.cargaVals[j.id] || {}, sj = bsN(v.sj), cmj = bsN(v.cmj), dj = bsN(v.dj), tc = bsN(v.tc);
+    if (sj === null && cmj === null && dj === null) continue;
+    if ([sj, cmj, dj].some(x => x !== null && (x <= 0 || x > 120)) || (tc !== null && (tc <= 0 || tc > 2000))){ toast(`Revisá los valores de ${j.nombre}: saltos entre 0 y 120 cm, contacto entre 0 y 2000 ms.`, true); return; }
+    filas.push({ gimnasio_id: PERFIL_ACTUAL.gimnasio_id, alumno_id: j.id, fecha, sj, cmj, dj, dj_tc_ms: dj !== null ? tc : null, modo: 'mejor', grupo_id: BS.grupoId || null, profesor_id: document.getElementById('profActual')?.value || null });
+  }
+  if (!filas.length){ toast('No cargaste ningún valor.', true); return; }
+  try{ await sb('bosco_tests', { method: 'POST', headers: { Prefer: 'return=minimal' }, body: JSON.stringify(filas) }); toast(`Se guardaron ${filas.length} test${filas.length === 1 ? '' : 's'} ✔`); BS.cargaAbierta = false; BS.cargaVals = {}; await bsElegirEquipo(BS.eqId); }
+  catch(e){ console.error(e); toast('No se pudo guardar: ' + (e.message || e), true); }
+}
+
+// ----- pestaña: grupos de referencia -----
+function bsRenderGrupos(){
+  const body = document.getElementById('bsBody'); if (!body) return;
+  if (!BS.grupos.length){
+    body.innerHTML = `<div class="card"><h2 style="margin-top:0">Grupos de referencia</h2><div class="muted">Un grupo guarda la media y el desvío estándar de cada test (por ejemplo “Hombres 18–25 · deportistas”, del libro o protocolo que use el profe). Con eso se calculan los puntajes z, los cuadrantes y el semáforo.</div>
+      <div class="row" style="margin-top:12px;gap:8px;flex-wrap:wrap;"><button onclick="bsCrearGrupo('')">＋ Crear grupo vacío</button><button class="ghost" onclick="bsCrearEjemplos()">Cargar 3 grupos de ejemplo</button></div>
+      <div class="bs-warn">Los grupos de ejemplo traen valores inventados solo para probar. Reemplazalos por los reales antes de usarlos con alumnos.</div></div>`;
+    return;
+  }
+  if (!BS.grupos.find(g => g.id === BS.grupoEdit)) BS.grupoEdit = BS.grupoId || BS.grupos[0].id;
+  const g = BS.grupos.find(x => x.id === BS.grupoEdit), nm = g.normas || {};
+  body.innerHTML = `<div class="card"><div class="bs-opts"><div class="field" style="flex:1;min-width:240px;"><label>Grupo</label><select id="bsGrupoEd" onchange="BS.grupoEdit=this.value;bsRenderGrupos()">${BS.grupos.map(x => `<option value="${x.id}" ${x.id === BS.grupoEdit ? 'selected' : ''}>${ejEsc(x.nombre)}</option>`).join('')}</select></div>
+      <div class="field" style="min-width:220px;"><label>Nuevo grupo (copia este)</label><div class="row" style="gap:6px;"><input id="bsNuevoNombre" maxlength="80" placeholder="Nombre del grupo"><button class="ghost" onclick="bsCrearGrupo(document.getElementById('bsNuevoNombre').value)">＋ Crear</button></div></div></div></div>
+    <div class="card"><h2 style="margin-top:0">Valores de referencia</h2>
+      ${/EJEMPLO/i.test(g.nombre) ? '<div class="bs-warn">Este grupo tiene valores de EJEMPLO. Cambiá el nombre y los valores por los reales.</div>' : ''}
+      <div class="field"><label>Nombre</label><input id="bsGNombre" maxlength="80" value="${ejEsc(g.nombre)}"></div>
+      <div class="bs-norm" style="margin-top:8px;"><span></span><b class="muted" style="font-size:12px;">Media</b><b class="muted" style="font-size:12px;">Desvío estándar (DE)</b></div>
+      ${BS_T.map(t => `<div class="bs-norm"><label>${t.n} <span class="muted" style="font-weight:400;">(${t.u})</span></label><input id="bsN_${t.k}_m" inputmode="decimal" value="${nm[t.k] ? String(nm[t.k][0]).replace('.', ',') : ''}" placeholder="media"><input id="bsN_${t.k}_s" inputmode="decimal" value="${nm[t.k] ? String(nm[t.k][1]).replace('.', ',') : ''}" placeholder="DE"></div>`).join('')}
+      <div class="muted" style="font-size:12.5px;margin-top:4px;">IE = (CMJ − SJ) / SJ × 100 y RSI = (DJ/100) / (contacto/1000). Podés dejar un test vacío si el libro no lo trae: ese test no tendrá puntaje z.</div>
+      <div class="row" style="margin-top:12px;gap:8px;flex-wrap:wrap;"><button onclick="bsGuardarGrupo()">💾 Guardar grupo</button><button class="ghost" onclick="bsArchivarGrupo()">🗂 Archivar grupo</button></div></div>`;
+}
+async function bsCrearGrupo(nombre){
+  nombre = String(nombre || '').trim();
+  if (!nombre) nombre = BS.grupos.length ? '' : 'Grupo 1';
+  if (!nombre){ toast('Escribí un nombre para el grupo.', true); return; }
+  const base = bsGrupo();
+  try{
+    const r = await sb('bosco_grupos', { method: 'POST', headers: { Prefer: 'return=representation' }, body: JSON.stringify({ gimnasio_id: PERFIL_ACTUAL.gimnasio_id, nombre: nombre.slice(0, 80), normas: (base && base.normas) || {}, creado_por: PERFIL_ACTUAL.id || null }) });
+    await bsCargarGrupos(); if (r && r[0]){ BS.grupoEdit = r[0].id; BS.grupoId = r[0].id; } toast('Grupo creado ✔'); bsRenderGrupos();
+  }catch(e){ console.error(e); toast('No se pudo crear: ' + (e.message || e), true); }
+}
+async function bsCrearEjemplos(){
+  try{
+    await sb('bosco_grupos', { method: 'POST', headers: { Prefer: 'return=minimal' }, body: JSON.stringify(BS_EJEMPLO.map(x => ({ gimnasio_id: PERFIL_ACTUAL.gimnasio_id, nombre: x.nombre, normas: x.normas, creado_por: PERFIL_ACTUAL.id || null }))) });
+    await bsCargarGrupos(); toast('Grupos de ejemplo cargados'); bsRenderGrupos();
+  }catch(e){ console.error(e); toast('No se pudieron cargar: ' + (e.message || e), true); }
+}
+async function bsGuardarGrupo(){
+  const nombre = (document.getElementById('bsGNombre').value || '').trim().slice(0, 80);
+  if (!nombre){ toast('El grupo necesita un nombre.', true); return; }
+  const normas = {};
+  for (const t of BS_T){
+    const m = bsN(document.getElementById(`bsN_${t.k}_m`).value), s = bsN(document.getElementById(`bsN_${t.k}_s`).value);
+    if (m === null && s === null) continue;
+    if (m === null || s === null || !(s > 0)){ toast(`${t.n}: cargá la media y un desvío estándar mayor que 0 (o dejá los dos vacíos).`, true); return; }
+    normas[t.k] = [m, s];
+  }
+  try{ await sb(`bosco_grupos?id=eq.${BS.grupoEdit}`, { method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: JSON.stringify({ nombre, normas }) }); await bsCargarGrupos(); toast('Grupo guardado ✔'); bsRenderGrupos(); }
+  catch(e){ console.error(e); toast('No se pudo guardar: ' + (e.message || e), true); }
+}
+async function bsArchivarGrupo(){
+  const g = BS.grupos.find(x => x.id === BS.grupoEdit); if (!g) return;
+  if (!confirm(`¿Archivar “${g.nombre}”? Los tests ya cargados se conservan; el grupo deja de ofrecerse.`)) return;
+  try{ await sb(`bosco_grupos?id=eq.${g.id}`, { method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: JSON.stringify({ activo: false }) }); await bsCargarGrupos(); BS.grupoEdit = ''; toast('Grupo archivado'); bsRenderGrupos(); }
+  catch(e){ toast('No se pudo archivar: ' + (e.message || e), true); }
+}
+
+// ---------- vista del alumno (solo lectura, dentro de "Mi evolución física") ----------
+async function boscoCargarAlu(alumnoId){
+  const card = document.getElementById('aluBoscoCard'); if (!card) return;
+  if (!boscoOn() || !alumnoId){ card.style.display = 'none'; return; }
+  try{
+    const [tests, grupos] = await Promise.all([
+      sb(`bosco_tests?alumno_id=eq.${alumnoId}&select=id,fecha,sj,cmj,dj,dj_tc_ms,grupo_id&order=fecha.asc,creado_en.asc&limit=200`),
+      sb('bosco_grupos?select=id,nombre,normas&activo=eq.true&order=creado_en.asc'),
+    ]);
+    if (!tests || !tests.length){ card.style.display = 'none'; return; }
+    const last = tests[tests.length - 1], g = (grupos || []).find(x => x.id === last.grupo_id) || (grupos || []).find(x => x.normas && (x.normas.sj || x.normas.ie)) || null;
+    document.getElementById('aluBoscoCont').innerHTML = bsIndHtml(tests.map(t => bsFila(t, g)), null, g, 'alu') + (g ? `<div class="muted" style="font-size:12px;margin-top:6px;">Comparado con: ${ejEsc(g.nombre)}.</div>` : '');
+    card.style.display = '';
+  }catch(e){ card.style.display = 'none'; console.error(e); }
+}
+
 const EM = { activo: false, equipo: '', fecha: '', metr: [], vals: {}, prev: {}, cargandoPrev: false };
 const EM_MENOR = new Set(['Sprint 30 metros', '1km tiempo', '% Grasa corporal', 'Circunferencia cintura']);
 const EM_NEUTRO = new Set(['Peso', 'Circunferencia cadera', 'Circunferencia brazo']);
@@ -21259,6 +21718,7 @@ function emModo(modo){
   document.getElementById('evalPanelEquipo').style.display = eq ? '' : 'none';
   document.getElementById('emSegAlumno').classList.toggle('active', !eq);
   document.getElementById('emSegEquipo').classList.toggle('active', eq);
+  try{ boscoSalir(); }catch(e){}   // (v183)
   if (eq) emIniciar();
 }
 function emIniciar(){
