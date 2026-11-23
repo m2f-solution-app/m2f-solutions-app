@@ -124,6 +124,59 @@ if ('serviceWorker' in navigator) window.addEventListener('load', function(){ tr
   .bs-range input{ width:140px; }
   @media(max-width:760px){ .bs-norm{ grid-template-columns:80px 1fr 1fr; } .bs-chart{ overflow-x:auto; } .bs-chart svg{ min-width:560px; } }
 
+  /* ---- (v184) Cierre de caja ---- */
+  #modalCierre .modal-box{ max-width:820px; width:100%; max-height:92vh; overflow:auto; text-align:left; }
+  .cj-head{ display:flex; gap:10px; flex-wrap:wrap; align-items:end; margin-bottom:10px; }
+  .cj-head .field{ min-width:150px; }
+  .cj-tabs{ display:flex; gap:8px; margin:6px 0 12px; }
+  .cj-caja{ border:1px solid var(--border); border-radius:14px; padding:10px 12px; margin-bottom:10px; background:var(--panel2); }
+  .cj-caja.ok{ border-color:rgba(61,220,132,.5); }
+  .cj-fila{ display:grid; grid-template-columns:minmax(0,1.5fr) minmax(0,1fr) minmax(0,1fr) minmax(0,1fr); gap:8px; align-items:center; }
+  .cj-fila .n{ font-weight:700; }
+  .cj-fila small{ display:block; color:var(--muted); font-size:11.5px; font-weight:400; }
+  .cj-fila .v{ text-align:right; font-variant-numeric:tabular-nums; }
+  .cj-fila input{ width:100%; text-align:right; }
+  .cj-dif.pos{ color:var(--accent2-text); font-weight:800; }
+  .cj-dif.neg{ color:var(--danger-text); font-weight:800; }
+  .cj-dif.cero{ color:var(--accent2-text); font-weight:700; }
+  .cj-th{ display:grid; grid-template-columns:minmax(0,1.5fr) minmax(0,1fr) minmax(0,1fr) minmax(0,1fr); gap:8px; font-size:12px; color:var(--muted); font-weight:700; margin:0 12px 4px; }
+  .cj-th span:not(:first-child){ text-align:right; }
+  .cj-nota{ margin-top:8px; display:none; }
+  .cj-nota.ver{ display:block; }
+  .cj-det{ margin-top:8px; font-size:13px; }
+  .cj-det summary{ cursor:pointer; color:var(--muted); font-size:12.5px; }
+  .cj-det table{ width:100%; border-collapse:collapse; margin-top:6px; }
+  .cj-det td{ padding:4px 6px; border-bottom:1px solid var(--border); }
+  .cj-det td:last-child{ text-align:right; white-space:nowrap; }
+  .cj-res{ background:var(--note-bg); border:1px solid var(--note-bd); border-radius:14px; padding:12px 14px; margin:12px 0; }
+  .cj-res h3{ margin:0 0 8px; font-size:16px; }
+  .cj-kp{ display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:8px; }
+  .cj-kp div{ background:var(--panel2); border:1px solid var(--border); border-radius:12px; padding:8px 10px; }
+  .cj-kp small{ display:block; color:var(--muted); font-size:12px; }
+  .cj-kp b{ font-size:17px; }
+  .cj-acc{ display:flex; gap:8px; flex-wrap:wrap; margin-top:12px; }
+  .cj-warn{ background:rgba(255,210,61,.14); border:1px solid rgba(255,210,61,.45); border-radius:12px; padding:10px 12px; font-size:13px; margin:8px 0; }
+  .cj-chips{ display:flex; gap:6px; flex-wrap:wrap; margin:6px 0 12px; }
+  .cj-chip{ border:1px solid rgba(255,210,61,.55); background:rgba(255,210,61,.12); border-radius:999px; padding:4px 10px; font-size:12.5px; cursor:pointer; color:var(--text); }
+  .cj-dia{ border:1px solid var(--border); border-radius:14px; padding:10px 12px; margin-bottom:10px; }
+  .cj-dia h4{ margin:0 0 6px; display:flex; justify-content:space-between; gap:8px; }
+  .cj-dia .r{ display:flex; justify-content:space-between; gap:8px; padding:4px 0; border-top:1px solid var(--border); font-size:13px; flex-wrap:wrap; }
+  .cj-dia .r.anul{ opacity:.55; text-decoration:line-through; }
+  #cjPrint{ display:none; }
+  @media print{
+    body.cj-print > *:not(#cjPrint){ display:none !important; }
+    body.cj-print #cjPrint{ display:block !important; color:#000; background:#fff; padding:16px; font-family:system-ui,Arial,sans-serif; }
+    body.cj-print #cjPrint table{ width:100%; border-collapse:collapse; margin:8px 0; }
+    body.cj-print #cjPrint th, body.cj-print #cjPrint td{ border-bottom:1px solid #999; padding:5px 6px; text-align:right; font-size:13px; }
+    body.cj-print #cjPrint th:first-child, body.cj-print #cjPrint td:first-child{ text-align:left; }
+  }
+  @media(max-width:640px){
+    .cj-fila, .cj-th{ grid-template-columns:1fr 1fr; }
+    .cj-th{ display:none; }
+    .cj-fila .v{ text-align:left; }
+    .cj-fila input{ text-align:left; }
+  }
+
   /* ---- (v85) Recepción ---- */
   .rc-grid{display:grid; grid-template-columns:340px 1fr; gap:14px; align-items:start;}
   @media(max-width:800px){ .rc-grid{grid-template-columns:1fr;} }
@@ -2767,7 +2820,7 @@ if ('serviceWorker' in navigator) window.addEventListener('load', function(){ tr
       <!-- ---- SUBVISTA: RECEPCIÓN (v85) — check-in y turnos por el alumno (administrador y usuario de recepción) ---- -->
       <div id="subvistaRecepcion" style="display:none;">
         <div class="vista-eyebrow">Check-in</div>
-        <div class="vista-titulo rc-tit"><span>Recepción <span class="pill suc" id="rcSede" style="display:none;"></span></span><button type="button" class="secondary" id="rcQrBtn" style="display:none;" onclick="qrAbrir()">🔳 QR de asistencia</button></div>
+        <div class="vista-titulo rc-tit"><span>Recepción <span class="pill suc" id="rcSede" style="display:none;"></span></span><button type="button" class="secondary" id="rcQrBtn" style="display:none;" onclick="qrAbrir()">🔳 QR de asistencia</button><button type="button" class="secondary" id="rcCierreBtn" style="display:none;" onclick="cjAbrir()">🧾 Cierre de caja</button></div>
         <div class="rc-grid">
           <div class="card">
             <h2 style="margin-top:0">Buscar socio</h2>
@@ -3660,6 +3713,7 @@ if ('serviceWorker' in navigator) window.addEventListener('load', function(){ tr
         </div>
 
         <div id="cobTabCajas" style="display:none;">
+          <div id="cjEntradaAdmin" style="display:none; margin-bottom:10px;"><button type="button" onclick="cjAbrir()">🧾 Cierre de caja</button> <span class="muted" style="font-size:12.5px;">Contá lo que hay en cada caja al final del día y compará con lo esperado.</span></div>
           <div id="cajasV2" style="display:none;"></div>
           <div id="cajasLegacy">
           <div class="card">
@@ -4903,8 +4957,8 @@ const MOD_PRESETS = {
   pro:           { n: 'Pro',           ico: '🚀', on: '*' },
   personal:      { n: 'Personal',      ico: '💪', on: ['seguimiento', 'logros', 'wellness'] },   // (v132) entrena por su cuenta: solo rutinas + progreso
 };
-const MOD_FUERA_PRESET = ['sucursales', 'servicios', 'cuota_variable', 'bosco'];   // módulos que no entran en ningún plan: se prenden aparte, gimnasio por gimnasio
-const MOD_BLOQUEO_SERVIDOR = ['clases', 'evaluaciones', 'alertas', 'finanzas', 'recepcion', 'proyeccion_ingresos', 'servicios', 'wellness', 'cuota_variable', 'bosco'];   // etapa 1 (SQL) + proyección (ya la valida su RPC)
+const MOD_FUERA_PRESET = ['sucursales', 'servicios', 'cuota_variable', 'bosco', 'cierre_caja'];   // módulos que no entran en ningún plan: se prenden aparte, gimnasio por gimnasio
+const MOD_BLOQUEO_SERVIDOR = ['clases', 'evaluaciones', 'alertas', 'finanzas', 'recepcion', 'proyeccion_ingresos', 'servicios', 'wellness', 'cuota_variable', 'bosco', 'cierre_caja'];   // etapa 1 (SQL) + proyección (ya la valida su RPC)
 function wellOn(){ return modOn('wellness'); }   // (v149) Wellness es un módulo por gimnasio
 function modOn(k){
   if (k === 'atletismo') return atlOn();
@@ -4934,6 +4988,7 @@ function modAplicarMenu(){
   try{ cvPintar(); }catch(e){}   // (v155) cuota variable
   try{ cvcMenu(); }catch(e){}   // (v157) cancelar clase
   try{ boscoChip(); }catch(e){}   // (v183) Bosco
+  try{ cjEntrada(); }catch(e){}   // (v184) cierre de caja
   try{ document.body.classList.toggle('sin-wellness', !wellOn()); }catch(e){}   // (v149)
   const roles = new Set([...(typeof MENU_SOLO_ADMIN !== 'undefined' ? MENU_SOLO_ADMIN : []), ...(typeof BNAV_SOLO_ADMIN !== 'undefined' ? BNAV_SOLO_ADMIN : []), 'menuRecepcion', 'ttRecepcion']);
   Object.keys(MOD_IDS).forEach(k => {
@@ -5450,11 +5505,11 @@ function atlIniciarAlu(){
   atlCargarVista('aluAtletismoContenido', id || '');
 }
 
-const APP_VERSION = 183;
+const APP_VERSION = 186;
 let ES_PERSONAL = false;   // (v132) cuenta personal (gimnasios.tipo = 'personal'); se calcula en perAplicar()
 // (v96) Fecha de la última actualización: se cambia junto con APP_VERSION en cada entrega. Se muestra en la
 // pantalla de inicio y en el menú de cuenta ("v94 · actualizada el 5/10/2026").
-const APP_FECHA = '2026-11-22';
+const APP_FECHA = '2026-11-23';
 function appVersionTxt(){ const [y, m, d] = APP_FECHA.split('-'); return `v${APP_VERSION} · actualizada el ${+d}/${+m}/${y}`; }
 (function(){ const el = document.getElementById('lcVersion'); if (el) el.textContent = 'M2F Solutions · ' + appVersionTxt(); })();
 
@@ -12930,9 +12985,14 @@ function caj2SedeActual(){
 }
 function caj2ElegirSede(id){ CAJ2.sede = id || ''; cajasCargar(); }
 // Tarjeta "Activar cajas por sede" (se ve en Finanzas → Cajas mientras no estén activadas y haya 2+ sedes)
+// (v186) También para quien tiene UNA sola sede: las cuentas (efectivo, bancos, tarjetas) no dependen de tener varias sedes
+function caj2PuedeActivar(){ return !!(PERFIL_ACTUAL && PERFIL_ACTUAL.rol === 'admin' && sucOn() && SUC.ok === true && !sucAdminSede() && !caj2Todas().length); }
 function caj2ActivarHtml(){
-  if (!caj2Posible() || caj2Todas().length || !sucMulti() || sucAdminSede()) return '';
-  const p = sucPrincipal();
+  if (!caj2PuedeActivar()) return '';
+  const p = sucPrincipal(), multi = sucMulti();
+  if (!multi) return `<div class="caj2-act"><b>🏦 Tus cuentas: efectivo, bancos y tarjetas</b>
+    <div class="muted" style="font-size:13px;">Activá tus cuentas: Efectivo, Banco, Tarjeta de crédito, Tarjeta de débito y Mercado Pago (y las que quieras agregar, por ejemplo un banco por cada cuenta). Cada cobro entra a la cuenta que corresponde y vas a poder elegir en qué banco o tarjeta entró, para conciliar cada resumen. Tus saldos y movimientos de hoy pasan a Efectivo y Banco y el total no cambia.</div>
+    <button class="btn-act" onclick="caj2Activar()" id="btnCaj2Activar">Activar mis cuentas</button></div>`;
   return `<div class="caj2-act"><b>🏢 Cajas por sede</b>
     <div class="muted" style="font-size:13px;">Cada sede tiene sus propias cajas: Efectivo, Banco, Tarjeta de crédito, Tarjeta de débito y Mercado Pago (y las que quieras agregar). Cada cobro entra solo a la caja de la sede del alumno. Tus saldos y movimientos de hoy pasan a la sede principal${p ? ' (' + xe(p.nombre) + ')' : ''} y el total no cambia.</div>
     <button class="btn-act" onclick="caj2Activar()" id="btnCaj2Activar">Activar cajas por sede</button></div>`;
@@ -12940,10 +13000,17 @@ function caj2ActivarHtml(){
 async function caj2Activar(){
   if (CAJ2.busy) return;
   const p = sucPrincipal();
-  if (!confirm('Se crean las cajas de cada sede (Efectivo, Banco, Tarjeta de crédito, Tarjeta de débito y Mercado Pago). Tus saldos, cobros, gastos y movimientos de hoy pasan a la sede principal' + (p ? ' (' + p.nombre + ')' : '') + '. El total no cambia. ¿Activar?')) return;
+  const msgActivar = sucMulti()
+    ? 'Se crean las cajas de cada sede (Efectivo, Banco, Tarjeta de crédito, Tarjeta de débito y Mercado Pago). Tus saldos, cobros, gastos y movimientos de hoy pasan a la sede principal' + (p ? ' (' + p.nombre + ')' : '') + '. El total no cambia. ¿Activar?'
+    : 'Se crean tus cuentas (Efectivo, Banco, Tarjeta de crédito, Tarjeta de débito y Mercado Pago). Tus saldos, cobros, gastos y movimientos de hoy pasan a Efectivo y Banco. El total no cambia. ¿Activar?';   // (v186)
+  if (!confirm(msgActivar)) return;
   CAJ2.busy = true;
   const b = document.getElementById('btnCaj2Activar'); if (b) b.disabled = true;
   try{
+    if (!sucPrincipal()){   // (v186) una sola sede y todavía sin sede principal: se crea sola, con el nombre del gimnasio
+      await sb('rpc/sucursales_activar', { method: 'POST', body: JSON.stringify({ p_nombre: (GIMNASIO_ACTUAL && GIMNASIO_ACTUAL.nombre) || null }) });
+      await sucCargar();
+    }
     await sb('rpc/cajas_activar', { method:'POST', body: '{}' });
     toast('Cajas por sede activadas ✓');
     await caj2Cargar();
@@ -16626,6 +16693,7 @@ async function abrirCobroAlumno(id, abrirForm){
       <div id="cobrarForm${id}" style="display:none; margin-top:14px;">
         <div class="row">
           <div class="field"><label>Forma de pago</label><select id="cobrarMetodo${id}" onchange="previewMontoCobro('${id}')"><option value="transferencia">Transferencia</option><option value="efectivo">Efectivo (con descuento)</option><option value="mercado_pago">Mercado Pago (transferencia a MP)</option>${caj2On() ? '<option value="tarjeta_credito">Tarjeta de crédito</option><option value="tarjeta_debito">Tarjeta de débito</option>' : ''}</select></div>
+          <div class="field" id="cobrarCajaWrap${id}" style="display:none;"><label id="cobrarCajaLbl${id}">Cuenta</label><select id="cobrarCaja${id}"></select></div>
           <div class="field"><label>Meses a pagar</label><select id="cobrarMeses${id}" onchange="previewMontoCobro('${id}')"><option value="">1 mes</option>${PLANES_PREPAGO_CACHE.filter(x => x.activo).map(x => `<option value="${x.id}">${xe(x.nombre)}</option>`).join('')}</select></div>
           <div class="field"><label>Monto a pagar</label><input disabled id="cobrarMonto${id}"></div>
           <button style="align-self:end;" onclick="confirmarCobro('${id}')">Confirmar pago</button>
@@ -16634,7 +16702,7 @@ async function abrirCobroAlumno(id, abrirForm){
       </div>
       <div id="historialPagos${id}" style="display:none; margin-top:14px;"></div>
     </div>`;
-  if (abrirForm) toggleCobrar(id);
+  // (v185) el formulario de cobro viene cerrado: se abre tocando "💰 Cobrar" (antes se abría solo)
 }
 function xCobRecordatorio(id){
   const al = ALUMNOS_CACHE.find(a => a.id === id) || (COBRANZAS_FILAS.find(f => f.alumno.id === id) || {}).alumno;
@@ -18289,6 +18357,26 @@ function previewMontoCobro(alumnoId){
   }
   document.getElementById(`cobrarMonto${alumnoId}`).value = `$${monto.toFixed(2)}${etiqueta}`;
   try{ cuoPreview(alumnoId); }catch(e){}   // (v153) desde / hasta de esta cuota
+  try{ cobrarCajaPintar(alumnoId); }catch(e){}   // (v185) a qué banco / tarjeta entra
+}
+// ----- (v185) Elegir a qué banco o tarjeta entra el cobro (para conciliar cada resumen). Solo aparece si hay 2+ cuentas del mismo tipo en la sede del alumno -----
+function cobrarCajaTipo(m){ return m === 'efectivo' ? 'efectivo' : m === 'mercado_pago' ? 'mercado_pago' : (m === 'tarjeta_credito' || m === 'tarjeta_debito') ? m : 'banco'; }
+function cobrarCajaPintar(id){
+  const w = document.getElementById('cobrarCajaWrap' + id), s = document.getElementById('cobrarCaja' + id), m = document.getElementById('cobrarMetodo' + id);
+  if (!w || !s || !m) return;
+  if (!caj2On()){ w.style.display = 'none'; return; }
+  const tipo = cobrarCajaTipo(m.value);
+  const al = ALUMNOS_CACHE.find(a => a.id === id) || (typeof ALUMNOS_LISTA_CACHE !== 'undefined' && ALUMNOS_LISTA_CACHE.find(a => a.id === id)) || {};
+  const act = caj2Todas().filter(c => c.activa);
+  let sede = al.sucursal_id;
+  if (!sede || !act.some(c => c.sucursal_id === sede)) sede = sucPrincipal() && sucPrincipal().id;
+  const op = act.filter(c => c.sucursal_id === sede && c.tipo === tipo).sort((a, b) => (b.es_base ? 1 : 0) - (a.es_base ? 1 : 0) || (a.orden - b.orden));
+  if (op.length < 2){ w.style.display = 'none'; s.innerHTML = ''; return; }   // una sola cuenta: el cobro va solo a esa
+  const prev = s.value;
+  document.getElementById('cobrarCajaLbl' + id).textContent = tipo === 'banco' ? '¿A qué banco entró?' : tipo === 'efectivo' ? '¿Qué caja?' : '¿En qué cuenta?';
+  s.innerHTML = op.map(c => `<option value="${c.id}">${caj2Ico(c.tipo)} ${xe(c.nombre)}</option>`).join('');
+  if (prev && op.some(c => c.id === prev)) s.value = prev;
+  w.style.display = '';
 }
 
 async function confirmarCobro(alumnoId){
@@ -18296,6 +18384,8 @@ async function confirmarCobro(alumnoId){
   const formaPagoId = document.getElementById(`cobrarMeses${alumnoId}`).value || null;
   const alumnoNombre = ALUMNOS_CACHE.find(a => a.id === alumnoId)?.nombre || 'Alumno';
   const planNombre = COBRANZAS_CACHE[alumnoId]?.plan_nombre || 'Plan';
+  const wCaja = document.getElementById(`cobrarCajaWrap${alumnoId}`), sCaja = document.getElementById(`cobrarCaja${alumnoId}`);
+  const cajaElegida = (wCaja && wCaja.style.display !== 'none' && sCaja && sCaja.value) ? sCaja.value : null;   // (v185)
   try{
     const resp = await sb('rpc/registrar_pago', {
       method: 'POST',
@@ -18303,6 +18393,10 @@ async function confirmarCobro(alumnoId){
     });
     cuoReset(alumnoId);
     const pago = Array.isArray(resp) ? resp[0] : resp;
+    if (cajaElegida && pago && pago.id && pago.caja_id !== cajaElegida){   // (v185) mover el cobro a la cuenta elegida
+      try{ await sb('rpc/pago_asignar_caja', { method: 'POST', body: JSON.stringify({ p_pago_id: pago.id, p_caja_id: cajaElegida }) }); pago.caja_id = cajaElegida; }
+      catch(e){ toast('El pago se registró, pero no se pudo asignar la cuenta elegida: ' + extraerMensajeError(e), true); }
+    }
     toast('Pago registrado ✓');
     cerrarFicha();
     mostrarExitoCobro(alumnoId, pago, alumnoNombre, planNombre);
@@ -21697,6 +21791,239 @@ async function boscoCargarAlu(alumnoId){
     document.getElementById('aluBoscoCont').innerHTML = bsIndHtml(tests.map(t => bsFila(t, g)), null, g, 'alu') + (g ? `<div class="muted" style="font-size:12px;margin-top:6px;">Comparado con: ${ejEsc(g.nombre)}.</div>` : '');
     card.style.display = '';
   }catch(e){ card.style.display = 'none'; console.error(e); }
+}
+
+// ===== (v184) Cierre de caja: arqueo diario por sede. Módulo opcional "cierre_caja" (apagado por defecto). Solo LEE cobros/gastos/cajas: no toca nada de lo existente =====
+function cjOn(){ return !!(MOD_MAP && MOD_MAP.cierre_caja === true && MOD_MAP.finanzas !== false); }
+const CJ = { sede: null, sedes: null, fecha: null, tab: 'dia', data: null, hist: null, busy: false, err: '' };
+function cjM(n){ return formatearMonto(Number(n) || 0); }
+function cjMs(n){ n = Number(n) || 0; return (n > 0 ? '+' : n < 0 ? '−' : '') + formatearMonto(Math.abs(n)); }
+function cjF(iso){ const m = String(iso || '').match(/^(\d{4})-(\d{2})-(\d{2})/); return m ? `${m[3]}/${m[2]}/${m[1]}` : ''; }
+function cjHoy(){ return dateAIso(new Date()); }
+function cjHoraDe(ts){ try{ const d = new Date(ts); return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); }catch(e){ return ''; } }
+function cjEsRec(){ return !!(PERFIL_ACTUAL && PERFIL_ACTUAL.rol === 'recepcion'); }
+function cjDifCls(d){ d = Math.round((Number(d) || 0) * 100) / 100; return d > 0 ? 'pos' : d < 0 ? 'neg' : 'cero'; }
+function cjDifTxt(d){ d = Math.round((Number(d) || 0) * 100) / 100; return d === 0 ? '✓ sin diferencia' : (d > 0 ? 'Sobran ' : 'Faltan ') + formatearMonto(Math.abs(d)); }
+// Botones de entrada (Finanzas → Cajas y Recepción): solo con el módulo prendido
+function cjEntrada(){
+  const on = cjOn();
+  const a = document.getElementById('cjEntradaAdmin'); if (a) a.style.display = on ? '' : 'none';
+  const r = document.getElementById('rcCierreBtn'); if (r) r.style.display = on ? '' : 'none';
+}
+function cjAbrir(){
+  if (!cjOn()){ toast('El cierre de caja no está habilitado.', true); return; }
+  CJ.sede = sucAdminSede() || CJ.sede || null; CJ.fecha = cjHoy(); CJ.tab = 'dia'; CJ.data = null; CJ.hist = null; CJ.err = '';
+  xAbrirModal('modalCierre');
+  cjCargar();
+}
+function cjCerrarModal(){ xCerrarModal('modalCierre'); }
+function cjSedes(){ return (CJ.sedes && CJ.sedes.length) ? CJ.sedes : (sucMulti() ? sucActivas().map(s => ({ id: s.id, nombre: s.nombre })) : []); }
+function cjTab(t){ CJ.tab = t; if (t === 'hist') cjCargarHist(); else cjRender(); }
+function cjElegirSede(id){ CJ.sede = id || null; CJ.data = null; CJ.hist = null; if (CJ.tab === 'hist') cjCargarHist(); else cjCargar(); }
+function cjElegirFecha(v){
+  if (!v) return;
+  if (v > cjHoy()){ toast('No se puede cerrar una fecha futura.', true); cjRender(); return; }
+  CJ.fecha = v; cjCargar();
+}
+function cjDia(delta){ const d = new Date(); d.setDate(d.getDate() + delta); CJ.fecha = dateAIso(d); cjCargar(); }
+async function cjCargar(){
+  const body = document.getElementById('cjBody'); if (!body) return;
+  CJ.err = '';
+  if (!CJ.data) body.innerHTML = '<div class="muted" style="padding:14px 0;">Cargando…</div>';
+  try{
+    const r = await sb('rpc/cierre_caja_preview', { method: 'POST', body: JSON.stringify({ p_sucursal_id: CJ.sede || null, p_fecha: CJ.fecha }) });
+    if (r && r.elegir_sede){ CJ.sedes = r.sedes || []; CJ.data = { elegir: true }; }
+    else { CJ.data = r; CJ.sede = r.sede_id; if (r.sedes && r.sedes.length) CJ.sedes = r.sedes; }
+  }catch(e){ CJ.data = null; CJ.err = extraerMensajeError(e); }
+  cjRender();
+}
+async function cjCargarHist(){
+  const body = document.getElementById('cjBody'); if (!body) return;
+  if (!CJ.sede){ cjRender(); return; }
+  body.innerHTML = '<div class="muted" style="padding:14px 0;">Cargando…</div>';
+  try{ CJ.hist = await sb('rpc/cierre_caja_historial', { method: 'POST', body: JSON.stringify({ p_sucursal_id: CJ.sede }) }); CJ.err = ''; }
+  catch(e){ CJ.hist = null; CJ.err = extraerMensajeError(e); }
+  cjRender();
+}
+function cjEncabezado(){
+  const sedes = cjSedes(), fija = sucAdminSede();
+  const selSede = (!fija && sedes.length > 1) ? `<div class="field"><label>📍 Sede</label><select onchange="cjElegirSede(this.value)"><option value="">— elegí la sede —</option>${sedes.map(s => `<option value="${s.id}" ${s.id === CJ.sede ? 'selected' : ''}>${xe(s.nombre)}</option>`).join('')}</select></div>` : '';
+  const nomSede = (fija && sucMulti()) ? `<span class="pill suc">📍 ${xe(sucNombre(fija))}</span>` : '';
+  const fecha = CJ.tab === 'dia' ? `<div class="field"><label>Fecha</label><input type="date" value="${xe(CJ.fecha)}" max="${cjHoy()}" onchange="cjElegirFecha(this.value)"></div>
+      <button type="button" class="ghost" onclick="cjDia(0)">Hoy</button><button type="button" class="ghost" onclick="cjDia(-1)">Ayer</button>` : '';
+  return `<div class="cj-head">${selSede}${nomSede}${fecha}</div>
+    <div class="cj-tabs"><button type="button" class="${CJ.tab === 'dia' ? '' : 'ghost'}" onclick="cjTab('dia')">Cerrar el día</button><button type="button" class="${CJ.tab === 'hist' ? '' : 'ghost'}" onclick="cjTab('hist')">Historial</button></div>`;
+}
+function cjRender(){
+  const body = document.getElementById('cjBody'); if (!body) return;
+  const cab = cjEncabezado();
+  if (CJ.err){ body.innerHTML = cab + `<div class="cj-warn">${xe(CJ.err)}</div>`; return; }
+  if (CJ.tab === 'hist'){ body.innerHTML = cab + cjHistHtml(); return; }
+  if (!CJ.data){ body.innerHTML = cab; return; }
+  if (CJ.data.elegir){ body.innerHTML = cab + '<div class="muted">Elegí la sede para ver sus cajas.</div>'; return; }
+  body.innerHTML = cab + cjDiaHtml(CJ.data);
+  cjCalc();
+}
+// ---- Cerrar el día ----
+function cjDetalleHtml(c){
+  const d = c.detalle || {}, cob = d.cobros || [], egr = d.egresos || [], mov = d.movimientos || [];
+  if (!cob.length && !egr.length && !mov.length) return '<div class="muted" style="font-size:12.5px; margin-top:6px;">Sin movimientos ese día.</div>';
+  const fil = (a, b, m) => `<tr><td>${a}</td><td>${b}</td><td>${m}</td></tr>`;
+  const filas = cob.map(x => fil(xe(x.hora), '+ ' + xe(x.alumno || '—') + ' <span class="muted">· ' + xe(x.metodo || '') + (x.recibo ? ' · #' + xe(x.recibo) : '') + '</span>', cjM(x.monto)))
+    .concat(egr.map(x => fil('', '− ' + xe(x.concepto || ''), '−' + cjM(x.monto))))
+    .concat(mov.map(x => fil('', '⇄ ' + (x.sentido === 'entra' ? 'Entra desde ' : 'Sale hacia ') + xe(x.otra || '—') + (x.nota ? ' · ' + xe(x.nota) : ''), (x.sentido === 'entra' ? '+' : '−') + cjM(x.monto))));
+  return `<details class="cj-det"><summary>Ver detalle (${cob.length} cobro${cob.length === 1 ? '' : 's'}, ${egr.length} egreso${egr.length === 1 ? '' : 's'}${mov.length ? ', ' + mov.length + ' mov.' : ''})</summary><table>${filas.join('')}</table></details>`;
+}
+function cjCajaHtml(c){
+  const tipo = CAJ2_TIPOS[c.tipo] || CAJ2_TIPOS.otra, ef = c.tipo === 'efectivo', ci = c.cierre;
+  const desglose = `Apertura ${cjM(c.apertura)} + cobros ${cjM(c.ingresos)} − egresos ${cjM(c.egresos)}${(Number(c.mov_entrada) || Number(c.mov_salida)) ? ' ± mov. ' + cjMs(Number(c.mov_entrada) - Number(c.mov_salida)) : ''}`;
+  const nombre = `<div class="n">${tipo[0]} ${xe(c.nombre)}${ef ? '' : ' <small>opcional</small>'}${ef && !ci ? ' <small>obligatorio</small>' : ''}</div>`;
+  if (ci){
+    const post = c.posteriores && Number(c.posteriores.cantidad) > 0
+      ? `<div class="cj-warn">⚠️ Después del cierre se cargaron ${c.posteriores.cantidad} movimiento(s) de esa fecha. El esperado de hoy es ${cjM(c.esperado)} (al cerrar era ${cjM(ci.esperado)}). Si corresponde, el administrador puede anular el cierre y volver a hacerlo.</div>` : '';
+    return `<div class="cj-caja ok"><div class="cj-fila">
+        <div>${nombre}<small>✅ Cerrada por ${xe(ci.cerrado_por_nombre || '—')} · ${xe(cjHoraDe(ci.cerrado_en))}</small></div>
+        <div class="v"><small>Esperado</small>${cjM(ci.esperado)}</div><div class="v"><small>Contado</small>${cjM(ci.contado)}</div>
+        <div class="v cj-dif ${cjDifCls(ci.diferencia)}"><small>Diferencia</small>${xe(cjDifTxt(ci.diferencia))}</div></div>
+      ${ci.nota ? `<div class="muted" style="font-size:12.5px; margin-top:6px;">📝 ${xe(ci.nota)}</div>` : ''}${post}${cjDetalleHtml(c)}</div>`;
+  }
+  return `<div class="cj-caja" data-id="${c.id}" data-esp="${Number(c.esperado) || 0}"><div class="cj-fila">
+      <div>${nombre}<small>${xe(desglose)}</small></div>
+      <div class="v"><small>Esperado</small><b>${cjM(c.esperado)}</b></div>
+      <div><small style="text-align:left;">Contado</small><input type="number" inputmode="decimal" min="0" step="0.01" id="cjC_${c.id}" placeholder="${ef ? 'Lo que hay' : '—'}" oninput="cjCalc()"></div>
+      <div class="v cj-dif" id="cjD_${c.id}"><small>Diferencia</small>—</div></div>
+    <div class="cj-nota" id="cjNw_${c.id}"><input id="cjN_${c.id}" maxlength="500" placeholder="Hay diferencia: explicá el motivo (obligatorio)" autocomplete="off"></div>
+    <div style="margin-top:6px;"><button type="button" class="ghost" style="padding:3px 10px; font-size:12px;" onclick="cjCoincide('${c.id}')">✓ Coincide</button></div>
+    ${cjDetalleHtml(c)}</div>`;
+}
+function cjFilas(d){   // una fila por caja con lo esperado, lo contado (cierre guardado o lo tipeado) y la diferencia
+  return (d.cajas || []).map(c => {
+    let contado = null, esp = Number(c.esperado) || 0, dif = null, cerrada = false;
+    if (c.cierre){ contado = Number(c.cierre.contado); esp = Number(c.cierre.esperado); dif = Number(c.cierre.diferencia); cerrada = true; }
+    else { const i = document.getElementById('cjC_' + c.id); if (i && i.value !== ''){ contado = Number(i.value); dif = Math.round((contado - esp) * 100) / 100; } }
+    return { c, tipo: c.tipo, nombre: c.nombre, ing: Number(c.ingresos) || 0, egr: Number(c.egresos) || 0, esp, contado, dif, cerrada };
+  });
+}
+function cjResumenHtml(d){
+  const f = cjFilas(d);
+  if (!f.length) return '';
+  const sum = a => a.reduce((s, x) => s + x, 0);
+  const por = t => sum(f.filter(x => t.includes(x.tipo)).map(x => x.ing));
+  const tot = sum(f.map(x => x.ing)), egr = sum(f.map(x => x.egr));
+  const conDif = f.filter(x => x.dif !== null), difTot = sum(conDif.map(x => x.dif));
+  const k = (t, v, extra) => `<div><small>${t}</small><b ${extra || ''}>${v}</b></div>`;
+  return `<div class="cj-res" id="cjRes"><h3>📊 Resumen del día · ${xe(cjF(d.fecha))}${d.sede_nombre && sucMulti() ? ' · ' + xe(d.sede_nombre) : ''}</h3>
+    <div class="cj-kp">${k('Cobrado en el día', cjM(tot))}${k('💵 Efectivo', cjM(por(['efectivo'])))}${k('📲 Mercado Pago', cjM(por(['mercado_pago'])))}${k('💳 Tarjetas', cjM(por(['tarjeta_credito', 'tarjeta_debito'])))}${k('🏦 Banco / transferencia', cjM(por(['banco'])))}${por(['otra']) ? k('🗂️ Otras', cjM(por(['otra']))) : ''}${k('Gastos y pagos', '−' + cjM(egr))}${conDif.length ? k('Diferencia total', cjDifTxt(difTot), `class="cj-dif ${cjDifCls(difTot)}"`) : ''}</div>
+    <div class="cj-acc"><button type="button" class="secondary" onclick="cjWhatsApp()">📲 Enviar por WhatsApp</button><button type="button" class="ghost" onclick="cjCopiar()">📋 Copiar</button><button type="button" class="ghost" onclick="cjImprimir()">🖨️ Imprimir</button></div></div>`;
+}
+function cjDiaHtml(d){
+  const cajas = d.cajas || [];
+  if (!cajas.length) return '<div class="empty">No hay cajas registrando esa fecha en esta sede (o todavía no tienen fecha de corte).</div>';
+  const abiertas = cajas.filter(c => !c.cierre).length;
+  const sc = d.sin_caja || {};
+  const avisoSin = Number(sc.cantidad) > 0 ? `<div class="cj-warn">⚠️ ${sc.cantidad} cobro(s) de ese día (${cjM(sc.monto)}) no entraron a ninguna caja: no están en este cierre. Revisalos en Finanzas → Cajas.</div>` : '';
+  const bloqueoRec = cjEsRec() && d.fecha < dateAIsoMenos(1) ? '<div class="cj-warn">Recepción puede cerrar solo hoy y ayer. Para esta fecha pedile al administrador.</div>' : '';
+  const th = '<div class="cj-th"><span>Caja</span><span>Esperado</span><span>Contado</span><span>Diferencia</span></div>';
+  return avisoSin + bloqueoRec + th + cajas.map(cjCajaHtml).join('') + cjResumenHtml(d)
+    + (abiertas ? `<div class="cj-acc"><button type="button" id="btnCjCerrar" onclick="cjCerrar()">🔒 Cerrar ${abiertas === cajas.length ? 'el día' : 'las cajas que faltan'}</button><span class="muted" style="font-size:12.5px; align-self:center;">Contá el efectivo de la sede. Las demás cajas son opcionales. El cierre queda guardado y no se edita.</span></div>` : '<div class="muted" style="font-size:12.5px; margin-top:8px;">✅ Todas las cajas de ese día están cerradas.</div>');
+}
+function dateAIsoMenos(n){ const d = new Date(); d.setDate(d.getDate() - n); return dateAIso(d); }
+function cjCoincide(id){ const w = document.querySelector(`.cj-caja[data-id="${id}"]`), i = document.getElementById('cjC_' + id); if (w && i){ i.value = Number(w.dataset.esp).toFixed(2).replace(/\.00$/, ''); cjCalc(); } }
+function cjCalc(){
+  const d = CJ.data; if (!d || !d.cajas) return;
+  d.cajas.forEach(c => {
+    if (c.cierre) return;
+    const i = document.getElementById('cjC_' + c.id), t = document.getElementById('cjD_' + c.id), nw = document.getElementById('cjNw_' + c.id);
+    if (!i || !t) return;
+    if (i.value === ''){ t.className = 'v cj-dif'; t.innerHTML = '<small>Diferencia</small>—'; if (nw) nw.classList.remove('ver'); return; }
+    const dif = Math.round((Number(i.value) - Number(c.esperado)) * 100) / 100;
+    t.className = 'v cj-dif ' + cjDifCls(dif); t.innerHTML = '<small>Diferencia</small>' + xe(cjDifTxt(dif));
+    if (nw) nw.classList.toggle('ver', dif !== 0);
+  });
+  const r = document.getElementById('cjRes'); if (r){ const hay = r.querySelector('.cj-acc'); r.outerHTML = cjResumenHtml(d); }
+}
+async function cjCerrar(){
+  if (CJ.busy) return;
+  const d = CJ.data; if (!d) return;
+  const conteos = [];
+  for (const c of d.cajas){
+    if (c.cierre) continue;
+    const i = document.getElementById('cjC_' + c.id); if (!i) continue;
+    if (i.value === ''){ if (c.tipo === 'efectivo'){ toast('Falta contar el efectivo: ' + c.nombre + '.', true); i.focus(); return; } continue; }
+    const v = Number(i.value);
+    if (!isFinite(v) || v < 0){ toast('Revisá lo contado de ' + c.nombre + '.', true); i.focus(); return; }
+    const dif = Math.round((v - Number(c.esperado)) * 100) / 100;
+    const n = document.getElementById('cjN_' + c.id), nota = n ? n.value.trim() : '';
+    if (dif !== 0 && nota.length < 3){ toast(c.nombre + ': hay diferencia, escribí el motivo.', true); if (n) n.focus(); return; }
+    conteos.push({ caja_id: c.id, contado: v, nota: nota || null });
+  }
+  if (!conteos.length){ toast('Cargá lo contado de al menos una caja.', true); return; }
+  const dtot = conteos.reduce((s, x) => { const c = d.cajas.find(y => y.id === x.caja_id); return s + (x.contado - Number(c.esperado)); }, 0);
+  if (!confirm('Se guarda el cierre del ' + cjF(d.fecha) + ' (' + conteos.length + ' caja' + (conteos.length === 1 ? '' : 's') + ', ' + cjDifTxt(dtot).toLowerCase() + '). No se puede editar después: solo lo anula el administrador. ¿Cerrar?')) return;
+  CJ.busy = true;
+  const b = document.getElementById('btnCjCerrar'); if (b) b.disabled = true;
+  try{
+    await sb('rpc/cierre_caja_cerrar', { method: 'POST', body: JSON.stringify({ p_sucursal_id: CJ.sede, p_fecha: d.fecha, p_conteos: conteos }) });
+    toast('Cierre guardado ✓');
+    CJ.data = null; CJ.hist = null;
+    await cjCargar();
+  }catch(e){ toast(extraerMensajeError(e), true); if (b) b.disabled = false; }
+  finally{ CJ.busy = false; }
+}
+// ---- Historial ----
+function cjHistHtml(){
+  if (!CJ.sede) return '<div class="muted">Elegí la sede.</div>';
+  const h = CJ.hist; if (!h) return '<div class="muted">Cargando…</div>';
+  const pend = (h.pendientes || []).length ? `<div class="cj-warn"><b>Días con movimiento de efectivo sin cerrar</b><div class="cj-chips" style="margin-bottom:0;">${h.pendientes.map(f => `<button type="button" class="cj-chip" onclick="cjIrDia('${f}')">${xe(cjF(f))}</button>`).join('')}</div></div>` : '';
+  const dias = (h.dias || []).length ? h.dias.map(dd => `<div class="cj-dia"><h4><span>${xe(cjF(dd.fecha))}</span><span class="cj-dif ${cjDifCls(dd.dif_total)}">${xe(cjDifTxt(dd.dif_total))}</span></h4>
+      ${(dd.cajas || []).map(c => `<div class="r ${c.estado === 'anulado' ? 'anul' : ''}"><span>${caj2Ico(c.tipo)} ${xe(c.nombre)} <span class="muted">· ${xe(c.por || '')} ${xe(cjHoraDe(c.cerrado_en))}</span></span>
+        <span>${cjM(c.esperado)} → <b>${cjM(c.contado)}</b> <span class="cj-dif ${cjDifCls(c.diferencia)}">${c.estado === 'anulado' ? 'anulado' : (Number(c.diferencia) === 0 ? '✓' : cjMs(c.diferencia))}</span>
+        ${c.estado === 'cerrado' && !cjEsRec() ? `<button type="button" class="ghost" style="padding:2px 8px; font-size:12px; color:var(--danger-text);" onclick="cjAnular('${c.id}')">Anular</button>` : ''}</span>
+        ${c.nota ? `<span class="muted" style="width:100%; font-size:12px;">📝 ${xe(c.nota)}</span>` : ''}${c.estado === 'anulado' && c.anulado_motivo ? `<span class="muted" style="width:100%; font-size:12px;">Anulado: ${xe(c.anulado_motivo)}</span>` : ''}</div>`).join('')}</div>`).join('')
+    : '<div class="empty">Todavía no hay cierres en los últimos 30 días.</div>';
+  return pend + dias;
+}
+function cjIrDia(f){
+  if (cjEsRec() && f < dateAIsoMenos(1)){ toast('Esa fecha solo la puede cerrar el administrador.', true); return; }
+  CJ.fecha = f; CJ.tab = 'dia'; CJ.data = null; cjCargar();
+}
+async function cjAnular(id){
+  const m = prompt('Motivo de la anulación (obligatorio). El día queda libre para volver a cerrarlo:');
+  if (m === null) return;
+  if (m.trim().length < 3){ toast('Escribí el motivo.', true); return; }
+  try{ await sb('rpc/cierre_caja_anular', { method: 'POST', body: JSON.stringify({ p_cierre_id: id, p_motivo: m.trim() }) }); toast('Cierre anulado'); CJ.data = null; await cjCargarHist(); }
+  catch(e){ toast(extraerMensajeError(e), true); }
+}
+// ---- Resumen para compartir ----
+function cjTexto(){
+  const d = CJ.data; if (!d || !d.cajas) return '';
+  const f = cjFilas(d), sum = a => a.reduce((s, x) => s + x, 0);
+  const lin = f.map(x => `${(CAJ2_TIPOS[x.tipo] || CAJ2_TIPOS.otra)[0]} ${x.nombre}: esperado ${cjM(x.esp)}` + (x.contado !== null ? ` · contado ${cjM(x.contado)} · ${cjDifTxt(x.dif).toLowerCase()}` : ' · sin contar'));
+  const por = t => sum(f.filter(x => t.includes(x.tipo)).map(x => x.ing));
+  const cier = d.cajas.map(c => c.cierre).filter(Boolean)[0];
+  return [`🧾 Cierre de caja · ${cjF(d.fecha)}${d.sede_nombre && sucMulti() ? ' · ' + d.sede_nombre : ''}`, '', ...lin, '',
+    `Cobrado en el día: ${cjM(sum(f.map(x => x.ing)))} (Efectivo ${cjM(por(['efectivo']))} · MP ${cjM(por(['mercado_pago']))} · Tarjetas ${cjM(por(['tarjeta_credito', 'tarjeta_debito']))} · Banco ${cjM(por(['banco']))})`,
+    `Gastos y pagos: ${cjM(sum(f.map(x => x.egr)))}`, cier ? `Cerrado por: ${cier.cerrado_por_nombre || '—'}` : 'Cierre todavía sin guardar'].join('\n');
+}
+function cjWhatsApp(){ const t = cjTexto(); if (t) window.open('https://wa.me/?text=' + encodeURIComponent(t), '_blank'); }
+async function cjCopiar(){
+  const t = cjTexto(); if (!t) return;
+  try{ await navigator.clipboard.writeText(t); toast('Resumen copiado ✓'); }
+  catch(e){ const ta = document.createElement('textarea'); ta.value = t; document.body.appendChild(ta); ta.select(); try{ document.execCommand('copy'); toast('Resumen copiado ✓'); }catch(_){ toast('No se pudo copiar.', true); } ta.remove(); }
+}
+function cjImprimir(){
+  const d = CJ.data; if (!d || !d.cajas) return;
+  let p = document.getElementById('cjPrint'); if (!p){ p = document.createElement('div'); p.id = 'cjPrint'; document.body.appendChild(p); }
+  const f = cjFilas(d), cier = d.cajas.map(c => c.cierre).filter(Boolean)[0];
+  p.innerHTML = `<h2 style="margin:0 0 4px;">Cierre de caja · ${xe(cjF(d.fecha))}</h2><div>${xe((GIMNASIO_ACTUAL && GIMNASIO_ACTUAL.nombre) || '')}${d.sede_nombre && sucMulti() ? ' · ' + xe(d.sede_nombre) : ''}</div>
+    <table><tr><th>Caja</th><th>Cobros</th><th>Egresos</th><th>Esperado</th><th>Contado</th><th>Diferencia</th></tr>
+    ${f.map(x => `<tr><td>${xe(x.nombre)}</td><td>${cjM(x.ing)}</td><td>${cjM(x.egr)}</td><td>${cjM(x.esp)}</td><td>${x.contado === null ? '—' : cjM(x.contado)}</td><td>${x.dif === null ? '—' : cjMs(x.dif)}</td></tr>`).join('')}</table>
+    <div>${cier ? 'Cerrado por ' + xe(cier.cerrado_por_nombre || '—') + ' a las ' + xe(cjHoraDe(cier.cerrado_en)) : 'Cierre sin guardar'}</div>
+    <div style="margin-top:40px;">Firma: ______________________</div>`;
+  document.body.classList.add('cj-print');
+  const fin = () => { document.body.classList.remove('cj-print'); window.removeEventListener('afterprint', fin); };
+  window.addEventListener('afterprint', fin);
+  window.print();
 }
 
 const EM = { activo: false, equipo: '', fecha: '', metr: [], vals: {}, prev: {}, cargandoPrev: false };
@@ -29982,6 +30309,14 @@ function perCargaAguda(alumnoId){
 </div>
 
 <!-- (v144) Editar una caja -->
+<div class="modal-overlay" id="modalCierre">
+  <div class="modal-box">
+    <div class="x-wrap"><button type="button" class="x-cerrar" aria-label="Cerrar" title="Cerrar" onclick="cjCerrarModal()">✕</button></div>
+    <h3 style="margin-top:0;">🧾 Cierre de caja</h3>
+    <div id="cjBody"></div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="modalCaja">
   <div class="modal-box">
     <div class="x-wrap"><button type="button" class="x-cerrar" aria-label="Cerrar" title="Cerrar" onclick="caj2Cerrar()">✕</button></div>
