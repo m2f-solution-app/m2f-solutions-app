@@ -5529,7 +5529,7 @@ function atlIniciarAlu(){
   atlCargarVista('aluAtletismoContenido', id || '');
 }
 
-const APP_VERSION = 189;
+const APP_VERSION = 190;
 let ES_PERSONAL = false;   // (v132) cuenta personal (gimnasios.tipo = 'personal'); se calcula en perAplicar()
 // (v96) Fecha de la última actualización: se cambia junto con APP_VERSION en cada entrega. Se muestra en la
 // pantalla de inicio y en el menú de cuenta ("v94 · actualizada el 5/10/2026").
@@ -9866,7 +9866,7 @@ async function pubContinuarDni(){
     PUB.dni = ''; PUB.f.dni = d;
     if (PUB.modo === 'wz'){ pubWzIr('registro'); return; }   // (v150)
     pubIr('registro');
-    if (PUB.modo === 'semana'){ PUB.msg = 'No encontramos ese DNI. Si es tu primera vez, completá tus datos y reservá tu entrenamiento.'; pubRender(true); }
+    if (PUB.modo === 'semana'){ PUB.msg = 'No encontramos ese DNI. Si es tu primera vez, completá tus datos y ' + (PUB.srv ? 'sacá tu turno' : 'reservá tu entrenamiento') + '.'; pubRender(true); }
   }catch(e){ PUB.busy = false; PUB.err = e.message; pubRender(true); }
 }
 async function pubRegistrar(){
@@ -9998,8 +9998,8 @@ function pubPantInicio(){
     const d0 = pubDias()[0], lista = pubClasesDia(d0).filter(c => pubSusp(c.id, d0.iso) === null).slice(0, 4);
     if (lista.length) hoyHtml = `<div class="pb-hoy-t">Hoy</div>${lista.map(c => { const o = pubOc(c.id, d0.iso); return `<div class="pb-cl"><div class="pb-cl-h"><div class="pb-cl-t">${ejEsc(c.nombre)}</div><div class="pb-cl-hr">${ejEsc(c.inicio)}</div></div><div class="pb-cl-m">${o.a >= c.cupo ? 'Completa' : (c.cupo - o.a === 1 ? 'Queda 1 lugar' : 'Quedan ' + (c.cupo - o.a) + ' lugares')}${pubLugarHtml(c) ? ' · ' + pubLugarHtml(c) : ''}</div></div>`; }).join('')}`;
   }
-  return `${pubTop()}${pubMarca(true)}<div class="pb-acc"><button type="button" onclick="pubEmpezar('reservar')">${PUB.srv ? '📅 Sacar turno' : '🏋️ Reservar entrenamiento'}</button><button type="button" class="secondary" onclick="pubEmpezar('semana')">📅 Ver mi semana · ingresar con mi DNI</button>${pubWaBtn('Consultas por WhatsApp')}</div>
-    ${g.prueba && g.tiene_clases !== false ? `<div class="pb-info" style="text-align:center;">🎁 Tu primer entrenamiento es de prueba.</div>` : ''}${hoyHtml}${pubPie()}`;
+  return `${pubTop()}${pubMarca(true)}<div class="pb-acc"><button type="button" onclick="pubEmpezar('reservar')">${PUB.srv ? '📅 Sacar turno' : '🏋️ Reservar entrenamiento'}</button><button type="button" class="secondary" onclick="pubEmpezar('semana')">${PUB.srv ? '🔎 Mis turnos' : '📅 Ver mi semana'} · ingresar con mi DNI</button>${pubWaBtn('Consultas por WhatsApp')}</div>
+    ${g.prueba && g.tiene_clases !== false && !PUB.srv ? `<div class="pb-info" style="text-align:center;">🎁 Tu primer entrenamiento es de prueba.</div>` : ''}${hoyHtml}${pubPie()}`;
 }
 // ---------- (v189) Portada por sede: bienvenida, sacar turno, sedes y horarios, mis turnos, WhatsApp de la sede ----------
 // SQL: v189-portada-sedes.sql (publico_sedes). Sin ese SQL o sin Sucursales: la portada de siempre.
@@ -10046,8 +10046,8 @@ function pubPantInicioQr(ent){
   const ent_ = `<button type="button" class="secondary" onclick="pubEntrarApp()">📲 Ya soy socio · entrar a la app</button>`;
   if (ent === 'registro')
     return `${pubTop()}${pubMarca(true)}<div class="pb-acc">${reg}${ent_}${pubWaBtn('Consultas por WhatsApp')}</div>${pubPie()}`;
-  return `${pubTop()}${pubMarca(true)}<div class="pb-acc">${reg}${ent_}<button type="button" class="secondary" onclick="pubEmpezar('reservar')">${PUB.srv ? '📅 Sacar turno' : '🏋️ Reservar entrenamiento'}</button><button type="button" class="secondary" onclick="pubEmpezar('semana')">📅 Ver mi semana</button>${pubWaBtn('Consultas por WhatsApp')}</div>
-    ${g.prueba && g.tiene_clases !== false ? `<div class="pb-info" style="text-align:center;">🎁 Tu primer entrenamiento es de prueba.</div>` : ''}${pubPie()}`;
+  return `${pubTop()}${pubMarca(true)}<div class="pb-acc">${reg}${ent_}<button type="button" class="secondary" onclick="pubEmpezar('reservar')">${PUB.srv ? '📅 Sacar turno' : '🏋️ Reservar entrenamiento'}</button><button type="button" class="secondary" onclick="pubEmpezar('semana')">${PUB.srv ? '🔎 Mis turnos' : '📅 Ver mi semana'}</button>${pubWaBtn('Consultas por WhatsApp')}</div>
+    ${g.prueba && g.tiene_clases !== false && !PUB.srv ? `<div class="pb-info" style="text-align:center;">🎁 Tu primer entrenamiento es de prueba.</div>` : ''}${pubPie()}`;
 }
 function pubPantRegistrado(){
   const g = PUB.g || {}, ya = !!PUB.ya, nm = PUB.nombre ? ', ' + PUB.nombre : '';
@@ -10057,14 +10057,14 @@ function pubPantRegistrado(){
 }
 function pubPantDni(){
   return `${pubTop()}${pubMarca(false)}<button type="button" class="pb-back" onclick="pubIr('inicio')">‹ Volver</button>
-    <div class="pb-h">${PUB.modo === 'semana' ? 'Ver mi semana' : PUB.modo === 'registro' ? 'Registrarme' : 'Reservar entrenamiento'}</div><p class="pb-p">Ingresá tu DNI. Si ya estás registrado/a entrás directo; si es tu primera vez te pedimos unos datos.</p>
+    <div class="pb-h">${PUB.modo === 'semana' ? (PUB.srv ? 'Mis turnos' : 'Ver mi semana') : PUB.modo === 'registro' ? 'Registrarme' : (PUB.srv ? 'Sacar turno' : 'Reservar entrenamiento')}</div><p class="pb-p">Ingresá tu DNI. Si ya estás registrado/a entrás directo; si es tu primera vez te pedimos unos datos.</p>
     <div class="pb-f"><label for="pbDni">Tu DNI (solo números)</label><input id="pbDni" inputmode="numeric" autocomplete="off" maxlength="12" placeholder="Ej: 30123456" value="${ejEsc(PUB.f.dni)}" oninput="pubCampo('dni',this.value); this.value=PUB.f.dni;" onkeydown="if(event.key==='Enter')pubContinuarDni()"></div>
     ${pubErr()}<div class="pb-acc" style="margin-top:16px;"><button type="button" onclick="pubContinuarDni()" ${PUB.busy ? 'disabled' : ''}>${PUB.busy ? 'Buscando…' : 'Continuar'}</button></div>${pubPie()}`;
 }
 function pubPantRegistro(){
   const f = PUB.f, g = PUB.g || {};
   return `${pubTop()}${pubMarca(false)}<button type="button" class="pb-back" onclick="pubIr('dni')">‹ Volver</button>
-    <div class="pb-h">Es tu primera vez</div><p class="pb-p">${PUB.modo === 'registro' ? 'Completá tus datos y el gimnasio te da tu acceso a la app.' : 'Completá tus datos para reservar' + (g.prueba ? '. Tu primer entrenamiento es de prueba' : '') + '.'}</p>
+    <div class="pb-h">Es tu primera vez</div><p class="pb-p">${PUB.modo === 'registro' ? 'Completá tus datos y el gimnasio te da tu acceso a la app.' : 'Completá tus datos para ' + (PUB.srv ? 'sacar tu turno' : 'reservar') + (g.prueba && !PUB.srv ? '. Tu primer entrenamiento es de prueba' : '') + '.'}</p>
     <div class="pb-f"><label>DNI</label><input value="${ejEsc(f.dni)}" readonly></div>
     <div class="pb-f"><label for="pbNom">Nombre</label><input id="pbNom" autocomplete="given-name" maxlength="40" value="${ejEsc(f.nombre)}" oninput="pubCampo('nombre',this.value)"></div>
     <div class="pb-f"><label for="pbApe">Apellido</label><input id="pbApe" autocomplete="family-name" maxlength="40" value="${ejEsc(f.apellido)}" oninput="pubCampo('apellido',this.value)"></div>
@@ -10078,7 +10078,7 @@ function pubPantClases(){
   const dias = pubDias(), dia = dias[PUB.dia] || dias[0], lista = pubClasesDia(dia);
   const pills = dias.map(d => `<button type="button" class="pb-d ${d.i === PUB.dia ? 'on' : ''}" onclick="pubElegirDia(${d.i})">${d.i === 0 ? 'Hoy' : PUB_DIAS[d.k]}<b>${d.num}</b><small>${d.i === 0 ? PUB_DIAS[d.k] : ''}</small></button>`).join('');
   return `${pubTop()}${pubMarca(false)}<button type="button" class="pb-back" onclick="pubIr('inicio')">‹ Inicio</button>${saludo}
-    ${PUB.prueba && (PUB.g || {}).prueba ? `<div class="pb-info">🎁 Tu primer entrenamiento es de prueba. Elegí la clase que más te sirva.</div>` : ''}${pubErr()}
+    ${PUB.prueba && (PUB.g || {}).prueba ? `<div class="pb-info">🎁 ${PUB.srv ? 'Tu primera clase es de prueba' : 'Tu primer entrenamiento es de prueba'}. Elegí la clase que más te sirva.</div>` : ''}${pubErr()}
     <div class="pb-days">${pills}</div>
     ${lista.length ? lista.map(c => pubCardClase(c, dia.iso)).join('') : `<div class="pb-vacio">No hay clases ${dia.i === 0 ? 'para el resto de hoy' : 'este día'}.<br>Probá con otro día.</div>`}
     <div class="pb-acc"><button type="button" class="secondary" onclick="pubVerSemana()">📅 Ver mi semana</button></div>${pubPie()}${pubHoja()}`;
@@ -10520,7 +10520,7 @@ async function rpxCopiar(){
   catch(e){ const t = document.createElement('textarea'); t.value = u; document.body.appendChild(t); t.select(); try{ document.execCommand('copy'); toast('Link copiado ✓'); }catch(x){ toast(u); } t.remove(); }
   if (!document.getElementById('gimLkOn').checked) toast('Ojo: el link está apagado. Activalo y guardá para que funcione.', true);
 }
-function rpxCompartir(){ const s = rpxLkSlug(); if (rpxSlugOk(s) && navigator.share) navigator.share({ title: (GIMNASIO_ACTUAL && GIMNASIO_ACTUAL.nombre) || 'Reservas', text: 'Reservá tu entrenamiento', url: rpxUrl(s) }).catch(() => {}); }
+function rpxCompartir(){ const s = rpxLkSlug(); if (rpxSlugOk(s) && navigator.share) navigator.share({ title: (GIMNASIO_ACTUAL && GIMNASIO_ACTUAL.nombre) || 'Reservas', text: srvOn() ? 'Sacá tu turno' : 'Reservá tu entrenamiento', url: rpxUrl(s) }).catch(() => {}); }
 function rpxVer(){
   const s = rpxLkSlug(); if (!rpxSlugOk(s)){ toast('Primero poné el nombre del link.', true); return; }
   if (!(RPX.cfg && RPX.cfg.reservas_publicas && RPX.cfg.reservas_slug === s)){ toast('Activá el link y guardá para poder verlo.', true); return; }
