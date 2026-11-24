@@ -1891,6 +1891,20 @@ if ('serviceWorker' in navigator) window.addEventListener('load', function(){ tr
   .rpx-slug{display:flex; align-items:center; gap:6px; flex-wrap:wrap;}
   .rpx-slug .pre{color:var(--muted); font-size:13px; word-break:break-all;}
   .rpx-slug input{flex:1 1 140px; min-width:0;}
+  /* (v194) Obras sociales */
+  .os-ord{border:1px solid var(--border); border-radius:12px; padding:10px 12px; margin-bottom:10px; background:var(--panel2);}
+  .os-ord .os-h{display:flex; gap:8px; align-items:center; flex-wrap:wrap; justify-content:space-between;}
+  .os-ord .os-l{font-size:13px; line-height:1.55; margin-top:4px;}
+  .os-ord .os-l b{font-weight:600;}
+  .os-bar{height:6px; border-radius:99px; background:var(--border); overflow:hidden; margin:6px 0 2px;}
+  .os-bar > i{display:block; height:100%; background:var(--accent);}
+  .os-bar.warn > i{background:var(--warn-text);} .os-bar.bad > i{background:var(--danger-text);}
+  .os-campos{display:flex; flex-wrap:wrap; gap:8px; margin:8px 0;}
+  .os-campos label{display:flex; gap:6px; align-items:center; padding:7px 11px; border:1px solid var(--border); border-radius:99px; cursor:pointer; font-size:13.5px;}
+  .os-campos input{width:auto; margin:0;}
+  .os-obra{display:flex; gap:8px; align-items:center; flex-wrap:wrap; padding:7px 0; border-bottom:1px solid var(--border);}
+  .os-obra .nm{flex:1; min-width:140px; font-weight:600;}
+  .os-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:10px;}
   .rpx-ban{padding:11px 13px; border-radius:12px; background:var(--note-bg); border:1px solid var(--note-bd); color:var(--note-text); font-size:13.5px; line-height:1.45;}
   .rpx-qr{background:#fff; border-radius:16px; padding:12px; width:220px; max-width:100%; margin:12px auto 0; box-sizing:border-box;} .rpx-qr svg{display:block; width:100%; height:auto;}
   /* Clases: tarjeta "Nuevos desde el link" */
@@ -4984,8 +4998,8 @@ const MOD_PRESETS = {
   pro:           { n: 'Pro',           ico: '🚀', on: '*' },
   personal:      { n: 'Personal',      ico: '💪', on: ['seguimiento', 'logros', 'wellness'] },   // (v132) entrena por su cuenta: solo rutinas + progreso
 };
-const MOD_FUERA_PRESET = ['sucursales', 'servicios', 'cuota_variable', 'bosco', 'cierre_caja'];   // módulos que no entran en ningún plan: se prenden aparte, gimnasio por gimnasio
-const MOD_BLOQUEO_SERVIDOR = ['clases', 'evaluaciones', 'alertas', 'finanzas', 'recepcion', 'proyeccion_ingresos', 'servicios', 'wellness', 'cuota_variable', 'bosco', 'cierre_caja'];   // etapa 1 (SQL) + proyección (ya la valida su RPC)
+const MOD_FUERA_PRESET = ['sucursales', 'servicios', 'cuota_variable', 'bosco', 'cierre_caja', 'obras_sociales'];   // módulos que no entran en ningún plan: se prenden aparte, gimnasio por gimnasio
+const MOD_BLOQUEO_SERVIDOR = ['clases', 'evaluaciones', 'alertas', 'finanzas', 'recepcion', 'proyeccion_ingresos', 'servicios', 'wellness', 'cuota_variable', 'bosco', 'cierre_caja', 'obras_sociales'];   // etapa 1 (SQL) + proyección (ya la valida su RPC)
 function wellOn(){ return modOn('wellness'); }   // (v149) Wellness es un módulo por gimnasio
 function modOn(k){
   if (k === 'atletismo') return atlOn();
@@ -5533,7 +5547,7 @@ function atlIniciarAlu(){
   atlCargarVista('aluAtletismoContenido', id || '');
 }
 
-const APP_VERSION = 193;
+const APP_VERSION = 194;
 let ES_PERSONAL = false;   // (v132) cuenta personal (gimnasios.tipo = 'personal'); se calcula en perAplicar()
 // (v96) Fecha de la última actualización: se cambia junto con APP_VERSION en cada entrega. Se muestra en la
 // pantalla de inicio y en el menú de cuenta ("v94 · actualizada el 5/10/2026").
@@ -11048,6 +11062,7 @@ function hsEntrar(){
 }
 function hsTab(t){
   HS.tab = t; hsPintar();
+  if (t === 'os') osTabEntrar();   // (v194)
   if (t === 'log') hsLogCargar();
   if (t === 'serv') try{ srvPintar(true); }catch(e){}
 }
@@ -11279,18 +11294,228 @@ function hsLogHtml(){
     return `<div style="padding:7px 0;border-bottom:1px solid var(--border);font-size:13.5px;"><span class="muted">${t}</span> · <b>${xe(x.quien || '')}</b> ${x.profesor ? `· 👤 ${xe(x.profesor)} ` : ''}<br>${xe(hsLogTxt(x))}</div>`; }).join('')}</div>`;
 }
 // ----- armado de la pantalla -----
+// ----- (v194) Obras sociales: cobertura del paciente (ficha → Cobertura) y exportación CSV para facturar (Servicios → 🏥 Obras sociales) -----
+// SQL: v194-obras-sociales.sql. Módulo 'obras_sociales' (apagado por defecto, requiere Servicios): se prende en 🧩 Accesos.
+// M2F solo guarda los datos y los exporta: no factura ni consulta a la obra social.
+const OS = { ok: null, err: '', cfg: null, ords: null, aluId: null, f: null, busy: false, edCampos: null, nuevaObra: '', edObra: null,
+             exp: { desde: '', hasta: '', sede: '', obra: '', filas: null, campos: null, busy: false, err: '' } };
+const OS_CAMPOS = [['plan', 'Plan'], ['afiliado', 'N° de afiliado'], ['medico', 'Médico que indica'], ['autorizacion', 'N° de autorización'], ['sesiones', 'Sesiones de la orden'], ['vigencia', 'Vigencia (desde / hasta)']];
+function osOn(){ return !!(MOD_MAP && MOD_MAP.obras_sociales === true && MOD_MAP.servicios === true); }
+function osRolOk(){ const r = PERFIL_ACTUAL && PERFIL_ACTUAL.rol; return r === 'admin' || r === 'recepcion' || r === 'profesor'; }
+function osCampo(k){ return !!(OS.cfg && Array.isArray(OS.cfg.campos) && OS.cfg.campos.includes(k)); }
+function osEsAdmin(){ return !!(OS.cfg && OS.cfg.es_admin); }
+function osPuedeEscribir(){ return !!(OS.cfg && OS.cfg.puede_escribir); }
+function osSinSql(e){ return /Could not find|PGRST202|404|not found/i.test((e && e.message) || ''); }
+async function osCfgCargar(){
+  if (!osOn() || !osRolOk()) return null;
+  try{ OS.cfg = await sb('rpc/os_config', { method: 'POST', body: '{}' }); OS.ok = true; OS.err = ''; OS.edCampos = new Set(OS.cfg.campos || []); }
+  catch(e){ OS.cfg = null; OS.ok = osSinSql(e) ? false : null; OS.err = extraerMensajeError(e); }
+  return OS.cfg;
+}
+function osBanner(){
+  return OS.ok === false
+    ? '<div class="rpx-ban">⚠️ Falta activar las obras sociales en la base de datos. Corré <b>v194-obras-sociales.sql</b> en Supabase (SQL Editor) y recargá la app.</div>'
+    : `<div class="rpx-ban">${xe(OS.err || 'No se pudo cargar.')}</div>`;
+}
+function osFechaCsv(iso){ if (!iso) return ''; const [y, m, d] = String(iso).slice(0, 10).split('-'); return `${d}/${m}/${y}`; }
+
+// ----- ficha del paciente → Cobertura -----
+async function osFichaCargar(a, tok){
+  const body = () => (tok === FICHA_TOK) ? document.getElementById('fichaTabBody') : null;
+  OS.aluId = a.id; OS.f = null; OS.ords = null;
+  const cfg = await osCfgCargar();
+  if (!cfg){ const b = body(); if (b) b.innerHTML = osBanner(); return; }
+  try{ OS.ords = await sb('rpc/os_ordenes', { method: 'POST', body: JSON.stringify({ p_alumno: a.id }) }) || []; }
+  catch(e){ const b = body(); if (b) b.innerHTML = `<div class="rpx-ban">${xe(extraerMensajeError(e))}</div>`; return; }
+  if (body()) osFichaPintar();
+}
+function osFichaVivo(){ return !!(FICHA_ALU && FICHA_ALU.tab === 'cob' && FICHA_ALU.id === OS.aluId && document.getElementById('fichaTabBody')); }
+function osFichaPintar(){
+  if (!osFichaVivo()) return;
+  const b = document.getElementById('fichaTabBody'), L = OS.ords || [], esc = osPuedeEscribir();
+  const sinLista = !((OS.cfg.obras || []).some(o => o.activo));
+  const aviso = sinLista ? `<div class="rpx-ban" style="margin-bottom:10px;">Todavía no hay obras sociales cargadas. ${osEsAdmin() ? '<button type="button" class="secondary" onclick="osIrConfig()">Cargar la lista</button>' : 'Pedile al administrador que cargue la lista (Servicios → Obras sociales).'}</div>` : '';
+  b.innerHTML = `<div class="x-sec">Cobertura médica</div>
+    <div class="muted" style="font-size:12.5px;margin-bottom:10px;">Cada orden tiene su propia autorización, sesiones y vigencia. El turno atendido toma la orden vigente ese día. Estos datos se exportan para facturar en otro sistema.</div>
+    ${aviso}
+    ${OS.f ? osFormHtml() : (esc && !sinLista ? '<div class="x-btns" style="margin:0 0 10px;"><button type="button" onclick="osNueva()">＋ Agregar orden</button></div>' : '')}
+    ${L.length ? L.map(osOrdenHtml).join('') : (OS.f ? '' : '<div class="muted">Este paciente no tiene obra social cargada (particular).</div>')}`;
+}
+function osOrdenHtml(o){
+  const hoy = fechaLocalISO();
+  const est = o.vigente ? '<span class="pill ok">Vigente</span>' : (o.hasta && o.hasta < hoy ? '<span class="pill">Vencida</span>' : (o.desde && o.desde > hoy ? '<span class="pill">Futura</span>' : '<span class="pill">Otra orden más reciente</span>'));
+  let ses = '';
+  if (o.sesiones){
+    const rest = o.sesiones - o.usadas, pct = Math.min(100, Math.round(o.usadas * 100 / o.sesiones));
+    const k = rest <= 0 ? 'bad' : (rest <= 1 ? 'warn' : '');
+    ses = `<div class="os-l"><b>${o.usadas} de ${o.sesiones}</b> sesiones atendidas${rest <= 0 ? ' · <b style="color:var(--danger-text)">orden agotada</b>' : (rest === 1 ? ' · <b style="color:var(--warn-text)">queda 1</b>' : '')}</div><div class="os-bar ${k}"><i style="width:${pct}%"></i></div>`;
+  } else ses = `<div class="os-l"><b>${o.usadas}</b> sesiones atendidas</div>`;
+  const ln = [['Plan', o.plan], ['N° de afiliado', o.afiliado], ['Médico', o.medico], ['N° de autorización', o.autorizacion]].filter(x => x[1]).map(x => `${x[0]}: <b>${xe(x[1])}</b>`).join(' · ');
+  const vig = (o.desde || o.hasta) ? `Vigencia: <b>${o.desde ? xe(osFechaCsv(o.desde)) : '—'}</b> al <b>${o.hasta ? xe(osFechaCsv(o.hasta)) : '—'}</b>` : '';
+  const acc = osPuedeEscribir() ? `<div class="x-btns" style="margin:8px 0 0;"><button type="button" class="ghost" onclick="osEditar('${o.id}')">✏️ Editar</button><button type="button" class="ghost" onclick="osBorrar('${o.id}')">🗑 Borrar</button></div>` : '';
+  return `<div class="os-ord"><div class="os-h"><b>🏥 ${xe(o.obra_social)}${o.obra_activa === false ? ' <span class="muted">(desactivada)</span>' : ''}</b>${est}</div>
+    ${ln ? `<div class="os-l">${ln}</div>` : ''}${vig ? `<div class="os-l">${vig}</div>` : ''}${ses}${o.nota ? `<div class="os-l muted">${xe(o.nota)}</div>` : ''}${acc}</div>`;
+}
+function osNueva(){
+  const u = (OS.ords && OS.ords[0]) || null;   // se arranca con los datos de la última orden (obra social, plan, afiliado, médico)
+  OS.f = { id: null, obra: u ? u.obra_social_id : '', plan: u ? (u.plan || '') : '', afiliado: u ? (u.afiliado || '') : '', medico: u ? (u.medico || '') : '', autorizacion: '', sesiones: '', desde: '', hasta: '', nota: '' };
+  osFichaPintar();
+}
+function osEditar(id){
+  const o = (OS.ords || []).find(x => x.id === id); if (!o) return;
+  OS.f = { id: o.id, obra: o.obra_social_id, plan: o.plan || '', afiliado: o.afiliado || '', medico: o.medico || '', autorizacion: o.autorizacion || '', sesiones: o.sesiones || '', desde: o.desde || '', hasta: o.hasta || '', nota: o.nota || '' };
+  osFichaPintar();
+}
+function osCancelar(){ OS.f = null; osFichaPintar(); }
+function osSet(k, v){ if (OS.f) OS.f[k] = v; }
+function osFormHtml(){
+  const f = OS.f, obras = (OS.cfg.obras || []).filter(o => o.activo || o.id === f.obra);
+  const inp = (k, lbl, tipo, extra) => osCampo(k) ? `<div class="field"><label>${lbl}</label><input type="${tipo || 'text'}" value="${xe(f[k])}" ${extra || ''} oninput="osSet('${k}', this.value)"></div>` : '';
+  return `<div class="card" style="margin:0 0 12px;"><div class="x-sec" style="margin-top:0;">${f.id ? 'Editar orden' : 'Nueva orden'}</div>
+    <div class="os-grid">
+      <div class="field"><label>Obra social</label><select onchange="osSet('obra', this.value)"><option value="">— elegir —</option>${obras.map(o => `<option value="${o.id}" ${o.id === f.obra ? 'selected' : ''}>${xe(o.nombre)}${o.activo ? '' : ' (desactivada)'}</option>`).join('')}</select></div>
+      ${inp('plan', 'Plan', 'text', 'maxlength="80"')}${inp('afiliado', 'N° de afiliado', 'text', 'maxlength="40"')}${inp('medico', 'Médico que indica', 'text', 'maxlength="80"')}
+      ${inp('autorizacion', 'N° de autorización', 'text', 'maxlength="40"')}${inp('sesiones', 'Sesiones de la orden', 'number', 'min="1" max="200" inputmode="numeric"')}
+      ${inp('desde', 'Vigente desde', 'date')}${inp('hasta', 'Vigente hasta', 'date')}
+    </div>
+    <div class="field" style="margin-top:10px;"><label>Nota (opcional)</label><input type="text" maxlength="300" value="${xe(f.nota)}" oninput="osSet('nota', this.value)"></div>
+    <div class="x-btns" style="margin-top:10px;"><button type="button" onclick="osGuardar()" ${OS.busy ? 'disabled' : ''}>Guardar</button><button type="button" class="ghost" onclick="osCancelar()">Cancelar</button></div></div>`;
+}
+async function osGuardar(){
+  const f = OS.f; if (!f || OS.busy) return;
+  if (!f.obra){ toast('Elegí la obra social.', true); return; }
+  const ses = f.sesiones === '' || f.sesiones == null ? null : parseInt(f.sesiones, 10);
+  if (ses != null && (isNaN(ses) || ses < 1 || ses > 200)){ toast('Las sesiones tienen que ser entre 1 y 200.', true); return; }
+  if (f.desde && f.hasta && f.hasta < f.desde){ toast('La vigencia termina antes de empezar.', true); return; }
+  OS.busy = true; osFichaPintar();
+  try{
+    await sb('rpc/os_orden_guardar', { method: 'POST', body: JSON.stringify({ p_id: f.id, p_alumno: OS.aluId, p_obra: f.obra, p_plan: f.plan || null, p_afiliado: f.afiliado || null, p_medico: f.medico || null,
+      p_autorizacion: f.autorizacion || null, p_sesiones: ses, p_desde: f.desde || null, p_hasta: f.hasta || null, p_nota: f.nota || null }) });
+    OS.f = null; OS.ords = await sb('rpc/os_ordenes', { method: 'POST', body: JSON.stringify({ p_alumno: OS.aluId }) }) || [];
+    toast('Orden guardada ✓');
+  }catch(e){ toast(extraerMensajeError(e), true); }
+  OS.busy = false; osFichaPintar();
+}
+async function osBorrar(id){
+  if (!confirm('¿Borrar esta orden? Los turnos ya atendidos dejan de figurar con esta obra social en el CSV.')) return;
+  try{ await sb('rpc/os_orden_borrar', { method: 'POST', body: JSON.stringify({ p_id: id }) }); OS.ords = await sb('rpc/os_ordenes', { method: 'POST', body: JSON.stringify({ p_alumno: OS.aluId }) }) || []; toast('Orden borrada'); }
+  catch(e){ toast(extraerMensajeError(e), true); }
+  osFichaPintar();
+}
+function osIrConfig(){ cerrarFicha(); HS.tab = 'os'; cambiarSubvista('servicios'); }
+
+// ----- Servicios → 🏥 Obras sociales: datos que se piden + lista + exportación -----
+async function osTabEntrar(){
+  if (!OS.exp.desde){ const d = new Date(); OS.exp.desde = fechaLocalISO(new Date(d.getFullYear(), d.getMonth(), 1)); OS.exp.hasta = fechaLocalISO(d); }
+  await osCfgCargar(); if (HS.tab === 'os') hsPintar();
+}
+function osTabHtml(){
+  if (!OS.cfg) return OS.ok === null && !OS.err ? '<div class="card muted">Cargando…</div>' : `<div class="card">${osBanner()}</div>`;
+  const adm = osEsAdmin();
+  const campos = adm ? `<div class="card"><h3 style="margin:0 0 4px;">Datos que se piden en la orden</h3>
+      <div class="muted" style="font-size:12.5px;">La obra social siempre se pide. Marcá lo que necesitás para facturar; lo que no marques no aparece ni se guarda.</div>
+      <div class="os-campos">${OS_CAMPOS.map(c => `<label><input type="checkbox" ${OS.edCampos && OS.edCampos.has(c[0]) ? 'checked' : ''} onchange="osCampoTog('${c[0]}', this.checked)"> ${c[1]}</label>`).join('')}</div>
+      <button type="button" onclick="osCamposGuardar()">Guardar datos</button></div>
+    <div class="card"><h3 style="margin:0 0 4px;">Lista de obras sociales</h3>
+      <div class="muted" style="font-size:12.5px;margin-bottom:8px;">Los pacientes se asignan eligiendo de esta lista (así el CSV no trae el mismo nombre escrito de varias formas). Una obra social con órdenes no se borra: se desactiva.</div>
+      <div class="row" style="gap:8px;align-items:flex-end;margin-bottom:6px;"><div class="field" style="flex:1;min-width:180px;"><label>Nueva obra social</label><input id="osNuevaObra" maxlength="80" placeholder="Ej: OSDE" value="${xe(OS.nuevaObra)}" oninput="OS.nuevaObra=this.value" onkeydown="if(event.key==='Enter'){event.preventDefault();osObraAgregar();}"></div><button type="button" onclick="osObraAgregar()">Agregar</button></div>
+      ${(OS.cfg.obras || []).length ? OS.cfg.obras.map(osObraFila).join('') : '<div class="muted">Todavía no cargaste ninguna.</div>'}</div>`
+    : `<div class="card muted" style="font-size:13px;">Los datos que se piden y la lista de obras sociales los define el administrador general.</div>`;
+  return campos + osExpHtml();
+}
+function osObraFila(o){
+  if (OS.edObra && OS.edObra.id === o.id) return `<div class="os-obra"><input style="flex:1;min-width:140px;" maxlength="80" value="${xe(OS.edObra.nombre)}" oninput="OS.edObra.nombre=this.value"><button type="button" onclick="osObraRenombrar()">Guardar</button><button type="button" class="ghost" onclick="OS.edObra=null;hsPintar()">Cancelar</button></div>`;
+  return `<div class="os-obra"><span class="nm" style="${o.activo ? '' : 'opacity:.55;'}">${xe(o.nombre)}${o.activo ? '' : ' <span class="muted">(desactivada)</span>'}</span><span class="muted" style="font-size:12.5px;">${o.ordenes} orden${o.ordenes === 1 ? '' : 'es'}</span>
+    <button type="button" class="ghost" onclick="osObraEditar('${o.id}')">✏️ Renombrar</button><button type="button" class="ghost" onclick="osObraActivo('${o.id}', ${o.activo ? 'false' : 'true'})">${o.activo ? 'Desactivar' : 'Activar'}</button></div>`;
+}
+function osCampoTog(k, on){ if (!OS.edCampos) OS.edCampos = new Set(); on ? OS.edCampos.add(k) : OS.edCampos.delete(k); }
+async function osCamposGuardar(){
+  try{ await sb('rpc/os_config_guardar', { method: 'POST', body: JSON.stringify({ p_campos: Array.from(OS.edCampos || []) }) }); await osCfgCargar(); toast('Datos guardados ✓'); }
+  catch(e){ toast(extraerMensajeError(e), true); }
+  hsPintar();
+}
+async function osObraRpc(args, ok){
+  try{ await sb('rpc/os_obra_guardar', { method: 'POST', body: JSON.stringify(args) }); await osCfgCargar(); if (ok) toast(ok); return true; }
+  catch(e){ toast(extraerMensajeError(e), true); return false; }
+}
+async function osObraAgregar(){
+  const n = String(OS.nuevaObra || '').trim(); if (!n){ toast('Escribí el nombre de la obra social.', true); return; }
+  if (await osObraRpc({ p_id: null, p_nombre: n, p_activo: true }, 'Agregada ✓')) OS.nuevaObra = '';
+  hsPintar();
+}
+function osObraEditar(id){ const o = (OS.cfg.obras || []).find(x => x.id === id); if (!o) return; OS.edObra = { id: o.id, nombre: o.nombre }; hsPintar(); }
+async function osObraRenombrar(){ const e = OS.edObra; if (!e) return; if (await osObraRpc({ p_id: e.id, p_nombre: e.nombre, p_activo: null }, 'Guardado ✓')) OS.edObra = null; hsPintar(); }
+async function osObraActivo(id, on){
+  const o = (OS.cfg.obras || []).find(x => x.id === id); if (!o) return;
+  await osObraRpc({ p_id: id, p_nombre: o.nombre, p_activo: on }, on ? 'Activada ✓' : 'Desactivada'); hsPintar();
+}
+
+// ----- exportación CSV (una fila por turno con asistencia marcada) -----
+function osExpHtml(){
+  const E = OS.exp, sedes = (typeof sucMulti === 'function' && sucMulti() && !hsFija()) ? sucActivas() : [];
+  const filas = E.filas, nSin = filas ? filas.filter(f => !f.obra_social).length : 0, nFuera = filas ? filas.filter(f => f.fuera_de_orden).length : 0;
+  const prev = filas && filas.length ? `<div style="overflow-x:auto;margin-top:10px;"><table class="x-mini"><thead><tr><th>Fecha</th><th>Paciente</th><th>Obra social</th><th>Autorización</th><th>Sesión</th></tr></thead><tbody>${filas.slice(0, 15).map(f => `<tr><td>${xe(osFechaCsv(f.fecha))} ${xe(f.hora || '')}</td><td>${xe(f.paciente)}</td><td>${f.obra_social ? xe(f.obra_social) : '<span class="muted">particular</span>'}</td><td>${xe(f.autorizacion || '')}</td><td>${f.sesion ? f.sesion + (f.sesiones_orden ? ' de ' + f.sesiones_orden : '') : ''}${f.fuera_de_orden ? ' ⚠️' : ''}</td></tr>`).join('')}</tbody></table>${filas.length > 15 ? `<div class="muted" style="font-size:12px;margin-top:4px;">Se muestran 15 de ${filas.length}. El CSV las trae todas.</div>` : ''}</div>` : '';
+  const res = filas ? (filas.length ? `<div style="margin-top:10px;"><b>${filas.length}</b> turno${filas.length === 1 ? '' : 's'} atendido${filas.length === 1 ? '' : 's'}${nSin ? ` · <b>${nSin}</b> sin obra social (particulares)` : ''}${nFuera ? ` · <b style="color:var(--warn-text)">${nFuera}</b> pasan las sesiones de la orden ⚠️` : ''}</div>${prev}<div class="x-btns" style="margin-top:10px;"><button type="button" onclick="osExpDescargar()">⬇️ Descargar CSV</button></div>` : '<div class="muted" style="margin-top:10px;">No hay turnos atendidos en ese período.</div>') : '';
+  return `<div class="card"><h3 style="margin:0 0 4px;">Exportar para facturar</h3>
+    <div class="muted" style="font-size:12.5px;">Una fila por turno con asistencia marcada, con la orden vigente ese día (obra social, autorización, sesión N° X de Y). Se abre en Excel.</div>
+    <div class="os-grid" style="margin-top:10px;">
+      <div class="field"><label>Desde</label><input type="date" value="${xe(E.desde)}" onchange="OS.exp.desde=this.value;OS.exp.filas=null"></div>
+      <div class="field"><label>Hasta</label><input type="date" value="${xe(E.hasta)}" onchange="OS.exp.hasta=this.value;OS.exp.filas=null"></div>
+      ${sedes.length ? `<div class="field"><label>Sede</label><select onchange="OS.exp.sede=this.value;OS.exp.filas=null"><option value="">Todas</option>${sedes.map(s => `<option value="${s.id}" ${E.sede === s.id ? 'selected' : ''}>${xe(s.nombre)}</option>`).join('')}</select></div>` : ''}
+      <div class="field"><label>Obra social</label><select onchange="OS.exp.obra=this.value;OS.exp.filas=null"><option value="">Todas (y particulares)</option>${(OS.cfg.obras || []).map(o => `<option value="${o.id}" ${E.obra === o.id ? 'selected' : ''}>${xe(o.nombre)}</option>`).join('')}</select></div>
+    </div>
+    <div class="x-btns" style="margin-top:10px;"><button type="button" class="secondary" onclick="osExpVer()" ${E.busy ? 'disabled' : ''}>${E.busy ? 'Buscando…' : '🔎 Ver turnos'}</button></div>
+    ${E.err ? `<div class="rpx-ban" style="margin-top:10px;">${xe(E.err)}</div>` : ''}${res}</div>`;
+}
+async function osExpVer(){
+  const E = OS.exp; if (E.busy) return;
+  if (!E.desde || !E.hasta){ toast('Elegí las fechas.', true); return; }
+  E.busy = true; E.err = ''; hsPintar();
+  try{
+    const r = await sb('rpc/os_exportar', { method: 'POST', body: JSON.stringify({ p_desde: E.desde, p_hasta: E.hasta, p_sede: E.sede || null, p_obra: E.obra || null }) });
+    E.filas = (r && r.filas) || []; E.campos = (r && r.campos) || [];
+  }catch(e){ E.filas = null; E.err = extraerMensajeError(e); }
+  E.busy = false; hsPintar();
+}
+function osCsvCelda(v){
+  let s = v == null ? '' : String(v);
+  if (/^[=+\-@\t\r]/.test(s)) s = "'" + s;   // evita que Excel lo tome como fórmula
+  return /[;"\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+}
+function osCsvArmar(filas, campos){
+  const has = k => (campos || []).includes(k);
+  const cols = [['Fecha', f => osFechaCsv(f.fecha)], ['Hora', f => f.hora], ['Sede', f => f.sede], ['Servicio', f => f.servicio], ['Profesional', f => f.profesional],
+    ['Paciente', f => f.paciente], ['DNI', f => f.dni], ['Obra social', f => f.obra_social || 'Particular']];
+  if (has('plan')) cols.push(['Plan', f => f.plan]);
+  if (has('afiliado')) cols.push(['N° afiliado', f => f.afiliado]);
+  if (has('medico')) cols.push(['Médico', f => f.medico]);
+  if (has('autorizacion')) cols.push(['N° autorización', f => f.autorizacion]);
+  if (has('sesiones')) cols.push(['Sesión N°', f => f.sesion], ['Sesiones de la orden', f => f.sesiones_orden], ['Fuera de orden', f => f.fuera_de_orden ? 'Sí' : '']);
+  else cols.push(['Sesión N°', f => f.sesion]);
+  if (has('vigencia')) cols.push(['Vigencia desde', f => osFechaCsv(f.vigencia_desde)], ['Vigencia hasta', f => osFechaCsv(f.vigencia_hasta)]);
+  return '﻿' + [cols.map(c => osCsvCelda(c[0])).join(';')].concat(filas.map(f => cols.map(c => osCsvCelda(c[1](f))).join(';'))).join('\r\n');
+}
+function osExpDescargar(){
+  const E = OS.exp; if (!E.filas || !E.filas.length) return;
+  const blob = new Blob([osCsvArmar(E.filas, E.campos)], { type: 'text/csv;charset=utf-8' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `obras-sociales_${E.desde}_a_${E.hasta}.csv`;
+  document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500);
+}
+
 function hsPintar(){
   const root = document.getElementById('subvistaServicios'); if (!root) return;
   const tabs = document.getElementById('hsTabs'), body = document.getElementById('hsBody'), serv = document.getElementById('hsTabServ');
   if (!tabs || !body || !serv) return;
   const admin = srvEsAdmin(); if (!admin && HS.tab === 'serv') HS.tab = 'horarios';
   const nReub = (HS.reub || []).length;
-  const def = [['serv', '🩺 Servicios', admin], ['horarios', hsSoyProfe() ? '🕒 Mis horarios' : '🕒 Horarios por servicio', true], ['reub', '🔀 Para reubicar' + (nReub ? ` (${nReub})` : ''), true], ['log', hsSoyProfe() ? '📜 Cambios' : '📜 Registro', true]];
+  const def = [['serv', '🩺 Servicios', admin], ['horarios', hsSoyProfe() ? '🕒 Mis horarios' : '🕒 Horarios por servicio', true], ['reub', '🔀 Para reubicar' + (nReub ? ` (${nReub})` : ''), true], ['log', hsSoyProfe() ? '📜 Cambios' : '📜 Registro', true], ['os', '🏥 Obras sociales', osOn() && !hsSoyProfe()]];
   const volver = hsRol() === 'recepcion' ? '<button type="button" class="ghost" onclick="cambiarSubvista(\'recepcion\')">← Volver a Recepción</button>' : '';
   const sedeTxt = (hsFija() && sucMulti()) ? `<span class="pill">📍 ${xe(sucNombre(hsFija()))}</span>` : '';
   tabs.innerHTML = volver + def.filter(x => x[2]).map(x => `<button type="button" class="ghost ${HS.tab === x[0] ? 'active' : ''}" onclick="hsTab('${x[0]}')">${x[1]}</button>`).join('') + sedeTxt;
   serv.style.display = HS.tab === 'serv' ? '' : 'none';
   if (HS.tab === 'serv'){ body.innerHTML = ''; return; }
+  if (HS.tab === 'os' && !(osOn() && !hsSoyProfe())) HS.tab = 'horarios';   // (v194)
+  if (HS.tab === 'os'){ body.innerHTML = osTabHtml(); return; }
   if (SRV.ok === false){ body.innerHTML = '<div class="rpx-ban">⚠️ Falta activar los servicios en la base de datos (v148).</div>'; return; }
   if (HS.ok === false){ body.innerHTML = '<div class="rpx-ban">⚠️ Falta activar esta función en la base de datos. Corré <b>v187-servicios-horarios.sql</b> en Supabase (SQL Editor) y recargá la app.</div>'; return; }
   if (HS.ok !== true){ body.innerHTML = '<div class="card muted">Cargando…</div>'; return; }
@@ -18266,8 +18491,10 @@ async function cvFeriadoQuitar(f){
 // ----- Ficha del alumno → pestaña "Cuota" (personal) -----
 let CVF = null;
 function cvTabsVis(){
-  if (!(cvOn() && CV.ok === true && cvStaff())) return FICHA_TABS;
-  const t = FICHA_TABS.slice(); const i = t.findIndex(x => x[0] === 'pag'); t.splice(i < 0 ? t.length : i + 1, 0, ['cuo', 'Plan']); return t;
+  let t = FICHA_TABS;
+  if (cvOn() && CV.ok === true && cvStaff()){ t = t.slice(); const i = t.findIndex(x => x[0] === 'pag'); t.splice(i < 0 ? t.length : i + 1, 0, ['cuo', 'Plan']); }
+  if (typeof osOn === 'function' && osOn() && osRolOk()){ t = t.slice(); let j = t.findIndex(x => x[0] === 'cuo'); if (j < 0) j = t.findIndex(x => x[0] === 'pag'); t.splice(j < 0 ? t.length : j + 1, 0, ['cob', 'Cobertura']); }   // (v194)
+  return t;
 }
 function cvFichaIr(id){ cerrarFicha(); abrirFichaAlumno(id, 'cuo'); }
 function cvFichaVivo(){ return !!(CVF && FICHA_ALU && FICHA_ALU.tab === 'cuo' && FICHA_ALU.id === CVF.id && document.getElementById('fichaTabBody')); }
@@ -19662,6 +19889,7 @@ function pintarFichaAlumno(){
   else if (F.tab === 'eva'){ body.innerHTML = '<div class="muted">Cargando…</div>'; xFichaEvaluaciones(a, tok); }
   else if (F.tab === 'car') xFichaCarga(a, tok);
   else if (F.tab === 'cuo'){ body.innerHTML = '<div class="muted">Cargando…</div>'; cvFichaCargar(a, tok); }   // (v155)
+  else if (F.tab === 'cob'){ body.innerHTML = '<div class="muted">Cargando…</div>'; osFichaCargar(a, tok); }   // (v194)
 }
 function xFichaRes(a){
   const cu = xCuota(a), r = RUTINAS_ALUMNO[a.id] || {}, plan = xPlanNombre(a);
