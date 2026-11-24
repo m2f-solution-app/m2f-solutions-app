@@ -2848,6 +2848,7 @@ if ('serviceWorker' in navigator) window.addEventListener('load', function(){ tr
             <div class="rc-hint" id="rcHintIng">Con el teclado de la pantalla o un teclado numérico USB: escribí el DNI y Enter.</div>
           </div>
           <div class="card" id="rcRes"></div>
+          <div class="card rc-full avi-card conf-card" id="dcpRecep" style="display:none;"></div>
           <div class="card rc-full avi-card conf-card" id="confRecep" style="display:none;"></div>
           <div class="card rc-full avi-card" id="aviRecep" style="display:none;"></div>
           <div class="card rc-full">
@@ -5532,7 +5533,7 @@ function atlIniciarAlu(){
   atlCargarVista('aluAtletismoContenido', id || '');
 }
 
-const APP_VERSION = 191;
+const APP_VERSION = 192;
 let ES_PERSONAL = false;   // (v132) cuenta personal (gimnasios.tipo = 'personal'); se calcula en perAplicar()
 // (v96) Fecha de la última actualización: se cambia junto con APP_VERSION en cada entrega. Se muestra en la
 // pantalla de inicio y en el menú de cuenta ("v94 · actualizada el 5/10/2026").
@@ -9764,7 +9765,7 @@ const ING = { t: null };
     if (['alumno', 'independiente', 'personal', 'gimnasio', 'login'].includes(v)) ING.t = v;
   }catch(e){}
 })();
-const PUB = { slug: null, g: null, cl: null, t0: 0, dni: '', nombre: '', prueba: false, pant: 'cargando', modo: 'reservar', dia: 0, sel: null, mi: null, res: null, busy: false, err: '', msg: '', f: { dni: '', nombre: '', apellido: '', tel: '', ok: false }, canc: null, srv: false, cat: null, w: null, sedeQ: null, sedes: [] };
+const PUB = { slug: null, g: null, cl: null, t0: 0, dni: '', nombre: '', prueba: false, pant: 'cargando', modo: 'reservar', dia: 0, sel: null, mi: null, res: null, busy: false, err: '', msg: '', f: { dni: '', nombre: '', apellido: '', tel: '', ok: false, email: '', tel2: '' }, dat: null, datBusy: false, canc: null, srv: false, cat: null, w: null, sedeQ: null, sedes: [] };
 (function pubCapturarLink(){
   try{
     const s = (new URLSearchParams(location.search).get('r') || '').trim().toLowerCase();
@@ -9789,7 +9790,7 @@ async function pubRpc(fn, body){
 }
 function pubGuardado(){ try{ const v = JSON.parse(sessionStorage.getItem('m2f_pub_' + PUB.slug) || 'null'); return v && /^\d{6,9}$/.test(v.dni || '') ? v : null; }catch(e){ return null; } }
 function pubGuardar(){ try{ sessionStorage.setItem('m2f_pub_' + PUB.slug, JSON.stringify({ dni: PUB.dni, nombre: PUB.nombre })); }catch(e){} }
-function pubOlvidar(){ try{ sessionStorage.removeItem('m2f_pub_' + PUB.slug); }catch(e){} PUB.dni = ''; PUB.nombre = ''; PUB.mi = null; PUB.prueba = false; PUB.f.dni = ''; }
+function pubOlvidar(){ try{ sessionStorage.removeItem('m2f_pub_' + PUB.slug); }catch(e){} PUB.dni = ''; PUB.nombre = ''; PUB.mi = null; PUB.prueba = false; PUB.f.dni = ''; PUB.dat = null; }
 function pubWa(tel, msg){
   const t = String(tel || '').replace(/\D/g, ''); if (!t) return null;
   return 'https://wa.me/' + (t.length === 10 ? '549' + t : t) + (msg ? '?text=' + encodeURIComponent(msg) : '');
@@ -9878,10 +9879,13 @@ async function pubRegistrar(){
   if (n.length < 2){ PUB.err = 'Poné tu nombre.'; pubRender(true); return; }
   if (a.length < 2){ PUB.err = 'Poné tu apellido.'; pubRender(true); return; }
   if (t.length < 8 || t.length > 15){ PUB.err = 'Poné un WhatsApp válido, con código de área (ej: 11 5555 1234).'; pubRender(true); return; }
+  if (PUB.srv && String(f.email || '').trim() && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(String(f.email).trim())){ PUB.err = 'Revisá el mail: parece que no está bien escrito. Si no querés dejarlo, borralo.'; pubRender(true); return; }
   if (!f.ok){ PUB.err = 'Tenés que aceptar que el gimnasio te contacte por WhatsApp.'; pubRender(true); return; }
   PUB.busy = true; pubLimpiaMsg(); pubRender(true);
   try{
     const r = await pubRpc('publico_registrar', { p_slug: PUB.slug, p_dni: f.dni, p_nombre: n, p_apellido: a, p_telefono: t });
+    if (PUB.srv && String(f.email || '').trim()){ try{ await pubRpc('publico_datos_contacto', { p_slug: PUB.slug, p_dni: f.dni, p_email: String(f.email).trim(), p_telefono: null }); }catch(e){} }   // (v192) el mail es opcional: si falla no frena el alta
+    if (PUB.w) PUB.w.datosOk = true;
     PUB.busy = false; PUB.dni = String(f.dni).replace(/\D/g, ''); PUB.nombre = (r && r.nombre) || n; pubGuardar();
     if (PUB.modo === 'wz'){ pubWzTrasDni(); } else if (PUB.modo === 'registro'){ PUB.ya = !!(r && r.ya_existia); pubIr('registrado'); } else pubVerClases();
   }catch(e){ PUB.busy = false; PUB.err = e.message; pubRender(true); }
@@ -10072,7 +10076,8 @@ function pubPantRegistro(){
     <div class="pb-f"><label for="pbNom">Nombre</label><input id="pbNom" autocomplete="given-name" maxlength="40" value="${ejEsc(f.nombre)}" oninput="pubCampo('nombre',this.value)"></div>
     <div class="pb-f"><label for="pbApe">Apellido</label><input id="pbApe" autocomplete="family-name" maxlength="40" value="${ejEsc(f.apellido)}" oninput="pubCampo('apellido',this.value)"></div>
     <div class="pb-f"><label for="pbTel">WhatsApp (con código de área)</label><input id="pbTel" type="tel" inputmode="tel" autocomplete="tel" maxlength="20" placeholder="Ej: 11 5555 1234" value="${ejEsc(f.tel)}" oninput="pubCampo('tel',this.value)"></div>
-    <label class="pb-chk"><input type="checkbox" ${f.ok ? 'checked' : ''} onchange="pubCampo('ok',this.checked)"><span>Acepto que ${ejEsc(g.nombre || 'el gimnasio')} use mis datos para contactarme por WhatsApp ${PUB.modo === 'registro' ? 'y darme acceso a la app' : 'sobre mi reserva'}.</span></label>
+    ${PUB.srv ? `<div class="pb-f"><label for="pbMail">Mail (opcional)</label><input id="pbMail" type="email" inputmode="email" autocomplete="email" maxlength="120" placeholder="Para avisos de tu turno" value="${ejEsc(f.email)}" oninput="pubCampo('email',this.value)"></div>` : ''}
+    <label class="pb-chk"><input type="checkbox" ${f.ok ? 'checked' : ''} onchange="pubCampo('ok',this.checked)"><span>Acepto que ${ejEsc(g.nombre || 'el gimnasio')} use mis datos para contactarme por WhatsApp${PUB.srv ? ' o mail' : ''} ${PUB.modo === 'registro' ? 'y darme acceso a la app' : 'sobre mi reserva'}.</span></label>
     ${pubErr()}<div class="pb-acc" style="margin-top:16px;"><button type="button" onclick="pubRegistrar()" ${PUB.busy ? 'disabled' : ''}>${PUB.busy ? 'Registrando…' : 'Continuar'}</button></div>${pubPie()}`;
 }
 function pubPantClases(){
@@ -10180,6 +10185,7 @@ function pubWzCalc(){
   if (!w.sel) return 'hora';
   if (w.res) return 'listo';
   if (!PUB.dni) return w.sub === 'registro' ? 'registro' : 'dni';
+  if (PUB.srv && !w.datosOk) return 'datos';   // (v192)
   return 'resumen';
 }
 function pubWzEmpezar(){
@@ -10228,6 +10234,54 @@ function pubWzVolver(){
 }
 function pubWzIr(sub){ if (PUB.w){ PUB.w.sub = sub === 'registro' ? 'registro' : null; pubLimpiaMsg(); pubRender(true); } }
 function pubWzTrasDni(){ pubLimpiaMsg(); if (PUB.w) PUB.w.sub = null; pubWzAvanzar(); }
+// ----- (v192) datos del paciente en el link: "¿seguimos con estos datos?" + cambiar mail o teléfono -----
+// SQL: v192-datos-paciente.sql. Sin ese SQL el paso se saltea solo y todo sigue como antes.
+async function pubDatosCargar(){
+  if (PUB.datBusy || !PUB.dni) return;
+  PUB.datBusy = true;
+  try{
+    const r = await pubRpc('publico_mis_datos', { p_slug: PUB.slug, p_dni: PUB.dni });
+    PUB.dat = Object.assign({ edit: false, msg: '' }, r || {});
+  }catch(e){
+    if (/No encontramos tu DNI|dada de baja/i.test(e.message)){ PUB.datBusy = false; pubOlvidar(); PUB.err = e.message; pubRender(true); setTimeout(() => pubIr('dni'), 0); return; }
+    if (PUB.w) PUB.w.datosOk = true;   // sin SQL v192 (o error): no se frena el turno por esto
+    PUB.datBusy = false; pubWzAvanzar(); return;
+  }
+  PUB.datBusy = false; pubRender(true);
+}
+function pubDatosSeguir(){ if (PUB.w){ PUB.w.datosOk = true; pubLimpiaMsg(); pubWzAvanzar(); } }
+function pubDatosEditar(){ if (PUB.dat){ PUB.dat.edit = true; PUB.dat.msg = ''; PUB.f.email = ''; PUB.f.tel2 = ''; pubLimpiaMsg(); pubRender(true); } }
+function pubDatosCancelar(){ if (PUB.dat){ PUB.dat.edit = false; pubLimpiaMsg(); pubRender(true); } }
+async function pubDatosGuardar(){
+  if (PUB.busy || !PUB.dat) return;
+  const mail = String(PUB.f.email || '').trim(), tel = String(PUB.f.tel2 || '').replace(/\D/g, '');
+  if (!mail && !tel){ PUB.err = 'Completá el mail, el teléfono o los dos.'; pubRender(true); return; }
+  if (mail && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(mail)){ PUB.err = 'Revisá el mail: parece que no está bien escrito.'; pubRender(true); return; }
+  if (tel && (tel.length < 8 || tel.length > 15)){ PUB.err = 'Poné un WhatsApp válido, con código de área (ej: 11 5555 1234).'; pubRender(true); return; }
+  PUB.busy = true; pubLimpiaMsg(); pubRender(true);
+  try{
+    const r = await pubRpc('publico_datos_contacto', { p_slug: PUB.slug, p_dni: PUB.dni, p_email: mail || null, p_telefono: tel || null });
+    PUB.busy = false;
+    const msg = r && r.propuesta ? 'Listo: el gimnasio revisa tu cambio y lo actualiza. Mientras tanto seguimos con los datos que tenemos.' : 'Guardado ✓';
+    PUB.datBusy = false; PUB.dat = null; await pubDatosCargar();
+    if (PUB.dat){ PUB.dat.msg = msg; pubRender(true); }
+  }catch(e){ PUB.busy = false; PUB.err = e.message; pubRender(true); }
+}
+function pubWzPasoDatos(){
+  const d = PUB.dat;
+  if (!d){ if (!PUB.datBusy) setTimeout(pubDatosCargar, 0); return '<div class="pb-cargando">Cargando…</div>'; }
+  if (d.edit){
+    return `<div class="pb-h">Cambiar mail o teléfono</div><p class="pb-p">Completá solo lo que quieras cambiar. Si ya tenías uno cargado distinto, el gimnasio lo revisa antes de actualizarlo; si no tenías, se guarda al instante.</p>
+      <div class="pb-f"><label for="pbTel2">WhatsApp nuevo (con código de área)</label><input id="pbTel2" type="tel" inputmode="tel" autocomplete="tel" maxlength="20" placeholder="Ej: 11 5555 1234" value="${ejEsc(PUB.f.tel2 || '')}" oninput="pubCampo('tel2',this.value)"></div>
+      <div class="pb-f"><label for="pbMail2">Mail</label><input id="pbMail2" type="email" inputmode="email" autocomplete="email" maxlength="120" value="${ejEsc(PUB.f.email || '')}" oninput="pubCampo('email',this.value)"></div>
+      ${pubErr()}<div class="pb-acc" style="margin-top:16px;"><button type="button" onclick="pubDatosGuardar()" ${PUB.busy ? 'disabled' : ''}>${PUB.busy ? 'Enviando…' : 'Guardar'}</button><button type="button" class="secondary" onclick="pubDatosCancelar()">Cancelar</button></div>`;
+  }
+  return `<div class="pb-h">${d.nombre ? ejEsc(d.nombre) + ', ¿' : '¿'}seguimos con estos datos?</div><p class="pb-p">Los usamos para avisarte de tu turno.</p>
+    <div class="pb-res"><div class="pb-cl-m">💬 WhatsApp: <b>${d.telefono ? ejEsc(d.telefono) : 'sin cargar'}</b><br>✉️ Mail: <b>${d.email ? ejEsc(d.email) : 'sin cargar'}</b></div></div>
+    ${d.msg ? `<div class="pb-info" style="margin-top:10px;">${ejEsc(d.msg)}</div>` : ''}${d.cambio_pendiente && !d.msg ? '<div class="pb-info" style="margin-top:10px;">Ya pediste un cambio de datos: lo está revisando el gimnasio.</div>' : ''}${pubErr()}
+    <div class="pb-acc" style="margin-top:16px;"><button type="button" onclick="pubDatosSeguir()">Seguir</button><button type="button" class="secondary" onclick="pubDatosEditar()">✏️ ${d.email && d.telefono ? 'Cambiar mail o teléfono' : 'Cargar mail o teléfono'}</button></div>`;
+}
+
 function pubWzSumar(iso, n){ const [y, m, d] = iso.split('-').map(Number); return fechaLocalISO(new Date(y, m - 1, d + n, 12)); }
 async function pubWzCargarHoras(mas){
   const w = PUB.w; if (!w) return;
@@ -10382,13 +10436,14 @@ function pubWzPasoRegistro(){
     <div class="pb-f"><label for="pbNom">Nombre</label><input id="pbNom" autocomplete="given-name" maxlength="40" value="${ejEsc(f.nombre)}" oninput="pubCampo('nombre',this.value)"></div>
     <div class="pb-f"><label for="pbApe">Apellido</label><input id="pbApe" autocomplete="family-name" maxlength="40" value="${ejEsc(f.apellido)}" oninput="pubCampo('apellido',this.value)"></div>
     <div class="pb-f"><label for="pbTel">WhatsApp (con código de área)</label><input id="pbTel" type="tel" inputmode="tel" autocomplete="tel" maxlength="20" placeholder="Ej: 11 5555 1234" value="${ejEsc(f.tel)}" oninput="pubCampo('tel',this.value)"></div>
-    <label class="pb-chk"><input type="checkbox" ${f.ok ? 'checked' : ''} onchange="pubCampo('ok',this.checked)"><span>Acepto que ${ejEsc(g.nombre || 'el lugar')} use mis datos para contactarme por WhatsApp sobre mi turno.</span></label>
+    ${PUB.srv ? `<div class="pb-f"><label for="pbMail">Mail (opcional)</label><input id="pbMail" type="email" inputmode="email" autocomplete="email" maxlength="120" placeholder="Para avisos de tu turno" value="${ejEsc(f.email)}" oninput="pubCampo('email',this.value)"></div>` : ''}
+    <label class="pb-chk"><input type="checkbox" ${f.ok ? 'checked' : ''} onchange="pubCampo('ok',this.checked)"><span>Acepto que ${ejEsc(g.nombre || 'el lugar')} use mis datos para contactarme por WhatsApp o mail sobre mi turno.</span></label>
     ${pubErr()}<div class="pb-acc" style="margin-top:16px;"><button type="button" onclick="pubRegistrar()" ${PUB.busy ? 'disabled' : ''}>${PUB.busy ? 'Registrando…' : 'Continuar'}</button></div>`;
 }
 function pubPantWz(){
   const w = PUB.w; if (!w || !PUB.cat) return pubPantInicio();
   const paso = pubWzCalc();
-  const mapa = { sede: pubWzPasoSede, tipo: pubWzPasoTipo, serv: pubWzPasoServ, prof: pubWzPasoProf, hora: pubWzPasoHora, dni: pubWzPasoDni, registro: pubWzPasoRegistro, resumen: pubWzPasoResumen, listo: pubWzPasoListo,
+  const mapa = { sede: pubWzPasoSede, tipo: pubWzPasoTipo, serv: pubWzPasoServ, prof: pubWzPasoProf, hora: pubWzPasoHora, dni: pubWzPasoDni, registro: pubWzPasoRegistro, datos: pubWzPasoDatos, resumen: pubWzPasoResumen, listo: pubWzPasoListo,
     vacio: () => `<div class="pb-vacio">Por ahora no hay nada para reservar desde acá.</div>${pubWaBtn('Escribinos por WhatsApp')}` };
   const volver = paso === 'listo' ? `<button type="button" class="pb-back" onclick="pubIr('inicio')">‹ Inicio</button>` : `<button type="button" class="pb-back" onclick="pubWzVolver()">‹ Volver</button>`;
   return `${pubTop()}${pubMarca(false)}${volver}${paso === 'listo' ? '' : pubWzFichas()}${(mapa[paso] || mapa.vacio)()}${pubPie()}`;
@@ -10902,6 +10957,7 @@ async function srvCargar(){
 function srvAplicar(){
   try{ srvPintar(); }catch(e){}
   try{ confCargar(); }catch(e){}   // (v191)
+  try{ dcpCargar(); }catch(e){}   // (v192)
   try{ if (RC && RC.ficha && typeof rcRender === 'function') { if (srvUsa() && !RC.prox) rcRefrescar(RC.msg); } }catch(e){}
 }
 
@@ -11344,7 +11400,7 @@ function aviRender(){
     const o = window.cambiarSubvista; if (typeof o !== 'function') return;
     window.cambiarSubvista = function(v){
       const r = o.apply(this, arguments);
-      try{ if (v === 'agenda' || v === 'recepcion'){ aviCargar(); confCargar(); } }catch(e){}
+      try{ if (v === 'agenda' || v === 'recepcion'){ aviCargar(); confCargar(); } if (v === 'recepcion') dcpCargar(); }catch(e){}
       return r;
     };
   }catch(e){}
@@ -11457,6 +11513,53 @@ setInterval(function(){
     if ((a && a.offsetParent) || (b && b.offsetParent)) confCargar(true);
   }catch(e){}
 }, 60000);
+
+// ----- (v192) Recepción: cambios de datos pedidos por pacientes desde el link -----
+const DCP = { ok: null, items: [], cargando: false, busy: {}, ts: 0, err: '' };
+function dcpOn(){ return srvOn() && DCP.ok !== false; }
+async function dcpCargar(forzar){
+  if (!dcpOn() || !PERFIL_ACTUAL){ dcpRender(); return; }
+  if (!forzar && DCP.ts && Date.now() - DCP.ts < 15000){ dcpRender(); return; }
+  DCP.cargando = true; DCP.err = ''; dcpRender();
+  try{
+    const r = await sb('rpc/datos_cambios_pendientes', { method: 'POST', body: JSON.stringify({}) });
+    DCP.ok = true; DCP.items = Array.isArray(r) ? r : []; DCP.ts = Date.now();
+  }catch(e){
+    const m = rpxMsg(e);
+    if (/datos_cambios_pendientes|42883|PGRST202|Could not find/i.test(m)) DCP.ok = false;
+    else if (!/No autorizado/i.test(m)) DCP.err = extraerMensajeError(e);
+  }
+  DCP.cargando = false; dcpRender();
+}
+async function dcpResolver(id, accion){
+  if (DCP.busy[id]) return; DCP.busy[id] = true; dcpRender();
+  try{
+    await sb('rpc/datos_cambio_resolver', { method: 'POST', body: JSON.stringify({ p_id: id, p_accion: accion }) });
+    DCP.items = DCP.items.filter(x => x.id !== id);
+    toast(accion === 'aplicar' ? 'Ficha actualizada ✓' : 'Listo, queda como estaba.');
+  }catch(e){ toast(extraerMensajeError(e), true); DCP.ts = 0; }
+  DCP.busy[id] = false; dcpRender();
+  if (!DCP.ts) dcpCargar(true);
+}
+function dcpLinea(txt, antes, ahora){
+  if (!ahora) return '';
+  return `<div style="font-size:13.5px;">${txt}: <span class="muted">${xe(antes || 'sin cargar')}</span> → <b>${xe(ahora)}</b></div>`;
+}
+function dcpFila(it){
+  const b = DCP.busy[it.id] ? 'disabled' : '';
+  return `<div class="avi-row"><div class="avi-quien"><b>${xe(it.alumno)}</b>${it.dni ? ` <span class="muted" style="font-size:12.5px;">DNI ${xe(it.dni)}</span>` : ''}
+    ${dcpLinea('💬 WhatsApp', it.telefono_actual, it.telefono_nuevo)}${dcpLinea('✉️ Mail', it.email_actual, it.email_nuevo)}</div>
+    <div class="avi-acc"><button type="button" class="avi-b" onclick="dcpResolver('${it.id}', 'aplicar')" ${b}>✓ Actualizar ficha</button><button type="button" class="ghost avi-b" onclick="dcpResolver('${it.id}', 'descartar')" ${b}>Dejar igual</button></div></div>`;
+}
+function dcpRender(){
+  const el = document.getElementById('dcpRecep'); if (!el) return;
+  const ver = !!(PERFIL_ACTUAL && dcpOn() && ((DCP.items || []).length || DCP.err));
+  el.style.display = ver ? '' : 'none';
+  if (!ver) return;
+  el.innerHTML = `<div class="avi-h"><div><b>✏️ Cambios de datos pedidos</b> <span class="muted" style="font-size:13px;">· el paciente los pidió desde el link; vos decidís si se actualiza la ficha</span></div>
+    <div style="display:flex;gap:8px;align-items:center;"><span class="pill warn">${(DCP.items || []).length} por revisar</span><button type="button" class="ghost avi-b" onclick="dcpCargar(true)" title="Actualizar">↻</button></div></div>
+    <div class="avi-lista">${DCP.err ? `<div class="rpx-ban">⚠️ ${xe(DCP.err)}</div>` : (DCP.items || []).map(dcpFila).join('')}</div>`;
+}
 
 // ----- Mi gimnasio: lista y alta de servicios + límite de turnos por día -----
 function srvEsAdmin(){ return !!(PERFIL_ACTUAL && PERFIL_ACTUAL.rol === 'admin' && !PERFIL_ACTUAL.sucursal_id); }
