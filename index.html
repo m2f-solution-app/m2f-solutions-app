@@ -2587,6 +2587,7 @@ if ('serviceWorker' in navigator) window.addEventListener('load', function(){ tr
     <button class="tt-btn" id="ttLogros" onclick="cambiarSubvista('logros')" style="display:none;" title="Logros"><span class="tt-ico">🏆</span><span class="tt-lbl">Logros</span></button>
     <button class="tt-btn" id="ttProfesores" onclick="cambiarSubvista('profesores')" style="display:none;" title="Profesores"><span class="tt-ico">🧑‍🏫</span><span class="tt-lbl">Profesores</span></button>
     <button class="tt-btn" id="ttHorarios" onclick="cambiarSubvista('horarios')" style="display:none;" title="Horarios"><span class="tt-ico">🕒</span><span class="tt-lbl">Horarios</span></button>
+    <button class="tt-btn" id="ttServicios" onclick="cambiarSubvista('servicios')" style="display:none;" title="Servicios"><span class="tt-ico">🩺</span><span class="tt-lbl">Servicios</span></button>   <!-- (v187) -->
     <button class="tt-btn" id="ttPlanes" onclick="cambiarSubvista('planes')" style="display:none;" title="Planes"><span class="tt-ico">💳</span><span class="tt-lbl">Planes</span></button>
     <button class="tt-btn" id="ttCobranzas" onclick="cambiarSubvista('cobranzas')" style="display:none;" title="Finanzas"><span class="tt-ico">💰</span><span class="tt-lbl">Finanzas</span></button>
     <button class="tt-btn" id="ttAlertas" onclick="cambiarSubvista('alertas')" style="display:none;" title="Alertas"><span class="tt-ico">🔔</span><span class="tt-lbl">Alertas</span></button>
@@ -2648,6 +2649,7 @@ if ('serviceWorker' in navigator) window.addEventListener('load', function(){ tr
     <div class="side-item" id="menuLogros" onclick="cambiarSubvista('logros')" title="Logros"><span class="side-ico">🏆</span><span class="side-label">Logros</span></div>
     <div class="side-item" id="menuProfesores" onclick="cambiarSubvista('profesores')" title="Profesores"><span class="side-ico">🧑‍🏫</span><span class="side-label">Profesores</span></div>
     <div class="side-item" id="menuHorarios" onclick="cambiarSubvista('horarios')" title="Horarios"><span class="side-ico">🕒</span><span class="side-label">Horarios</span></div>
+    <div class="side-item" id="menuServicios" onclick="cambiarSubvista('servicios')" style="display:none;" title="Servicios"><span class="side-ico">🩺</span><span class="side-label">Servicios</span></div>   <!-- (v187) -->
     <div class="side-item" id="menuPlanes" onclick="cambiarSubvista('planes')" title="Planes"><span class="side-ico">💳</span><span class="side-label">Planes</span></div>
     <div class="side-item" id="menuCobranzas" onclick="cambiarSubvista('cobranzas')" title="Finanzas"><span class="side-ico">💰</span><span class="side-label">Finanzas</span></div>
     <div class="side-item" id="menuAlertas" onclick="cambiarSubvista('alertas')" title="Alertas"><span class="side-ico">🔔</span><span class="side-label">Alertas</span></div>
@@ -3898,6 +3900,12 @@ if ('serviceWorker' in navigator) window.addEventListener('load', function(){ tr
       </div>
 
       <!-- ---- SUBVISTA: MI GIMNASIO (nombre + logo propio) ---- -->
+      <!-- (v187) Servicios y horarios -->
+      <div id="subvistaServicios" style="display:none;">
+        <div class="card"><div class="row" id="hsTabs" style="gap:8px;flex-wrap:wrap;"></div></div>
+        <div id="hsTabServ" style="display:none;"><div class="card" id="gimSrvBox" style="display:none;"><div id="gimSrvBody"><div class="muted">Cargando…</div></div></div></div>
+        <div id="hsBody"></div>
+      </div>
       <div id="subvistaGimnasio" style="display:none;">
         <div class="vista-titulo">Mi gimnasio</div>
         <details class="plegable card" data-k="gim-nombre"><summary>Nombre y logo</summary><div class="plg-body">
@@ -4023,8 +4031,7 @@ if ('serviceWorker' in navigator) window.addEventListener('load', function(){ tr
         <details class="plegable card" data-k="gim-suc" id="gimSucBox" style="display:none;"><summary>📍 Sucursales (sedes, dirección y mapa)</summary><div class="plg-body" id="gimSucBody"><div class="muted">Cargando…</div></div></details>
         <!-- (v145) Administradores por sede -->
         <details class="plegable card" data-k="gim-adm" id="gimAdmBox" style="display:none;"><summary>👥 Administradores por sede</summary><div class="plg-body" id="gimAdmBody"><div class="muted">Cargando…</div></div></details>
-        <!-- (v148) Servicios y turnos con duración -->
-        <details class="plegable card" data-k="gim-srv" id="gimSrvBox" style="display:none;"><summary>🩺 Servicios (turnos con duración)</summary><div class="plg-body" id="gimSrvBody"><div class="muted">Cargando…</div></div></details>
+        <!-- (v187) Servicios: ahora tiene su propio ítem de menú -->
         <!-- (v155) Cuota variable -->
         <details class="plegable card" data-k="gim-cv" id="gimCvBox" style="display:none;"><summary>🧮 Cuota variable (valor por clase y zonas)</summary><div class="plg-body" id="gimCvBody"><div class="muted">Cargando…</div></div></details>
         <details class="plegable card" data-k="gim-pf" id="gimPfBox" style="display:none;"><summary>🏦 Alias para cobrar por transferencia</summary><div class="plg-body" id="gimPfBody"><div class="muted">Cargando…</div></div></details>
@@ -4934,7 +4941,7 @@ let MOD_CAT = null;        // catálogo (solo se usa en el panel de Martin)
 let MOD_EDIT = null;       // edición en curso del modal de accesos
 const MOD_REQ = { equipo: 'evaluaciones' };   // este módulo necesita que el otro esté activo
 const MOD_VISTAS = { agenda:'agenda', horarios:'agenda', clases:'clases', recepcion:'recepcion', planes:'planes', cobranzas:'finanzas',
-  alertas:'alertas', evaluaciones:'evaluaciones', equipo:'equipo', seguimiento:'seguimiento', logros:'logros', dashboard:'dashboard', atletismo:'atletismo' };
+  alertas:'alertas', evaluaciones:'evaluaciones', equipo:'equipo', seguimiento:'seguimiento', logros:'logros', dashboard:'dashboard', atletismo:'atletismo', servicios:'servicios' };
 const MOD_VISTAS_ALU = { turnos:'agenda', clases:'clases', atletismo:'atletismo', evolucion:'evaluaciones', seguimiento:'seguimiento', logros:'logros' };
 const MOD_IDS = {   // elementos de menú / barra / navegación inferior por módulo
   agenda:       ['menuAgenda', 'ttAgenda', 'bnavProfAgenda', 'menuHorarios', 'ttHorarios', 'menuAluTurnos', 'bnavTurnos'],
@@ -4948,6 +4955,7 @@ const MOD_IDS = {   // elementos de menú / barra / navegación inferior por mó
   seguimiento:  ['menuSeguimiento', 'ttSeguimiento', 'menuAluSeguimiento', 'bnavSeguimiento'],
   logros:       ['menuLogros', 'ttLogros', 'menuAluLogros'],
   dashboard:    ['menuDashboard', 'ttDashboard'],
+  servicios:    ['menuServicios', 'ttServicios'],   // (v187)
   wellness:     ['ipPnWell', 'wellnessCard'],   // (v149)
 };
 // Presets de venta (editables acá): se aplican de un toque y después se ajusta a mano.
@@ -5000,6 +5008,7 @@ function modAplicarMenu(){
     });
   });
   try{ sedeAdminOcultar(); }catch(e){}   // (v145)
+  try{ hsMenu(); }catch(e){}   // (v187) Servicios solo con el módulo prendido
 }
 async function modulosCargar(){
   try{
@@ -5505,11 +5514,11 @@ function atlIniciarAlu(){
   atlCargarVista('aluAtletismoContenido', id || '');
 }
 
-const APP_VERSION = 186;
+const APP_VERSION = 187;
 let ES_PERSONAL = false;   // (v132) cuenta personal (gimnasios.tipo = 'personal'); se calcula en perAplicar()
 // (v96) Fecha de la última actualización: se cambia junto con APP_VERSION en cada entrega. Se muestra en la
 // pantalla de inicio y en el menú de cuenta ("v94 · actualizada el 5/10/2026").
-const APP_FECHA = '2026-11-23';
+const APP_FECHA = '2026-11-24';
 function appVersionTxt(){ const [y, m, d] = APP_FECHA.split('-'); return `v${APP_VERSION} · actualizada el ${+d}/${+m}/${y}`; }
 (function(){ const el = document.getElementById('lcVersion'); if (el) el.textContent = 'M2F Solutions · ' + appVersionTxt(); })();
 
@@ -10805,6 +10814,292 @@ function srvAplicar(){
   try{ if (RC && RC.ficha && typeof rcRender === 'function') { if (srvUsa() && !RC.prox) rcRefrescar(RC.msg); } }catch(e){}
 }
 
+// ---------- (v187) Servicios y horarios: menú propio, sedes por servicio, horario general que cada servicio hereda o personaliza ----------
+// SQL: v187-servicios-horarios.sql. Todo cambio pasa por funciones de la base (choques, permisos, registro); acá solo se ordena la pantalla.
+const HS = { tab: 'horarios', ok: null, err: '', cargando: false, sedes: {}, modo: {}, gen: [], prop: [], srvSel: '', reub: null, canc: [], log: null, busy: false, edSedes: null, abierto: {}, f: {} };
+const HS_ORD = [1, 2, 3, 4, 5, 6, 0];
+const HS_DIA = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+function hsOn(){ return srvOn() && SRV.ok === true; }
+function hsHora(t){ return String(t || '').slice(0, 5); }
+function hsFecha(f){ const p = String(f || '').split('-'); return p.length === 3 ? `${p[2]}/${p[1]}` : ''; }
+function hsFija(){ return sucAdminSede(); }   // sede fija (admin de sede / recepción con sede): solo ve y toca lo suyo
+function hsEsMio(pid){ const p = (PROFESORES_CACHE || []).find(x => x.id === pid); return !!(p && PERFIL_ACTUAL && PERFIL_ACTUAL.rol === 'profesor' && p.perfil_id === PERFIL_ACTUAL.id); }
+function hsPuedeModo(pid){ return srvEsAdmin() || hsEsMio(pid); }   // personalizar / volver a heredar
+function hsMenu(){   // el ítem del menú solo existe con el módulo prendido
+  ['menuServicios', 'ttServicios'].forEach(id => { const e = document.getElementById(id); if (e && !srvOn()) e.style.display = 'none'; });
+}
+function hsSedesDe(sid){ return HS.sedes[sid] || new Set(); }
+function hsSedesTxt(sid){
+  const s = hsSedesDe(sid); if (!s.size) return 'Todas las sedes';
+  return [...s].map(id => sucNombre(id)).filter(Boolean).join(', ') || 'Todas las sedes';
+}
+function hsSedesPosibles(sid){   // sedes donde se puede cargar un horario de este servicio (y que la cuenta puede tocar)
+  const s = hsSedesDe(sid), fija = hsFija();
+  return sucActivas().filter(x => (!s.size || s.has(x.id)) && (!fija || x.id === fija));
+}
+function hsRangos(pid, sid){   // lo que de verdad rige: general heredado o propio (misma regla que la base)
+  const modo = HS.modo[pid + '|' + sid] || 'hereda', ss = hsSedesDe(sid);
+  let r;
+  if (modo === 'propio') r = HS.prop.filter(x => x.profesor_id === pid && x.servicio_id === sid).map(x => ({ id: x.id, dia: x.dia_semana, ini: hsHora(x.hora_inicio), fin: hsHora(x.hora_fin), sede: x.sucursal_id, origen: 'propio' }));
+  else r = HS.gen.filter(x => x.profesor_id === pid && (!x.sucursal_id || !ss.size || ss.has(x.sucursal_id))).map(x => ({ id: x.id, dia: x.dia_semana, ini: hsHora(x.hora_inicio), fin: hsHora(x.hora_fin), sede: x.sucursal_id, origen: 'general' }));
+  return r.sort((a, b) => HS_ORD.indexOf(a.dia) - HS_ORD.indexOf(b.dia) || a.ini.localeCompare(b.ini));
+}
+function hsGenerales(pid){
+  return HS.gen.filter(x => x.profesor_id === pid).map(x => ({ id: x.id, dia: x.dia_semana, ini: hsHora(x.hora_inicio), fin: hsHora(x.hora_fin), sede: x.sucursal_id, origen: 'general' }))
+    .sort((a, b) => HS_ORD.indexOf(a.dia) - HS_ORD.indexOf(b.dia) || a.ini.localeCompare(b.ini));
+}
+async function hsCargar(){
+  if (!hsOn()) { HS.ok = null; hsPintar(); return; }
+  HS.cargando = true;
+  try{
+    const [ss, ps, gen, prop] = await Promise.all([
+      sb('servicio_sedes?select=servicio_id,sucursal_id&limit=2000'),
+      sb('profesor_servicios?select=profesor_id,servicio_id,horario_modo&limit=3000'),
+      sb('horarios_trabajo?select=id,profesor_id,dia_semana,hora_inicio,hora_fin,sucursal_id&activo=eq.true&limit=5000'),
+      sb('servicio_horarios?select=id,profesor_id,servicio_id,dia_semana,hora_inicio,hora_fin,sucursal_id&activo=eq.true&limit=5000'),
+    ]);
+    HS.sedes = {}; (ss || []).forEach(x => { (HS.sedes[x.servicio_id] = HS.sedes[x.servicio_id] || new Set()).add(x.sucursal_id); });
+    HS.modo = {}; (ps || []).forEach(x => { HS.modo[x.profesor_id + '|' + x.servicio_id] = x.horario_modo || 'hereda'; });
+    HS.gen = gen || []; HS.prop = prop || []; HS.ok = true; HS.err = '';
+  }catch(e){
+    const m = (e && e.message) || '';
+    HS.ok = /42P01|42703|does not exist|horario_modo|servicio_sedes|servicio_horarios|Could not find/i.test(m) ? false : null; HS.err = m;
+  }
+  try{ HS.reub = await sb('rpc/turnos_reubicar_listar', { method: 'POST', body: '{}' }); if (!Array.isArray(HS.reub)) HS.reub = []; }catch(e){ HS.reub = []; }
+  HS.cargando = false; hsPintar();
+  try{ srvPintar(true); }catch(e){}   // las tarjetas de servicios muestran las sedes
+}
+function hsEntrar(){
+  if (!srvEsAdmin() && HS.tab === 'serv') HS.tab = 'horarios';
+  hsPintar(); hsCargar();
+}
+function hsTab(t){
+  HS.tab = t; hsPintar();
+  if (t === 'log') hsLogCargar();
+  if (t === 'serv') try{ srvPintar(true); }catch(e){}
+}
+async function hsLogCargar(){
+  try{ HS.log = await sb('rpc/horarios_log_listar', { method: 'POST', body: JSON.stringify({ p_profesor: null, p_limite: 60 }) }); if (!Array.isArray(HS.log)) HS.log = []; }catch(e){ HS.log = []; }
+  if (HS.tab === 'log') hsPintar();
+}
+function hsAfectadosTxt(a){
+  const lin = a.slice(0, 8).map(t => `• ${hsFecha(t.fecha)} ${t.hora} · ${t.alumno || 'Paciente'}${t.servicio ? ' (' + t.servicio + ')' : ''}`).join('\n');
+  return `Esto deja ${a.length === 1 ? '1 turno' : a.length + ' turnos'} fuera del horario:\n${lin}${a.length > 8 ? `\n… y ${a.length - 8} más` : ''}\n\nNo se cancelan solos: pasan a “Para reubicar” y decidís uno por uno. ¿Aplicar el cambio igual?`;
+}
+async function hsRpc(fn, args, okMsg){
+  if (HS.busy) return null;
+  HS.busy = true;
+  try{
+    let r = await sb('rpc/' + fn, { method: 'POST', body: JSON.stringify(args) });
+    if (r && r.ok === false && Array.isArray(r.afectados)){
+      if (!confirm(hsAfectadosTxt(r.afectados))) return null;
+      r = await sb('rpc/' + fn, { method: 'POST', body: JSON.stringify(Object.assign({}, args, { p_forzar: true })) });
+      HS.busy = false; await hsCargar();
+      const n = (r && r.afectados && r.afectados.length) || 0;
+      toast(n ? `Listo. ${n === 1 ? '1 turno quedó' : n + ' turnos quedaron'} en “Para reubicar”.` : (okMsg || 'Listo ✓'));
+      return r;
+    }
+    HS.busy = false; await hsCargar(); toast(okMsg || 'Listo ✓'); return r;
+  }catch(e){ toast(extraerMensajeError(e), true); return null; }
+  finally{ HS.busy = false; }
+}
+// ----- sedes de cada servicio (se muestran en la pestaña Servicios) -----
+function hsSedesLinea(s){
+  if (!sucMulti() || !hsOn() || HS.ok !== true) return '';
+  const e = HS.edSedes;
+  if (e && e.sid === s.id){
+    const chips = sucActivas().map(x => `<label class="srv-pro"><input type="checkbox" ${e.sel.has(x.id) ? 'checked' : ''} onchange="hsSedesTog('${x.id}', this.checked)"> ${xe(x.nombre)}</label>`).join('');
+    return `<div class="suc-form" style="margin-top:8px;"><div style="font-weight:700;margin-bottom:6px;">📍 ¿En qué sedes se hace ${xe(s.nombre)}?</div><div class="srv-pros">${chips}</div>
+      <div class="muted" style="font-size:12px;margin:6px 0 10px;">Si no marcás ninguna, se hace en todas las sedes.</div>
+      <div class="row"><button type="button" onclick="hsSedesGuardar()">Guardar sedes</button><button type="button" class="ghost" onclick="hsSedesCancelar()">Cancelar</button></div></div>`;
+  }
+  return `<div style="font-size:13.5px;margin-top:4px;">📍 ${xe(hsSedesTxt(s.id))} <button type="button" class="ghost" style="padding:2px 10px;" onclick="hsSedesEditar('${s.id}')">Cambiar sedes</button></div>`;
+}
+function hsSedesEditar(sid){ HS.edSedes = { sid, sel: new Set(hsSedesDe(sid)) }; srvPintar(true); }
+function hsSedesTog(id, on){ if (HS.edSedes){ if (on) HS.edSedes.sel.add(id); else HS.edSedes.sel.delete(id); } }
+function hsSedesCancelar(){ HS.edSedes = null; srvPintar(true); }
+async function hsSedesGuardar(){
+  const e = HS.edSedes; if (!e) return;
+  const todas = sucActivas().length, sel = [...e.sel];
+  const r = await hsRpc('servicio_sedes_guardar', { p_servicio: e.sid, p_sucursales: sel.length === todas ? [] : sel }, 'Sedes guardadas ✓');
+  if (r !== null){ HS.edSedes = null; srvPintar(true); }
+}
+// ----- pestaña Horarios por servicio -----
+function hsFormDe(key){
+  if (!HS.f[key]) HS.f[key] = { dias: new Set(), ini: '09:00', fin: '12:00', sede: '' };
+  return HS.f[key];
+}
+function hsF(key, k, v){ hsFormDe(key)[k] = v; }
+function hsDia(key, d){ const f = hsFormDe(key); if (f.dias.has(d)) f.dias.delete(d); else f.dias.add(d); hsPintar(); }
+function hsAbrir(k, on){ HS.abierto[k] = on; }
+function hsFormHtml(key, sedes, accion){
+  const f = hsFormDe(key);
+  const dias = HS_ORD.map(d => `<button type="button" class="srv-chip ${f.dias.has(d) ? 'on' : ''}" onclick="hsDia('${key}', ${d})">${HS_DIA[d]}</button>`).join('');
+  let sedeSel = '';
+  if (sucMulti() && sedes.length){
+    const val = f.sede && sedes.some(x => x.id === f.sede) ? f.sede : sedes[0].id; f.sede = val;
+    sedeSel = `<div class="field" style="max-width:220px;"><label>Sede</label><select onchange="hsF('${key}','sede',this.value)">${sedes.map(x => `<option value="${x.id}" ${x.id === val ? 'selected' : ''}>${xe(x.nombre)}</option>`).join('')}</select></div>`;
+  }
+  return `<div class="suc-form" style="margin-top:10px;"><div class="srv-chips" style="margin-bottom:8px;">${dias}</div>
+    <div class="row" style="gap:10px;align-items:flex-end;flex-wrap:wrap;">
+      <div class="field"><label>Desde</label><input type="time" value="${f.ini}" onchange="hsF('${key}','ini',this.value)"></div>
+      <div class="field"><label>Hasta</label><input type="time" value="${f.fin}" onchange="hsF('${key}','fin',this.value)"></div>
+      ${sedeSel}
+      <button type="button" onclick="${accion}">＋ Agregar</button></div></div>`;
+}
+function hsFranjaHtml(r, borrarFn){
+  const sede = (sucMulti() && r.sede) ? ` · 📍 ${xe(sucNombre(r.sede))}` : '';
+  const fija = hsFija(), ajena = !!(fija && r.sede && r.sede !== fija);
+  const x = (borrarFn && !ajena) ? `<button type="button" class="ghost" style="padding:0 8px;" title="Quitar" onclick="${borrarFn}('${r.id}')">✕</button>` : (ajena ? '<span class="muted" title="Es de otra sede">🔒</span>' : '');
+  return `<div class="row" style="gap:8px;padding:3px 0;align-items:center;"><span style="min-width:36px;font-weight:600;">${HS_DIA[r.dia]}</span><span>${r.ini}–${r.fin}${sede}</span>${x}</div>`;
+}
+function hsProfCard(p, s){
+  const pid = p.id, sid = s.id, modo = HS.modo[pid + '|' + sid] || 'hereda', rangos = hsRangos(pid, sid), propio = modo === 'propio';
+  const gen = hsGenerales(pid), kP = `p|${pid}|${sid}`, kG = `g|${pid}`;
+  const pill = propio ? '<span class="pill warn" title="Tiene horarios propios para este servicio">✏️ Horario propio</span>' : '<span class="pill" title="Usa su horario general">🔗 Hereda su horario general</span>';
+  const durMin = +s.duracion_min || 0;
+  const btnModo = !hsPuedeModo(pid) ? '' : (propio
+    ? `<button type="button" class="ghost" onclick="hsHeredar('${pid}','${sid}')">↩ Volver a heredar</button>`
+    : `<button type="button" class="ghost" onclick="hsPersonalizar('${pid}','${sid}')">✏️ Personalizar para este servicio</button>`);
+  const franjas = rangos.length ? rangos.map(r => hsFranjaHtml(r, propio ? 'hsQuitarPropio' : null)).join('')
+    : `<div style="color:var(--warn-text);font-size:13.5px;">⚠ Sin horarios: nadie puede reservar con este profesional${propio ? '' : '. Cargá su horario general abajo'}.</div>`;
+  const corta = propio ? rangos.filter(r => hsMin(r.fin) - hsMin(r.ini) < durMin) : [];
+  const avisoCorta = corta.length ? `<div class="rpx-ban" style="margin-top:6px;">Hay franjas más cortas que el servicio (${srvDur(durMin)}): no generan turnos.</div>` : '';
+  const formP = propio ? `<details ${HS.abierto[kP] ? 'open' : ''} ontoggle="hsAbrir('${kP}', this.open)" style="margin-top:8px;"><summary style="cursor:pointer;">＋ Agregar franja propia</summary>${hsFormHtml(kP, hsSedesPosibles(sid), `hsAgregarPropio('${pid}','${sid}')`)}</details>` : '';
+  const genLista = gen.length ? gen.map(r => hsFranjaHtml(r, 'hsQuitarGeneral')).join('') : '<div class="muted" style="font-size:13px;">Todavía no tiene horario general.</div>';
+  const formG = `<details ${HS.abierto[kG] ? 'open' : ''} ontoggle="hsAbrir('${kG}', this.open)" style="margin-top:8px;"><summary style="cursor:pointer;">🕒 Horario general de ${xe(p.nombre)} <span class="muted" style="font-size:12px;">(lo heredan sus servicios)</span></summary>
+    <div style="margin-top:6px;">${genLista}</div>${hsFormHtml(kG, sucElegibles(), `hsAgregarGeneral('${pid}')`)}</details>`;
+  return `<div class="suc-card" style="margin-bottom:10px;">
+    <div class="suc-card-h"><b>👤 ${xe(p.nombre)}</b>${pill}<span style="flex:1"></span>${btnModo}</div>
+    ${franjas}${avisoCorta}${formP}${formG}</div>`;
+}
+function hsMin(h){ const [a, b] = String(h).split(':').map(Number); return a * 60 + b; }
+function hsHorHtml(){
+  const srvs = srvActivos();
+  if (!srvs.length) return '<div class="card muted">Todavía no hay servicios. Creá el primero en la pestaña <b>Servicios</b>.</div>';
+  if (!HS.srvSel || !srvs.some(x => x.id === HS.srvSel)) HS.srvSel = srvs[0].id;
+  const s = srvPorId(HS.srvSel), profs = srvProfes(s.id);
+  const chips = srvs.map(x => `<button type="button" class="srv-chip ${x.id === HS.srvSel ? 'on' : ''}" onclick="hsSrv('${x.id}')">${xe(srvEtq(x))}</button>`).join('');
+  const sedesTxt = sucMulti() ? `<span class="pill">📍 ${xe(hsSedesTxt(s.id))}</span>` : '';
+  const cuerpo = profs.length ? profs.map(p => hsProfCard(p, s)).join('')
+    : `<div class="muted">Este servicio todavía no tiene profesionales.${srvEsAdmin() ? ' Tocá “Servicios”, después Editar, y elegilos.' : ''}</div>`;
+  const comparte = hsComparteTxt(s);
+  return `<div class="card"><div class="srv-chips" style="margin-bottom:10px;">${chips}</div>
+    <div class="suc-card-h"><b>${xe(srvEtq(s))}</b><span class="pill">${srvDur(s.duracion_min)}</span>${sedesTxt}</div>
+    <div class="muted" style="font-size:12.5px;margin-bottom:10px;">Cada profesional usa su <b>horario general</b> salvo que lo personalices para este servicio. Un profesional no puede estar en dos sedes a la vez. Si dos servicios comparten horario, la agenda es una sola: gana el primero que reserva.</div>
+    ${comparte}${cuerpo}</div>`;
+}
+function hsComparteTxt(s){   // aviso: servicios que usan el mismo profesional y se pisan en día y hora
+  const out = [];
+  srvProfes(s.id).forEach(p => {
+    const mias = hsRangos(p.id, s.id);
+    srvActivos().filter(o => o.id !== s.id && srvProfes(o.id).some(q => q.id === p.id)).forEach(o => {
+      const otras = hsRangos(p.id, o.id);
+      if (mias.some(a => otras.some(b => a.dia === b.dia && a.ini < b.fin && b.ini < a.fin))) out.push(`${p.nombre} comparte horario con ${o.nombre}`);
+    });
+  });
+  const u = [...new Set(out)]; return u.length ? `<div class="rpx-ban" style="margin-bottom:10px;">🔁 ${u.map(xe).join(' · ')}. La agenda es una sola: si uno reserva, el otro servicio no tiene ese horario.</div>` : '';
+}
+function hsSrv(id){ HS.srvSel = id; hsPintar(); }
+function hsLeerForm(key){
+  const f = hsFormDe(key);
+  if (!f.dias.size){ toast('Elegí al menos un día.', true); return null; }
+  if (!f.ini || !f.fin || f.fin <= f.ini){ toast('Revisá las horas: el inicio tiene que ser antes del fin.', true); return null; }
+  return f;
+}
+async function hsAgregarPropio(pid, sid){
+  const key = `p|${pid}|${sid}`, f = hsLeerForm(key); if (!f) return;
+  const r = await hsRpc('servicio_horario_guardar', { p_profesor: pid, p_servicio: sid, p_dias: [...f.dias], p_ini: f.ini, p_fin: f.fin, p_sucursal: f.sede || null }, 'Franja agregada ✓');
+  if (r !== null){ f.dias.clear(); hsPintar(); }
+}
+async function hsAgregarGeneral(pid){
+  const key = `g|${pid}`, f = hsLeerForm(key); if (!f) return;
+  const r = await hsRpc('horario_general_guardar', { p_profesor: pid, p_dias: [...f.dias], p_ini: f.ini, p_fin: f.fin, p_sucursal: f.sede || null, p_cupo: 1 }, 'Horario general agregado ✓');
+  if (r !== null){ f.dias.clear(); hsPintar(); }
+}
+function hsQuitarPropio(id){ if (!confirm('¿Quitar esta franja?')) return; hsRpc('servicio_horario_borrar', { p_id: id }, 'Franja quitada ✓'); }
+function hsQuitarGeneral(id){ if (!confirm('¿Quitar este horario general? Lo dejan de heredar todos los servicios de este profesional que no tengan horario propio.')) return; hsRpc('horario_general_borrar', { p_id: id }, 'Horario quitado ✓'); }
+async function hsPersonalizar(pid, sid){
+  HS.abierto[`p|${pid}|${sid}`] = true;   // queda abierto el formulario de franjas propias
+  const r = await hsRpc('servicio_horario_personalizar', { p_profesor: pid, p_servicio: sid }, 'Listo: copié su horario general. Ahora editá solo este servicio.');
+  if (r === null){ HS.abierto[`p|${pid}|${sid}`] = false; }
+}
+function hsHeredar(pid, sid){
+  if (!confirm('¿Volver a usar el horario general? Se borran los horarios propios de este servicio.')) return;
+  hsRpc('servicio_horario_heredar', { p_profesor: pid, p_servicio: sid }, 'Vuelve a heredar su horario general ✓');
+}
+// ----- pestaña Para reubicar -----
+function hsReubMsg(t){
+  const nom = String(t.alumno || '').trim().split(/\s+/)[0] || '';
+  const n = nom ? nom.charAt(0).toUpperCase() + nom.slice(1).toLowerCase() : '';
+  const gim = (GIMNASIO_ACTUAL && GIMNASIO_ACTUAL.nombre) ? GIMNASIO_ACTUAL.nombre : '';
+  return `Hola ${n}! Tuvimos que mover tu turno de ${t.servicio || 'atención'} del ${hsFecha(t.fecha)} a las ${t.hora}${gim ? ' en ' + gim : ''}. ¿Te queda bien otro día u horario? Escribinos y lo coordinamos.`;
+}
+function hsWaBtn(t){
+  const u = (typeof pubWa === 'function') ? pubWa(t.telefono, hsReubMsg(t)) : null;
+  return u ? `<a class="ghost" style="text-decoration:none;padding:6px 12px;border:1px solid var(--border);border-radius:10px;" href="${u}" target="_blank" rel="noopener">💬 Avisar por WhatsApp</a>` : '<span class="muted" style="font-size:12.5px;">Sin teléfono cargado</span>';
+}
+function hsReubHtml(){
+  const l = HS.reub || [];
+  const ya = (HS.canc || []).length ? `<div class="card"><b>Cancelados recién</b><div class="muted" style="font-size:12.5px;margin:2px 0 8px;">Avisales para que elijan otro horario.</div>${HS.canc.map(t => `<div class="row" style="gap:10px;padding:4px 0;align-items:center;flex-wrap:wrap;"><span>${hsFecha(t.fecha)} ${t.hora} · ${xe(t.alumno || '')} · ${xe(t.servicio || '')}</span>${hsWaBtn(t)}</div>`).join('')}</div>` : '';
+  if (!l.length) return `<div class="card muted">No hay turnos para reubicar. Cuando quites un horario que tenga turnos dados, aparecen acá.</div>${ya}`;
+  return `<div class="card"><div class="muted" style="font-size:12.5px;margin-bottom:8px;">Estos turnos quedaron fuera del horario. Decidí uno por uno: dejarlo igual o cancelarlo y avisar al paciente.</div>
+    ${l.map(t => `<div class="suc-card" style="margin-bottom:8px;"><div class="suc-card-h"><b>${HS_DIA[new Date(t.fecha + 'T12:00:00').getDay()]} ${hsFecha(t.fecha)} ${t.hora}</b><span class="pill">${xe(t.servicio || '')}</span><span class="pill">👤 ${xe(t.profesor || '')}</span>${(sucMulti() && t.sucursal_id) ? `<span class="pill">📍 ${xe(sucNombre(t.sucursal_id))}</span>` : ''}</div>
+      <div style="font-size:14px;">Paciente: <b>${xe(t.alumno || '')}</b>${t.telefono ? ' · ' + xe(t.telefono) : ''}</div>
+      <div class="muted" style="font-size:12.5px;margin:2px 0 8px;">${xe(t.motivo || '')}</div>
+      <div class="row" style="gap:8px;flex-wrap:wrap;"><button type="button" class="ghost" onclick="hsReub('${t.turno_id}','mantener')">Mantener igual</button><button type="button" class="danger" onclick="hsReub('${t.turno_id}','cancelar')">Cancelar turno</button>${hsWaBtn(t)}</div></div>`).join('')}</div>${ya}`;
+}
+async function hsReub(id, accion){
+  const t = (HS.reub || []).find(x => x.turno_id === id);
+  if (accion === 'cancelar' && !confirm('¿Cancelar este turno? El horario queda libre. Después podés avisarle por WhatsApp.')) return;
+  const r = await hsRpc('turno_reubicar_resolver', { p_turno: id, p_accion: accion }, accion === 'cancelar' ? 'Turno cancelado ✓' : 'Queda como está ✓');
+  if (r !== null && accion === 'cancelar' && t){ HS.canc.unshift(t); HS.canc = HS.canc.slice(0, 10); hsPintar(); }
+}
+// ----- pestaña Registro -----
+function hsLogTxt(l){
+  const d = l.detalle || {}, dias = Array.isArray(d.dias) ? d.dias.map(x => HS_DIA[x]).join(', ') : (d.dia != null ? HS_DIA[d.dia] : '');
+  const hh = (d.desde && d.hasta) ? ` ${hsHora(d.desde)}–${hsHora(d.hasta)}` : '';
+  const sede = (sucMulti() && d.sucursal_id) ? ` en ${sucNombre(d.sucursal_id)}` : '';
+  const serv = l.servicio ? ` de ${l.servicio}` : '';
+  const af = d.afectados ? ` (${d.afectados} turno${d.afectados === 1 ? '' : 's'} a reubicar)` : '';
+  switch (l.accion){
+    case 'sedes_servicio': return `Cambió las sedes${serv}${af}`;
+    case 'general_agregar': return `Agregó horario general: ${dias}${hh}${sede}`;
+    case 'general_quitar': return `Quitó horario general: ${dias}${hh}${sede}${af}`;
+    case 'servicio_alta': return `Sumó al profesional${serv}`;
+    case 'personalizar': return `Personalizó el horario${serv}`;
+    case 'servicio_agregar': return `Agregó franja${serv}: ${dias}${hh}${sede}`;
+    case 'servicio_quitar': return `Quitó franja${serv}: ${dias}${hh}${sede}${af}`;
+    case 'heredar': return `Volvió al horario general${serv}${af}`;
+    case 'reubicar_mantener': return `Dejó un turno como estaba`;
+    case 'reubicar_cancelar': return `Canceló un turno por cambio de horario`;
+    default: return l.accion;
+  }
+}
+function hsLogHtml(){
+  const l = HS.log;
+  if (l == null) return '<div class="card muted">Cargando…</div>';
+  if (!l.length) return '<div class="card muted">Todavía no hay cambios registrados.</div>';
+  return `<div class="card">${l.map(x => { const f = new Date(x.creado_en); const t = f.toLocaleString('es-AR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+    return `<div style="padding:7px 0;border-bottom:1px solid var(--border);font-size:13.5px;"><span class="muted">${t}</span> · <b>${xe(x.quien || '')}</b> ${x.profesor ? `· 👤 ${xe(x.profesor)} ` : ''}<br>${xe(hsLogTxt(x))}</div>`; }).join('')}</div>`;
+}
+// ----- armado de la pantalla -----
+function hsPintar(){
+  const root = document.getElementById('subvistaServicios'); if (!root) return;
+  const tabs = document.getElementById('hsTabs'), body = document.getElementById('hsBody'), serv = document.getElementById('hsTabServ');
+  if (!tabs || !body || !serv) return;
+  const admin = srvEsAdmin(); if (!admin && HS.tab === 'serv') HS.tab = 'horarios';
+  const nReub = (HS.reub || []).length;
+  const def = [['serv', '🩺 Servicios', admin], ['horarios', '🕒 Horarios por servicio', true], ['reub', '🔀 Para reubicar' + (nReub ? ` (${nReub})` : ''), true], ['log', '📜 Registro', true]];
+  tabs.innerHTML = def.filter(x => x[2]).map(x => `<button type="button" class="ghost ${HS.tab === x[0] ? 'active' : ''}" onclick="hsTab('${x[0]}')">${x[1]}</button>`).join('');
+  serv.style.display = HS.tab === 'serv' ? '' : 'none';
+  if (HS.tab === 'serv'){ body.innerHTML = ''; return; }
+  if (SRV.ok === false){ body.innerHTML = '<div class="rpx-ban">⚠️ Falta activar los servicios en la base de datos (v148).</div>'; return; }
+  if (HS.ok === false){ body.innerHTML = '<div class="rpx-ban">⚠️ Falta activar esta función en la base de datos. Corré <b>v187-servicios-horarios.sql</b> en Supabase (SQL Editor) y recargá la app.</div>'; return; }
+  if (HS.ok !== true){ body.innerHTML = '<div class="card muted">Cargando…</div>'; return; }
+  body.innerHTML = HS.tab === 'horarios' ? hsHorHtml() : (HS.tab === 'reub' ? hsReubHtml() : hsLogHtml());
+}
+
 // ----- (v152) Avisos de turno: "a quién avisar" (el turno es mañana) -----
 const AVI = { ok: null, dias: 1, fecha: null, items: [], cargando: false, busy: {}, ts: 0, err: '' };
 function aviOn(){ return srvOn() && AVI.ok !== false; }
@@ -10934,7 +11229,7 @@ function srvPintar(forzar){
         <button type="button" class="ghost" onclick="srvEditar('${s.id}')">Editar</button>
         <button type="button" class="ghost" onclick="srvActivoToggle('${s.id}', ${s.activo ? 'false' : 'true'})">${s.activo ? 'Desactivar' : 'Activar'}</button></div>
       ${s.descripcion ? `<div class="muted" style="font-size:13px;margin-bottom:4px;">${xe(s.descripcion)}</div>` : ''}
-      <div style="font-size:13.5px;">${nombres.length ? '👤 ' + nombres.join(', ') : '<span style="color:var(--warn-text);">⚠ Sin profesionales: nadie puede darlo todavía. Tocá Editar y elegilos.</span>'}</div></div>`;
+      <div style="font-size:13.5px;">${nombres.length ? '👤 ' + nombres.join(', ') : '<span style="color:var(--warn-text);">⚠ Sin profesionales: nadie puede darlo todavía. Tocá Editar y elegilos.</span>'}</div>${hsSedesLinea(s)}</div>`;
   }).join('');
   let form = '';
   if (e){
@@ -11074,7 +11369,7 @@ function srvRcHtml(f, tHoy){
   let h = `<h2 id="srvRcPanel" style="margin:18px 0 0;">Sacarle turno <span class="muted" style="font-weight:400; font-size:12px;">(como si fuera el alumno)</span></h2>
     <div class="srv-chips">${act.map(x => `<button type="button" class="srv-chip ${x.id === R.sel ? 'on' : ''}" onclick="srvRcSet('sel','${x.id}')">${xe(srvEtq(x))} <small>${srvDur(x.duracion_min)}</small></button>`).join('')}</div>`;
   if (s && s.descripcion) h += `<div class="rc-hint" style="margin-top:0;">${xe(s.descripcion)}</div>`;
-  if (!profs.length) return h + '<div class="rc-hint">Todavía no hay profesionales para este servicio. Se asignan en Mi gimnasio → Servicios.</div>';
+  if (!profs.length) return h + '<div class="rc-hint">Todavía no hay profesionales para este servicio. Se asignan en 🩺 Servicios.</div>';
   if (profs.length > 1) h += `<div class="field" style="margin-top:8px;"><label>Profesional</label><select onchange="srvRcSet('pid', this.value)"><option value="">Cualquiera disponible</option>${profs.map(p => `<option value="${p.id}" ${p.id === R.pid ? 'selected' : ''}>${xe(p.nombre)}</option>`).join('')}</select></div>`;
   const rel = [['Hoy', 0], ['Mañana', 1], ['En 1 semana', 7], ['En 2 semanas', 14], ['En 1 mes', 30]];
   h += `<div class="rc-days">${rel.map(([t, n]) => `<button class="rc-day ${R.fecha === rcSumarDias(f.hoy, n) ? 'on' : ''}" onclick="srvRcDia(${n})">${t}</button>`).join('')}</div>
@@ -12320,6 +12615,7 @@ function cambiarSubvista(v){
   document.getElementById('subvistaProfesores').style.display = v==='profesores' ? '' : 'none';
   document.getElementById('subvistaAgenda').style.display = v==='agenda' ? '' : 'none';
   document.getElementById('subvistaHorarios').style.display = v==='horarios' ? '' : 'none';
+  document.getElementById('subvistaServicios').style.display = v==='servicios' ? '' : 'none';   // (v187)
   document.getElementById('subvistaClases').style.display = v==='clases' ? '' : 'none';
   document.getElementById('subvistaAtletismo').style.display = v==='atletismo' ? '' : 'none';
   document.getElementById('subvistaCvClases').style.display = v==='cvclases' ? '' : 'none';   // (v157)
@@ -12341,6 +12637,7 @@ function cambiarSubvista(v){
   document.getElementById('menuProfesores').classList.toggle('active', v==='profesores');
   document.getElementById('menuAgenda').classList.toggle('active', v==='agenda' || v==='cvclases');   // (v167)
   document.getElementById('menuHorarios').classList.toggle('active', v==='horarios');
+  document.getElementById('menuServicios').classList.toggle('active', v==='servicios');   // (v187)
   document.getElementById('menuClases').classList.toggle('active', v==='clases');
   document.getElementById('menuAtletismo').classList.toggle('active', v==='atletismo');
   document.getElementById('menuCvClases').classList.toggle('active', v==='cvclases');   // (v157)
@@ -12362,6 +12659,7 @@ function cambiarSubvista(v){
   document.getElementById('ttProfesores').classList.toggle('active', v==='profesores');
   document.getElementById('ttAgenda').classList.toggle('active', v==='agenda' || v==='cvclases');   // (v167)
   document.getElementById('ttHorarios').classList.toggle('active', v==='horarios');
+  document.getElementById('ttServicios').classList.toggle('active', v==='servicios');   // (v187)
   document.getElementById('ttClases').classList.toggle('active', v==='clases');
   document.getElementById('ttAtletismo').classList.toggle('active', v==='atletismo');
   document.getElementById('ttCvClases').classList.toggle('active', v==='cvclases');   // (v157)
@@ -12387,6 +12685,7 @@ function cambiarSubvista(v){
   if (v==='profesores'){ cargarListaProfesores(); cargarListaProfesoresInactivos(); cargarListaRecepcion(); }
   if (v==='agenda') iniciarAgenda();
   if (v==='horarios'){ horCambiarTab('editar'); cargarHorarioProfesorActual(); }
+  if (v==='servicios') hsEntrar();   // (v187)
   if (v==='clases') clIniciarStaff();
   if (v==='atletismo') atlIniciarStaff();
   if (v==='cvclases') cvcEntrar();   // (v157)
@@ -14194,7 +14493,7 @@ function renderMarcaGimnasio(){
 // UI; el bloqueo real está en las políticas de RLS (ver migración
 // rbac_admin_vs_profesor) — aunque alguien llame a la API directo sin pasar
 // por estos botones, la base igual lo rechaza si no es admin.
-const MENU_SOLO_ADMIN = ['menuDashboard', 'menuAlumnos', 'menuLogros', 'menuProfesores', 'menuHorarios', 'menuPlanes', 'menuCobranzas', 'menuAlertas', 'menuGimnasio', 'ttDashboard', 'ttAlumnos', 'ttLogros', 'ttProfesores', 'ttHorarios', 'ttPlanes', 'ttCobranzas', 'ttAlertas', 'ttGimnasio'];
+const MENU_SOLO_ADMIN = ['menuServicios', 'ttServicios', 'menuDashboard', 'menuAlumnos', 'menuLogros', 'menuProfesores', 'menuHorarios', 'menuPlanes', 'menuCobranzas', 'menuAlertas', 'menuGimnasio', 'ttDashboard', 'ttAlumnos', 'ttLogros', 'ttProfesores', 'ttHorarios', 'ttPlanes', 'ttCobranzas', 'ttAlertas', 'ttGimnasio'];
 const BNAV_SOLO_ADMIN = ['bnavProfAlumnos'];
 
 function aplicarPermisosPorRol(){
