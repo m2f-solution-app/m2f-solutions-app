@@ -1851,6 +1851,19 @@ if ('serviceWorker' in navigator) window.addEventListener('load', function(){ tr
   .pb-cl-hr{font-size:14px; font-weight:800; color:var(--accent-text); white-space:nowrap;}
   .pb-cl-m{font-size:13px; color:var(--muted); margin-top:5px; line-height:1.45;}
   .pb-bar{height:6px; border-radius:99px; background:var(--panel2); margin-top:10px; overflow:hidden;} .pb-bar i{display:block; height:100%; background:var(--accent2); border-radius:99px;} .pb-bar i.full{background:var(--danger);}
+  .pb-sd{margin-top:12px; padding:16px; border-radius:20px; background:var(--panel); border:1px solid var(--border); box-sizing:border-box; text-align:left;}
+  .pb-sd h3{margin:0; font-size:20px; line-height:1.2;}
+  .pb-sd .m{font-size:13.5px; color:var(--muted); margin-top:4px; line-height:1.45;}
+  .pb-sd .k{font-size:12px; font-weight:800; color:var(--muted); margin:14px 0 6px;}
+  .pb-sd .p{font-weight:800; margin-top:10px;}
+  .pb-sd .pl{font-size:13px; color:var(--muted); line-height:1.5;}
+  .pb-sd .pb-chips{display:flex; flex-wrap:wrap; gap:6px;} .pb-sd .pb-chips .pb-chip{margin-top:0;}
+  .pb-hor{white-space:pre-line; font-size:14px; line-height:1.5;}
+  .pb-sd-b{display:flex; gap:8px; flex-wrap:wrap; margin-top:14px;}
+  .pb-sd-b button, .pb-sd-b a{flex:1 1 130px; font-size:14.5px; font-weight:800; padding:11px 12px; border-radius:12px; text-align:center; text-decoration:none; box-sizing:border-box; border:1px solid var(--border); background:var(--panel2); color:var(--text); cursor:pointer;}
+  .pb-sd-b .pri{background:var(--accent); color:#1a1000; border-color:transparent;}
+  .pb-sd-b .wa{background:#25d366; color:#06210f; border:none;}
+  .pb-lnk{background:none; border:none; color:var(--accent-text); font-weight:800; font-size:13.5px; text-decoration:underline; cursor:pointer; padding:6px;}
   .pb-chip{display:inline-block; font-size:12px; font-weight:800; padding:3px 10px; border-radius:99px; background:var(--panel2); color:var(--text); margin-top:8px;}
   .pb-chip.ok{background:rgba(47,210,122,.2); color:var(--accent2-text);} .pb-chip.w{background:rgba(255,200,74,.24); color:var(--warn-text);} .pb-chip.x{background:rgba(255,93,93,.16); color:var(--danger-text);}
   .pb-vacio{margin-top:14px; padding:22px 14px; text-align:center; color:var(--muted); background:var(--panel); border-radius:16px; border:1px dashed var(--border); font-size:14px;}
@@ -5516,7 +5529,7 @@ function atlIniciarAlu(){
   atlCargarVista('aluAtletismoContenido', id || '');
 }
 
-const APP_VERSION = 188;
+const APP_VERSION = 189;
 let ES_PERSONAL = false;   // (v132) cuenta personal (gimnasios.tipo = 'personal'); se calcula en perAplicar()
 // (v96) Fecha de la última actualización: se cambia junto con APP_VERSION en cada entrega. Se muestra en la
 // pantalla de inicio y en el menú de cuenta ("v94 · actualizada el 5/10/2026").
@@ -9748,7 +9761,7 @@ const ING = { t: null };
     if (['alumno', 'independiente', 'personal', 'gimnasio', 'login'].includes(v)) ING.t = v;
   }catch(e){}
 })();
-const PUB = { slug: null, g: null, cl: null, t0: 0, dni: '', nombre: '', prueba: false, pant: 'cargando', modo: 'reservar', dia: 0, sel: null, mi: null, res: null, busy: false, err: '', msg: '', f: { dni: '', nombre: '', apellido: '', tel: '', ok: false }, canc: null, srv: false, cat: null, w: null, sedeQ: null };
+const PUB = { slug: null, g: null, cl: null, t0: 0, dni: '', nombre: '', prueba: false, pant: 'cargando', modo: 'reservar', dia: 0, sel: null, mi: null, res: null, busy: false, err: '', msg: '', f: { dni: '', nombre: '', apellido: '', tel: '', ok: false }, canc: null, srv: false, cat: null, w: null, sedeQ: null, sedes: [] };
 (function pubCapturarLink(){
   try{
     const s = (new URLSearchParams(location.search).get('r') || '').trim().toLowerCase();
@@ -9817,6 +9830,7 @@ async function pubIniciar(){
     const gd = pubGuardado(); if (gd){ PUB.dni = gd.dni; PUB.nombre = gd.nombre || ''; }
     PUB.srv = !!g.tiene_servicios;   // (v150)
     if (PUB.srv){ try{ await pubWzCargarCat(); }catch(e){ PUB.srv = false; if (g.tiene_clases === false){ PUB.err = e.message; PUB.pant = 'cerrado'; pubRender(); return; } } }
+    if (PUB.srv && g.entrada !== 'registro' && g.entrada !== 'ambos'){ try{ const r = await pubRpc('publico_sedes', { p_slug: PUB.slug }); PUB.sedes = (r && r.sedes) || []; }catch(e){ PUB.sedes = []; } }   // (v189) portada por sede; sin el SQL queda la portada de siempre
     if (g.entrada !== 'registro' && g.tiene_clases !== false) pubCargarClases().catch(() => {});   // (v139) en modo registro no hace falta el módulo Clases
     PUB.pant = 'inicio';
   }catch(e){ PUB.err = e.message; PUB.pant = 'cerrado'; }
@@ -9937,8 +9951,18 @@ function pubPie(){
   return `<div class="pb-pie">${PUB.dni ? `<button type="button" onclick="pubOtroDni()">No soy yo · usar otro DNI</button><br>` : ''}<button type="button" onclick="pubSalirApp()">¿Sos del gimnasio? Ingresá a la app</button><br>Reservas con M2F Solutions</div>`;
 }
 function pubErr(){ return (PUB.err ? `<div class="pb-err" role="alert">${ejEsc(PUB.err)}</div>` : '') + (PUB.msg ? `<div class="pb-info">${ejEsc(PUB.msg)}</div>` : ''); }
+// (v189) sede de la que se está hablando: la elegida en el asistente, la del cartel (&s=) o la única que hay
+function pubSedesLista(){ return (PUB.sedes && PUB.sedes.length) ? PUB.sedes : ((PUB.cat && PUB.cat.sedes) || []); }
+function pubSedeQ(){ const q = PUB.sedeQ; if (!q) return null; return pubSedesLista().find(x => x.id === q || pubWzSlug(x.nombre) === q) || null; }
+function pubSedeActual(){
+  const ss = pubSedesLista(); if (!ss.length) return null;
+  if (ss.length === 1) return ss[0];
+  if (PUB.w && PUB.w.sede) return ss.find(x => x.id === PUB.w.sede) || null;
+  return pubSedeQ();
+}
 function pubWaBtn(txt){
-  const g = PUB.g || {}, u = pubWa(g.telefono, 'Hola! Escribo desde el link de reservas de ' + (g.nombre || '') + '.');
+  const g = PUB.g || {}, sd = pubSedeActual(), tel = (sd && (sd.whatsapp || sd.telefono)) || g.telefono;
+  const u = pubWa(tel, 'Hola! Escribo desde el link de reservas de ' + (g.nombre || '') + (sd && pubSedesLista().length >= 2 ? ' (sede ' + sd.nombre + ')' : '') + '.');
   return u ? `<a class="pb-btn wa" href="${ejEsc(u)}" target="_blank" rel="noopener">💬 ${ejEsc(txt || 'Escribinos por WhatsApp')}</a>` : '';
 }
 function pubCardClase(c, iso){
@@ -9968,6 +9992,7 @@ function pubHoja(){
 function pubPantInicio(){
   const g = PUB.g || {};
   if (g.entrada === 'registro' || g.entrada === 'ambos') return pubPantInicioQr(g.entrada);   // (v139)
+  if (PUB.srv && PUB.sedes && PUB.sedes.length) return pubPantPortada();   // (v189) portada con sedes
   let hoyHtml = '';
   if (PUB.cl){
     const d0 = pubDias()[0], lista = pubClasesDia(d0).filter(c => pubSusp(c.id, d0.iso) === null).slice(0, 4);
@@ -9975,6 +10000,44 @@ function pubPantInicio(){
   }
   return `${pubTop()}${pubMarca(true)}<div class="pb-acc"><button type="button" onclick="pubEmpezar('reservar')">${PUB.srv ? '📅 Sacar turno' : '🏋️ Reservar entrenamiento'}</button><button type="button" class="secondary" onclick="pubEmpezar('semana')">📅 Ver mi semana · ingresar con mi DNI</button>${pubWaBtn('Consultas por WhatsApp')}</div>
     ${g.prueba && g.tiene_clases !== false ? `<div class="pb-info" style="text-align:center;">🎁 Tu primer entrenamiento es de prueba.</div>` : ''}${hoyHtml}${pubPie()}`;
+}
+// ---------- (v189) Portada por sede: bienvenida, sacar turno, sedes y horarios, mis turnos, WhatsApp de la sede ----------
+// SQL: v189-portada-sedes.sql (publico_sedes). Sin ese SQL o sin Sucursales: la portada de siempre.
+function pubPantPortada(){
+  const g = PUB.g || {}, ss = PUB.sedes, multi = ss.length >= 2, sq = multi ? pubSedeQ() : null;
+  const franja = sq ? `<div class="pb-info" style="text-align:center;">📍 <b>${ejEsc(sq.nombre)}</b>${sucDireccionTxt(sq) ? ' · ' + ejEsc(sucDireccionTxt(sq)) : ''}<br><button type="button" class="pb-lnk" onclick="pubVerSedes()">Cambiar de sede</button></div>` : '';
+  return `${pubTop()}${pubMarca(true)}${franja}<div class="pb-acc"><button type="button" onclick="pubEmpezar('reservar')">📅 Sacar turno</button>
+    <button type="button" class="secondary" onclick="pubIr('sedes')">📍 ${multi ? 'Sedes y horarios' : 'Horarios y profesionales'}</button>
+    <button type="button" class="secondary" onclick="pubEmpezar('semana')">🔎 Mis turnos · ingresar con mi DNI</button>${pubWaBtn('Escribinos por WhatsApp')}</div>
+    <div class="pb-sd"><h3 style="font-size:16px;">¿Cómo funciona?</h3><div class="m">Elegís ${multi ? 'la sede, ' : ''}el servicio y el profesional, ves los horarios libres y confirmás con tu DNI. Si ya sacaste turno antes, te traemos tus datos.</div></div>${pubPie()}`;
+}
+function pubVerSedes(){ PUB.sedeQ = null; pubRender(); }
+function pubSedeTurno(id){ PUB.sedeQ = id; pubEmpezar('reservar'); }
+// "Lun, Mié, Vie 09:00–13:00": agrupa los días que comparten el mismo horario
+function pubFranjasTxt(fr){
+  const orden = d => (Number(d) + 6) % 7, grupos = [];
+  (fr || []).slice().sort((x, y) => orden(x.d) - orden(y.d) || String(x.a).localeCompare(String(y.a))).forEach(f => {
+    const k = f.a + '–' + f.b; let gr = grupos.find(z => z.k === k); if (!gr){ gr = { k, dias: [] }; grupos.push(gr); }
+    const n = PUB_DIAS[orden(f.d)]; if (!gr.dias.includes(n)) gr.dias.push(n);
+  });
+  return grupos.map(z => z.dias.join(', ') + ' ' + z.k).join(' · ');
+}
+function pubSedeCard(s, multi){
+  const dir = sucDireccionTxt(s), ir = sucComoLlegarUrl(s), wa = s.whatsapp ? pubWa(s.whatsapp, 'Hola! Escribo desde el link de reservas de ' + ((PUB.g || {}).nombre || '') + (multi ? ' (sede ' + s.nombre + ')' : '') + '.') : null;
+  const sv = s.servicios || [], profs = {};
+  sv.forEach(x => (x.profesionales || []).forEach(p => { (profs[p.id] = profs[p.id] || { nombre: p.nombre, lineas: [] }).lineas.push({ sn: x.nombre, fr: p.franjas }); }));
+  const pl = Object.values(profs).sort((a, b) => a.nombre.localeCompare(b.nombre));
+  return `<div class="pb-sd"><h3>${ejEsc(s.nombre)}</h3>
+    ${dir || s.telefono ? `<div class="m">${ejEsc(dir)}${dir && s.telefono ? ' · ' : ''}${s.telefono ? 'Tel. ' + ejEsc(s.telefono) : ''}</div>` : ''}
+    ${s.horario_atencion ? `<div class="k">Atención</div><div class="pb-hor">${ejEsc(s.horario_atencion)}</div>` : ''}
+    ${sv.length ? `<div class="k">Servicios</div><div class="pb-chips">${sv.map(x => `<span class="pb-chip">${x.icono ? ejEsc(x.icono) + ' ' : ''}${ejEsc(x.nombre)}${x.duracion_min ? ' · ' + ejEsc(pubWzDur(x.duracion_min)) : ''}</span>`).join('')}</div>` : ''}
+    ${pl.length ? `<div class="k">Profesionales y días</div>${pl.map(p => `<div class="p">${ejEsc(p.nombre)}</div><div class="pl">${p.lineas.map(l => ejEsc(l.sn) + ': ' + ejEsc(pubFranjasTxt(l.fr))).join('<br>')}</div>`).join('')}` : ''}
+    <div class="pb-sd-b"><button type="button" class="pri" onclick="${multi ? `pubSedeTurno('${s.id}')` : `pubEmpezar('reservar')`}">${multi ? 'Sacar turno acá' : 'Sacar turno'}</button>${ir ? `<a href="${ejEsc(ir)}" target="_blank" rel="noopener">Cómo llegar</a>` : ''}${wa ? `<a class="wa" href="${ejEsc(wa)}" target="_blank" rel="noopener">💬 WhatsApp</a>` : ''}</div></div>`;
+}
+function pubPantSedes(){
+  const ss = PUB.sedes || [], multi = ss.length >= 2;
+  return `${pubTop()}${pubMarca(false)}<button type="button" class="pb-back" onclick="pubIr('inicio')">‹ Inicio</button>
+    <div class="pb-h" style="margin-top:6px;">${multi ? 'Sedes y horarios' : 'Horarios y profesionales'}</div>${ss.map(s => pubSedeCard(s, multi)).join('')}${pubPie()}`;
 }
 function pubEntrarApp(){ location.href = location.pathname + '?ingresar=alumno'; }
 function pubPantInicioQr(ent){
@@ -10064,7 +10127,7 @@ function pubRender(conservarFoco){
   const root = document.getElementById('pubReservas'); if (!root) return;
   const foco = conservarFoco && document.activeElement && document.activeElement.id, pos = foco ? document.activeElement.selectionStart : null;
   const y = root.scrollTop;
-  const mapa = { cargando: () => `${pubTop()}<div class="pb-cargando">Cargando…</div>`, inicio: pubPantInicio, dni: pubPantDni, registro: pubPantRegistro, clases: pubPantClases, semana: pubPantSemana, listo: pubPantListo, registrado: pubPantRegistrado, cerrado: pubPantCerrado, wz: pubPantWz };
+  const mapa = { cargando: () => `${pubTop()}<div class="pb-cargando">Cargando…</div>`, inicio: pubPantInicio, dni: pubPantDni, registro: pubPantRegistro, clases: pubPantClases, semana: pubPantSemana, listo: pubPantListo, registrado: pubPantRegistrado, cerrado: pubPantCerrado, wz: pubPantWz, sedes: pubPantSedes };
   root.innerHTML = `<div class="pb-wrap">${(mapa[PUB.pant] || mapa.cerrado)()}</div>`;
   root.scrollTop = y;
   if (foco){ const e = document.getElementById(foco); if (e && e.focus){ e.focus(); try{ if (pos != null) e.setSelectionRange(pos, pos); }catch(x){} } }
@@ -10404,8 +10467,25 @@ function rpxSedesLinks(c){
     const sedes = sucActivas(); if (sedes.length < 2) return '';
     return `<details style="margin:10px 0;"><summary style="cursor:pointer; font-weight:800;">📍 Link para el cartel de cada sede</summary>
       <div class="muted" style="font-size:12.5px; margin:6px 0;">Cada sede puede imprimir su QR con este link: la persona entra directo a esa sede, sin tener que elegirla.</div>
-      ${sedes.map(s => { const u = rpxUrl(c.reservas_slug) + '&s=' + encodeURIComponent(pubWzSlug(s.nombre)); return `<div class="rpx-link"><span style="flex:0 0 100%; font-weight:700;">${ejEsc(s.nombre)}</span><code>${ejEsc(u)}</code><button type="button" class="secondary" onclick="rpxCopiarUrl('${ejEsc(u)}')">📋 Copiar</button></div>`; }).join('')}</details>`;
+      ${sedes.map((s, i) => { const u = rpxUrl(c.reservas_slug) + '&s=' + encodeURIComponent(pubWzSlug(s.nombre)); return `<div class="rpx-link"><span style="flex:0 0 100%; font-weight:700;">${ejEsc(s.nombre)}</span><code>${ejEsc(u)}</code><button type="button" class="secondary" onclick="rpxCopiarUrl('${ejEsc(u)}')">📋 Copiar</button><button type="button" class="secondary" onclick="rpxQrSede(${i})">🔳 QR y cartel</button></div>`; }).join('')}</details>`;
   }catch(e){ return ''; }
+}
+function rpxSedeUrl(i){ const s = sucActivas()[i], c = RPX.cfg || {}; return (s && c.reservas_slug) ? { s, u: rpxUrl(c.reservas_slug) + '&s=' + encodeURIComponent(pubWzSlug(s.nombre)) } : null; }
+function rpxQrSede(i){
+  const x = rpxSedeUrl(i); if (!x) return;
+  const ov = overlayGenerico('rpxQrOv', 360);
+  ov.querySelector('.modal-box').innerHTML = `<div class="row" style="justify-content:space-between; align-items:flex-start; flex-wrap:nowrap;"><h3 style="margin:0;">🔳 QR · ${ejEsc(x.s.nombre)}</h3><button type="button" class="ghost cl-sm" onclick="cerrarOverlayGenerico('rpxQrOv')" aria-label="Cerrar">✕</button></div>
+    <div class="rpx-qr">${QRGEN.svg(x.u, { nivel: 'Q' })}</div><div class="muted" style="text-align:center; font-size:12.5px; margin-top:10px; word-break:break-all;">${ejEsc(x.u)}</div>
+    <div class="muted" style="font-size:12.5px; margin-top:8px;">Quien escanea este código cae en la portada de <b>${ejEsc(x.s.nombre)}</b>: sacar turno ya en esa sede, ver sus horarios y escribir al WhatsApp de la sede.</div>
+    <div class="row" style="gap:8px; margin-top:12px;"><button type="button" class="secondary" onclick="rpxCopiarUrl(rpxSedeUrl(${i}).u)">📋 Copiar link</button><button type="button" onclick="rpxCartel(${i})">🖨 Imprimir cartel</button><button type="button" class="ghost" style="margin-left:auto;" onclick="cerrarOverlayGenerico('rpxQrOv')">Cerrar</button></div>`;
+  ov.classList.add('show');
+}
+function rpxCartel(i){
+  const x = rpxSedeUrl(i); if (!x) return;
+  const gim = (GIMNASIO_ACTUAL && GIMNASIO_ACTUAL.nombre) || '', w = window.open('', '_blank');
+  if (!w){ toast('El navegador bloqueó la ventana. Permití las ventanas emergentes para imprimir el cartel.', true); return; }
+  w.document.write(`<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Cartel · ${ejEsc(x.s.nombre)}</title><style>@page{size:A4;margin:14mm} body{font-family:system-ui,-apple-system,Segoe UI,sans-serif;text-align:center;color:#111;margin:0} h1{font-size:44px;margin:24px 0 4px} h2{font-size:30px;margin:0 0 18px;font-weight:600} .qr{width:420px;max-width:80%;margin:10px auto} .qr svg{width:100%;height:auto;display:block} p{font-size:24px;margin:16px 0} small{display:block;font-size:13px;color:#555;word-break:break-all;margin-top:18px}</style></head><body><h1>${ejEsc(gim)}</h1><h2>${ejEsc(x.s.nombre)}</h2><div class="qr">${QRGEN.svg(x.u, { nivel: 'Q' })}</div><p><b>Escaneá el código y sacá tu turno</b></p><small>${ejEsc(x.u)}</small><script>window.onload=function(){setTimeout(function(){window.print();},300);}<\/script></body></html>`);
+  w.document.close();
 }
 function rpxLkSlug(){ return ((document.getElementById('gimLkSlug') || {}).value || '').trim().toLowerCase(); }
 function rpxLkVista(){
@@ -10615,7 +10695,7 @@ function sucComoLlegarUrl(s){
 function sucTarjetaHtml(s, conMapa){
   const dir = sucDireccionTxt(s), url = sucComoLlegarUrl(s);
   return `<div class="suc-dir">${dir ? `<div class="suc-dir-t">📍 ${xe(dir)}</div>` : '<div class="muted">Sin dirección cargada.</div>'}
-    ${s.telefono ? `<div class="muted" style="font-size:13px;">📞 ${xe(s.telefono)}</div>` : ''}
+    ${s.telefono ? `<div class="muted" style="font-size:13px;">📞 ${xe(s.telefono)}</div>` : ''}${s.whatsapp ? `<div class="muted" style="font-size:13px;">💬 ${xe(s.whatsapp)}</div>` : ''}${s.horario_atencion ? `<div class="muted" style="font-size:13px; white-space:pre-line;">🕒 ${xe(s.horario_atencion)}</div>` : ''}
     ${conMapa && sucTieneMapa(s) ? `<iframe class="suc-mapa" loading="lazy" referrerpolicy="no-referrer" title="Mapa de ${xe(s.nombre)}" src="${sucMapaSrc(s)}"></iframe>` : ''}
     ${url ? `<a class="suc-ir" href="${xe(url)}" target="_blank" rel="noopener">🧭 Cómo llegar</a>` : ''}</div>`;
 }
@@ -10685,10 +10765,11 @@ async function sucGeocodificar(){
   SUC.geo = false; sucPintar(true);
 }
 // ----- Mi gimnasio → 📍 Sucursales -----
+function sucV189(){ const f = (SUC.lista || [])[0]; return !!(f && 'whatsapp' in f); }   // (v189) las columnas existen
 function sucFormGuardarCampos(){
   const g = id => { const e = document.getElementById(id); return e ? e.value : ''; };
   if (!SUC.edit || !document.getElementById('sucF_nombre')) return;
-  Object.assign(SUC.edit, { nombre: g('sucF_nombre'), direccion: g('sucF_dir'), localidad: g('sucF_loc'), telefono: g('sucF_tel'), maps_url: g('sucF_url') });
+  Object.assign(SUC.edit, { nombre: g('sucF_nombre'), direccion: g('sucF_dir'), localidad: g('sucF_loc'), telefono: g('sucF_tel'), maps_url: g('sucF_url'), whatsapp: g('sucF_wa'), horario_atencion: g('sucF_hor') });
 }
 function sucPintar(forzar){
   const box = document.getElementById('gimSucBox'); if (!box) return;
@@ -10722,6 +10803,8 @@ function sucPintar(forzar){
         <div class="field"><label>Dirección</label><input id="sucF_dir" maxlength="200" value="${xe(e.direccion || '')}" placeholder="Calle y número"></div>
         <div class="field"><label>Localidad</label><input id="sucF_loc" maxlength="80" value="${xe(e.localidad || '')}" placeholder="Ej: Vicente López"></div>
       </div>
+      ${sucV189() ? `<div class="field" style="margin-top:8px;"><label>WhatsApp de la sede (opcional)</label><input id="sucF_wa" maxlength="30" inputmode="tel" value="${xe(e.whatsapp || '')}" placeholder="Si lo dejás vacío, el link usa el teléfono de la sede o el del gimnasio"></div>
+      <div class="field" style="margin-top:8px;"><label>Horario de atención (opcional)</label><textarea id="sucF_hor" rows="3" maxlength="300" placeholder="Ej: Lun a Vie 8 a 20&#10;Sáb 9 a 13">${xe(e.horario_atencion || '')}</textarea><div class="muted" style="font-size:12.5px; margin-top:4px;">Es un texto para la portada del link público. No cambia los horarios de los profesionales ni de los turnos.</div></div>` : ''}
       <div class="field" style="margin-top:8px;"><label>Link de Google Maps (opcional)</label><input id="sucF_url" maxlength="500" value="${xe(e.maps_url || '')}" placeholder="Pegá el link de “Compartir” de Google Maps"></div>
       <div class="row" style="margin-top:10px;align-items:center;"><button type="button" class="ghost" id="sucBtnUbicar" onclick="sucFormGuardarCampos();sucGeocodificar()">📍 Ubicar en el mapa</button>
         <span class="muted" style="font-size:12.5px;">${sucTieneMapa(p) ? 'Ubicada ✓' : 'Escribí la dirección y tocá el botón.'}</span></div>
@@ -10754,6 +10837,7 @@ async function sucGuardar(){
   let lat = e.lat, lng = e.lng; if (!sucTieneMapa({ lat, lng }) && p){ lat = p.lat; lng = p.lng; }
   const fila = { nombre, direccion: (e.direccion || '').trim() || null, localidad: (e.localidad || '').trim() || null, telefono: (e.telefono || '').trim() || null,
     maps_url: (e.maps_url || '').trim() || null, lat: sucTieneMapa({ lat, lng }) ? lat : null, lng: sucTieneMapa({ lat, lng }) ? lng : null };
+  if (sucV189()){ fila.whatsapp = (e.whatsapp || '').trim() || null; fila.horario_atencion = (e.horario_atencion || '').trim().slice(0, 300) || null; }   // (v189)
   SUC.busy = true; const btn = document.getElementById('sucBtnGuardar'); if (btn){ btn.disabled = true; btn.textContent = 'Guardando…'; }
   try{
     if (e.id) await sb(`sucursales?id=eq.${e.id}`, { method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: JSON.stringify(fila) });
