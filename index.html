@@ -1905,6 +1905,10 @@ if ('serviceWorker' in navigator) window.addEventListener('load', function(){ tr
   .os-obra{display:flex; gap:8px; align-items:center; flex-wrap:wrap; padding:7px 0; border-bottom:1px solid var(--border);}
   .os-obra .nm{flex:1; min-width:140px; font-weight:600;}
   .os-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:10px;}
+  /* (v195) Cambiar turno desde el link */
+  .pb-camb{margin-top:10px; border-top:1px dashed var(--border); padding-top:10px;}
+  .pb-camb .pb-days{margin-top:8px;}
+  .pb-camb .pb-cambx{margin-top:10px; width:100%;}
   .rpx-ban{padding:11px 13px; border-radius:12px; background:var(--note-bg); border:1px solid var(--note-bd); color:var(--note-text); font-size:13.5px; line-height:1.45;}
   .rpx-qr{background:#fff; border-radius:16px; padding:12px; width:220px; max-width:100%; margin:12px auto 0; box-sizing:border-box;} .rpx-qr svg{display:block; width:100%; height:auto;}
   /* Clases: tarjeta "Nuevos desde el link" */
@@ -5547,7 +5551,7 @@ function atlIniciarAlu(){
   atlCargarVista('aluAtletismoContenido', id || '');
 }
 
-const APP_VERSION = 194;
+const APP_VERSION = 196;
 let ES_PERSONAL = false;   // (v132) cuenta personal (gimnasios.tipo = 'personal'); se calcula en perAplicar()
 // (v96) Fecha de la última actualización: se cambia junto con APP_VERSION en cada entrega. Se muestra en la
 // pantalla de inicio y en el menú de cuenta ("v94 · actualizada el 5/10/2026").
@@ -9831,7 +9835,7 @@ function pubClasesDia(dia){
   return ((PUB.cl && PUB.cl.clases) || []).filter(c => (c.dias || []).map(Number).includes(dia.k) && (!hoy || pubHm(c.inicio) > ahora));
 }
 function pubLimpiaMsg(){ PUB.err = ''; PUB.msg = ''; }
-function pubIr(p){ pubLimpiaMsg(); PUB.pant = p; PUB.sel = null; PUB.canc = null; pubRender(true); const r = document.getElementById('pubReservas'); if (r) r.scrollTop = 0; }
+function pubIr(p){ pubLimpiaMsg(); PUB.pant = p; PUB.sel = null; PUB.canc = null; PUB.cb = null; pubRender(true); const r = document.getElementById('pubReservas'); if (r) r.scrollTop = 0; }
 
 // ----- arranque -----
 async function pubIniciar(){
@@ -10341,24 +10345,127 @@ async function pubCargarMi(){
   if (b) mi.turnos = b.turnos || [];
   return mi;
 }
+// ----- (v195) El paciente cambia o cancela su turno desde el link (dentro del plazo del servicio) -----
+// SQL: v195-cambio-cancelacion-turnos.sql. Mismo servicio y mismo profesional; un solo cambio por turno.
+function pubLimiteTxt(m){ m = Number(m) || 0; return m <= 0 ? 'hasta que empiece' : (m % 60 === 0 ? 'hasta ' + (m / 60) + (m === 60 ? ' hora' : ' horas') + ' antes' : 'hasta ' + m + ' minutos antes'); }
+function pubCambioAbrir(id){
+  if (PUB.cb && PUB.cb.id === id){ PUB.cb = null; pubRender(true); return; }
+  PUB.canc = null; pubLimpiaMsg();
+  PUB.cb = { id, dias: null, dia: null, hasta: null, sel: null, cargando: false, err: '', busy: false, modo: null };
+  pubCambioCargar(false);
+}
+function pubCambioCerrar(){ PUB.cb = null; pubRender(true); }
+async function pubCambioCargar(mas){
+  const c = PUB.cb; if (!c) return;
+  c.cargando = true; c.err = ''; pubRender(true);
+  try{
+    const ult = mas && c.dias && c.dias.length ? c.dias[c.dias.length - 1].fecha : null;
+    const r = await pubRpc('publico_cambio_opciones', { p_slug: PUB.slug, p_dni: PUB.dni, p_turno_id: c.id, p_desde: ult ? pubWzSumar(ult, 1) : null, p_dias: 14 });
+    if (PUB.cb !== c) return;
+    c.dias = (mas ? (c.dias || []) : []).concat((r && r.dias) || []); c.hasta = r && r.hasta; c.modo = r && r.modo; c.profesor = r && r.profesor;
+    if (!c.dia || !c.dias.some(d => d.fecha === c.dia && (d.turnos || []).length)) c.dia = (c.dias.find(d => (d.turnos || []).length) || {}).fecha || null;
+  }catch(e){
+    if (PUB.cb !== c) return;
+    c.err = e.message; if (!mas) c.dias = [];
+    if (/No encontramos tu DNI|dada de baja/i.test(e.message)){ pubOlvidar(); pubRender(true); return; }
+  }
+  c.cargando = false; pubRender(true);
+}
+function pubCambioDia(iso){ if (PUB.cb){ PUB.cb.dia = iso; PUB.cb.sel = null; pubRender(true); } }
+function pubCambioHora(h){
+  const c = PUB.cb; if (!c) return;
+  const d = (c.dias || []).find(x => x.fecha === c.dia); if (!d) return;
+  const t = (d.turnos || []).find(x => x.hora === h); if (!t) return;
+  c.sel = { fecha: d.fecha, hora: t.hora, hora_fin: t.hora_fin }; c.err = ''; pubRender(true);
+}
+function pubCambioOtro(){ if (PUB.cb){ PUB.cb.sel = null; PUB.cb.err = ''; pubRender(true); } }
+async function pubCambioConfirmar(){
+  const c = PUB.cb; if (!c || !c.sel || c.busy || PUB.busy) return;
+  c.busy = true; c.err = ''; pubRender(true);
+  try{
+    const r = await pubRpc('publico_cambiar_turno', { p_slug: PUB.slug, p_dni: PUB.dni, p_turno_id: c.id, p_fecha: c.sel.fecha, p_hora: c.sel.hora });
+    PUB.cb = null;
+    PUB.msg = (r && r.modo === 'directo')
+      ? '✅ Listo, cambiamos tu turno: ahora es el ' + pubFechaTxt(r.fecha) + ' a las ' + r.hora + '. Ya liberamos el horario anterior.'
+      : '🕒 Pedido enviado: ' + (r && r.fecha ? 'el ' + pubFechaTxt(r.fecha) + ' a las ' + r.hora + ' ' : '') + 'queda reservado para vos y el lugar lo confirma. Hasta entonces seguís con tu turno actual y te avisan por WhatsApp.';
+    PUB.mi = await pubCargarMi();
+  }catch(e){
+    c.busy = false; c.err = e.message;
+    if (/No encontramos tu DNI|dada de baja/i.test(e.message)){ PUB.cb = null; pubOlvidar(); pubRender(true); return; }
+    if (/Se puede cambiar|ya empezó|ya fue cambiado|Ya pediste|No encontramos ese turno|no permite cambiar|por confirmarse/i.test(e.message)){
+      const m = e.message; PUB.cb = null; PUB.err = m; try{ PUB.mi = await pubCargarMi(); }catch(x){} pubRender(true); return;
+    }
+    if (/No quedan cupos|no está disponible|ya pasó/i.test(e.message)){ const m = e.message; c.sel = null; c.dias = null; pubCambioCargar(false).then(() => { if (PUB.cb === c){ c.err = m; pubRender(true); } }); return; }
+  }
+  pubRender(true);
+}
+function pubCambioHtml(t){
+  const c = PUB.cb; if (!c || c.id !== t.id) return '';
+  let h = `<div class="pb-camb"><div class="pb-cl-t">🔁 Elegí el nuevo día y horario</div>
+    <div class="pb-cl-m">Mismo servicio${t.profesor ? ' y mismo profesional (' + ejEsc(t.profesor) + ')' : ''}. ${t.cambio_modo === 'autorizacion' ? 'El lugar tiene que confirmar el cambio: hasta entonces mantenés tu turno actual y el horario nuevo queda reservado para vos.' : 'El cambio es inmediato y se libera tu horario actual para otra persona.'} Se puede cambiar una sola vez.</div>`;
+  if (c.err) h += `<div class="pb-err" role="alert" style="margin-top:8px;">${ejEsc(c.err)}</div>`;
+  if (c.cargando && !(c.dias || []).length) return h + '<div class="pb-cargando">Buscando horarios…</div><button type="button" class="pb-ccl ghost pb-cambx" onclick="pubCambioCerrar()">Cerrar</button></div>';
+  const dias = c.dias || [];
+  if (!dias.some(d => (d.turnos || []).length) && !(c.hasta && dias.length && dias[dias.length - 1].fecha < c.hasta))
+    return h + `<div class="pb-vacio" style="margin-top:8px;">No hay otros horarios libres con ${ejEsc(t.profesor || 'este profesional')} en los próximos días.<br>Escribinos por WhatsApp y lo vemos.</div>${pubWaBtn('Consultar por WhatsApp')}<button type="button" class="pb-ccl ghost pb-cambx" onclick="pubCambioCerrar()">Cerrar</button></div>`;
+  if (c.sel){
+    h += `<div class="pb-info" style="margin-top:10px;">De <b>${ejEsc(pubFechaTxt(t.fecha))} · ${ejEsc(t.hora)}</b><br>a <b>${ejEsc(pubFechaTxt(c.sel.fecha))} · ${ejEsc(c.sel.hora)} a ${ejEsc(c.sel.hora_fin)}</b></div>
+      <div style="display:flex; gap:8px; margin-top:8px;"><button type="button" class="pb-ccl" style="flex:1;" onclick="pubCambioConfirmar()" ${c.busy ? 'disabled' : ''}>${c.busy ? 'Enviando…' : (t.cambio_modo === 'autorizacion' ? 'Pedir el cambio' : 'Confirmar cambio')}</button><button type="button" class="pb-ccl ghost" style="flex:1;" onclick="pubCambioOtro()" ${c.busy ? 'disabled' : ''}>Elegir otro</button></div>`;
+    return h + `<button type="button" class="pb-ccl ghost pb-cambx" onclick="pubCambioCerrar()" ${c.busy ? 'disabled' : ''}>Cerrar</button></div>`;
+  }
+  const pills = dias.map(d => {
+    const [y, m, dd] = d.fecha.split('-').map(Number), k = (new Date(y, m - 1, dd, 12).getDay() + 6) % 7, n = (d.turnos || []).length;
+    return `<button type="button" class="pb-d ${d.fecha === c.dia ? 'on' : ''} ${n ? '' : 'off'}" ${n ? '' : 'disabled'} onclick="pubCambioDia('${ejEsc(d.fecha)}')">${PUB_DIAS[k]}<b>${dd}</b><small>${n ? n + (n === 1 ? ' hora' : ' horas') : 'sin turnos'}</small></button>`;
+  }).join('');
+  const dsel = dias.find(d => d.fecha === c.dia);
+  const mas = c.hasta && dias.length && dias[dias.length - 1].fecha < c.hasta;
+  h += `<div class="pb-days">${pills}</div>`;
+  if (mas) h += `<button type="button" class="pb-mas" onclick="pubCambioCargar(true)" ${c.cargando ? 'disabled' : ''}>${c.cargando ? 'Buscando…' : 'Ver más días ›'}</button>`;
+  if (dsel) h += `<div class="pb-hoy-t" style="margin-top:10px;">${ejEsc(pubFechaTxt(dsel.fecha))}</div><div class="pb-hrs">${(dsel.turnos || []).map(x => `<button type="button" class="pb-hr" onclick="pubCambioHora('${ejEsc(x.hora)}')">${ejEsc(x.hora)}</button>`).join('')}</div>`;
+  else h += `<div class="pb-vacio" style="margin-top:12px;">Elegí un día con horarios disponibles.</div>`;
+  return h + `<button type="button" class="pb-ccl ghost pb-cambx" onclick="pubCambioCerrar()">Cerrar</button></div>`;
+}
 async function pubCancelarTurno(id){
   if (PUB.busy) return;
   PUB.busy = true; PUB.err = ''; pubRender(true);
   try{
-    await pubRpc('publico_cancelar_turno', { p_slug: PUB.slug, p_dni: PUB.dni, p_turno_id: id });
-    PUB.busy = false; PUB.canc = null; PUB.msg = 'Listo, cancelamos tu turno.';
+    const r = await pubRpc('publico_cancelar_turno', { p_slug: PUB.slug, p_dni: PUB.dni, p_turno_id: id });
+    PUB.busy = false; PUB.canc = null; PUB.cb = null;
+    PUB.msg = r && r.cambio_retirado ? 'Listo, retiramos tu pedido de cambio. Seguís con tu turno original.' : 'Listo, cancelamos tu turno. El horario quedó libre para otra persona.';
     PUB.mi = await pubCargarMi();
-  }catch(e){ PUB.busy = false; PUB.err = e.message; }
+  }catch(e){ PUB.busy = false; PUB.err = e.message; try{ PUB.mi = await pubCargarMi(); }catch(x){} }
   pubRender(true);
 }
 function pubTurnosHtml(ts){
-  return (ts || []).map(t => `<div class="pb-res"><div class="pb-cl-h"><div class="pb-cl-t">${ejEsc((t.icono ? t.icono + ' ' : '') + (t.servicio || 'Turno'))}</div><div class="pb-cl-hr">${ejEsc(t.hora)}</div></div>
-      <div class="pb-cl-m">📅 ${ejEsc(pubFechaTxt(t.fecha))} · ${ejEsc(t.hora)} a ${ejEsc(t.hora_fin)}${t.profesor ? '<br>👤 ' + ejEsc(t.profesor) : ''}${t.sede ? '<br>📍 ' + ejEsc(t.sede) : ''}</div>${t.confirmacion === 'pendiente' ? '<span class="pb-chip w">🕒 Por confirmar</span><div class="pb-cl-m" style="margin-top:6px;">El profesional lo confirma y te avisa por WhatsApp. El horario queda reservado para vos.</div>' : '<span class="pb-chip ok">✓ Reservado</span>'}
-      ${t.puede_cancelar
-        ? (PUB.canc === t.id
-          ? `<div class="pb-info" style="margin-top:10px;">¿Cancelar este turno?</div><div style="display:flex; gap:8px; margin-top:8px;"><button type="button" class="pb-ccl" style="flex:1;" onclick="pubCancelarTurno('${ejEsc(t.id)}')" ${PUB.busy ? 'disabled' : ''}>Sí, cancelar</button><button type="button" class="pb-ccl ghost" style="flex:1;" onclick="pubPedirCancelar('${ejEsc(t.id)}')">No</button></div>`
-          : `<button type="button" class="pb-ccl secondary" onclick="pubPedirCancelar('${ejEsc(t.id)}')">Cancelar turno</button>`)
-        : `<div class="pb-cl-m" style="margin-top:8px;">Ya no se puede cancelar desde acá: avisale por WhatsApp.</div>`}</div>`).join('');
+  return (ts || []).map(t => {
+    const esPedido = !!(t.cambio_de && t.confirmacion === 'pendiente');
+    const orig = t.orig_fecha ? pubFechaTxt(t.orig_fecha) + ' a las ' + t.orig_hora : '';
+    let chip;
+    if (esPedido) chip = `<span class="pb-chip w">🔁 Cambio pedido · por confirmar</span><div class="pb-cl-m" style="margin-top:6px;">El horario nuevo queda reservado para vos. Hasta que el lugar lo confirme seguís con tu turno${orig ? ' del ' + ejEsc(orig) : ' original'}.</div>`;
+    else if (t.confirmacion === 'pendiente') chip = '<span class="pb-chip w">🕒 Por confirmar</span><div class="pb-cl-m" style="margin-top:6px;">El profesional lo confirma y te avisa por WhatsApp. El horario queda reservado para vos.</div>';
+    else chip = '<span class="pb-chip ok">✓ Reservado</span>' + (t.cambio_de ? ' <span class="pb-chip">🔁 Cambiado</span>' : '');
+    const cp = t.cambio_pendiente ? `<div class="pb-info" style="margin-top:8px;">🔁 Pediste pasar al ${ejEsc(pubFechaTxt(t.cambio_pendiente.fecha))} a las ${ejEsc(t.cambio_pendiente.hora)}: esperando la respuesta del lugar.</div>` : '';
+    const lim = t.cancelar_min != null ? pubLimiteTxt(t.cancelar_min) : '';
+    let acc = '';
+    if (esPedido){
+      acc = t.puede_cancelar ? (PUB.canc === t.id
+        ? `<div class="pb-info" style="margin-top:10px;">¿Retirar el pedido de cambio? Seguís con tu turno original.</div><div style="display:flex; gap:8px; margin-top:8px;"><button type="button" class="pb-ccl" style="flex:1;" onclick="pubCancelarTurno('${ejEsc(t.id)}')" ${PUB.busy ? 'disabled' : ''}>Sí, retirar</button><button type="button" class="pb-ccl ghost" style="flex:1;" onclick="pubPedirCancelar('${ejEsc(t.id)}')">No</button></div>`
+        : `<button type="button" class="pb-ccl secondary" onclick="pubPedirCancelar('${ejEsc(t.id)}')">Retirar pedido de cambio</button>`) : '';
+    } else {
+      if (t.puede_cambiar) acc += `<button type="button" class="pb-ccl" onclick="pubCambioAbrir('${ejEsc(t.id)}')">${PUB.cb && PUB.cb.id === t.id ? 'Cerrar' : '🔁 Cambiar turno'}</button> `;
+      acc += pubCambioHtml(t);
+      if (t.puede_cancelar){
+        acc += PUB.canc === t.id
+          ? `<div class="pb-info" style="margin-top:10px;">¿Cancelar este turno?${t.cambio_pendiente ? ' También se cancela tu pedido de cambio.' : ''}</div><div style="display:flex; gap:8px; margin-top:8px;"><button type="button" class="pb-ccl" style="flex:1;" onclick="pubCancelarTurno('${ejEsc(t.id)}')" ${PUB.busy ? 'disabled' : ''}>Sí, cancelar</button><button type="button" class="pb-ccl ghost" style="flex:1;" onclick="pubPedirCancelar('${ejEsc(t.id)}')">No</button></div>`
+          : `<button type="button" class="pb-ccl secondary" onclick="pubPedirCancelar('${ejEsc(t.id)}')">Cancelar turno</button>`;
+        acc += `<div class="pb-cl-m" style="margin-top:6px;font-size:12px;">Podés cancelar${t.cambio_modo && t.cambio_modo !== 'no' ? ' o cambiar' : ''} ${ejEsc(lim)}${t.cancelar_min > 0 ? ' del turno' : ' el turno'}.</div>`;
+        if (!t.puede_cambiar && t.cambio_modo && t.cambio_modo !== 'no' && t.cambio_motivo && !t.cambio_pendiente) acc += `<div class="pb-cl-m" style="margin-top:4px;font-size:12px;">${ejEsc(t.cambio_motivo)}</div>`;
+      } else acc += `<div class="pb-cl-m" style="margin-top:8px;">Ya no se puede cancelar${t.cambio_modo && t.cambio_modo !== 'no' ? ' ni cambiar' : ''} desde acá: avisale por WhatsApp.</div>`;
+    }
+    return `<div class="pb-res"><div class="pb-cl-h"><div class="pb-cl-t">${ejEsc((t.icono ? t.icono + ' ' : '') + (t.servicio || 'Turno'))}</div><div class="pb-cl-hr">${ejEsc(t.hora)}</div></div>
+      <div class="pb-cl-m">📅 ${ejEsc(pubFechaTxt(t.fecha))} · ${ejEsc(t.hora)} a ${ejEsc(t.hora_fin)}${t.profesor ? '<br>👤 ' + ejEsc(t.profesor) : ''}${t.sede ? '<br>📍 ' + ejEsc(t.sede) : ''}</div>${chip}${cp}
+      ${acc}</div>`;
+  }).join('');
 }
 
 // ----- dibujo del camino -----
@@ -10431,8 +10538,9 @@ function pubWzTarjeta(r, sel){
     <div class="pb-cl-m">📅 ${ejEsc(pubFechaTxt(fecha))} · ${ejEsc(hIni)} a ${ejEsc(hFin)}${prof ? '<br>👤 ' + ejEsc(prof) : ''}${sedeTxt ? '<br>📍 ' + ejEsc(sedeTxt) + (sd && sd.direccion ? ' · ' + ejEsc(sd.direccion) : '') + mapa : ''}</div></div>`;
 }
 function pubWzPasoResumen(){
-  const w = PUB.w, g = PUB.g || {}, m = Number(g.cancelar_min) || 0;
-  const cancel = m <= 0 ? 'Podés cancelarlo hasta que empiece, desde “Ver mi semana”.' : 'Podés cancelarlo ' + (m % 60 === 0 ? 'hasta ' + (m / 60) + (m === 60 ? ' hora' : ' horas') : 'hasta ' + m + ' minutos') + ' antes, desde “Ver mi semana”.';
+  const w = PUB.w, g = PUB.g || {}, sv0 = pubWzServ() || {}, m = Number(sv0.cancelar_min != null ? sv0.cancelar_min : g.cancelar_min) || 0;   // (v195) plazo por servicio
+  const cmb = sv0.cambio_modo === 'directo' ? ' o cambiarlo de horario' : sv0.cambio_modo === 'autorizacion' ? ' o pedir un cambio de horario (lo confirma el lugar)' : '';
+  const cancel = (m <= 0 ? 'Podés cancelarlo' + cmb + ' hasta que empiece' : 'Podés cancelarlo' + cmb + ' ' + (m % 60 === 0 ? 'hasta ' + (m / 60) + (m === 60 ? ' hora' : ' horas') : 'hasta ' + m + ' minutos') + ' antes') + ', desde “Ver mi semana”.';
   return `<div class="pb-h">${PUB.nombre ? 'Revisá tu turno, ' + ejEsc(PUB.nombre) : 'Revisá tu turno'}</div>${pubWzTarjeta(null, w.sel)}
     ${(pubWzServ() || {}).confirmacion === 'manual' ? '<div class="pb-info" style="margin-top:10px;">🕒 Este turno lo confirma el profesional. Te avisamos por WhatsApp.</div>' : ''}
     <p class="pb-p" style="margin-top:10px;">${ejEsc(cancel)}</p>${pubErr()}
@@ -11666,6 +11774,11 @@ function confMsg(it){
   const donde = (it.sucursal && sucOn()) ? ' en ' + it.sucursal : (gim ? ' en ' + gim : '');
   const con = it.profesor ? ' con ' + it.profesor : '';
   const cuando = 'el ' + fechaLegible(it.fecha).replace(',', '') + ' a las ' + it.hora;
+  if (it.cambio_de){   // (v195) pedido de cambio de turno
+    const antes = it.orig_fecha ? 'el ' + fechaLegible(it.orig_fecha).replace(',', '') + ' a las ' + it.orig_hora : 'original';
+    if (it.confirmacion === 'confirmado') return `Hola ${nombre}! Tu cambio de turno de ${it.servicio} quedó confirmado ✅: ahora es ${cuando}${donde}${con}. Liberamos tu turno anterior (${antes}). ¡Te esperamos!`;
+    return `Hola ${nombre}! No pudimos hacer el cambio de tu turno de ${it.servicio} para ${cuando}. Seguís con tu turno ${it.orig_fecha ? antes : 'original'}. Si querés otro horario escribinos y lo coordinamos. ¡Disculpá las molestias!`;
+  }
   if (it.confirmacion === 'confirmado') return `Hola ${nombre}! Tu turno de ${it.servicio} ${cuando}${donde}${con} quedó confirmado ✅. Si no podés venir avisanos así liberamos el horario. ¡Te esperamos!`;
   if (it.confirmacion === 'rechazado') return `Hola ${nombre}! No pudimos confirmar tu turno de ${it.servicio} ${cuando}${donde}. Podés elegir otro horario desde el link o escribinos y lo coordinamos. ¡Disculpá las molestias!`;
   return `Hola ${nombre}! Tu turno de ${it.servicio} ${cuando}${donde} quedó sin confirmar y el horario se liberó. Si todavía lo querés, pedí uno nuevo desde el link o escribinos.`;
@@ -11674,9 +11787,10 @@ async function confResolver(id, accion){
   if (CONF.busy[id]) return; CONF.busy[id] = true; CONF.rech = null; confRender();
   try{
     await sb('rpc/turno_confirmar', { method: 'POST', body: JSON.stringify({ p_turno: id, p_accion: accion }) });
-    const it = CONF.items.find(x => x.turno_id === id);
+    var it = CONF.items.find(x => x.turno_id === id);
     if (it){ it.confirmacion = accion === 'confirmar' ? 'confirmado' : 'rechazado'; it.vence = null; }
-    toast(accion === 'confirmar' ? 'Turno confirmado ✓ Avisale al paciente por WhatsApp.' : 'Turno rechazado: el horario quedó libre. Avisale al paciente.');
+    toast(it && it.cambio_de ? (accion === 'confirmar' ? 'Cambio aprobado ✓ Se liberó el horario anterior. Avisale al paciente por WhatsApp.' : 'Cambio rechazado: el paciente sigue con su turno original. Avisale por WhatsApp.')
+      : accion === 'confirmar' ? 'Turno confirmado ✓ Avisale al paciente por WhatsApp.' : 'Turno rechazado: el horario quedó libre. Avisale al paciente.');
     try{ if (typeof renderAgenda === 'function' && document.getElementById('agendaTimelineWrap') && document.getElementById('agendaTimelineWrap').offsetParent) renderAgenda(); }catch(e){}
   }catch(e){ toast(extraerMensajeError(e), true); CONF.ts = 0; }
   CONF.busy[id] = false; confRender();
@@ -11705,16 +11819,18 @@ function confFila(it){
   let acc;
   if (pend){
     acc = CONF.rech === id
-      ? `<span class="muted" style="font-size:12.5px;">¿Rechazar y liberar el horario?</span><button type="button" class="avi-b" onclick="confResolver('${id}', 'rechazar')">Sí, rechazar</button><button type="button" class="ghost avi-b" onclick="confCancelarRechazo()">No</button>`
-      : `<button type="button" class="avi-b" onclick="confResolver('${id}', 'confirmar')" ${CONF.busy[id] ? 'disabled' : ''}>✅ Aceptar</button><button type="button" class="ghost avi-b" onclick="confPedirRechazo('${id}')" ${CONF.busy[id] ? 'disabled' : ''}>✕ Rechazar</button>`;
+      ? `<span class="muted" style="font-size:12.5px;">${it.cambio_de ? '¿Rechazar el cambio? El paciente sigue con su turno.' : '¿Rechazar y liberar el horario?'}</span><button type="button" class="avi-b" onclick="confResolver('${id}', 'rechazar')">Sí, rechazar</button><button type="button" class="ghost avi-b" onclick="confCancelarRechazo()">No</button>`
+      : `<button type="button" class="avi-b" onclick="confResolver('${id}', 'confirmar')" ${CONF.busy[id] ? 'disabled' : ''}>${it.cambio_de ? '✅ Aprobar cambio' : '✅ Aceptar'}</button><button type="button" class="ghost avi-b" onclick="confPedirRechazo('${id}')" ${CONF.busy[id] ? 'disabled' : ''}>✕ Rechazar</button>`;
   } else {
-    const est = it.confirmacion === 'confirmado' ? '✓ Confirmado' : it.confirmacion === 'rechazado' ? '✕ Rechazado' : '⌛ Venció sin confirmar';
+    const est = it.cambio_de ? (it.confirmacion === 'confirmado' ? '✓ Cambio aprobado' : it.confirmacion === 'rechazado' ? '✕ Cambio rechazado' : '⌛ Cambio vencido')
+      : it.confirmacion === 'confirmado' ? '✓ Confirmado' : it.confirmacion === 'rechazado' ? '✕ Rechazado' : '⌛ Venció sin confirmar';
     acc = `<span class="avi-ok">${est}</span>`
       + (it.telefono ? `<button type="button" class="avi-b avi-wa" onclick="confWhatsapp('${id}')">💬 Avisar por WhatsApp</button>` : '<span class="muted" style="font-size:12px;">Sin teléfono</span>')
       + `<button type="button" class="secondary avi-b" onclick="confAvisado('${id}')">✓ Ya avisé</button>`;
   }
   return `<div class="avi-row"><div class="avi-quien"><b>${xe(fechaLegible(it.fecha))} · ${xe(it.hora)}–${xe(it.hora_fin)}</b> ${xe(it.alumno)}${it.nuevo ? ' <span class="pill" title="Primera vez">🆕</span>' : ''}${it.tiene_app ? ' <span class="pill" title="Tiene la app">📱</span>' : ''}
-    <div class="muted" style="font-size:12.5px;">${it.icono ? xe(it.icono) + ' ' : ''}${xe(it.servicio)}${it.profesor ? ' · ' + xe(it.profesor) : ''}${sede}${pend && it.vence ? ' · ⏱ ' + xe(confVenceTxt(it)) : ''}</div></div><div class="avi-acc">${acc}</div></div>`;
+    <div class="muted" style="font-size:12.5px;">${it.cambio_de ? '🔁 <b>Cambio de turno</b> · ' : ''}${it.icono ? xe(it.icono) + ' ' : ''}${xe(it.servicio)}${it.profesor ? ' · ' + xe(it.profesor) : ''}${sede}${pend && it.vence ? ' · ⏱ ' + xe(confVenceTxt(it)) : ''}</div>
+    ${it.cambio_de && it.orig_fecha ? `<div class="muted" style="font-size:12.5px;">Pasa de <b>${xe(fechaLegible(it.orig_fecha))} ${xe(it.orig_hora)}</b> a <b>${xe(fechaLegible(it.fecha))} ${xe(it.hora)}</b>${pend ? ' · el horario viejo se libera al aprobar' : ''}</div>` : ''}</div><div class="avi-acc">${acc}</div></div>`;
 }
 function confHtml(){
   const pend = confPendientes().length, tot = (CONF.items || []).length;
@@ -11827,6 +11943,12 @@ function srvPintar(forzar){
         <select id="srvF_conf" onchange="srvConfCambio()" style="max-width:420px;"><option value="automatica" ${e.confirmacion !== 'manual' ? 'selected' : ''}>Automática: queda reservado al instante</option><option value="manual" ${e.confirmacion === 'manual' ? 'selected' : ''}>A mano: el profesional lo acepta o rechaza</option></select>
         ${e.confirmacion === 'manual' ? `<div style="margin-top:8px;font-size:13.5px;">Si nadie lo confirma, se cancela solo a las <select id="srvF_vence" style="width:auto;display:inline-block;">${[2, 6, 12, 24, 48, 72].map(h => `<option value="${h}" ${+e.confirmacion_vence_horas === h ? 'selected' : ''}>${h} h</option>`).join('')}</select> de pedido (o al empezar el turno, lo que pase primero).</div>
         <div class="muted" style="font-size:12px;margin-top:4px;">Cuando alguien lo pide desde el link o la app queda “por confirmar” y el horario queda tomado. Lo aceptás o rechazás en “🕒 Turnos por confirmar” (Agenda y Recepción) y te dejamos el WhatsApp listo. Los turnos que cargás vos desde la agenda quedan confirmados directo.</div>` : '<div class="muted" style="font-size:12px;margin-top:4px;">Es lo de siempre: el turno queda confirmado apenas se reserva.</div>'}</div>` : ''}
+      ${camOk() ? `<div class="field" style="margin-top:12px;"><label>Plazo para cancelar o cambiar el turno desde el link</label>
+        <select id="srvF_cmin" style="max-width:420px;"><option value="" ${e.cancelar_horas == null ? 'selected' : ''}>El general del lugar (Mi gimnasio → Clases y reservas)</option><option value="0" ${e.cancelar_horas === 0 ? 'selected' : ''}>Hasta que empiece el turno</option>${[1, 2, 4, 6, 12, 24, 48, 72].map(h => `<option value="${h}" ${+e.cancelar_horas === h && e.cancelar_horas != null ? 'selected' : ''}>Hasta ${h} ${h === 1 ? 'hora' : 'horas'} antes</option>`).join('')}</select>
+        <div class="muted" style="font-size:12px;margin-top:4px;">Pasado ese plazo el paciente ya no puede cancelar ni cambiar solo desde el link: tiene que escribirles.</div></div>
+      <div class="field" style="margin-top:8px;"><label>¿Puede el paciente cambiar el turno desde el link?</label>
+        <select id="srvF_cmod" onchange="srvFormLeer(); srvPintar(true)" style="max-width:420px;"><option value="no" ${(e.cambio_modo || 'no') === 'no' ? 'selected' : ''}>No: solo puede cancelar</option><option value="autorizacion" ${e.cambio_modo === 'autorizacion' ? 'selected' : ''}>Sí, con autorización: el profesional lo aprueba</option><option value="directo" ${e.cambio_modo === 'directo' ? 'selected' : ''}>Sí, directo: se cambia al instante</option></select>
+        <div class="muted" style="font-size:12px;margin-top:4px;">${(e.cambio_modo || 'no') === 'autorizacion' ? 'El horario nuevo queda reservado y el viejo se mantiene hasta que lo apruebes en “🕒 Turnos por confirmar”. Si lo rechazás o vence, el paciente sigue con su turno.' : e.cambio_modo === 'directo' ? 'Se libera el horario anterior y se toma el nuevo en el mismo momento. Te llega un aviso a la campanita.' : 'Puede cancelar dentro del plazo (se libera el cupo) pero no cambiar de horario.'} Siempre con el mismo servicio y profesional, y un solo cambio por turno.</div></div>` : ''}
       <div class="field" style="margin-top:8px;"><label>¿Quién lo da?</label>
         ${profes.length ? `<div class="srv-pros">${profes.map(p => `<label class="srv-pro"><input type="checkbox" ${sel.has(p.id) ? 'checked' : ''} onchange="srvProfSet('${p.id}', this.checked)"> ${xe(p.nombre)}</label>`).join('')}</div>`
           : '<div class="muted">Primero cargá a los profesionales en <b>Profesores</b>.</div>'}</div>
@@ -11844,7 +11966,7 @@ function srvPintar(forzar){
 }
 function srvNuevo(i){
   const x = (i != null) ? SRV_EJEMPLOS[i] : null;
-  SRV.edit = { id: null, nombre: x ? x[0] : '', duracion_min: x ? x[1] : 30, icono: x ? x[2] : '', descripcion: '', profs: [], recordar: true, confirmacion: 'automatica', confirmacion_vence_horas: 24 }; srvPintar(true);
+  SRV.edit = { id: null, nombre: x ? x[0] : '', duracion_min: x ? x[1] : 30, icono: x ? x[2] : '', descripcion: '', profs: [], recordar: true, confirmacion: 'automatica', confirmacion_vence_horas: 24, cancelar_horas: null, cambio_modo: 'no' }; srvPintar(true);
 }
 function srvEditar(id){ const s = srvPorId(id); if (!s) return; SRV.edit = Object.assign({}, s, { profs: [...(SRV.profs[id] || [])] }); srvPintar(true); }
 function srvCancelar(){ SRV.edit = null; srvPintar(true); }
@@ -11854,8 +11976,11 @@ function srvFormLeer(){
   e.nombre = g('srvF_nombre'); e.icono = g('srvF_ico'); e.descripcion = g('srvF_desc'); e.duracion_min = g('srvF_dur');
   const cf = document.getElementById('srvF_conf'); if (cf) e.confirmacion = cf.value;   // (v191)
   const cv = document.getElementById('srvF_vence'); if (cv) e.confirmacion_vence_horas = parseInt(cv.value, 10) || 24;
+  const cm = document.getElementById('srvF_cmin'); if (cm) e.cancelar_horas = cm.value === '' ? null : parseInt(cm.value, 10);   // (v195)
+  const cd = document.getElementById('srvF_cmod'); if (cd) e.cambio_modo = cd.value;
   const rc = document.getElementById('srvF_rec'); if (rc) e.recordar = rc.checked;   // (v152)
 }
+function camOk(){ return !!(SRV.lista && SRV.lista.length && ('cambio_modo' in SRV.lista[0])); }   // (v195) SQL v195 corrido
 function srvConfCambio(){ srvFormLeer(); if (SRV.edit && SRV.edit.confirmacion === 'manual' && !SRV.edit.confirmacion_vence_horas) SRV.edit.confirmacion_vence_horas = 24; srvPintar(true); }
 function srvRecOk(){ return (SRV.lista && SRV.lista.length) ? ('recordar' in SRV.lista[0]) : AVI.ok === true; }   // (v152) la columna existe (SQL v152 corrido)
 function srvProfSet0(on){ if (SRV.edit) SRV.edit.recordar = !!on; }
@@ -11869,6 +11994,7 @@ async function srvGuardar(){
   if (!(dur >= 5 && dur <= 240 && dur % 5 === 0)){ toast('La duración tiene que estar entre 5 y 240 minutos, de a 5.', true); return; }
   const fila = { nombre, duracion_min: dur, icono: (e.icono || '').trim() || null, descripcion: (e.descripcion || '').trim() || null };
   if (srvRecOk()) fila.recordar = e.recordar !== false;   // (v152) avisar el día anterior
+  if (camOk()){ fila.cancelar_horas = (e.cancelar_horas == null || e.cancelar_horas === '') ? null : Math.max(0, Math.min(720, parseInt(e.cancelar_horas, 10) || 0)); fila.cambio_modo = ['autorizacion', 'directo'].includes(e.cambio_modo) ? e.cambio_modo : 'no'; }   // (v195)
   if (confOk()){ fila.confirmacion = e.confirmacion === 'manual' ? 'manual' : 'automatica'; fila.confirmacion_vence_horas = Math.max(1, Math.min(168, parseInt(e.confirmacion_vence_horas, 10) || 24)); }   // (v191)
   SRV.busy = true; const btn = document.getElementById('srvBtnGuardar'); if (btn){ btn.disabled = true; btn.textContent = 'Guardando…'; }
   try{
@@ -21631,6 +21757,28 @@ function clSlot(ev, d, s){
   const f = x => String(Math.floor(x / 60)).padStart(2, '0') + ':' + String(x % 60).padStart(2, '0');
   clEditar(null, { dias: [d], ini: f(ini), fin: f(fin) });
 }
+// ----- (v196) Crear varias clases de una hora (o la duración que elijas) a partir de UN rango horario -----
+const CL_DIV_MIN = [30, 45, 60, 90, 120];
+function clMinATxt(m){ return String(Math.floor(m / 60)).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0'); }
+function clDivTramos(ini, fin, dur){
+  const a = clTm(ini), b = clTm(fin), out = [];
+  if (!(dur >= 5) || !(b > a)) return out;
+  for (let t = a; t + dur <= b; t += dur) out.push([clMinATxt(t), clMinATxt(t + dur)]);
+  return out;
+}
+function clDivCambio(){
+  const on = !!(document.getElementById('clDiv') || {}).checked, bx = document.getElementById('clDivBox'); if (bx) bx.style.display = on ? '' : 'none';
+  clDivPrev();
+}
+function clDivPrev(){
+  const pv = document.getElementById('clDivPrev'); if (!pv) return;
+  const on = !!(document.getElementById('clDiv') || {}).checked; if (!on){ pv.innerHTML = ''; return; }
+  const ini = (document.getElementById('clIni') || {}).value, fin = (document.getElementById('clFin') || {}).value, dur = +(document.getElementById('clDivMin') || {}).value || 60;
+  if (!ini || !fin || fin <= ini){ pv.innerHTML = '<span style="color:var(--danger-text);">Completá Desde y Hasta.</span>'; return; }
+  const tr = clDivTramos(ini, fin, dur), sobra = (clTm(fin) - clTm(ini)) - tr.length * dur;
+  pv.innerHTML = !tr.length ? '<span style="color:var(--danger-text);">El rango es más corto que la duración elegida.</span>'
+    : `Se crean <b>${tr.length}</b> ${tr.length === 1 ? 'clase' : 'clases'}: ${tr.map(t => '<b>' + t[0] + '</b>–' + t[1]).join(' · ')}` + (sobra > 0 ? `<br><span class="muted">Sobran ${sobra} min al final que no se usan.</span>` : '') + (tr.length > 24 ? '<br><span style="color:var(--danger-text);">Máximo 24 clases por vez.</span>' : '');
+}
 function clEditar(id, pre){
   if (PERFIL_ACTUAL?.rol !== 'admin') return;
   const c = id ? clTodas().find(x => String(x.id) === String(id)) : Object.assign({ id: null, nombre: '', dias: [], ini: '18:00', fin: '19:00', profId: '', nota: '', cupo: null, suc: (sucMulti() && CL.sucCol === true) ? sucDefault() : null }, pre || {});
@@ -21646,7 +21794,9 @@ function clEditar(id, pre){
     <div class="field"><label>Nombre de la clase</label><input id="clNom" value="${ejEsc(c.nombre)}" placeholder="ej: Funcional, Spinning, Yoga"></div>
     ${selSede}
     <div class="field"><label>Días en que se repite</label><div class="cl-dchips" id="clDias">${CL_DL.map((l, d) => `<span class="${CL.EC.dias.includes(d) ? 'on' : ''}" onclick="clTogDia(${d})">${l}</span>`).join('')}</div></div>
-    <div class="cl-row2"><div class="field"><label>Desde</label><input type="time" id="clIni" value="${c.ini}"></div><div class="field"><label>Hasta</label><input type="time" id="clFin" value="${c.fin}"></div></div>
+    <div class="cl-row2"><div class="field"><label>Desde</label><input type="time" id="clIni" value="${c.ini}" oninput="clDivPrev()"></div><div class="field"><label>Hasta</label><input type="time" id="clFin" value="${c.fin}" oninput="clDivPrev()"></div></div>
+    ${id ? '' : `<label class="srv-pro" style="display:flex;gap:8px;align-items:flex-start;margin:2px 0 8px;"><input type="checkbox" id="clDiv" onchange="clDivCambio()" style="margin-top:3px;"> <span><b style="text-transform:none;letter-spacing:0;">Dividir el rango en varias clases</b><br><small class="muted" style="text-transform:none;letter-spacing:0;font-weight:400;">Ej: de 18:00 a 21:00 se crean 3 clases de 1 hora, todas con el mismo nombre, días, profesor y cupo.</small></span></label>
+      <div id="clDivBox" style="display:none;margin:0 0 10px;"><div class="field" style="margin-bottom:6px;"><label>Duración de cada clase</label><select id="clDivMin" onchange="clDivPrev()" style="max-width:200px;">${CL_DIV_MIN.map(m => `<option value="${m}" ${m === 60 ? 'selected' : ''}>${m === 60 ? '1 hora' : m === 120 ? '2 horas' : m === 90 ? '1 hora y media' : m + ' minutos'}</option>`).join('')}</select></div><div id="clDivPrev" class="muted" style="font-size:13px;"></div></div>`}
     ${CL.res === true
       ? `<div class="cl-row2 cl-row21"><div class="field"><label>Profesor (opcional)</label>${selProf}</div><div class="field"><label>Cupo</label><input type="number" id="clCupo" min="1" max="500" inputmode="numeric" value="${c.cupo || ''}" placeholder="ej: 12"></div></div>
          <div class="muted" style="font-size:12px; margin:6px 0 10px;">Cupo: cuántos alumnos entran. Se anotan desde su app y, con el cupo lleno, pasan a lista de espera.</div>`
@@ -21672,6 +21822,13 @@ async function clGuardar(id){
   if (!nombre){ toast('Poné el nombre de la clase.', true); return; }
   if (!CL.EC.dias.length){ toast('Elegí al menos un día.', true); return; }
   if (!ini || !fin || fin <= ini){ toast('La hora de fin tiene que ser después de la de inicio.', true); return; }
+  const dvOn = !id && !!(document.getElementById('clDiv') || {}).checked;   // (v196) dividir el rango en varias clases
+  let tramos = [[ini, fin]];
+  if (dvOn){
+    tramos = clDivTramos(ini, fin, +(document.getElementById('clDivMin') || {}).value || 60);
+    if (!tramos.length){ toast('El rango es más corto que la duración de cada clase.', true); return; }
+    if (tramos.length > 24){ toast('Son demasiadas clases juntas (máximo 24). Achicá el rango.', true); return; }
+  }
   const body = { nombre, dias: CL.EC.dias.slice().sort((a, b) => a - b), hora_inicio: ini, hora_fin: fin, profesor_id: document.getElementById('clProf').value || null, nota: document.getElementById('clNota').value.trim() || null };
   const lg = rpxEditorLeer(); if (lg === false) return; if (lg) Object.assign(body, lg);   // (v111) punto de encuentro
   const inSede = document.getElementById('clSede'); if (inSede) body.sucursal_id = inSede.value || null;   // (v146) sede de la clase (vacío = todas)
@@ -21684,8 +21841,8 @@ async function clGuardar(id){
   const btn = document.getElementById('clBtnGuardar'); if (btn) btn.disabled = true;
   try{
     if (id) await sb(`clases?id=eq.${id}`, { method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: JSON.stringify(body) });
-    else await sb('clases', { method: 'POST', headers: { Prefer: 'return=minimal' }, body: JSON.stringify([{ ...body, gimnasio_id: PERFIL_ACTUAL.gimnasio_id }]) });
-    clCerrar(); toast(id ? 'Clase actualizada ✓' : 'Clase creada ✓');
+    else await sb('clases', { method: 'POST', headers: { Prefer: 'return=minimal' }, body: JSON.stringify(tramos.map(t => ({ ...body, hora_inicio: t[0], hora_fin: t[1], gimnasio_id: PERFIL_ACTUAL.gimnasio_id }))) });
+    clCerrar(); toast(id ? 'Clase actualizada ✓' : (tramos.length > 1 ? tramos.length + ' clases creadas ✓' : 'Clase creada ✓'));
     await clCargar(CL.contId, CL.ro, CL.rolAlumno);
   }catch(e){ toast('Error guardando la clase: ' + e.message, true); if (btn) btn.disabled = false; }
 }
