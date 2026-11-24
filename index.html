@@ -5533,7 +5533,7 @@ function atlIniciarAlu(){
   atlCargarVista('aluAtletismoContenido', id || '');
 }
 
-const APP_VERSION = 192;
+const APP_VERSION = 193;
 let ES_PERSONAL = false;   // (v132) cuenta personal (gimnasios.tipo = 'personal'); se calcula en perAplicar()
 // (v96) Fecha de la última actualización: se cambia junto con APP_VERSION en cada entrega. Se muestra en la
 // pantalla de inicio y en el menú de cuenta ("v94 · actualizada el 5/10/2026").
@@ -19122,6 +19122,7 @@ async function chequearPagoQR(alumnoId){
         <div style="background:rgba(61,220,132,.1); border:1px solid rgba(61,220,132,.35); border-radius:10px; padding:14px;">
           <div style="font-weight:700; color:var(--accent2-text); margin-bottom:8px;">✅ ¡Pago recibido! — $${Number(ultimo.monto).toFixed(2)}</div>
           <button onclick='descargarReciboPago(${JSON.stringify(ultimo)}, ${JSON.stringify(alumnoNombre)}, ${JSON.stringify(planNombre)})'>🧾 Descargar recibo</button>
+          <button class="secondary" onclick='reciboWhatsApp(${JSON.stringify(ultimo)}, ${JSON.stringify(alumnoId)}, ${JSON.stringify(alumnoNombre)}, ${JSON.stringify(planNombre)})'>💬 Comprobante por WhatsApp</button>
         </div>`;
       toast('¡Pago con QR recibido! ✓');
       try{ if (typeof cvFichaVivo === 'function' && cvFichaVivo()) cvFichaRecargar(); }catch(e){}
@@ -19151,7 +19152,8 @@ function mostrarExitoCobro(alumnoId, pago, alumnoNombre, planNombre){
       <div style="font-weight:700; color:var(--accent2-text); margin-bottom:8px;">✅ Pago registrado — $${Number(pago.monto).toFixed(2)}</div>
       <div class="row" style="gap:8px;">
         <button onclick='descargarReciboPago(${JSON.stringify(pago)}, ${JSON.stringify(alumnoNombre)}, ${JSON.stringify(planNombre)})'>🧾 Descargar recibo</button>
-        <button id="${idBtn}" style="display:none;" onclick='compartirReciboPago(${JSON.stringify(pago)}, ${JSON.stringify(alumnoNombre)}, ${JSON.stringify(planNombre)})'>📲 Enviar por WhatsApp</button>
+        <button class="secondary" onclick='reciboWhatsApp(${JSON.stringify(pago)}, ${JSON.stringify(alumnoId)}, ${JSON.stringify(alumnoNombre)}, ${JSON.stringify(planNombre)})'>💬 Comprobante por WhatsApp</button>
+        <button id="${idBtn}" style="display:none;" onclick='compartirReciboPago(${JSON.stringify(pago)}, ${JSON.stringify(alumnoNombre)}, ${JSON.stringify(planNombre)})'>📲 Enviar PDF</button>
       </div>
     </div>
   `;
@@ -19162,6 +19164,40 @@ function mostrarExitoCobro(alumnoId, pago, alumnoNombre, planNombre){
     document.getElementById(idBtn).style.display = '';
   }
 }
+
+// ----- (v193) Comprobante de pago como texto de WhatsApp (con el N° de recibo) -----
+// Se arma el mensaje y se abre WhatsApp con el chat del alumno; si no tiene teléfono cargado, se copia el texto.
+function reciboNumTxt(p){ return String((p && p.numero_recibo) ?? '-').padStart(6, '0'); }
+function reciboTextoWa(pago, alumnoNombre, planNombre){
+  const met = { efectivo: 'Efectivo', transferencia: 'Transferencia', mercado_pago: 'Mercado Pago', tarjeta_credito: 'Tarjeta de crédito', tarjeta_debito: 'Tarjeta de débito' };
+  const gim = (GIMNASIO_ACTUAL && GIMNASIO_ACTUAL.nombre) || 'el gimnasio';
+  const primero = String(alumnoNombre || '').trim().split(/\s+/)[0] || '';
+  return [
+    `🧾 *Comprobante de pago N° ${reciboNumTxt(pago)}*`,
+    `*${gim}*`,
+    '',
+    `Hola${primero ? ' ' + primero : ''}! Registramos tu pago, ¡gracias! 🙌`,
+    '',
+    `• Plan: ${planNombre || 'Plan'}`,
+    `• Monto: ${formatearMonto(pago.monto)}`,
+    `• Medio de pago: ${met[pago.metodo_pago] || pago.metodo_pago || '—'}`,
+    `• Fecha: ${formatearFechaCorta((pago.creado_en || '').slice(0, 10))}`,
+    `• Período cubierto: ${formatearFechaCorta(pago.vigencia_desde)} al ${formatearFechaCorta(pago.vigencia_hasta)}`,
+    `• Próximo vencimiento: ${formatearFechaCorta(pago.vigencia_hasta)}`,
+  ].join('\n');
+}
+async function reciboWhatsApp(pago, alumnoId, alumnoNombre, planNombre){
+  if (!pago) return;
+  let tel = ((typeof ALUMNOS_CACHE !== 'undefined' && ALUMNOS_CACHE || []).find(a => a.id === alumnoId) || {}).telefono
+         || ((typeof FICHA_ALU !== 'undefined' && FICHA_ALU && FICHA_ALU.a && FICHA_ALU.a.id === alumnoId) ? FICHA_ALU.a.telefono : null);
+  const msg = reciboTextoWa(pago, alumnoNombre, planNombre);
+  if (!tel){ try{ const r = await sb(`alumnos?select=telefono&id=eq.${alumnoId}`); tel = r && r[0] && r[0].telefono; }catch(e){} }
+  const url = whatsappUrlAlumno(tel, msg);
+  if (url){ window.open(url, '_blank', 'noopener'); return; }
+  try{ await navigator.clipboard.writeText(msg); toast('No tiene WhatsApp cargado. Copié el comprobante: pegalo donde quieras.'); }
+  catch(e){ toast('No tiene teléfono cargado.', true); }
+}
+function fichaReciboWa(i){ const p = FICHA_PAGOS[i]; if (!p || !FICHA_ALU?.a) return; reciboWhatsApp(p, FICHA_ALU.a.id, FICHA_ALU.a.nombre, xPlanNombre(FICHA_ALU.a) || 'Plan'); }
 
 function armarDocRecibo(pago, alumnoNombre, planNombre){
   const { jsPDF } = window.jspdf;
@@ -19733,7 +19769,7 @@ async function xFichaPagos(a, tok){
     const b = body(); if (!b) return;
     FICHA_PAGOS = pagos;
     const met = { mercado_pago:'💳 Mercado Pago', transferencia:'🏦 Transferencia', efectivo:'💵 Efectivo', tarjeta_credito:'💳 Tarjeta de crédito', tarjeta_debito:'💳 Tarjeta de débito' };
-    b.innerHTML = (pagos.length ? `<div style="overflow-x:auto;"><table class="x-mini"><thead><tr><th>Fecha</th><th>Monto</th><th>Medio</th><th>Cubre</th><th></th></tr></thead><tbody>${pagos.map((p, i) => `<tr><td><b>${xe(formatearFechaCorta((p.creado_en || '').slice(0, 10)))}</b></td><td>${xe(formatearMonto(p.monto))}</td><td>${xe(met[p.metodo_pago] || p.metodo_pago)}</td><td>${xe(formatearFechaCorta(p.vigencia_desde))} → ${xe(formatearFechaCorta(p.vigencia_hasta))}</td><td><button class="ghost" title="Descargar comprobante" onclick="fichaRecibo(${i})">🧾</button></td></tr>`).join('')}</tbody></table></div>` : '<div class="muted">Todavía no hay pagos registrados.</div>')
+    b.innerHTML = (pagos.length ? `<div style="overflow-x:auto;"><table class="x-mini"><thead><tr><th>Fecha</th><th>Monto</th><th>Medio</th><th>Cubre</th><th></th></tr></thead><tbody>${pagos.map((p, i) => `<tr><td><b>${xe(formatearFechaCorta((p.creado_en || '').slice(0, 10)))}</b></td><td>${xe(formatearMonto(p.monto))}</td><td>${xe(met[p.metodo_pago] || p.metodo_pago)}</td><td>${xe(formatearFechaCorta(p.vigencia_desde))} → ${xe(formatearFechaCorta(p.vigencia_hasta))}</td><td><button class="ghost" title="Descargar comprobante" onclick="fichaRecibo(${i})">🧾</button> <button class="ghost" title="Mandar por WhatsApp" onclick="fichaReciboWa(${i})">💬</button></td></tr>`).join('')}</tbody></table></div>` : '<div class="muted">Todavía no hay pagos registrados.</div>')
       + `<div class="x-btns">${(VIGENTES_POR_ALUMNO[a.id] && VIGENTES_POR_ALUMNO[a.id].plan_id) ? '<button onclick="fichaCobrar()">💰 Cobrar</button>' : ''}${(pagos.length && PERFIL_ACTUAL && PERFIL_ACTUAL.rol === 'admin' && CUO.ok !== false) ? '<button class="ghost" onclick="cuoAjusteAbrir()">✏️ Corregir vencimiento</button>' : ''}</div><div id="cuoAjuste"></div>`
       + (pagos.length && PERFIL_ACTUAL && PERFIL_ACTUAL.rol === 'admin' ? await cuoAjustesHtml(a.id) : '');
     if (CUO.auto){ CUO.auto = false; if (pagos.length) cuoAjusteAbrir(); }
@@ -28225,6 +28261,7 @@ async function toggleHistorialPagos(alumnoId){
           <div class="row" style="gap:8px; align-items:center;">
             <div style="font-weight:600;">$${Number(p.monto).toFixed(2)}</div>
             <button class="ghost" style="font-size:11px; padding:2px 6px;" title="Descargar comprobante" onclick='descargarReciboPago(${JSON.stringify(p)}, ${JSON.stringify(alumnoNombre)}, ${JSON.stringify(planNombre)})'>🧾</button>
+            <button class="ghost" style="font-size:11px; padding:2px 6px;" title="Mandar por WhatsApp" onclick='reciboWhatsApp(${JSON.stringify(p)}, ${JSON.stringify(alumnoId)}, ${JSON.stringify(alumnoNombre)}, ${JSON.stringify(planNombre)})'>💬</button>
           </div>
         </div>
         <div class="muted">${formatearFechaCorta((p.creado_en || '').slice(0,10))} · cubre hasta ${formatearFechaCorta(p.vigencia_hasta)}${p.metodo_pago === 'mercado_pago' && p.comision_mp != null ? ` · comisión $${Number(p.comision_mp).toFixed(2)} · neto $${Number(p.monto_neto).toFixed(2)}` : ''}</div>
