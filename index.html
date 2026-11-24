@@ -406,6 +406,7 @@ if ('serviceWorker' in navigator) window.addEventListener('load', function(){ tr
   button.avi-wa{ }
   .avi-ok{ color:var(--text); font-weight:600; font-size:13px; }
   .avi-auto{ font-size:12.5px; color:var(--muted); }
+  .conf-card{ border-left:3px solid var(--warn-text, #f0b429); }
   /* (v155) Cuota variable */
   .cv-h{ margin:20px 0 8px; font-size:14.5px; }
   .cv-prow{ display:flex; align-items:center; justify-content:space-between; gap:10px; padding:8px 0; border-bottom:1px solid var(--border); }
@@ -2847,6 +2848,7 @@ if ('serviceWorker' in navigator) window.addEventListener('load', function(){ tr
             <div class="rc-hint" id="rcHintIng">Con el teclado de la pantalla o un teclado numérico USB: escribí el DNI y Enter.</div>
           </div>
           <div class="card" id="rcRes"></div>
+          <div class="card rc-full avi-card conf-card" id="confRecep" style="display:none;"></div>
           <div class="card rc-full avi-card" id="aviRecep" style="display:none;"></div>
           <div class="card rc-full">
             <h2 style="margin-top:0">Llegadas de hoy · <span id="rcCnt" style="color:var(--accent-text);">0</span></h2>
@@ -3511,6 +3513,7 @@ if ('serviceWorker' in navigator) window.addEventListener('load', function(){ tr
           <label style="margin-top:14px;">Día</label>
           <div class="dias-scroll" id="agendaDiasScroll"></div>
         </div>
+        <div class="card avi-card conf-card" id="confAgenda" style="display:none;"></div>
         <div class="card avi-card" id="aviAgenda" style="display:none;"></div>
         <div class="kpis" id="agendaKpis"></div>
         <div id="agendaTimelineWrap">Elegí un día.</div>
@@ -5529,7 +5532,7 @@ function atlIniciarAlu(){
   atlCargarVista('aluAtletismoContenido', id || '');
 }
 
-const APP_VERSION = 190;
+const APP_VERSION = 191;
 let ES_PERSONAL = false;   // (v132) cuenta personal (gimnasios.tipo = 'personal'); se calcula en perAplicar()
 // (v96) Fecha de la última actualización: se cambia junto con APP_VERSION en cada entrega. Se muestra en la
 // pantalla de inicio y en el menú de cuenta ("v94 · actualizada el 5/10/2026").
@@ -10282,7 +10285,7 @@ async function pubCancelarTurno(id){
 }
 function pubTurnosHtml(ts){
   return (ts || []).map(t => `<div class="pb-res"><div class="pb-cl-h"><div class="pb-cl-t">${ejEsc((t.icono ? t.icono + ' ' : '') + (t.servicio || 'Turno'))}</div><div class="pb-cl-hr">${ejEsc(t.hora)}</div></div>
-      <div class="pb-cl-m">📅 ${ejEsc(pubFechaTxt(t.fecha))} · ${ejEsc(t.hora)} a ${ejEsc(t.hora_fin)}${t.profesor ? '<br>👤 ' + ejEsc(t.profesor) : ''}${t.sede ? '<br>📍 ' + ejEsc(t.sede) : ''}</div><span class="pb-chip ok">✓ Reservado</span>
+      <div class="pb-cl-m">📅 ${ejEsc(pubFechaTxt(t.fecha))} · ${ejEsc(t.hora)} a ${ejEsc(t.hora_fin)}${t.profesor ? '<br>👤 ' + ejEsc(t.profesor) : ''}${t.sede ? '<br>📍 ' + ejEsc(t.sede) : ''}</div>${t.confirmacion === 'pendiente' ? '<span class="pb-chip w">🕒 Por confirmar</span><div class="pb-cl-m" style="margin-top:6px;">El profesional lo confirma y te avisa por WhatsApp. El horario queda reservado para vos.</div>' : '<span class="pb-chip ok">✓ Reservado</span>'}
       ${t.puede_cancelar
         ? (PUB.canc === t.id
           ? `<div class="pb-info" style="margin-top:10px;">¿Cancelar este turno?</div><div style="display:flex; gap:8px; margin-top:8px;"><button type="button" class="pb-ccl" style="flex:1;" onclick="pubCancelarTurno('${ejEsc(t.id)}')" ${PUB.busy ? 'disabled' : ''}>Sí, cancelar</button><button type="button" class="pb-ccl ghost" style="flex:1;" onclick="pubPedirCancelar('${ejEsc(t.id)}')">No</button></div>`
@@ -10363,13 +10366,14 @@ function pubWzPasoResumen(){
   const w = PUB.w, g = PUB.g || {}, m = Number(g.cancelar_min) || 0;
   const cancel = m <= 0 ? 'Podés cancelarlo hasta que empiece, desde “Ver mi semana”.' : 'Podés cancelarlo ' + (m % 60 === 0 ? 'hasta ' + (m / 60) + (m === 60 ? ' hora' : ' horas') : 'hasta ' + m + ' minutos') + ' antes, desde “Ver mi semana”.';
   return `<div class="pb-h">${PUB.nombre ? 'Revisá tu turno, ' + ejEsc(PUB.nombre) : 'Revisá tu turno'}</div>${pubWzTarjeta(null, w.sel)}
+    ${(pubWzServ() || {}).confirmacion === 'manual' ? '<div class="pb-info" style="margin-top:10px;">🕒 Este turno lo confirma el profesional. Te avisamos por WhatsApp.</div>' : ''}
     <p class="pb-p" style="margin-top:10px;">${ejEsc(cancel)}</p>${pubErr()}
-    <div class="pb-acc"><button type="button" onclick="pubWzConfirmar()" ${PUB.busy ? 'disabled' : ''}>${PUB.busy ? 'Reservando…' : 'Confirmar turno'}</button><button type="button" class="secondary" onclick="pubWzReset('sel')">Cambiar horario</button></div>`;
+    <div class="pb-acc"><button type="button" onclick="pubWzConfirmar()" ${PUB.busy ? 'disabled' : ''}>${PUB.busy ? 'Enviando…' : ((pubWzServ() || {}).confirmacion === 'manual' ? 'Pedir turno' : 'Confirmar turno')}</button><button type="button" class="secondary" onclick="pubWzReset('sel')">Cambiar horario</button></div>`;
 }
 function pubWzPasoListo(){
-  const w = PUB.w, r = w.res || {}, nm = PUB.nombre ? ', ' + PUB.nombre : '';
-  return `<div class="pb-center"><div class="pb-big">✅</div><div class="pb-h" style="margin-top:0;">¡Turno reservado${ejEsc(nm)}!</div><p class="pb-p">Te esperamos. Lo podés ver o cancelar desde “Ver mi semana”.</p></div>${pubWzTarjeta(r, w.sel)}
-    <div class="pb-acc"><button type="button" onclick="pubVerSemana()">📅 Ver mi semana</button><button type="button" class="secondary" onclick="pubWzOtro()">Sacar otro turno</button>${pubWaBtn('Escribir por WhatsApp')}</div>`;
+  const w = PUB.w, r = w.res || {}, nm = PUB.nombre ? ', ' + PUB.nombre : '', pend = r.confirmacion === 'pendiente';
+  return `<div class="pb-center"><div class="pb-big ${pend ? 'w' : ''}">${pend ? '🕒' : '✅'}</div><div class="pb-h" style="margin-top:0;">${pend ? 'Pedido enviado' : '¡Turno reservado'}${ejEsc(nm)}${pend ? '' : '!'}</div><p class="pb-p">${pend ? 'El profesional lo confirma y te escribe por WhatsApp. Mientras tanto el horario queda reservado para vos.' : 'Te esperamos. Lo podés ver o cancelar desde “' + (PUB.srv ? 'Mis turnos' : 'Ver mi semana') + '”.'}</p></div>${pubWzTarjeta(r, w.sel)}
+    <div class="pb-acc"><button type="button" onclick="pubVerSemana()">${PUB.srv ? '🔎 Mis turnos' : '📅 Ver mi semana'}</button><button type="button" class="secondary" onclick="pubWzOtro()">Sacar otro turno</button>${pubWaBtn('Escribir por WhatsApp')}</div>`;
 }
 function pubWzPasoRegistro(){
   const f = PUB.f, g = PUB.g || {};
@@ -10870,7 +10874,7 @@ function srvOn(){ return !!(MOD_MAP && MOD_MAP.servicios === true); }
 function srvActivos(){ return (SRV.lista || []).filter(s => s.activo); }
 function srvPorId(id){ return (SRV.lista || []).find(s => s.id === id) || null; }
 function srvUsa(){ return srvOn() && SRV.ok === true && srvActivos().length > 0 && !salaHorario(); }   // hay servicios para reservar
-function srvCols(){ return (srvOn() && SRV.ok === true) ? ',servicio_id,duracion_min' : ''; }   // columnas extra de turnos (solo con el módulo prendido)
+function srvCols(){ return (srvOn() && SRV.ok === true) ? ',servicio_id,duracion_min' + (confOk() ? ',confirmacion,confirmacion_vence' : '') : ''; }   // columnas extra de turnos (solo con el módulo prendido)
 function srvDur(m){ m = +m || 0; if (m < 60) return m + ' min'; const h = Math.floor(m / 60), r = m % 60; return r ? `${h} h ${r} min` : `${h} h`; }
 function srvEtq(s){ return s ? ((s.icono ? s.icono + ' ' : '') + s.nombre) : ''; }
 function srvProfes(sid){   // profesionales activos que dan el servicio
@@ -10897,6 +10901,7 @@ async function srvCargar(){
 }
 function srvAplicar(){
   try{ srvPintar(); }catch(e){}
+  try{ confCargar(); }catch(e){}   // (v191)
   try{ if (RC && RC.ficha && typeof rcRender === 'function') { if (srvUsa() && !RC.prox) rcRefrescar(RC.msg); } }catch(e){}
 }
 
@@ -11339,11 +11344,119 @@ function aviRender(){
     const o = window.cambiarSubvista; if (typeof o !== 'function') return;
     window.cambiarSubvista = function(v){
       const r = o.apply(this, arguments);
-      try{ if (v === 'agenda' || v === 'recepcion') aviCargar(); }catch(e){}
+      try{ if (v === 'agenda' || v === 'recepcion'){ aviCargar(); confCargar(); } }catch(e){}
       return r;
     };
   }catch(e){}
 })();
+
+// ----- (v191) Turnos por confirmar: servicios con "confirmación a mano" -----
+// SQL: v191-confirmacion-manual.sql. Sin ese SQL (la columna no existe) no se muestra nada nuevo.
+const CONF = { ok: null, items: [], cargando: false, busy: {}, ts: 0, err: '', rech: null };
+function confOk(){ return !!(SRV.lista && SRV.lista.length && ('confirmacion' in SRV.lista[0])); }
+function confOn(){ return srvOn() && CONF.ok !== false && confOk(); }
+async function confCargar(forzar){
+  if (!confOn() || !PERFIL_ACTUAL){ confRender(); return; }
+  if (!forzar && CONF.ts && Date.now() - CONF.ts < 15000){ confRender(); return; }
+  CONF.cargando = true; CONF.err = ''; confRender();
+  try{
+    const r = await sb('rpc/turnos_por_confirmar', { method: 'POST', body: JSON.stringify({}) });
+    CONF.ok = true; CONF.items = (r && r.items) || []; CONF.ts = Date.now();
+  }catch(e){
+    const m = rpxMsg(e);
+    if (/turnos_por_confirmar|42883|PGRST202|Could not find/i.test(m)) CONF.ok = false;
+    else CONF.err = extraerMensajeError(e);
+  }
+  CONF.cargando = false; confRender();
+}
+function confPendientes(){ return (CONF.items || []).filter(it => it.confirmacion === 'pendiente'); }
+function confVenceTxt(it){
+  if (!it.vence) return '';
+  const min = Math.round((new Date(it.vence).getTime() - Date.now()) / 60000);
+  if (min <= 0) return 'vence ahora';
+  if (min < 90) return 'vence en ' + min + ' min';
+  const h = Math.round(min / 60);
+  return h < 48 ? 'vence en ' + h + ' h' : 'vence en ' + Math.round(h / 24) + ' días';
+}
+function confMsg(it){
+  const nom = String(it.alumno || '').trim().split(/\s+/)[0] || '';
+  const nombre = nom ? nom.charAt(0).toUpperCase() + nom.slice(1).toLowerCase() : '';
+  const gim = (typeof GIMNASIO_ACTUAL !== 'undefined' && GIMNASIO_ACTUAL && GIMNASIO_ACTUAL.nombre) ? GIMNASIO_ACTUAL.nombre : '';
+  const donde = (it.sucursal && sucOn()) ? ' en ' + it.sucursal : (gim ? ' en ' + gim : '');
+  const con = it.profesor ? ' con ' + it.profesor : '';
+  const cuando = 'el ' + fechaLegible(it.fecha).replace(',', '') + ' a las ' + it.hora;
+  if (it.confirmacion === 'confirmado') return `Hola ${nombre}! Tu turno de ${it.servicio} ${cuando}${donde}${con} quedó confirmado ✅. Si no podés venir avisanos así liberamos el horario. ¡Te esperamos!`;
+  if (it.confirmacion === 'rechazado') return `Hola ${nombre}! No pudimos confirmar tu turno de ${it.servicio} ${cuando}${donde}. Podés elegir otro horario desde el link o escribinos y lo coordinamos. ¡Disculpá las molestias!`;
+  return `Hola ${nombre}! Tu turno de ${it.servicio} ${cuando}${donde} quedó sin confirmar y el horario se liberó. Si todavía lo querés, pedí uno nuevo desde el link o escribinos.`;
+}
+async function confResolver(id, accion){
+  if (CONF.busy[id]) return; CONF.busy[id] = true; CONF.rech = null; confRender();
+  try{
+    await sb('rpc/turno_confirmar', { method: 'POST', body: JSON.stringify({ p_turno: id, p_accion: accion }) });
+    const it = CONF.items.find(x => x.turno_id === id);
+    if (it){ it.confirmacion = accion === 'confirmar' ? 'confirmado' : 'rechazado'; it.vence = null; }
+    toast(accion === 'confirmar' ? 'Turno confirmado ✓ Avisale al paciente por WhatsApp.' : 'Turno rechazado: el horario quedó libre. Avisale al paciente.');
+    try{ if (typeof renderAgenda === 'function' && document.getElementById('agendaTimelineWrap') && document.getElementById('agendaTimelineWrap').offsetParent) renderAgenda(); }catch(e){}
+  }catch(e){ toast(extraerMensajeError(e), true); CONF.ts = 0; }
+  CONF.busy[id] = false; confRender();
+  if (!CONF.ts) confCargar(true);
+}
+function confPedirRechazo(id){ CONF.rech = id; confRender(); }
+function confCancelarRechazo(){ CONF.rech = null; confRender(); }
+async function confAvisado(id){
+  if (CONF.busy[id]) return; CONF.busy[id] = true;
+  try{
+    await sb('rpc/turno_confirmacion_avisado', { method: 'POST', body: JSON.stringify({ p_turno: id }) });
+    CONF.items = CONF.items.filter(x => x.turno_id !== id);
+  }catch(e){ toast(extraerMensajeError(e), true); }
+  CONF.busy[id] = false; confRender();
+}
+function confWhatsapp(id){
+  const it = CONF.items.find(x => x.turno_id === id); if (!it) return;
+  const url = whatsappUrlAlumno(it.telefono, confMsg(it));
+  if (!url){ toast('Este paciente no tiene teléfono cargado.', true); return; }
+  window.open(url, '_blank', 'noopener');
+  confAvisado(id);
+}
+function confFila(it){
+  const sede = (it.sucursal && sucOn()) ? ` · 📍 ${xe(it.sucursal)}` : '';
+  const id = it.turno_id, pend = it.confirmacion === 'pendiente';
+  let acc;
+  if (pend){
+    acc = CONF.rech === id
+      ? `<span class="muted" style="font-size:12.5px;">¿Rechazar y liberar el horario?</span><button type="button" class="avi-b" onclick="confResolver('${id}', 'rechazar')">Sí, rechazar</button><button type="button" class="ghost avi-b" onclick="confCancelarRechazo()">No</button>`
+      : `<button type="button" class="avi-b" onclick="confResolver('${id}', 'confirmar')" ${CONF.busy[id] ? 'disabled' : ''}>✅ Aceptar</button><button type="button" class="ghost avi-b" onclick="confPedirRechazo('${id}')" ${CONF.busy[id] ? 'disabled' : ''}>✕ Rechazar</button>`;
+  } else {
+    const est = it.confirmacion === 'confirmado' ? '✓ Confirmado' : it.confirmacion === 'rechazado' ? '✕ Rechazado' : '⌛ Venció sin confirmar';
+    acc = `<span class="avi-ok">${est}</span>`
+      + (it.telefono ? `<button type="button" class="avi-b avi-wa" onclick="confWhatsapp('${id}')">💬 Avisar por WhatsApp</button>` : '<span class="muted" style="font-size:12px;">Sin teléfono</span>')
+      + `<button type="button" class="secondary avi-b" onclick="confAvisado('${id}')">✓ Ya avisé</button>`;
+  }
+  return `<div class="avi-row"><div class="avi-quien"><b>${xe(fechaLegible(it.fecha))} · ${xe(it.hora)}–${xe(it.hora_fin)}</b> ${xe(it.alumno)}${it.nuevo ? ' <span class="pill" title="Primera vez">🆕</span>' : ''}${it.tiene_app ? ' <span class="pill" title="Tiene la app">📱</span>' : ''}
+    <div class="muted" style="font-size:12.5px;">${it.icono ? xe(it.icono) + ' ' : ''}${xe(it.servicio)}${it.profesor ? ' · ' + xe(it.profesor) : ''}${sede}${pend && it.vence ? ' · ⏱ ' + xe(confVenceTxt(it)) : ''}</div></div><div class="avi-acc">${acc}</div></div>`;
+}
+function confHtml(){
+  const pend = confPendientes().length, tot = (CONF.items || []).length;
+  const cuerpo = CONF.err ? `<div class="rpx-ban">⚠️ ${xe(CONF.err)}</div>` : (CONF.items || []).map(confFila).join('');
+  return `<div class="avi-h"><div><b>🕒 Turnos por confirmar</b> <span class="muted" style="font-size:13px;">· aceptá o rechazá y avisale al paciente por WhatsApp</span></div>
+    <div style="display:flex;gap:8px;align-items:center;"><span class="pill ${pend ? 'warn' : ''}">${pend ? pend + ' por confirmar' : (tot ? 'Falta avisar' : '')}</span><button type="button" class="ghost avi-b" onclick="confCargar(true)" title="Actualizar">↻</button></div></div>
+    <div class="avi-lista">${cuerpo}</div>`;
+}
+function confRender(){
+  ['confAgenda', 'confRecep'].forEach(id => {
+    const el = document.getElementById(id); if (!el) return;
+    const ver = !!(PERFIL_ACTUAL && confOn() && ((CONF.items || []).length || CONF.err));
+    el.style.display = ver ? '' : 'none';
+    if (ver) el.innerHTML = confHtml();
+  });
+}
+setInterval(function(){
+  try{
+    if (document.hidden || !confOn()) return;
+    const a = document.getElementById('agendaTimelineWrap'), b = document.getElementById('rcRes');
+    if ((a && a.offsetParent) || (b && b.offsetParent)) confCargar(true);
+  }catch(e){}
+}, 60000);
 
 // ----- Mi gimnasio: lista y alta de servicios + límite de turnos por día -----
 function srvEsAdmin(){ return !!(PERFIL_ACTUAL && PERFIL_ACTUAL.rol === 'admin' && !PERFIL_ACTUAL.sucursal_id); }
@@ -11360,7 +11473,7 @@ function srvPintar(forzar){
   const tarjetas = lista.map(s => {
     const nombres = srvProfes(s.id).map(p => xe(p.nombre));
     return `<div class="suc-card ${s.activo ? '' : 'off'}">
-      <div class="suc-card-h"><b>${xe(srvEtq(s))}</b><span class="pill">${srvDur(s.duracion_min)}</span>${s.activo ? '' : '<span class="pill warn">Desactivado</span>'}${s.recordar === true ? '<span class="pill" title="Se avisa el día anterior">🔔 Avisa</span>' : ''}
+      <div class="suc-card-h"><b>${xe(srvEtq(s))}</b><span class="pill">${srvDur(s.duracion_min)}</span>${s.activo ? '' : '<span class="pill warn">Desactivado</span>'}${s.recordar === true ? '<span class="pill" title="Se avisa el día anterior">🔔 Avisa</span>' : ''}${s.confirmacion === 'manual' ? '<span class="pill" title="El profesional acepta o rechaza cada turno">🕒 Confirma a mano</span>' : ''}
         <span style="flex:1"></span>
         <button type="button" class="ghost" onclick="srvEditar('${s.id}')">Editar</button>
         <button type="button" class="ghost" onclick="srvActivoToggle('${s.id}', ${s.activo ? 'false' : 'true'})">${s.activo ? 'Desactivar' : 'Activar'}</button></div>
@@ -11382,6 +11495,10 @@ function srvPintar(forzar){
         ${e.id ? '<div class="muted" style="font-size:12px;margin-top:4px;">Si cambiás la duración, los turnos ya dados no se mueven: solo cambian los nuevos.</div>' : '<div class="muted" style="font-size:12px;margin-top:4px;">Múltiplo de 5. Los turnos salen cada esa cantidad de minutos desde el inicio del horario del profesional.</div>'}</div>
       <div class="field" style="margin-top:8px;"><label>Descripción (opcional)</label><input id="srvF_desc" maxlength="200" value="${xe(e.descripcion || '')}" placeholder="Se muestra al elegir el servicio"></div>
       ${srvRecOk() ? `<label class="srv-pro" style="margin-top:12px;display:flex;gap:8px;align-items:flex-start;"><input type="checkbox" id="srvF_rec" ${e.recordar !== false ? 'checked' : ''} onchange="srvProfSet0(this.checked)" style="margin-top:3px;"> <span><b>🔔 Avisar el día anterior</b><br><small class="muted">Aparece en “📣 Avisar hoy” (Agenda y Recepción) para mandarle el WhatsApp, y a quien tiene la app le llega un aviso solo a las 10:00. Apagalo para turnos que se repiten todas las semanas (ej. entrenamiento).</small></span></label>` : ''}
+      ${confOk() ? `<div class="field" style="margin-top:12px;"><label>¿Cómo se confirma el turno?</label>
+        <select id="srvF_conf" onchange="srvConfCambio()" style="max-width:420px;"><option value="automatica" ${e.confirmacion !== 'manual' ? 'selected' : ''}>Automática: queda reservado al instante</option><option value="manual" ${e.confirmacion === 'manual' ? 'selected' : ''}>A mano: el profesional lo acepta o rechaza</option></select>
+        ${e.confirmacion === 'manual' ? `<div style="margin-top:8px;font-size:13.5px;">Si nadie lo confirma, se cancela solo a las <select id="srvF_vence" style="width:auto;display:inline-block;">${[2, 6, 12, 24, 48, 72].map(h => `<option value="${h}" ${+e.confirmacion_vence_horas === h ? 'selected' : ''}>${h} h</option>`).join('')}</select> de pedido (o al empezar el turno, lo que pase primero).</div>
+        <div class="muted" style="font-size:12px;margin-top:4px;">Cuando alguien lo pide desde el link o la app queda “por confirmar” y el horario queda tomado. Lo aceptás o rechazás en “🕒 Turnos por confirmar” (Agenda y Recepción) y te dejamos el WhatsApp listo. Los turnos que cargás vos desde la agenda quedan confirmados directo.</div>` : '<div class="muted" style="font-size:12px;margin-top:4px;">Es lo de siempre: el turno queda confirmado apenas se reserva.</div>'}</div>` : ''}
       <div class="field" style="margin-top:8px;"><label>¿Quién lo da?</label>
         ${profes.length ? `<div class="srv-pros">${profes.map(p => `<label class="srv-pro"><input type="checkbox" ${sel.has(p.id) ? 'checked' : ''} onchange="srvProfSet('${p.id}', this.checked)"> ${xe(p.nombre)}</label>`).join('')}</div>`
           : '<div class="muted">Primero cargá a los profesionales en <b>Profesores</b>.</div>'}</div>
@@ -11399,7 +11516,7 @@ function srvPintar(forzar){
 }
 function srvNuevo(i){
   const x = (i != null) ? SRV_EJEMPLOS[i] : null;
-  SRV.edit = { id: null, nombre: x ? x[0] : '', duracion_min: x ? x[1] : 30, icono: x ? x[2] : '', descripcion: '', profs: [], recordar: true }; srvPintar(true);
+  SRV.edit = { id: null, nombre: x ? x[0] : '', duracion_min: x ? x[1] : 30, icono: x ? x[2] : '', descripcion: '', profs: [], recordar: true, confirmacion: 'automatica', confirmacion_vence_horas: 24 }; srvPintar(true);
 }
 function srvEditar(id){ const s = srvPorId(id); if (!s) return; SRV.edit = Object.assign({}, s, { profs: [...(SRV.profs[id] || [])] }); srvPintar(true); }
 function srvCancelar(){ SRV.edit = null; srvPintar(true); }
@@ -11407,8 +11524,11 @@ function srvFormLeer(){
   const e = SRV.edit; if (!e) return;
   const g = id => { const el = document.getElementById(id); return el ? el.value : ''; };
   e.nombre = g('srvF_nombre'); e.icono = g('srvF_ico'); e.descripcion = g('srvF_desc'); e.duracion_min = g('srvF_dur');
+  const cf = document.getElementById('srvF_conf'); if (cf) e.confirmacion = cf.value;   // (v191)
+  const cv = document.getElementById('srvF_vence'); if (cv) e.confirmacion_vence_horas = parseInt(cv.value, 10) || 24;
   const rc = document.getElementById('srvF_rec'); if (rc) e.recordar = rc.checked;   // (v152)
 }
+function srvConfCambio(){ srvFormLeer(); if (SRV.edit && SRV.edit.confirmacion === 'manual' && !SRV.edit.confirmacion_vence_horas) SRV.edit.confirmacion_vence_horas = 24; srvPintar(true); }
 function srvRecOk(){ return (SRV.lista && SRV.lista.length) ? ('recordar' in SRV.lista[0]) : AVI.ok === true; }   // (v152) la columna existe (SQL v152 corrido)
 function srvProfSet0(on){ if (SRV.edit) SRV.edit.recordar = !!on; }
 function srvDurSet(m){ srvFormLeer(); SRV.edit.duracion_min = m; srvPintar(true); }
@@ -11421,6 +11541,7 @@ async function srvGuardar(){
   if (!(dur >= 5 && dur <= 240 && dur % 5 === 0)){ toast('La duración tiene que estar entre 5 y 240 minutos, de a 5.', true); return; }
   const fila = { nombre, duracion_min: dur, icono: (e.icono || '').trim() || null, descripcion: (e.descripcion || '').trim() || null };
   if (srvRecOk()) fila.recordar = e.recordar !== false;   // (v152) avisar el día anterior
+  if (confOk()){ fila.confirmacion = e.confirmacion === 'manual' ? 'manual' : 'automatica'; fila.confirmacion_vence_horas = Math.max(1, Math.min(168, parseInt(e.confirmacion_vence_horas, 10) || 24)); }   // (v191)
   SRV.busy = true; const btn = document.getElementById('srvBtnGuardar'); if (btn){ btn.disabled = true; btn.textContent = 'Guardando…'; }
   try{
     let id = e.id;
@@ -11769,7 +11890,7 @@ async function srvAluRender(){
 // ----- Agenda del día: tarjetas de turnos con servicio (hora real y duración) -----
 function srvAgendaTag(r){
   const s = srvPorId(r.servId);
-  return `<div class="chip-progreso" style="color:var(--accent2-text);">${xe(s ? srvEtq(s) : 'Servicio')} · ${xe(rcHora(r.hora))}–${srvHoraFin(r.hora, r.dur)}</div>`;
+  return `<div class="chip-progreso" style="color:var(--accent2-text);">${xe(s ? srvEtq(s) : 'Servicio')} · ${xe(rcHora(r.hora))}–${srvHoraFin(r.hora, r.dur)}${r.conf === 'pendiente' ? ' · <b style="color:var(--warn-text);">🕒 por confirmar</b>' : ''}</div>`;
 }
 function srvFranjaTxt(ns, cupo){
   const min = Math.round(ns.reduce((a, r) => a + (r.dur || 60), 0));
@@ -16500,6 +16621,7 @@ async function renderAgenda(){
         ajustada: !!t.rutina_ajustada_en,
         profId: t.profesor_id,
         hora: t.servicio_id ? t.hora : null, servId: t.servicio_id || null, dur: t.servicio_id ? (t.duracion_min || 60) : null,   // (v148)
+        conf: t.confirmacion || null,   // (v191)
         rot: rotAg ? (rotAg.rotDe[t.alumno_id] ? { nombre: rotAg.rotDe[t.alumno_id], dia: rotAg.rotDia[t.alumno_id] || null } : (rotAg.ok && !t.rutina_dia_id ? 'sin' : null)) : null,
       });
     });
@@ -28188,7 +28310,7 @@ async function confirmarReservaTurno(){
   if (servicioId){   // (v148) turno de un servicio: sin enganche de rutina
     try{
       await sb('rpc/reservar_turno_servicio', { method: 'POST', body: JSON.stringify({ p_alumno_id: alumnoId, p_profesor_id: profesorId, p_servicio_id: servicioId, p_fecha: fecha, p_hora: hora }) });
-      toast('Turno reservado ✓');
+      { const sv0 = srvPorId(servicioId); toast(sv0 && sv0.confirmacion === 'manual' ? 'Pedido enviado ✓ El profesional tiene que confirmarlo y te avisa.' : 'Turno reservado ✓'); }
       if (AW.w) AW.w.dias = null;   // (v151) los horarios cambiaron
       cargarTurnos(alumnoId);
     }catch(e){ toast('Error reservando turno: ' + extraerMensajeError(e), true); }
@@ -28890,8 +29012,8 @@ async function cargarTurnos(alumnoId){
       return tcardHtml({
         fecha: t.fecha, cls: cancelado ? 'canc' : vencido ? 'venc' : '',
         titulo: t.hora.slice(0,5) + ' hs' + (sv ? ' · ' + srvEtq(sv) + (t.duracion_min ? ' (' + srvDur(t.duracion_min) + ')' : '') : '') + (t.profesores?.nombre ? ' · ' + t.profesores.nombre : '') + (sucMulti() && t.sucursal_id && sucNombre(t.sucursal_id) ? ' · 📍 ' + sucNombre(t.sucursal_id) : ''),
-        sub: sv ? (cancelado ? 'Cancelado' : diffDias > 0 ? 'Turno pasado' : diffDias === 0 ? 'Es hoy' : 'Próximo turno') : cancelado ? 'Cancelado' : completado ? '✓ Entrenamiento realizado' : vencido ? 'Vencido' : futuro ? 'Disponible ese día' : (t.rutina_dias ? t.rutina_dias.nombre_dia : 'Todavía sin rutina planificada para este día'),
-        estadoCls: cls, estadoTxt: (sv && diffDias > 0 && !cancelado) ? 'Pasado' : txt,
+        sub: sv ? (cancelado ? 'Cancelado' : t.confirmacion === 'pendiente' ? '🕒 Esperando que el profesional lo confirme' : diffDias > 0 ? 'Turno pasado' : diffDias === 0 ? 'Es hoy' : 'Próximo turno') : cancelado ? 'Cancelado' : completado ? '✓ Entrenamiento realizado' : vencido ? 'Vencido' : futuro ? 'Disponible ese día' : (t.rutina_dias ? t.rutina_dias.nombre_dia : 'Todavía sin rutina planificada para este día'),
+        estadoCls: (sv && t.confirmacion === 'pendiente' && !cancelado) ? 'pend' : cls, estadoTxt: (sv && t.confirmacion === 'pendiente' && !cancelado) ? 'Por confirmar' : (sv && diffDias > 0 && !cancelado) ? 'Pasado' : txt,
         acciones: sv ? ((cancelado || diffDias > 0) ? '' : `<button class="ghost" onclick="cancelarTurno('${t.id}','${alumnoId}')">Cancelar</button>`) : acciones,
       });
     }).join('');
