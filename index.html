@@ -5551,7 +5551,7 @@ function atlIniciarAlu(){
   atlCargarVista('aluAtletismoContenido', id || '');
 }
 
-const APP_VERSION = 196;
+const APP_VERSION = 197;
 let ES_PERSONAL = false;   // (v132) cuenta personal (gimnasios.tipo = 'personal'); se calcula en perAplicar()
 // (v96) Fecha de la última actualización: se cambia junto con APP_VERSION en cada entrega. Se muestra en la
 // pantalla de inicio y en el menú de cuenta ("v94 · actualizada el 5/10/2026").
@@ -21766,15 +21766,11 @@ function clDivTramos(ini, fin, dur){
   for (let t = a; t + dur <= b; t += dur) out.push([clMinATxt(t), clMinATxt(t + dur)]);
   return out;
 }
-function clDivCambio(){
-  const on = !!(document.getElementById('clDiv') || {}).checked, bx = document.getElementById('clDivBox'); if (bx) bx.style.display = on ? '' : 'none';
-  clDivPrev();
-}
 function clDivPrev(){
   const pv = document.getElementById('clDivPrev'); if (!pv) return;
-  const on = !!(document.getElementById('clDiv') || {}).checked; if (!on){ pv.innerHTML = ''; return; }
-  const ini = (document.getElementById('clIni') || {}).value, fin = (document.getElementById('clFin') || {}).value, dur = +(document.getElementById('clDivMin') || {}).value || 60;
-  if (!ini || !fin || fin <= ini){ pv.innerHTML = '<span style="color:var(--danger-text);">Completá Desde y Hasta.</span>'; return; }
+  const ini = (document.getElementById('clIni') || {}).value, fin = (document.getElementById('clFin') || {}).value, dur = +(document.getElementById('clDivMin') || {}).value;
+  if (!dur){ pv.innerHTML = ini && fin && fin > ini ? 'Se crea <b>1</b> clase: <b>' + ini + '</b>–' + fin : ''; return; }
+  if (!ini || !fin || fin <= ini){ pv.innerHTML = '<span style="color:var(--danger-text);">Completá la franja horaria (Desde y Hasta).</span>'; return; }
   const tr = clDivTramos(ini, fin, dur), sobra = (clTm(fin) - clTm(ini)) - tr.length * dur;
   pv.innerHTML = !tr.length ? '<span style="color:var(--danger-text);">El rango es más corto que la duración elegida.</span>'
     : `Se crean <b>${tr.length}</b> ${tr.length === 1 ? 'clase' : 'clases'}: ${tr.map(t => '<b>' + t[0] + '</b>–' + t[1]).join(' · ')}` + (sobra > 0 ? `<br><span class="muted">Sobran ${sobra} min al final que no se usan.</span>` : '') + (tr.length > 24 ? '<br><span style="color:var(--danger-text);">Máximo 24 clases por vez.</span>' : '');
@@ -21794,9 +21790,9 @@ function clEditar(id, pre){
     <div class="field"><label>Nombre de la clase</label><input id="clNom" value="${ejEsc(c.nombre)}" placeholder="ej: Funcional, Spinning, Yoga"></div>
     ${selSede}
     <div class="field"><label>Días en que se repite</label><div class="cl-dchips" id="clDias">${CL_DL.map((l, d) => `<span class="${CL.EC.dias.includes(d) ? 'on' : ''}" onclick="clTogDia(${d})">${l}</span>`).join('')}</div></div>
-    <div class="cl-row2"><div class="field"><label>Desde</label><input type="time" id="clIni" value="${c.ini}" oninput="clDivPrev()"></div><div class="field"><label>Hasta</label><input type="time" id="clFin" value="${c.fin}" oninput="clDivPrev()"></div></div>
-    ${id ? '' : `<label class="srv-pro" style="display:flex;gap:8px;align-items:flex-start;margin:2px 0 8px;"><input type="checkbox" id="clDiv" onchange="clDivCambio()" style="margin-top:3px;"> <span><b style="text-transform:none;letter-spacing:0;">Dividir el rango en varias clases</b><br><small class="muted" style="text-transform:none;letter-spacing:0;font-weight:400;">Ej: de 18:00 a 21:00 se crean 3 clases de 1 hora, todas con el mismo nombre, días, profesor y cupo.</small></span></label>
-      <div id="clDivBox" style="display:none;margin:0 0 10px;"><div class="field" style="margin-bottom:6px;"><label>Duración de cada clase</label><select id="clDivMin" onchange="clDivPrev()" style="max-width:200px;">${CL_DIV_MIN.map(m => `<option value="${m}" ${m === 60 ? 'selected' : ''}>${m === 60 ? '1 hora' : m === 120 ? '2 horas' : m === 90 ? '1 hora y media' : m + ' minutos'}</option>`).join('')}</select></div><div id="clDivPrev" class="muted" style="font-size:13px;"></div></div>`}
+    ${id ? '' : `<div class="field"><label>Duración de cada clase</label><select id="clDivMin" onchange="clDivPrev()" style="max-width:260px;">${CL_DIV_MIN.map(m => `<option value="${m}" ${m === 60 ? 'selected' : ''}>${m === 60 ? '1 hora' : m === 120 ? '2 horas' : m === 90 ? '1 hora y media' : m + ' minutos'}</option>`).join('')}<option value="0">Una sola clase (todo el rango)</option></select></div>`}
+    <div class="cl-row2"><div class="field"><label>Franja horaria · Desde</label><input type="time" id="clIni" value="${c.ini}" oninput="clDivPrev()"></div><div class="field"><label>Hasta</label><input type="time" id="clFin" value="${c.fin}" oninput="clDivPrev()"></div></div>
+    ${id ? '' : '<div id="clDivPrev" class="muted" style="font-size:13px;margin:-4px 0 10px;"></div>'}
     ${CL.res === true
       ? `<div class="cl-row2 cl-row21"><div class="field"><label>Profesor (opcional)</label>${selProf}</div><div class="field"><label>Cupo</label><input type="number" id="clCupo" min="1" max="500" inputmode="numeric" value="${c.cupo || ''}" placeholder="ej: 12"></div></div>
          <div class="muted" style="font-size:12px; margin:6px 0 10px;">Cupo: cuántos alumnos entran. Se anotan desde su app y, con el cupo lleno, pasan a lista de espera.</div>`
@@ -21805,7 +21801,7 @@ function clEditar(id, pre){
     ${rpxEditorHtml(c)}
     <div class="row" style="justify-content:flex-end; gap:8px; margin-top:14px;">${id ? `<button type="button" class="ghost" style="margin-right:auto; color:var(--danger-text);" onclick="clEliminar('${id}')">🗑️ Eliminar</button>` : ''}<button type="button" class="ghost" onclick="clCerrar()">Cancelar</button><button type="button" id="clBtnGuardar" onclick="clGuardar(${id ? `'${id}'` : 'null'})">Guardar</button></div>`;
   const ov = document.getElementById('clOv'); m.style.transform = ''; m.dataset.dx = 0; m.dataset.dy = 0;
-  ov.classList.add('show'); ov.classList.toggle('desk', !movil);
+  ov.classList.add('show'); ov.classList.toggle('desk', !movil); clDivPrev();
   document.getElementById(CL.contId).classList.add('cl-lock');
   clArrastrable(document.getElementById('clMh'), m);
 }
@@ -21822,10 +21818,10 @@ async function clGuardar(id){
   if (!nombre){ toast('Poné el nombre de la clase.', true); return; }
   if (!CL.EC.dias.length){ toast('Elegí al menos un día.', true); return; }
   if (!ini || !fin || fin <= ini){ toast('La hora de fin tiene que ser después de la de inicio.', true); return; }
-  const dvOn = !id && !!(document.getElementById('clDiv') || {}).checked;   // (v196) dividir el rango en varias clases
+  const dvMin = !id ? (+(document.getElementById('clDivMin') || {}).value || 0) : 0;   // (v196/v197) duración de cada clase dentro de la franja (0 = una sola clase)
   let tramos = [[ini, fin]];
-  if (dvOn){
-    tramos = clDivTramos(ini, fin, +(document.getElementById('clDivMin') || {}).value || 60);
+  if (dvMin > 0){
+    tramos = clDivTramos(ini, fin, dvMin);
     if (!tramos.length){ toast('El rango es más corto que la duración de cada clase.', true); return; }
     if (tramos.length > 24){ toast('Son demasiadas clases juntas (máximo 24). Achicá el rango.', true); return; }
   }
