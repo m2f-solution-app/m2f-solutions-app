@@ -3240,7 +3240,7 @@ if ('serviceWorker' in navigator) window.addEventListener('load', function(){ tr
           <div class="row" style="margin-top:12px;">
             <div class="field" id="espAlumnoWrap" style="min-width:240px; max-width:380px;">
               <label>¿Qué alumno?</label>
-              <select id="espAlumno" onchange="cargarEspecialesDeAlumno(); nrTarget()"></select>
+              <select id="espAlumno" onchange="cargarEspecialesDeAlumno(); nrTarget(); etqAlumnoCambio()"></select>
             </div>
             <div class="field" id="espEquipoWrap" style="display:none; min-width:240px; max-width:380px;">
               <label>¿Qué equipo?</label>
@@ -5702,7 +5702,7 @@ function atlIniciarAlu(){
   atlCargarVista('aluAtletismoContenido', id || '');
 }
 
-const APP_VERSION = 206;
+const APP_VERSION = 207;
 let ES_PERSONAL = false;   // (v132) cuenta personal (gimnasios.tipo = 'personal'); se calcula en perAplicar()
 // (v96) Fecha de la última actualización: se cambia junto con APP_VERSION en cada entrega. Se muestra en la
 // pantalla de inicio y en el menú de cuenta ("v94 · actualizada el 5/10/2026").
@@ -21264,7 +21264,7 @@ function ppFilas(L){
       <div><div class="pp-lab">Última evaluación</div>${d.ev ? `<div class="pp-big">SJ ${ppFx(d.ev.sj)} · CMJ ${ppFx(d.ev.cmj)} cm</div><div class="pp-muted pp-small">IE ${ppFx(ie)} % · ${f(d.ev.f)}</div>` : '<div class="pp-empty pp-small">Sin SJ / CMJ</div>'}
         ${d.t5 ? `<div class="pp-small" style="margin-top:3px">5-0-5: ${ppFx(d.t5.l, 2)} / ${ppFx(d.t5.r, 2)} s <span class="pp-chip ${as}">${ppFx(a)} %</span></div>` : ''}
         ${!d.perfil && d.ev ? `<div class="pp-small" style="margin-top:3px; color:var(--pp-warn);">${xe(d.why)}</div>` : ''}</div>
-      <div><div class="pp-lab">Rutina</div>${d.rut ? `<div class="pp-big pp-small">${xe(d.rut.nombre)}</div>${d.rut.sem ? `<div class="pp-muted pp-small">Semana ${d.rut.sem}${d.rut.tot ? ' de ' + d.rut.tot : ''}</div>` : ''}` : '<span class="pp-chip warn">∅ Sin rutina asignada</span>'}</div>
+      <div><div class="pp-lab">Rutina</div>${d.rut ? `<div class="pp-big pp-small">${xe(d.rut.nombre)}</div>${d.rut.sem ? `<div class="pp-muted pp-small">Semana ${d.rut.sem}${d.rut.tot ? ' de ' + d.rut.tot : ''}</div>` : ''}` : '<span class="pp-chip warn">∅ Sin rutina asignada</span><div style="margin-top:6px;"><button class="pp-tg" onclick="event.stopPropagation(); irAAsignarEspecialDesdeModal(\'' + d.id + '\')">＋ Asignar rutina</button></div>'}</div>
     </div>`;
   }).join('');
 }
@@ -21285,7 +21285,7 @@ async function ppFichaCarga(a, tok){
   body.innerHTML = '<div class="muted">Cargando…</div>';
   const vig = () => tok === FICHA_TOK && document.getElementById('fichaTabBody') === body;
   try{
-    if (!PP.ok && PP.cortes == null){ try{ const g = await sb(`gimnasios?select=panel_cortes&id=eq.${PERFIL_ACTUAL.gimnasio_id}`); PP.cortes = (g && g[0] && g[0].panel_cortes) || null; }catch(e){} }
+    await ppCortesAsegurar();
     const hoy = dateAIso(new Date());
     const [evals, rs] = await Promise.all([
       sb(`evaluaciones?select=id,fecha&alumno_id=eq.${a.id}&order=fecha.desc&limit=60`),
@@ -24982,6 +24982,7 @@ function nrGuardar(){
   nrEl('nrNombreLbl2').textContent = plant ? 'Nombre de la plantilla' : 'Nombre de la rutina';
   const nd = nrCantDias(), ej = nrCantEj();
   nrEl('nrNombreResumen').innerHTML = `${escaparHtml(nrDestinoTxt())} · ${nrModoTxt()} · ${nd} día${nd === 1 ? '' : 's'} · ${ej} ejercicio${ej === 1 ? '' : 's'}<br>Dejá este nombre, cambialo o generá otro automático.`;
+  etqNombreModal(nrPara());   // (v207)
   nrEl('modalNombreRutina').classList.add('show');
   setTimeout(() => { const i = nrEl('nrNombreInput'); i.focus(); i.select(); }, 60);
 }
@@ -24991,6 +24992,7 @@ async function nrNombreOk(){
   const v = (nrEl('nrNombreInput').value || '').trim();
   if (!v){ toast('Poné un nombre o tocá "Generar nombre automático".', true); return; }
   NR.autoUsado = (v === nrNombreAutoTxt()) ? v : null;
+  etqSnap();   // (v207)
   nrEl('espNombreRutina').value = v;
   nrNombreCerrar();
   await guardarRutinaEspecial();
@@ -25136,6 +25138,141 @@ function traerDiaAplicar(prefijo, diaId, idx, modo){
   toast(`✓ Traído "${rot}" de ${nombreOrigen} (${ejs.length} ejercicio${ejs.length === 1 ? '' : 's'})` + (avisos.length ? ' — ' + avisos.join('; ') : ''));
 }
 
+// ---------- (v207) Etiquetas de rutinas + asignación filtrada (Panel Deportistas) ----------
+// rutinas.perfil (text[]), rutinas.nivel, rutinas.deporte: todo opcional. Solo con el módulo prendido; apagado, nada de esto aparece ni se envía.
+const ETQ_PERF = ['FM', 'POT', 'FP', 'FR', 'MAN', 'READ'], ETQ_NIVELES = ['Principiante', 'Intermedio', 'Profesional'];
+const ETQ = { perfil: [], nivel: '', deporte: '', on: false, snap: null, cont: '', id: null, ctx: {}, verTodas: false };
+function etqVacio(){ ETQ.perfil = []; ETQ.nivel = ''; ETQ.deporte = ''; }
+function etqBody(){ return { perfil: ETQ.perfil.length ? ETQ.perfil.slice() : null, nivel: ETQ.nivel || null, deporte: (ETQ.deporte || '').trim() || null }; }
+function etqTiene(r){ return !!((r.perfil && r.perfil.length) || r.nivel || r.deporte); }
+function etqPostBody(){ const sn = ETQ.snap; ETQ.snap = null; return (panelOn() && sn) ? sn : {}; }
+function etqEditorHtml(){
+  const chips = ETQ_PERF.map(k => `<span class="chip-toggle${ETQ.perfil.includes(k) ? ' active' : ''}" onclick="etqTogglePerfil('${k}')">${xe(PP_PERF[k].n)}</span>`).join('');
+  return `<div class="field"><label>Perfil (podés marcar varios)</label><div style="display:flex; gap:6px; flex-wrap:wrap;">${chips}</div></div>
+    <div class="field"><label>Nivel</label><select onchange="ETQ.nivel=this.value"><option value="">General (cualquier nivel)</option>${ETQ_NIVELES.map(n => `<option ${ETQ.nivel === n ? 'selected' : ''}>${n}</option>`).join('')}</select></div>
+    <div class="field"><label>Deporte</label><input value="${xe(ETQ.deporte)}" placeholder="Vacío = cualquier deporte" maxlength="60" autocomplete="off" oninput="ETQ.deporte=this.value"></div>`;
+}
+function etqPintar(){ const c = document.getElementById(ETQ.cont); if (c) c.innerHTML = etqEditorHtml(); }
+function etqTogglePerfil(k){ const i = ETQ.perfil.indexOf(k); if (i < 0) ETQ.perfil.push(k); else ETQ.perfil.splice(i, 1); etqPintar(); }
+// al guardar una rutina nueva: solo para las que van a la biblioteca (tipo de entrenamiento o plantilla)
+function etqNombreModal(para){
+  const b = document.getElementById('nrEtqBloque'); if (!b) return;
+  ETQ.snap = null;
+  const ver = panelOn() && (para === 'tipo' || para === 'plantilla');
+  ETQ.on = ver; b.style.display = ver ? '' : 'none';
+  if (!ver){ b.innerHTML = ''; return; }
+  etqVacio(); ETQ.cont = 'nrEtqIn';
+  b.innerHTML = '<div class="x-sec" style="margin:4px 0 8px;">🎯 Para qué deportistas es (opcional)</div><div id="nrEtqIn"></div>';
+  etqPintar();
+}
+function etqSnap(){ ETQ.snap = ETQ.on ? etqBody() : null; }
+// editar las de una rutina que ya existe (lista de Rutinas)
+function etqEditar(id){
+  const r = (RUTINAS_CACHE || []).find(x => x.id === id); if (!r) return;
+  ETQ.id = id; ETQ.perfil = (r.perfil || []).slice(); ETQ.nivel = r.nivel || ''; ETQ.deporte = r.deporte || ''; ETQ.cont = 'rutEtqIn';
+  document.getElementById('rutEtqTitulo').textContent = r.nombre;
+  etqPintar(); document.getElementById('modalRutEtq').classList.add('show');
+}
+function etqCerrar(){ const m = document.getElementById('modalRutEtq'); if (m) m.classList.remove('show'); ETQ.id = null; }
+async function etqGuardar(){
+  const id = ETQ.id; if (!id) return;
+  const btn = document.getElementById('rutEtqBtn'), body = etqBody();
+  if (btn){ btn.disabled = true; btn.textContent = 'Guardando...'; }
+  try{
+    const r = await sb(`rutinas?id=eq.${id}`, { method: 'PATCH', headers: { Prefer: 'return=representation' }, body: JSON.stringify(body) });
+    if (!Array.isArray(r) || !r.length) throw new Error('no tenés permiso para cambiar esta rutina');
+    const c = (RUTINAS_CACHE || []).find(x => x.id === id); if (c) Object.assign(c, body);
+    ESP_BASE_LISTA = null;
+    etqCerrar(); renderGrillaRutinas(); toast('Etiquetas guardadas ✓');
+  }catch(e){ toast('No se pudieron guardar las etiquetas: ' + (e.message || e), true); }
+  if (btn){ btn.disabled = false; btn.textContent = '✓ Guardar etiquetas'; }
+}
+function etqPills(r){
+  if (!panelOn()) return '';
+  const out = [];
+  (r.perfil || []).forEach(k => { if (PP_PERF[k]) out.push(`<span class="pill" style="border-color:${PP_PERF[k].c};">🎯 ${xe(PP_PERF[k].n)}</span>`); });
+  if (r.nivel) out.push(`<span class="pill">${xe(r.nivel)}</span>`);
+  if (r.deporte) out.push(`<span class="pill">${xe(r.deporte)}</span>`);
+  return out.join('');
+}
+// contexto del deportista elegido: perfil calculado, nivel, deporte, readaptación
+async function ppCortesAsegurar(){
+  if (PP.ok || PP.cortesOk) return;
+  try{ const g = await sb(`gimnasios?select=panel_cortes&id=eq.${PERFIL_ACTUAL.gimnasio_id}`); PP.cortes = (g && g[0] && g[0].panel_cortes) || null; PP.cortesOk = true; }catch(e){}
+}
+async function etqContexto(id){
+  const c0 = ETQ.ctx[id]; if (c0 && Date.now() - c0.t < 60000) return c0;
+  const [a] = await sb(`alumnos?select=id,nombre,sexo,es_deportista,nivel,deporte_disciplina,tipo_alumno_id&id=eq.${id}`);
+  if (!a) return null;
+  let sj = null, cmj = null;
+  if (a.es_deportista){
+    await ppCortesAsegurar();
+    const evals = await sb(`evaluaciones?select=id,fecha&alumno_id=eq.${id}&order=fecha.desc&limit=30`);
+    if (evals.length){
+      const nombres = encodeURIComponent('("' + [PP_M_SJ, PP_M_CMJ].join('","') + '")');
+      const ms = await sb(`evaluacion_metricas?select=evaluacion_id,metrica,valor&evaluacion_id=in.(${evals.map(e => e.id).join(',')})&metrica=in.${nombres}&limit=2000`);
+      const m = {}; ms.forEach(x => { (m[x.evaluacion_id] = m[x.evaluacion_id] || {})[x.metrica] = Number(x.valor); });
+      for (const e of evals){ const v = m[e.id]; if (v && v[PP_M_SJ] > 0 && v[PP_M_CMJ] > 0){ sj = v[PP_M_SJ]; cmj = v[PP_M_CMJ]; break; } }
+    }
+  }
+  const c = ppCalcPerfil(a.sexo, sj, cmj);
+  const tn = ((typeof TIPOS_ALUMNO_CACHE !== 'undefined' && TIPOS_ALUMNO_CACHE) || []).find(t => t.id === a.tipo_alumno_id);
+  return ETQ.ctx[id] = { t: Date.now(), a, perfil: c.k, why: c.why, nivel: a.nivel || '', deporte: a.deporte_disciplina || '', readapt: ppEsReadapt(tn && tn.nombre) };
+}
+function etqAlumnoCambio(){
+  if (!panelOn()) return;
+  ETQ.verTodas = false;
+  const id = document.getElementById('espAlumno').value; if (!id) return;
+  etqContexto(id).then(c => { if (c && c.a.es_deportista && document.getElementById('espAlumno').value === id) espBaseBuscar(); }).catch(() => {});
+}
+function etqVerTodas(){ ETQ.verTodas = !ETQ.verTodas; espBaseBuscar(); }
+// Lista agrupada para "Empezar desde una rutina existente" cuando el destino es un deportista. null = usar la lista de siempre.
+async function etqBaseHtml(terminos){
+  if (!panelOn() || document.getElementById('espModoDestino').value !== 'alumno') return null;
+  const id = document.getElementById('espAlumno').value; if (!id) return null;
+  let ctx; try{ ctx = await etqContexto(id); }catch(e){ return null; }
+  if (!ctx || !ctx.a.es_deportista) return null;
+  const norm = x => normalizar(String(x || '')).trim();
+  const todas = (ESP_BASE_LISTA || []).filter(r => {
+    const texto = normalizar(`${r.nombre} ${r.tipos_alumno?.nombre || ''} ${(r.especialDe || []).join(' ')} ${(r.perfil || []).join(' ')} ${r.nivel || ''} ${r.deporte || ''}`);
+    return terminos.every(t => texto.includes(t));
+  });
+  const perf = ctx.perfil ? [ctx.perfil] : []; if (ctx.readapt) perf.push('READ');
+  const okPerfil = r => perf.length && (r.perfil || []).some(k => perf.includes(k));
+  const okNivel = r => !r.nivel || r.nivel === ctx.nivel;
+  const okDep = r => r.deporte && ctx.deporte && norm(r.deporte) === norm(ctx.deporte);
+  const A = [], B = [], resto = [];
+  todas.forEach(r => {
+    if (r.especialDe) resto.push(r);
+    else if (okPerfil(r) && okNivel(r) && okDep(r)) A.push(r);
+    else if (okPerfil(r) && okNivel(r) && !r.deporte) B.push(r);
+    else resto.push(r);
+  });
+  const etiqueta = r => r.especialDe ? `⭐ Especial de ${escaparHtml(r.especialDe.slice(0, 2).join(', '))}${r.especialDe.length > 2 ? '…' : ''}`
+    : r.modo_dias === 'plantilla' ? '🧩 Plantilla' : r.modo_dias === 'rotativa' ? '🔁 Mensual' : `🏷️ ${escaparHtml(r.tipos_alumno?.nombre || 'Sin tipo')}`;
+  const item = r => `<button type="button" class="ghost" style="width:100%; text-align:left; display:block; margin-bottom:6px;" onclick="espCargarDesdeRutina('${r.id}')">
+      <span style="font-weight:700;">${escaparHtml(r.nombre)}</span>
+      <span class="muted" style="font-size:11px;"> · ${etiqueta(r)} · ${r.rutina_dias.length} día${r.rutina_dias.length === 1 ? '' : 's'}</span>
+      ${etqTiene(r) ? `<div style="display:flex; gap:4px; flex-wrap:wrap; margin-top:4px;">${etqPills(r)}</div>` : ''}</button>`;
+  const P = ctx.perfil ? PP_PERF[ctx.perfil] : null;
+  const quien = `<div class="x-sub" style="margin-bottom:8px;"><b>${escaparHtml(ctx.a.nombre)}</b> · ${P ? 'perfil ' + escaparHtml(P.n) : '<span style="color:var(--warn-text);">sin perfil todavía</span>'}${ctx.readapt ? ' · Readaptación' : ''} · ${ctx.nivel ? escaparHtml(ctx.nivel) : 'sin nivel'}${ctx.deporte ? ' · ' + escaparHtml(ctx.deporte) : ''}</div>`;
+  const sec = (t, L) => L.length ? `<div class="x-sec" style="margin:10px 2px 6px;">${t} <span class="pill">${L.length}</span></div>${L.slice(0, 30).map(item).join('')}` : '';
+  const sinPerfil = !perf.length;
+  let h = quien;
+  if (sinPerfil){
+    h += `<div class="pp-warnbar" style="margin-bottom:8px;">Todavía no tiene perfil (${escaparHtml(ctx.why)}). Cargale una evaluación con SJ y CMJ para que se sugieran las rutinas de su perfil.</div>`;
+    h += todas.length ? todas.slice(0, 30).map(item).join('') : '<div class="empty">No encontramos rutinas con ese nombre.</div>';
+    return h;
+  }
+  h += sec('✅ Coinciden en perfil, nivel y deporte', A) + sec('👍 Mismo perfil y nivel (sin deporte)', B);
+  if (!A.length && !B.length) h += terminos.length ? '<div class="empty">Ninguna rutina sugerida coincide con la búsqueda.</div>' : '<div class="empty">Todavía no hay rutinas etiquetadas para este perfil y nivel. Etiquetalas desde Rutinas → 🏷️ Etiquetas.</div>';
+  if (resto.length){
+    h += `<div style="margin-top:8px;"><button type="button" class="ghost" onclick="etqVerTodas()">${ETQ.verTodas ? '▾ Ocultar las demás' : '▸ Ver todas las demás (' + resto.length + ')'}</button></div>`;
+    if (ETQ.verTodas) h += resto.slice(0, 30).map(item).join('');
+  }
+  return h;
+}
+
 // ---------- (v84) Especiales: empezar desde una rutina que ya existe ----------
 // Copia (client-side) los días y ejercicios de una rutina guardada al constructor de
 // Especiales. No toca la original: al guardar se crea una rutina nueva asignada al alumno/equipo.
@@ -25150,7 +25287,7 @@ async function espBaseAsegurarLista(){
   try{
     const filtroGym = PERFIL_ACTUAL ? `&gimnasio_id=eq.${PERFIL_ACTUAL.gimnasio_id}` : '';
     const [rutinas, asig] = await Promise.all([
-      sb(`rutinas?select=id,nombre,modo_dias,es_ajuste,tipos_alumno(nombre),rutina_dias(id)&activa=eq.true${filtroGym}&order=nombre.asc`),
+      sb(`rutinas?select=id,nombre,modo_dias,es_ajuste,tipos_alumno(nombre),rutina_dias(id)${panelOn() ? ',perfil,nivel,deporte' : ''}&activa=eq.true${filtroGym}&order=nombre.asc`),
       sb('rutina_asignaciones?select=rutina_id,alumnos(nombre)'),
     ]);
     const deAlumno = {};
@@ -25169,6 +25306,7 @@ async function espBaseBuscar(){
   try{ await espBaseAsegurarLista(); }catch(e){ cont.innerHTML = 'Error: ' + escaparHtml(e.message); return; }
   const q = normalizar(document.getElementById('espBaseBuscar').value || '').trim();
   const terminos = q.split(/\s+/).filter(Boolean);
+  if (panelOn()){ const h = await etqBaseHtml(terminos); if (h != null){ cont.innerHTML = h; return; } }   // (v207) deportista: sugeridas primero
   const lista = (ESP_BASE_LISTA || []).filter(r => {
     const texto = normalizar(`${r.nombre} ${r.tipos_alumno?.nombre || ''} ${(r.especialDe || []).join(' ')}`);
     return terminos.every(t => texto.includes(t));
@@ -27466,6 +27604,7 @@ async function guardarRutinaGenerica({ constructor, nombre, tipoAlumnoId, etique
       body: JSON.stringify([{
         nombre, gimnasio_id: PERFIL_ACTUAL?.gimnasio_id || null, tipo_alumno_id: tipoAlumnoId || null,
         modo_dias: modoDias,
+        ...etqPostBody(),   // (v207)
         etiqueta: modoDias === 'plantilla' ? (etiqueta || null) : null,
         dias_por_semana_objetivo: modoDias === 'rotativa' ? (constructor.estado.diasPorSemanaObjetivo || null) : null,
         duracion_semanas: modoDias === 'rotativa' ? (constructor.estado.duracionSemanas || null) : null,
@@ -27589,7 +27728,7 @@ async function cargarGrillaRutinas(){
   cont.innerHTML = 'Cargando...';
   try{
     const filtroGym = PERFIL_ACTUAL ? `&gimnasio_id=eq.${PERFIL_ACTUAL.gimnasio_id}` : '';
-    const base = 'id,nombre,creado_en,modo_dias,etiqueta,es_ajuste,duracion_semanas,tipos_alumno(nombre),creador:perfiles(nombre),rutina_dias(id,fecha,nombre_dia,orden),rutina_asignaciones(alumno_id,alumnos(nombre))';
+    const base = 'id,nombre,creado_en,modo_dias,etiqueta,es_ajuste,duracion_semanas,tipos_alumno(nombre),creador:perfiles(nombre),rutina_dias(id,fecha,nombre_dia,orden),rutina_asignaciones(alumno_id,alumnos(nombre))' + (panelOn() ? ',perfil,nivel,deporte' : '');
     let rutinas;
     try{ rutinas = await sb(`rutinas?select=${base},fecha_inicio&activa=eq.true${filtroGym}&order=creado_en.desc&limit=600`); }
     catch(e){ rutinas = await sb(`rutinas?select=${base}&activa=eq.true${filtroGym}&order=creado_en.desc&limit=600`); } // falta la columna fecha_inicio
@@ -27634,7 +27773,8 @@ function rutPasaFiltros(r, q, fecha){
   const al = rutAlumnos(r);
   if (RUT_FILTRO.origen === 'alumnos' && !al.length) return false;
   if (RUT_FILTRO.origen === 'generales' && al.length) return false;
-  if (RUT_FILTRO.modo !== 'todos' && (r.modo_dias || 'fecha_fija') !== RUT_FILTRO.modo) return false;
+  if (RUT_FILTRO.modo === 'sinetq'){ if (al.length || etqTiene(r)) return false; }   // (v207)
+  else if (RUT_FILTRO.modo !== 'todos' && (r.modo_dias || 'fecha_fija') !== RUT_FILTRO.modo) return false;
   if (fecha && !(r.rutina_dias || []).some(d => d.fecha === fecha)) return false;
   if (q){
     const pajar = rutNorm([r.nombre, r.etiqueta, r.tipos_alumno && r.tipos_alumno.nombre, r.creador && r.creador.nombre, ...al, ...(r.rutina_dias || []).map(d => d.nombre_dia)].filter(Boolean).join(' | '));
@@ -27679,6 +27819,7 @@ function rutTarjetaHtml(r, abierta){
   else if (r.tipos_alumno && r.tipos_alumno.nombre) pills.push(`<span class="pill">🏷️ ${escaparHtml(r.tipos_alumno.nombre)}</span>`);
   else pills.push('<span class="pill">🌐 Para todos</span>');
   if (est) pills.push(`<span class="pill">${est.txt}</span>`);
+  if (panelOn() && !al.length) pills.push(etqTiene(r) ? etqPills(r) : '<span class="pill warn">🏷️ Sin etiquetas</span>');   // (v207)
   const meta = [rutFechaCreacion(r.creado_en) ? `Creada ${rutFechaCreacion(r.creado_en)}` : '', r.creador && r.creador.nombre ? `por ${escaparHtml(r.creador.nombre)}` : '', est && est.rango ? est.rango : ''].filter(Boolean).join(' · ');
   const diasHtml = dias.length
     ? dias.map((d, i) => `<button class="ghost" style="width:100%; text-align:left; margin-bottom:6px; display:block;" onclick="abrirDiaDesdeLista('${r.id}','${d.id}')">${escaparHtml(d.nombre_dia || ('Día ' + (i + 1)))}${d.fecha ? ` <span class="muted" style="font-size:11px;">· ${d.fecha}</span>` : ''} <span class="muted" style="font-size:11px;">✏️ Editar</span></button>`).join('')
@@ -27696,6 +27837,7 @@ function rutTarjetaHtml(r, abierta){
       <div id="rutBody-${r.id}" style="display:${abierta ? '' : 'none'}; padding:0 10px 10px;">
         ${diasHtml}
         <div style="display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end; margin-top:4px;">
+          ${panelOn() && !al.length ? `<button class="ghost" style="padding:2px 8px; font-size:12px;" title="Perfil, nivel y deporte para sugerirla al asignar" onclick="etqEditar('${r.id}')">🏷️ Etiquetas</button>` : ''}
           <button class="ghost" style="padding:2px 8px; font-size:12px;" title="Copiar esta rutina para un alumno o equipo (se abre en Especiales para ajustarla)" onclick="copiarRutinaParaAlumno('${r.id}')">📋 Copiar para un alumno</button>
           <button class="ghost" style="color:var(--danger-text); padding:2px 8px; font-size:12px;" title="Eliminar rutina" onclick="eliminarRutina('${r.id}')">🗑️ Eliminar</button>
         </div>
@@ -27706,7 +27848,7 @@ function rutTarjetaHtml(r, abierta){
 function renderGrillaRutinas(){
   const cont = document.getElementById('grillaRutinas');
   document.getElementById('rutChipsOrigen').innerHTML = rutChipsHtml(RUT_ORIGENES, RUT_FILTRO.origen, 'origen');
-  document.getElementById('rutChipsModo').innerHTML = rutChipsHtml(RUT_MODOS, RUT_FILTRO.modo, 'modo');
+  document.getElementById('rutChipsModo').innerHTML = rutChipsHtml(panelOn() ? RUT_MODOS.concat([['sinetq', '🏷️ Sin etiquetar']]) : RUT_MODOS, RUT_FILTRO.modo, 'modo');
   const q = rutNorm(document.getElementById('filtroRutinaNombre').value).trim();
   const fecha = document.getElementById('filtroRutinaFecha').value;
   const total = RUTINAS_CACHE.length;
@@ -32108,6 +32250,18 @@ function perCargaAguda(alumnoId){
   </div>
 </div>
 
+<!-- (v207) Etiquetas de una rutina (Panel Deportistas) -->
+<div class="modal-overlay" id="modalRutEtq" onclick="if(event.target===this)etqCerrar()">
+  <div class="modal-box">
+    <div class="x-wrap "><button type="button" class="x-cerrar" aria-label="Cerrar" title="Cerrar" onclick="etqCerrar()">✕</button></div>
+    <h3 style="margin-top:0;">🏷️ Etiquetas de la rutina</h3>
+    <div id="rutEtqTitulo" class="muted" style="font-size:13px; margin-bottom:10px; overflow-wrap:anywhere;"></div>
+    <div class="muted" style="font-size:12px; margin-bottom:10px;">Sirven para sugerirla al asignar a un deportista: primero las que coinciden en perfil, nivel y deporte. Todo es opcional.</div>
+    <div id="rutEtqIn"></div>
+    <div class="row" style="margin-top:14px; gap:8px; flex-wrap:wrap;"><button type="button" id="rutEtqBtn" onclick="etqGuardar()">✓ Guardar etiquetas</button><button type="button" class="ghost" onclick="etqCerrar()">Cancelar</button></div>
+  </div>
+</div>
+
 <!-- Cobro presencial con QR de Mercado Pago (28/9, pedido de Martin) -->
 <div class="modal-overlay" id="modalNombreRutina">
   <div class="modal-box">
@@ -32116,6 +32270,7 @@ function perCargaAguda(alumnoId){
     <div id="nrNombreResumen" class="muted" style="font-size:13px; margin-bottom:12px;"></div>
     <div class="field"><label id="nrNombreLbl2">Nombre de la rutina</label>
       <input id="nrNombreInput" maxlength="120" autocomplete="off" onkeydown="if(event.key==='Enter'){ event.preventDefault(); nrNombreOk(); }"></div>
+    <div id="nrEtqBloque" style="display:none; margin-top:10px;"></div>   <!-- (v207) etiquetas del Panel Deportistas -->
     <div class="row" style="margin-top:4px;"><button type="button" class="ghost" onclick="nrNombreAuto()">✨ Generar nombre automático</button></div>
     <div class="row" style="margin-top:14px; gap:8px; flex-wrap:wrap;"><button type="button" id="nrNombreBtn" onclick="nrNombreOk()">✓ Guardar</button><button type="button" class="ghost" onclick="nrNombreCerrar()">Seguir editando</button></div>
   </div>
