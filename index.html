@@ -5872,7 +5872,7 @@ function atlIniciarAlu(){
   atlCargarVista('aluAtletismoContenido', id || '');
 }
 
-const APP_VERSION = 212;
+const APP_VERSION = 213;
 let ES_PERSONAL = false;   // (v132) cuenta personal (gimnasios.tipo = 'personal'); se calcula en perAplicar()
 // (v96) Fecha de la última actualización: se cambia junto con APP_VERSION en cada entrega. Se muestra en la
 // pantalla de inicio y en el menú de cuenta ("v94 · actualizada el 5/10/2026").
@@ -20804,8 +20804,10 @@ async function evalEliminar(evalId){
   const e = (EVAL_CACHE_PROF || []).find(x => x.id === evalId); if (!e) return;
   if (!confirm(`¿Eliminar la evaluación del ${evalFechaTxt(e.fecha)}?\n\nSe borran sus ${e.metricas.length} medición${e.metricas.length === 1 ? '' : 'es'} y deja de verse en los gráficos y el historial del alumno. Queda un registro de que la eliminaste.`)) return;
   try{
+    let f505 = []; if (panelOn()){ try{ f505 = await sb(`evaluacion_fotos_505?select=ruta&evaluacion_id=eq.${evalId}`); }catch(e2){} }   // (v213)
     const r = await sb(`evaluaciones?id=eq.${evalId}`, { method: 'DELETE', headers: { Prefer: 'return=representation' } });
     if (!r || !r.length) throw new Error('No tenés permiso para eliminar esta evaluación.');
+    if (f505 && f505.length) ofdBorrarFotos(f505.map(x => x.ruta));   // (v213)
     toast('Evaluación eliminada ✓');
     onCambiarEvalAlumno();
   }catch(err){ toast('No se pudo eliminar: ' + extraerMensajeError(err), true); }
@@ -21612,7 +21614,7 @@ async function ppFichaCarga(a, tok){
     evals.forEach(e => {
       const m = metr[e.id]; if (!m) return;
       if (m[PP_M_SJ] > 0 && m[PP_M_CMJ] > 0) sjs.push({ f: e.fecha, sj: m[PP_M_SJ], cmj: m[PP_M_CMJ] });
-      if (m[T505_IZQ] > 0 && m[T505_DER] > 0) t5s.push({ f: e.fecha, l: m[T505_IZQ], r: m[T505_DER] });
+      if (m[T505_IZQ] > 0 && m[T505_DER] > 0) t5s.push({ id: e.id, f: e.fecha, l: m[T505_IZQ], r: m[T505_DER] });
     });
     const cur = sjs[0] || null, pre = sjs[1] || null, c5 = t5s[0] || null, p5 = t5s[1] || null;
     const pf = ppCalcPerfil(a.sexo, cur && cur.sj, cur && cur.cmj), pfPre = pre ? ppCalcPerfil(a.sexo, pre.sj, pre.cmj) : null;
@@ -21644,7 +21646,7 @@ async function ppFichaCarga(a, tok){
       ? `<div class="x-sec">5-0-5 · ${fch(c5.f)}</div>
          <div class="x-kpis"><div class="x-kpi"><div class="k">Giro izquierda</div><div class="v">${ppFx(c5.l, 2)} s</div></div>
          <div class="x-kpi"><div class="k">Giro derecha</div><div class="v">${ppFx(c5.r, 2)} s</div></div>
-         <div class="x-kpi"><div class="k">Asimetría</div><div class="v"><span class="pp-chip ${sa}" style="font-size:14px;">${ppFx(as5)} %</span></div><div class="x-sub">${as5 < 0.05 ? '' : 'más lento a la ' + (c5.l > c5.r ? 'izquierda' : 'derecha')}${as5p != null ? ` · antes ${ppFx(as5p)} %` : ''}</div></div></div>`
+         <div class="x-kpi"><div class="k">Asimetría</div><div class="v"><span class="pp-chip ${sa}" style="font-size:14px;">${ppFx(as5)} %</span></div><div class="x-sub">${as5 < 0.05 ? '' : 'más lento a la ' + (c5.l > c5.r ? 'izquierda' : 'derecha')}${as5p != null ? ` · antes ${ppFx(as5p)} %` : ''}</div></div></div><div id="dep505Fotos"></div>`
       : '';
     const rutHtml = rut
       ? `<div class="x-item"><div><div class="x-nm" style="font-weight:700;">${xe(rut.nombre)}</div><div class="x-sub">${sem ? 'Semana ' + sem + (rut.duracion_semanas ? ' de ' + rut.duracion_semanas : '') : 'Activa'}</div></div><button class="ghost" onclick="fichaTab('rut')">Ver rutinas</button></div>`
@@ -21654,6 +21656,7 @@ async function ppFichaCarga(a, tok){
       <div class="x-sec">Rutina activa</div>${rutHtml}
       <div class="x-btns"><button onclick="fichaNuevaEvaluacion()">＋ Nueva evaluación</button><button class="ghost" onclick="fichaTab('eva')">Historial de evaluaciones</button></div>`;
     ppFichaCargaAcwr(a, vig);
+    if (c5 && c5.id) t505FotosFicha(c5.id, vig);   // (v213)
   }catch(e){ if (tok === FICHA_TOK) body.innerHTML = `<div class="empty">No se pudo cargar: ${xe(e.message || e)}</div>`; }
 }
 async function ppFichaCargaAcwr(a, vig){
@@ -21844,7 +21847,7 @@ async function ofdDetalle(S, vig){
     ${S.extras ? `<div class="x-sec">Observaciones adicionales</div><div style="white-space:pre-wrap;">${xe(S.extras)}</div>` : ''}
     ${S.notas ? `<div class="x-sec">Notas</div><div style="white-space:pre-wrap;">${xe(S.notas)}</div>` : ''}
     <div class="x-sec">Qué trabajar</div>${ofdCorrectivosHtml(S)}
-    <div class="x-btns"><button onclick="ofdEditar('${S.id}')">✏️ Editar</button><button class="ghost" onclick="ofdEliminar('${S.id}')">🗑 Eliminar set</button></div>`;
+    <div class="x-btns"><button onclick="ofdInforme('${S.id}')">📄 Informe PDF</button><button class="ghost" onclick="ofdEditar('${S.id}')">✏️ Editar</button><button class="ghost" onclick="ofdEliminar('${S.id}')">🗑 Eliminar set</button></div>`;
   if (S.foto_frontal || S.foto_lateral){
     const L = S.lineas || {};
     const bloque = async (k, path, tit) => {
@@ -22048,6 +22051,245 @@ async function ofdEliminar(id){
   }catch(e){ toast('No se pudo eliminar: ' + extraerMensajeError(e), true); }
 }
 
+// ---------- (v213) Fotos opcionales del 5-0-5 (izquierda / derecha) ----------
+// Se sacan junto con los tiempos en Evaluaciones → Tests de Capacidad Física y se guardan en el bucket privado "eval-funcional"
+// (tabla evaluacion_fotos_505). Necesitan el permiso de fotos. Si las fotos fallan, la evaluación igual queda guardada.
+const T505F = { izq: null, der: null, perm: false };
+function t505FotosReset(){ ['izq', 'der'].forEach(l => { if (T505F[l] && T505F[l].url) URL.revokeObjectURL(T505F[l].url); T505F[l] = null; }); T505F.perm = false; }
+function t505FotosInner(){
+  const slot = (l, tit) => {
+    const F = T505F[l];
+    return `<div style="flex:1; min-width:150px; text-align:center;">${F
+      ? `<img src="${F.url}" alt="" style="width:100%; max-width:140px; border-radius:10px; display:block; margin:0 auto 6px;"><button type="button" class="ghost" onclick="t505FotoQuitar('${l}')">Quitar foto ${tit}</button>`
+      : (T505F.perm ? `<button type="button" class="ghost" onclick="document.getElementById('t505File_${l}').click()">📷 Foto giro ${tit}</button>` : `<div class="x-sub">Giro ${tit}</div>`)}
+      <input type="file" accept="image/*" id="t505File_${l}" style="display:none;" onchange="t505Foto('${l}', this.files[0])"></div>`;
+  };
+  return `<label style="display:flex; gap:6px; align-items:center; font-size:13px;"><input type="checkbox" ${T505F.perm ? 'checked' : ''} onchange="t505Perm(this.checked)"> Tengo permiso para sacar fotos (opcional)</label>
+    <div style="display:flex; gap:12px; flex-wrap:wrap; margin-top:8px;">${slot('izq', 'izquierda')}${slot('der', 'derecha')}</div>`;
+}
+function t505FotosPintar(){ const c = document.getElementById('t505Fotos'); if (c) c.innerHTML = t505FotosInner(); }
+function t505Perm(v){
+  T505F.perm = !!v;
+  if (!v) ['izq', 'der'].forEach(l => { if (T505F[l] && T505F[l].url) URL.revokeObjectURL(T505F[l].url); T505F[l] = null; });
+  t505FotosPintar();
+}
+async function t505Foto(l, file){
+  if (!file) return;
+  try{ const blob = await ofdPrepararFoto(file); if (T505F[l] && T505F[l].url) URL.revokeObjectURL(T505F[l].url); T505F[l] = { blob, url: URL.createObjectURL(blob) }; t505FotosPintar(); }
+  catch(e){ toast('No se pudo cargar la foto: ' + extraerMensajeError(e), true); }
+}
+function t505FotoQuitar(l){ if (T505F[l] && T505F[l].url) URL.revokeObjectURL(T505F[l].url); T505F[l] = null; t505FotosPintar(); }
+async function t505SubirFotos(evalId, alumnoId){
+  const gim = PERFIL_ACTUAL.gimnasio_id; let fallo = false;
+  for (const l of ['izq', 'der']){
+    const F = T505F[l]; if (!F || !F.blob) continue;
+    const p = `${gim}/${alumnoId}/505_${evalId}_${l}_${Date.now().toString(36)}.jpg`;
+    try{
+      await ofdSubirFoto(p, F.blob);
+      try{ await sb('evaluacion_fotos_505', { method: 'POST', headers: { Prefer: 'return=minimal' }, body: JSON.stringify({ gimnasio_id: gim, alumno_id: alumnoId, evaluacion_id: evalId, lado: l, ruta: p }) }); }
+      catch(e2){ await ofdBorrarFotos([p]); throw e2; }
+    }catch(e){ fallo = true; toast('La evaluación se guardó, pero la foto del giro ' + (l === 'izq' ? 'izquierdo' : 'derecho') + ' no: ' + extraerMensajeError(e), true); }
+  }
+  return !fallo;
+}
+async function t505FotosFicha(evalId, vig){
+  const el = document.getElementById('dep505Fotos'); if (!el) return;
+  try{
+    const fs = await sb(`evaluacion_fotos_505?select=lado,ruta&evaluacion_id=eq.${evalId}`);
+    if (!fs || !fs.length || !vig()) return;
+    const items = [];
+    for (const l of ['izq', 'der']){
+      const f = fs.find(x => x.lado === l); if (!f) continue;
+      try{ const u = await ofdFotoUrl(f.ruta); items.push(`<div style="text-align:center;"><img src="${u}" alt="" onclick="t505Ampliar(this.src)" style="width:110px; border-radius:10px; cursor:zoom-in; display:block;"><div class="x-sub">Giro ${l === 'izq' ? 'izquierda' : 'derecha'}</div></div>`); }catch(e){}
+    }
+    if (items.length && vig()) el.innerHTML = `<div style="display:flex; gap:12px; flex-wrap:wrap; margin-top:10px;">${items.join('')}</div>`;
+  }catch(e){ /* sin fotos o sin SQL: no se muestra nada */ }
+}
+function t505Ampliar(src){ ofdModal(`<img src="${src}" alt="" style="width:100%; border-radius:12px; display:block;"><div class="x-btns" style="margin-top:10px;"><button class="ghost" onclick="ofdCerrar()">Cerrar</button></div>`); }
+
+// ---------- (v213) Informe PDF de la Evaluación funcional ----------
+async function ofdImgData(path, max){
+  const u = await ofdFotoUrl(path);
+  const img = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = () => rej(new Error('foto')); i.src = u; });
+  const k = Math.min(1, max / Math.max(img.naturalWidth, img.naturalHeight));
+  const c = document.createElement('canvas'); c.width = Math.max(1, Math.round(img.naturalWidth * k)); c.height = Math.max(1, Math.round(img.naturalHeight * k));
+  c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+  return { d: c.toDataURL('image/jpeg', 0.82), w: c.width, h: c.height };
+}
+async function ofdLogoData(url){
+  try{
+    const img = await new Promise((res, rej) => { const i = new Image(); i.crossOrigin = 'anonymous'; i.onload = () => res(i); i.onerror = rej; i.src = url; });
+    const c = document.createElement('canvas'); c.width = 200; c.height = 200; const x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, 200, 200);
+    const k = Math.min(200 / img.naturalWidth, 200 / img.naturalHeight), w = img.naturalWidth * k, h = img.naturalHeight * k; x.drawImage(img, (200 - w) / 2, (200 - h) / 2, w, h);
+    return c.toDataURL('image/png');
+  }catch(e){ return null; }
+}
+async function ofdInforme(id){
+  const S = OFD.sets.find(s => s.id === id); if (!S) return;
+  if (!window.jspdf){ toast('No se pudo cargar el generador de PDF (revisá tu conexión a internet).', true); return; }
+  toast('Generando informe…');
+  try{
+    const a = (FICHA_ALU && FICHA_ALU.a) || {}, cat = await ofdCatalogo();
+    const idx = OFD.sets.findIndex(s => s.id === id), viejos = OFD.sets.slice(idx + 1);   // OFD.sets viene de más nuevo a más viejo
+    const prevPts = viejos.find(s => !s.prueba_nula && !s.corte_dolor) || null;
+    const { jsPDF } = window.jspdf, doc = new jsPDF('p', 'mm', 'a4');
+    const W = 210, M = 14, AN = W - M * 2, FIN = 280;
+    const rgb = hexARgb((GIMNASIO_ACTUAL && GIMNASIO_ACTUAL.color_primario) || '#16a34a');
+    const L = t => String(t == null ? '' : t).replace(/[–—]/g, '-').replace(/[“”]/g, '"').replace(/[‘’]/g, "'").replace(/…/g, '...').replace(/[^\x20-\x7E\xA0-\xFF\n]/g, '').replace(/[ \t]+/g, ' ').trim();
+    let y = 0;
+    const salto = h => { if (y + h > FIN){ doc.addPage(); y = 16; } };
+    const txt = (t, x, yy, o) => doc.text(L(t), x, yy, o);
+    const par = (t, x, w, lh) => { const ls = doc.splitTextToSize(L(t), w); ls.forEach(l => { salto(lh); txt(l, x, y); y += lh; }); };
+    const sec = t => { salto(12); doc.setFont('helvetica', 'bold'); doc.setFontSize(12); doc.setTextColor(17, 24, 39); txt(t, M, y); y += 6; doc.setFont('helvetica', 'normal'); };
+    const badge = (x, yy, t, c, w) => { w = w || 14; doc.setFillColor(c[0], c[1], c[2]); doc.roundedRect(x, yy - 4.2, w, 5.6, 1.5, 1.5, 'F'); doc.setTextColor(255, 255, 255); doc.setFont('helvetica', 'bold'); doc.setFontSize(8.5); txt(t, x + w / 2, yy - 0.2, { align: 'center' }); doc.setFont('helvetica', 'normal'); };
+    const VERDE = [22, 163, 74], ROJO = [220, 38, 38], GRIS = [120, 128, 140];
+    const celdaSN = (x, yy, v) => v === true ? badge(x, yy, 'SÍ', VERDE, 11) : v === false ? badge(x, yy, 'NO', ROJO, 11) : (doc.setTextColor(150, 156, 166), doc.setFontSize(9), txt('-', x + 5.5, yy, { align: 'center' }));
+    const fch = f => ofdFch(f);
+
+    // ---- Encabezado
+    doc.setFillColor(rgb.r, rgb.g, rgb.b); doc.rect(0, 0, W, 30, 'F');
+    doc.setTextColor(255, 255, 255); doc.setFont('helvetica', 'bold'); doc.setFontSize(17); txt('Evaluación funcional', M, 14);
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(10); txt('Sentadilla de arranque · Observación Funcional Dinámica', M, 21);
+    const gnom = (GIMNASIO_ACTUAL && GIMNASIO_ACTUAL.nombre) || ''; let xr = W - M;
+    const logo = GIMNASIO_ACTUAL && GIMNASIO_ACTUAL.logo_url ? await ofdLogoData(GIMNASIO_ACTUAL.logo_url) : null;
+    if (logo){ doc.addImage(logo, 'PNG', W - M - 20, 5, 20, 20); xr = W - M - 24; }
+    doc.setFontSize(10.5); doc.setFont('helvetica', 'bold'); if (gnom) txt(gnom, xr, 15, { align: 'right' });
+    y = 40;
+    doc.setTextColor(17, 24, 39); doc.setFont('helvetica', 'bold'); doc.setFontSize(15); txt(a.nombre || 'Deportista', M, y); y += 6;
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.setTextColor(75, 85, 99);
+    const edad = edadDesdeFecha(a.fecha_nacimiento);
+    const prof = (PROFESORES_CACHE || []).find(p => p.id === S.profesor_id);
+    txt([edad != null ? edad + ' años' : '', a.deporte_disciplina || '', a.nivel || ''].filter(Boolean).join('  ·  '), M, y); y += 5;
+    txt('Fecha de evaluación: ' + fch(S.fecha) + (prof ? '  ·  Evaluó: ' + prof.nombre : ''), M, y); y += 9;
+
+    // ---- Resultado
+    const sinPuntaje = S.prueba_nula || S.corte_dolor;
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(20); doc.setTextColor(17, 24, 39);
+    if (sinPuntaje){ txt('Sin puntaje', M, y); } else { txt(ofdTotSi(S) + ' de 6 puntos en SÍ', M, y); }
+    let bx = M + (sinPuntaje ? 46 : 78);
+    if (S.prueba_nula){ badge(bx, y - 1, 'PRUEBA NULA', ROJO, 30); bx += 33; }
+    if (S.corte_dolor){ badge(bx, y - 1, 'CORTE POR DOLOR', ROJO, 36); bx += 39; }
+    y += 8;
+    if (S.corte_dolor){ doc.setFont('helvetica', 'normal'); doc.setFontSize(9.5); doc.setTextColor(185, 28, 28); par('Se detuvo la prueba por dolor: se recomienda que lo revise un médico antes de continuar.', M, AN, 4.6); y += 2; }
+    if (S.prueba_nula){ doc.setFont('helvetica', 'normal'); doc.setFontSize(9.5); doc.setTextColor(75, 85, 99); par('Prueba nula: perdió el equilibrio más de 3 veces o no mantuvo los talones apoyados tras 3 intentos. No cuenta para la evolución.', M, AN, 4.6); y += 2; }
+    y += 2;
+
+    // ---- Fotos (actual + anterior)
+    const antFoto = k => viejos.find(s => s['foto_' + k]);
+    const vistas = [['frontal', 'Vista frontal'], ['lateral', 'Vista lateral izquierda']];
+    const hayActual = !!(S.foto_frontal || S.foto_lateral), hayAnt = vistas.some(([k]) => S['foto_' + k] && antFoto(k));
+    const dibujarFoto = async (path, lineas, x, yy, bw, bh) => {
+      try{
+        const im = await ofdImgData(path, 1000), k = Math.min(bw / im.w, bh / im.h), w = im.w * k, h = im.h * k, ox = x + (bw - w) / 2;
+        doc.addImage(im.d, 'JPEG', ox, yy, w, h);
+        const Lz = lineas || {}, X = f => ox + f * w, Y = f => yy + f * h;
+        const trazo = (x1, y1, x2, y2, c, lw) => { doc.setLineCap && doc.setLineCap('round'); doc.setDrawColor(0, 0, 0); doc.setLineWidth(lw + 0.5); doc.line(x1, y1, x2, y2); doc.setDrawColor(c[0], c[1], c[2]); doc.setLineWidth(lw); doc.line(x1, y1, x2, y2); };
+        if (Lz.b){ trazo(X(Lz.b.x), yy, X(Lz.b.x), yy + h, [255, 255, 255], 0.45); trazo(ox, Y(Lz.b.y), ox + w, Y(Lz.b.y), [255, 255, 255], 0.45); }
+        (Lz.r || []).forEach(r => trazo(X(r[0]), Y(r[1]), X(r[2]), Y(r[3]), [255, 59, 48], 0.7));
+        return h;
+      }catch(e){ doc.setFontSize(9); doc.setTextColor(150, 156, 166); txt('(foto no disponible)', x + 4, yy + 10); return 12; }
+    };
+    if (hayActual){
+      sec('Fotos');
+      if (!hayAnt){
+        const bw = (AN - 6) / 2, bh = 112; salto(bh + 10); let max = 0;
+        for (let i = 0; i < 2; i++){
+          const [k, tit] = vistas[i], p = S['foto_' + k]; if (!p) continue;
+          const x = M + i * (bw + 6);
+          doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(75, 85, 99); txt(tit + ' · ' + fch(S.fecha), x, y);
+          max = Math.max(max, await dibujarFoto(p, (S.lineas || {})[k], x, y + 2, bw, bh));
+        }
+        y += max + 8;
+      } else {
+        const bw = (AN - 6) / 2, bh = 84;
+        for (const [k, tit] of vistas){
+          const pa = S['foto_' + k], an = pa ? antFoto(k) : null; if (!pa) continue;
+          salto(bh + 10);
+          let max = 0;
+          if (an){ doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(75, 85, 99); txt(tit + ' · anterior ' + fch(an.fecha), M, y); max = Math.max(max, await dibujarFoto(an['foto_' + k], (an.lineas || {})[k], M, y + 2, bw, bh)); }
+          if (pa){ doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(75, 85, 99); txt(tit + ' · actual ' + fch(S.fecha), M + bw + 6, y); max = Math.max(max, await dibujarFoto(pa, (S.lineas || {})[k], M + bw + 6, y + 2, bw, bh)); }
+          y += max + 8;
+        }
+      }
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(120, 128, 140);
+      salto(6); txt('Líneas blancas: referencia estructural. Líneas rojas: desvíos respecto de la referencia.', M, y); y += 7;
+    }
+
+    // ---- Puntos observados
+    salto(78); sec('Puntos observados');
+    const cx = [M, M + 38, M + 126, M + 152];
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(8.5); doc.setTextColor(107, 114, 128);
+    txt('Punto', cx[0], y); txt('Qué se observa (SÍ = satisfactorio)', cx[1], y); txt(prevPts ? 'Anterior' : '', cx[2], y); txt('Actual', cx[3], y); y += 2;
+    doc.setDrawColor(209, 213, 219); doc.setLineWidth(0.3); doc.line(M, y, M + AN, y); y += 5.5;
+    OFD_PUNTOS.forEach(p => {
+      salto(9);
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.setTextColor(17, 24, 39); txt(p.n, cx[0], y);
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(75, 85, 99); txt(p.v + ': ' + p.q, cx[1], y);
+      if (prevPts) celdaSN(cx[2], y, prevPts[p.k]);
+      celdaSN(cx[3], y, sinPuntaje ? null : S[p.k]);
+      y += 2.5; doc.line(M, y, M + AN, y); y += 5.5;
+    });
+    y += 2;
+    if (S.extras){ sec('Observaciones adicionales'); doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.setTextColor(55, 65, 81); par(S.extras, M, AN, 4.8); y += 3; }
+    if (S.notas){ sec('Notas'); doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.setTextColor(55, 65, 81); par(S.notas, M, AN, 4.8); y += 3; }
+
+    // ---- Evolución
+    const cols = OFD.sets.slice(idx, idx + 8).slice().reverse();   // hasta la fecha de este set
+    if (cols.length >= 2){
+      salto(14 + 7 * 8); sec('Evolución');
+      const x0 = M + 38, cw = Math.min(18, (AN - 38) / cols.length);
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(8); doc.setTextColor(107, 114, 128);
+      cols.forEach((s, i) => txt(fch(s.fecha).slice(0, 5) + '/' + String(s.fecha).slice(2, 4), x0 + i * cw + cw / 2, y, { align: 'center' })); y += 2;
+      doc.line(M, y, M + AN, y); y += 5.5;
+      OFD_PUNTOS.forEach(p => {
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(9.5); doc.setTextColor(17, 24, 39); txt(p.n, M, y);
+        cols.forEach((s, i) => celdaSN(x0 + i * cw + (cw - 11) / 2, y, (s.prueba_nula || s.corte_dolor) ? null : s[p.k]));
+        y += 2.5; doc.line(M, y, M + AN, y); y += 5.5;
+      });
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(9.5); doc.setTextColor(17, 24, 39); txt('Total SÍ', M, y);
+      cols.forEach((s, i) => { const t = s.prueba_nula ? 'Nula' : s.corte_dolor ? 'Dolor' : ofdTotSi(s) + '/6'; txt(t, x0 + i * cw + cw / 2, y, { align: 'center' }); });
+      y += 9;
+    }
+
+    // ---- Qué trabajar
+    sec('Qué trabajar');
+    const nos = OFD_PUNTOS.map((p, i) => ({ p, i })).filter(x => S[x.p.k] === false);
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(9.5); doc.setTextColor(75, 85, 99);
+    if (S.prueba_nula){ par('Prueba nula: no hay puntos para trabajar.', M, AN, 4.8); }
+    else if (S.corte_dolor){ par('Corte por dolor: que lo revise un médico antes de continuar.', M, AN, 4.8); }
+    else if (!nos.length){ par((cat.ok && cat.ok.observacion) || 'Sin puntos en NO.', M, AN, 4.8); }
+    else {
+      par('Por cada NO se propone al menos un ejercicio para incorporar a diario (en la preparación de movimiento, entre los ejercicios del gimnasio o de forma aislada). Al reevaluar debería verse una mejora en la calidad del movimiento.', M, AN, 4.6); y += 3;
+      for (const { p, i } of nos){
+        const c = cat[p.k]; if (!c) continue;
+        salto(26);
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.setTextColor(185, 28, 28); txt((i + 1) + '. NO', M, y);
+        doc.setTextColor(17, 24, 39); txt('= ' + c.titulo, M + 14, y); y += 5.5;
+        doc.setFont('helvetica', 'italic'); doc.setFontSize(9.5); doc.setTextColor(75, 85, 99); par(c.observacion || '', M, AN, 4.6); y += 1.5;
+        (c.ejercicios || []).forEach(e => {
+          const pref = L(e.nombre) + '. ';
+          salto(10);
+          doc.setFont('helvetica', 'bold'); doc.setFontSize(9.5); doc.setTextColor(17, 24, 39);
+          const nl = doc.splitTextToSize(pref, AN); nl.forEach(l => { salto(4.6); txt(l, M, y); y += 4.6; });
+          doc.setFont('helvetica', 'normal'); doc.setTextColor(55, 65, 81); par(e.descripcion || '', M + 4, AN - 4, 4.6); y += 1.5;
+        });
+        y += 4;
+      }
+    }
+
+    // ---- Pie de cada página
+    const n = doc.getNumberOfPages();
+    for (let i = 1; i <= n; i++){
+      doc.setPage(i); doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5); doc.setTextColor(130, 138, 150);
+      const pie = doc.splitTextToSize(L('Basado en la Observación Funcional Dinámica (sentadilla de arranque) del Prof. Jorge O. Gonzalez Guedes, Juegos Olímpicos de la Juventud Buenos Aires 2018. Informe confidencial, de uso exclusivo del deportista y su equipo de entrenamiento.'), AN - 22);
+      pie.forEach((l, j) => txt(l, M, 288 + j * 3.4));
+      txt('Página ' + i + ' de ' + n, W - M, 288, { align: 'right' });
+    }
+    doc.save(`Evaluación funcional - ${a.nombre || 'deportista'} - ${String(S.fecha).slice(0, 10)}.pdf`);
+    toast('Informe descargado ✓');
+  }catch(e){ toast('Error generando el informe: ' + extraerMensajeError(e), true); }
+}
+
 // ---------- (v199) Test 5-0-5 (cambio de dirección) — solo con el Panel Deportistas prendido ----------
 // Se cargan los dos tiempos (giro izquierda / derecha, en segundos) como métricas comunes de "Capacidad Física";
 // la asimetría = diferencia ÷ lado más rápido × 100 se calcula sola y se guarda como tercera métrica.
@@ -22072,6 +22314,7 @@ function t505UltimoPrevio(){
   return null;
 }
 function test505Html(){
+  t505FotosReset();   // (v213)
   const prev = t505UltimoPrevio();
   const pa = prev ? t505Asim(prev.izq, prev.der) : null;
   const f = prev ? String(prev.fecha).split('-').reverse().join('/') : '';
@@ -22094,6 +22337,7 @@ function test505Html(){
       </div>
       ${prev ? `<div class="muted" style="font-size:12px; margin-top:4px;">Anterior (${f}): izq ${prev.izq.toFixed(2)} s · der ${prev.der.toFixed(2)} s${pa != null ? ` · asimetría ${pa.toFixed(1)} %` : ''}</div>` : ''}
       <div class="muted" style="font-size:11.5px; margin-top:4px;">Asimetría = diferencia ÷ lado más rápido. Moderada ≥ ${PANEL_CORTES_DEF.asim.mod} % · alta ≥ ${PANEL_CORTES_DEF.asim.alta} % (valores de ejemplo, a validar con el profe). No cambia el perfil.</div>
+      <div id="t505Fotos" style="margin-top:10px;">${t505FotosInner()}</div>   <!-- (v213) fotos opcionales -->
     </div>`;
 }
 function t505Calc(){
@@ -22243,6 +22487,7 @@ async function guardarEvaluacion(){
       await sb('evaluacion_metricas', { method: 'POST', headers: { Prefer: 'return=minimal' }, body: JSON.stringify(filas) });
     }
     toast('Evaluación guardada ✓');
+    if (panelOn()) await t505SubirFotos(ev.id, alumnoId);   // (v213) fotos opcionales del 5-0-5
     document.getElementById('evalNotas').value = '';
     document.querySelectorAll('.eval-metrica-input').forEach(i => i.value = '');
     document.querySelectorAll('.eval-fuerza-peso, .eval-fuerza-reps').forEach(i => i.value = '');
