@@ -3373,7 +3373,7 @@ if ('serviceWorker' in navigator) window.addEventListener('load', function(){ tr
 
         <!-- (v161) Ajustes del ciclo mensual: va después de los días -->
         <div class="card" id="nrPaso3" style="display:none;">
-          <h2 style="margin-top:0">🔁 Ajustes del ciclo mensual <span class="muted" style="font-size:12px; font-weight:400;">(opcional)</span></h2>
+          <h2 style="margin-top:0">🔁 Ajustes del ciclo mensual <span class="muted" id="espAjustesOpc" style="font-size:12px; font-weight:400;">(opcional)</span></h2>
           <div class="row">
             <input id="espNombreRutina" type="hidden" />   <!-- (v161) el nombre se pide al guardar -->
             <div class="field" id="espDiasObjetivoWrap" style="display:none;">
@@ -3385,13 +3385,14 @@ if ('serviceWorker' in navigator) window.addEventListener('load', function(){ tr
             </div>
             <div class="field" id="espDuracionWrap" style="display:none; min-width:130px;">
               <label>Duración (semanas)</label>
-              <input inputmode="numeric" type="number" min="1" id="espDuracionSemanas" onchange="CONS['esp'].estado.duracionSemanas=this.value?parseInt(this.value):null">
+              <input inputmode="numeric" type="number" min="1" id="espDuracionSemanas" onchange="CONS['esp'].estado.duracionSemanas=this.value?parseInt(this.value):null; nrDurHint()">
             </div>
             <div class="field" id="espFechaInicioWrap" style="display:none; min-width:160px;">
               <label>📅 Inicia el ciclo el</label>
               <input type="date" id="espFechaInicio" title="Opcional. Desde esa fecha arranca en el Día 1. Vacío = arranca apenas esté asignada." onchange="CONS['esp'].estado.fechaInicio=this.value||null">
             </div>
           </div>
+          <div class="muted" id="espDurHint" style="font-size:12.5px; margin-top:6px; display:none;"></div>
           <div class="muted" id="espModoDiasHint" style="font-size:12px; margin-top:6px; display:none;">Mensual: no hace falta cargar fecha en los días. Sirve tanto para el que también usa turno (por cupo/aforo) como para el que entrena a distancia sin reservar nada — el turno es un tema aparte.</div>
         </div>
 
@@ -5393,6 +5394,31 @@ async function depGuardar(){
   }
 }
 
+// (v219) ¿Este armador admite progresión por semana? Mensual, o plantilla que se repite como mensual.
+function estadoAdmiteProg(e){ return !!e && (e.modoDias === 'rotativa' || (e.modoDias === 'plantilla' && e.plantRep === 'rotativa')); }
+function consMaxSemProg(e){ let m = 0; Object.values((e && e.dias) || {}).forEach(d => (d.ejercicios || []).forEach(x => { if (x.modo_progresion === 'por_semana') (x.semanas || []).forEach(s => { if ((s.semana || 0) > m) m = s.semana; }); })); return m; }
+function nrDurHint(){
+  const el = document.getElementById('espDurHint'), sp = document.getElementById('espAjustesOpc'), cons = (typeof CONS !== 'undefined') && CONS['esp'];
+  if (!el || !cons) return;
+  const pl = cons.estado.modoDias === 'plantilla' && cons.estado.plantRep === 'rotativa';
+  if (sp) sp.textContent = pl ? '(la duración es obligatoria)' : '(opcional)';
+  if (!pl){ el.style.display = 'none'; return; }
+  const mp = consMaxSemProg(cons.estado), dur = cons.estado.duracionSemanas;
+  el.style.display = '';
+  el.innerHTML = mp ? `📈 Tus progresiones llegan hasta la semana <b>${mp}</b>. ${dur ? (dur < mp ? '⚠️ La duración no puede ser menor.' : '') : 'Si dejás la duración vacía se usa ' + mp + '.'}`
+    : 'Es lo que dura el ciclo cuando se la asignes a un alumno (la podés cambiar al asignar). Si usás progresión "Por semana", se completa sola con la última semana.';
+}
+// la plantilla mensual necesita duración: si falta se toma de la progresión; avisa si es menor a la progresión
+function nrDurOk(){
+  const cons = CONS['esp'], e = cons.estado; if (!(e.modoDias === 'plantilla' && e.plantRep === 'rotativa')) return true;
+  const mp = consMaxSemProg(e); let dur = e.duracionSemanas;
+  const di = document.getElementById('espDuracionSemanas');
+  if (!dur && mp){ dur = mp; e.duracionSemanas = mp; if (di) di.value = mp; }
+  if (!dur){ toast('Poné cuántas semanas dura la plantilla mensual (Ajustes del ciclo mensual, abajo de los días).', true); const c = document.getElementById('nrPaso3'); if (c) c.scrollIntoView({ behavior:'smooth', block:'center' }); return false; }
+  if (mp > dur){ toast(`Tus progresiones llegan hasta la semana ${mp}: la duración no puede ser menor.`, true); nrDurHint(); return false; }
+  return true;
+}
+
 // ---------- (v216) Plantilla: se elige cómo se repite y se asigna directo a un alumno ----------
 // rutinas.plantilla_repeticion ('fecha_fija' | 'rotativa' | null = preguntar). modo_dias sigue siendo 'plantilla'.
 let PLANT_REP_OK = null;   // null = todavía no se sabe; false = falta correr v216-plantilla-repeticion.sql
@@ -5401,7 +5427,11 @@ async function ppAsignarPlantilla(r){
   const id = PP_ASIG; if (!id) return;
   let dias = [];
   try{ dias = await sb(`rutina_dias?select=nombre_dia,orden&rutina_id=eq.${r.id}&order=orden.asc`); }catch(e){ toast('No se pudo leer la plantilla: ' + extraerMensajeError(e), true); return; }
-  PP_PLANT = { r, rep: (r.plantilla_repeticion === 'fecha_fija' || r.plantilla_repeticion === 'rotativa') ? r.plantilla_repeticion : null, dias: dias || [], fechas: [], ini: '' };
+  // (v219) duración y días por semana de la plantilla; si no tiene, la última semana de sus progresiones o 4
+  let ex = {}, mp = 0;
+  try{ const [x] = await sb(`rutinas?select=duracion_semanas,dias_por_semana_objetivo&id=eq.${r.id}`); ex = x || {}; }catch(e){}
+  try{ const m = await sb(`rutina_ejercicio_semanas?select=semana,rutina_ejercicios!inner(rutina_dias!inner(rutina_id))&rutina_ejercicios.rutina_dias.rutina_id=eq.${r.id}&order=semana.desc&limit=1`); mp = (m && m[0] && m[0].semana) || 0; }catch(e){}
+  PP_PLANT = { r, rep: (r.plantilla_repeticion === 'fecha_fija' || r.plantilla_repeticion === 'rotativa') ? r.plantilla_repeticion : null, dias: dias || [], fechas: [], ini: fechaLocalISO(), dur: Math.max(ex.duracion_semanas || 0, mp) || 4, mp, dsem: ex.dias_por_semana_objetivo ? String(ex.dias_por_semana_objetivo) : '' };
   ppPlantPintar();
 }
 function ppPlantPintar(){
@@ -5423,25 +5453,55 @@ function ppPlantPintar(){
     if (P.rep === 'fecha_fija'){
       h += P.dias.map((d, i) => `<div class="field" style="margin-bottom:6px;"><label>${escaparHtml(d.nombre_dia || 'Día ' + (i + 1))}</label><input type="date" value="${escaparHtml(P.fechas[i] || '')}" onchange="PP_PLANT.fechas[${i}]=this.value"></div>`).join('');
     } else {
-      h += `<div class="field"><label>Empieza el (opcional)</label><input type="date" value="${escaparHtml(P.ini || '')}" onchange="PP_PLANT.ini=this.value"><div class="x-sub">Vacío = arranca apenas se asigna, en el día 1.</div></div>`;
+      const dopt = ['', '2', '3', '4', '5', 'libre'].map(v => `<option value="${v}" ${String(P.dsem || '') === v ? 'selected' : ''}>${v === '' ? '-- sin definir --' : v === 'libre' ? 'Libre' : v}</option>`).join('');
+      h += `<div class="field"><label>Empieza el</label><input type="date" id="ppPlIni" value="${escaparHtml(P.ini || '')}" onchange="ppPlantFechas('ini', this.value)"><div class="x-sub">Arranca en el día 1 desde esa fecha (por defecto, hoy).</div></div>
+        <div class="field"><label>Dura (semanas)</label><input type="number" min="1" inputmode="numeric" id="ppPlDur" value="${P.dur || ''}" onchange="ppPlantFechas('dur', this.value)"></div>
+        <div class="field"><label>Termina el</label><input type="date" id="ppPlFin" onchange="ppPlantFechas('fin', this.value)"></div>
+        <div id="ppPlFinTxt" class="x-sub" style="margin-bottom:8px;"></div>
+        <div class="field"><label>Días por semana (objetivo, opcional)</label><select id="ppPlDsem" onchange="PP_PLANT.dsem=this.value">${dopt}</select></div>`;
     }
     h += `<div class="x-btns" style="margin-top:12px;"><button onclick="ppPlantAsignar(true)">✓ Asignar${ctx && ctx.a ? ' a ' + escaparHtml(nom) : ''}</button><button class="ghost" onclick="ppPlantAsignar(false)">Abrir para ajustar</button></div>`;
   }
   h += `<div style="margin-top:8px;"><button type="button" class="ghost" onclick="PP_PLANT=null; ppAsignarPintar_volver()">← Volver a la lista</button></div>`;
   b.innerHTML = h;
+  if (P.rep === 'rotativa') ppPlantFechas();
+}
+function ppPlantFechas(k, v){
+  const P = PP_PLANT; if (!P) return;
+  if (k === 'ini') P.ini = v || '';
+  if (k === 'dur') P.dur = parseInt(v) > 0 ? parseInt(v) : null;
+  const ini = P.ini || fechaLocalISO();
+  if (k === 'fin' && v){
+    if (v < ini) toast('La fecha de fin no puede ser anterior al inicio.', true);
+    else P.dur = Math.max(1, Math.ceil((diasEntreISO(ini, v) + 1) / 7));
+  }
+  const d = document.getElementById('ppPlDur'), f = document.getElementById('ppPlFin'), t = document.getElementById('ppPlFinTxt');
+  if (d) d.value = P.dur || '';
+  const fin = P.dur ? ipSumarDias(ini, P.dur * 7 - 1) : '';
+  if (f) f.value = fin;
+  if (t) t.textContent = P.dur ? `Termina el ${fechaCortaISO(fin)} (${P.dur} semana${P.dur === 1 ? '' : 's'} completas)${P.mp && P.dur < P.mp ? ' · ⚠️ las progresiones llegan hasta la semana ' + P.mp : ''}` : 'Poné la duración o la fecha de fin.';
 }
 function ppPlantRep(m){ if (!PP_PLANT) return; PP_PLANT.rep = m; ppPlantPintar(); }
 function ppAsignarPintar_volver(){ const id = PP_ASIG; if (id) ppAsignarRutina(id); }
 async function ppPlantAsignar(directo){
   const P = PP_PLANT, id = PP_ASIG; if (!P || !id || !P.rep) return;
   if (directo && P.rep === 'fecha_fija' && P.dias.some((d, i) => !P.fechas[i])){ toast('Elegí la fecha de cada día.', true); return; }
+  if (P.rep === 'rotativa'){
+    if (!P.dur || P.dur < 1){ toast('Poné cuántas semanas dura (o la fecha de fin).', true); return; }
+    if (P.mp && P.dur < P.mp){ toast(`Las progresiones llegan hasta la semana ${P.mp}: poné ${P.mp} semanas o más.`, true); return; }
+  }
   PP_ASIG = null; PP_PLANT = null; modalSeguridadCerrar();
   irAAsignarEspecialDesdeModal(id); volverBarraPintar();
   const ok = await espCargarDesdeRutina(P.r.id, { sinScroll: true, modo: P.rep });
   if (!ok) return;
   const cons = CONS['esp'];
   if (P.rep === 'fecha_fija'){ Object.keys(cons.estado.dias).forEach((k, i) => { if (P.fechas[i]) cons.estado.dias[k].fecha = P.fechas[i]; }); cons.render(); }
-  else if (P.ini){ cons.estado.fechaInicio = P.ini; const fi = document.getElementById('espFechaInicio'); if (fi) fi.value = P.ini; }
+  else {
+    // (v219) sin fecha de inicio el ciclo nunca termina: arranca hoy por defecto, con su duración y días por semana
+    cons.estado.fechaInicio = P.ini || fechaLocalISO(); const fi = document.getElementById('espFechaInicio'); if (fi) fi.value = cons.estado.fechaInicio;
+    cons.estado.duracionSemanas = P.dur; const di = document.getElementById('espDuracionSemanas'); if (di) di.value = P.dur;
+    cons.estado.diasPorSemanaObjetivo = P.dsem || null; const ds = document.getElementById('espDiasObjetivo'); if (ds) ds.value = P.dsem || '';
+  }
   nrRender();
   if (directo) await guardarRutinaEspecial();
   else document.getElementById('diasContainerEsp')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -6022,7 +6082,7 @@ function atlIniciarAlu(){
   atlCargarVista('aluAtletismoContenido', id || '');
 }
 
-const APP_VERSION = 218;
+const APP_VERSION = 219;
 let ES_PERSONAL = false;   // (v132) cuenta personal (gimnasios.tipo = 'personal'); se calcula en perAplicar()
 // (v96) Fecha de la última actualización: se cambia junto con APP_VERSION en cada entrega. Se muestra en la
 // pantalla de inicio y en el menú de cuenta ("v94 · actualizada el 5/10/2026").
@@ -25544,7 +25604,7 @@ function crearConstructorDeDias(prefijo, containerId, headerPrefix){
   // medio. diasPorSemanaObjetivo/duracionSemanas son solo informativos — nunca se
   // validan ni se fuerzan, quedan para orientar al alumno y como recordatorio de
   // revisión para el profesor.
-  const estado = { dias: {}, contador: 0, modoDias: 'fecha_fija', diasPorSemanaObjetivo: null, duracionSemanas: null, fechaInicio: null };
+  const estado = { dias: {}, contador: 0, modoDias: 'fecha_fija', diasPorSemanaObjetivo: null, duracionSemanas: null, fechaInicio: null, plantRep: null };   // (v219) plantRep: la plantilla se repite como 'rotativa' (mensual) o 'fecha_fija'
 
   function agregarDia(){
     estado.contador++;
@@ -25561,12 +25621,13 @@ function crearConstructorDeDias(prefijo, containerId, headerPrefix){
   function setModoDias(valor){
     estado.modoDias = valor;
     const esRotativa = valor === 'rotativa';
-    if (!esRotativa) Object.values(estado.dias).forEach(d => d.ejercicios.forEach(e => { e.modo_progresion = 'fijo'; e.semanas = []; }));
+    const mensualPlant = valor === 'plantilla' && estado.plantRep === 'rotativa';   // (v219)
+    if (!(esRotativa || mensualPlant)) Object.values(estado.dias).forEach(d => d.ejercicios.forEach(e => { e.modo_progresion = 'fijo'; e.semanas = []; }));
     const objetivoWrap = document.getElementById(`${headerPrefix}DiasObjetivoWrap`);
     const duracionWrap = document.getElementById(`${headerPrefix}DuracionWrap`);
     const hint = document.getElementById(`${headerPrefix}ModoDiasHint`);
-    if (objetivoWrap) objetivoWrap.style.display = esRotativa ? '' : 'none';
-    if (duracionWrap) duracionWrap.style.display = esRotativa ? '' : 'none';
+    if (objetivoWrap) objetivoWrap.style.display = (esRotativa || mensualPlant) ? '' : 'none';
+    if (duracionWrap) duracionWrap.style.display = (esRotativa || mensualPlant) ? '' : 'none';
     // (v88) fecha de inicio del ciclo: solo rotativa
     const fechaIniWrap = document.getElementById(`${headerPrefix}FechaInicioWrap`);
     if (fechaIniWrap) fechaIniWrap.style.display = esRotativa ? '' : 'none';
@@ -25593,26 +25654,29 @@ function crearConstructorDeDias(prefijo, containerId, headerPrefix){
     render();
   }
 
+  // (v219) la plantilla elige cómo se repite: si es mensual admite progresión por semana y lleva duración
+  function setPlantRep(m){ estado.plantRep = m || null; if (estado.modoDias === 'plantilla') setModoDias('plantilla'); else render(); }
+
   function setNombreDia(diaId, valor){
     estado.dias[diaId].nombre_dia = valor;
   }
 
   function setModoProgresion(diaId, idx, valor){
     estado.dias[diaId].ejercicios[idx].modo_progresion = valor;
-    render();
+    render(); nrDurHint();
   }
 
   function agregarSemana(diaId, idx){
     const ex = estado.dias[diaId].ejercicios[idx];
     ex.semanas.push({ semana: ex.semanas.length + 1, series: ex.series || null, repeticiones: ex.repeticiones || '', peso_sugerido: ex.peso_sugerido ?? null, medidas: medBase(ex) });
-    render();
+    render(); nrDurHint();
   }
 
   function quitarSemana(diaId, idx, semIdx){
     const semanas = estado.dias[diaId].ejercicios[idx].semanas;
     semanas.splice(semIdx, 1);
     semanas.forEach((s,i) => s.semana = i + 1);
-    render();
+    render(); nrDurHint();
   }
 
   function setSemanaCampo(diaId, idx, semIdx, campo, valor){
@@ -25623,7 +25687,7 @@ function crearConstructorDeDias(prefijo, containerId, headerPrefix){
     const ex = estado.dias[diaId].ejercicios[idx];
     // (30/9) La progresión solo tiene sentido en rutinas rotativas: en fecha fija cada día
     // se entrena UNA sola vez, así que no hay "la próxima vez" sobre la cual progresar.
-    const esRot = estado.modoDias === 'rotativa';
+    const esRot = estadoAdmiteProg(estado);   // (v219) también la plantilla mensual
     const prog = (esRot && !ex.carrera) ? (ex.modo_progresion || 'fijo') : 'fijo';
     const cuerpo = `
           ${ejCamposHtml(bloqueFieldHtml(`${prefijo}-${diaId}-${idx}`, ex.bloque, (v)=>CONS[prefijo].setBloque(diaId,idx,v)), `CONS['${prefijo}'].quitarEjercicio('${diaId}',${idx})`, ex)}
@@ -25811,7 +25875,7 @@ function crearConstructorDeDias(prefijo, containerId, headerPrefix){
   }
 
   render();
-  return { estado, agregarDia, eliminarDia, setFecha, setBloque, quitarEjercicio, moverEjercicio, render, buscar, agregarEjercicio, limpiar, setModoDias, setNombreDia, setModoProgresion, agregarSemana, quitarSemana, setSemanaCampo };
+  return { estado, agregarDia, eliminarDia, setFecha, setBloque, quitarEjercicio, moverEjercicio, render, buscar, agregarEjercicio, limpiar, setModoDias, setNombreDia, setModoProgresion, agregarSemana, quitarSemana, setSemanaCampo, setPlantRep };
 }
 
 const CONS = {}; // 'dia' -> constructor del Armador estándar, 'esp' -> constructor de Especiales
@@ -25914,7 +25978,8 @@ function nrRender(){
   const r3 = nrEl('nrRes3');
   r3.style.display = (ver34 && !abre3) ? '' : 'none';
   r3.innerHTML = `<div class="l"><b>3 · Punto de partida:</b><span class="pill">${escaparHtml(nrBaseTxt())}</span></div><button type="button" class="ghost" style="padding:4px 12px; font-size:12px;" onclick="nrCambiar(3)">Cambiar</button>`;
-  nrEl('nrPaso3').style.display = (baseOk && modoMotor === 'rotativa') ? '' : 'none';
+  nrEl('nrPaso3').style.display = (baseOk && (modoMotor === 'rotativa' || (plant && NR.plantRep === 'rotativa'))) ? '' : 'none';
+  nrDurHint();
   const p4 = nrEl('nrPaso4'); if (p4) p4.style.display = baseOk ? '' : 'none';
   const inp = nrEl('espNombreRutina');
   if (inp && !inp.dataset.nrTocado){
@@ -25961,7 +26026,7 @@ function nrSetPara(k){
   nrRender();
 }
 function nrSetModo(m){
-  if (nrPara() === 'plantilla'){ NR.plantRep = m; NR.modoTocado = true; NR.edit = 0; nrRender(); return; }   // (v216) la plantilla sigue siendo plantilla: solo se guarda cómo se repite
+  if (nrPara() === 'plantilla'){ NR.plantRep = m; NR.modoTocado = true; NR.edit = 0; CONS['esp'].setPlantRep(m); nrRender(); return; }   // (v216) la plantilla sigue siendo plantilla: solo se guarda cómo se repite
   NR.modoTocado = true; NR.edit = 0;
   nrEl('espModoDias').value = m;
   CONS['esp'].setModoDias(m);
@@ -25969,7 +26034,7 @@ function nrSetModo(m){
 }
 // después de guardar: alumno se queda (para ver sus rutinas); el resto vuelve a empezar
 function nrDespuesDeGuardar(destino){
-  NR.modoTocado = false; NR.edit = 0; NR.baseTocada = false; NR.baseTxt = ''; NR.autoUsado = null; NR.plantRep = null;
+  NR.modoTocado = false; NR.edit = 0; NR.baseTocada = false; NR.baseTxt = ''; NR.autoUsado = null; NR.plantRep = null; try{ CONS['esp'].estado.plantRep = null; }catch(e){}
   const inp = nrEl('espNombreRutina'); if (inp) delete inp.dataset.nrTocado;
   if (destino !== 'alumno'){
     NR.paraTocado = false;
@@ -26025,6 +26090,7 @@ function nrNombreAutoTxt(){
 }
 function nrGuardar(){
   const b = nrEl('btnGuardarEspecial'); if (b && b.disabled) return;
+  if (!nrDurOk()) return;   // (v219) plantilla mensual: duración obligatoria
   const plant = nrPara() === 'plantilla', inp = nrEl('espNombreRutina'), actual = (inp.value || '').trim();
   const usarAuto = !actual || (NR.autoUsado && actual === NR.autoUsado);   // un nombre que se generó solo se recalcula (por si cambió el alumno o las fechas)
   nrEl('nrNombreInput').value = usarAuto ? nrNombreAutoTxt() : actual;
@@ -26152,7 +26218,7 @@ function traerDiaAplicar(prefijo, diaId, idx, modo){
   const dest = cons.estado.dias[diaId];
   const src = TRAER[diaId]?.dias[idx];
   if (!dest || !src) return;
-  const esRot = cons.estado.modoDias === 'rotativa';
+  const esRot = estadoAdmiteProg(cons.estado);   // (v219)
   let sinCatalogo = 0, conSemanasPerdidas = 0;
   const ejs = (src.rutina_ejercicios || []).slice().sort((a, b) => (a.orden ?? 0) - (b.orden ?? 0)).map(x => {
     const cat = (typeof TODOS_EJERCICIOS !== 'undefined' && TODOS_EJERCICIOS.find(e => e.id === x.ejercicios?.id)) || x.ejercicios;
@@ -26435,6 +26501,7 @@ async function espCargarDesdeRutina(rutinaId, opts){
     // Una especial es para una persona: plantilla se copia como fecha fija (hay que darle fecha a cada día).
     const modo = document.getElementById('espModoDestino').value === 'plantilla' ? 'plantilla' : (rutina.modo_dias === 'plantilla' && opts && (opts.modo === 'rotativa' || opts.modo === 'fecha_fija') ? opts.modo : (rutina.modo_dias === 'rotativa' ? 'rotativa' : 'fecha_fija'));   // (v216) la plantilla se copia con la repetición elegida
     cons.limpiar();
+    cons.estado.plantRep = modo === 'plantilla' ? NR.plantRep : null;   // (v219)
     document.getElementById('espModoDias').value = modo;
     cons.setModoDias(modo);
 
@@ -26446,7 +26513,7 @@ async function espCargarDesdeRutina(rutinaId, opts){
         const cat = (typeof TODOS_EJERCICIOS !== 'undefined' && TODOS_EJERCICIOS.find(e => e.id === x.ejercicios?.id)) || x.ejercicios;
         if (!cat){ sinEjercicio++; return null; }
         const semanas = (x.rutina_ejercicio_semanas || []).slice().sort((a, b) => a.semana - b.semana).map(s => ({ semana: s.semana, series: s.series, repeticiones: s.repeticiones || '', peso_sugerido: s.peso_sugerido, medidas: medSemNorm(s.medidas) }));
-        const prog = modo === 'rotativa' ? (x.modo_progresion || 'fijo') : 'fijo';
+        const prog = estadoAdmiteProg(cons.estado) ? (x.modo_progresion || 'fijo') : 'fijo';   // (v219)
         if (prog === 'por_semana') conSemanas++;
         return {
           ejercicio: cat, bloque: x.bloque || 'General', series: x.series, repeticiones: x.repeticiones || '',
@@ -26464,7 +26531,7 @@ async function espCargarDesdeRutina(rutinaId, opts){
       const ultimoBloque = ejs.length ? ejs[ejs.length - 1].bloque : 'Bloque 1';
       cons.estado.dias[diaId] = { nombre_dia: d.nombre_dia || '', fecha: '', objetivo: d.objetivo || '', bloqueActual: ultimoBloque, ejercicios: ejs };
     });
-    if (modo === 'rotativa'){
+    if (estadoAdmiteProg(cons.estado)){
       cons.estado.diasPorSemanaObjetivo = rutina.dias_por_semana_objetivo ? String(rutina.dias_por_semana_objetivo) : null;
       cons.estado.duracionSemanas = rutina.duracion_semanas || null;
       document.getElementById('espDiasObjetivo').value = cons.estado.diasPorSemanaObjetivo || '';
@@ -28693,8 +28760,8 @@ async function guardarRutinaGenerica({ constructor, nombre, tipoAlumnoId, etique
         ...etqPostBody(),   // (v207)
         ...(modoDias === 'plantilla' && NR.plantRep && PLANT_REP_OK !== false ? { plantilla_repeticion: NR.plantRep } : {}),   // (v216)
         etiqueta: modoDias === 'plantilla' ? (etiqueta || null) : null,
-        dias_por_semana_objetivo: modoDias === 'rotativa' ? (constructor.estado.diasPorSemanaObjetivo || null) : null,
-        duracion_semanas: modoDias === 'rotativa' ? (constructor.estado.duracionSemanas || null) : null,
+        dias_por_semana_objetivo: estadoAdmiteProg(constructor.estado) ? (constructor.estado.diasPorSemanaObjetivo || null) : null,   // (v219) también la plantilla mensual
+        duracion_semanas: estadoAdmiteProg(constructor.estado) ? (constructor.estado.duracionSemanas || null) : null,
         ...(modoDias === 'rotativa' && constructor.estado.fechaInicio ? { fecha_inicio: constructor.estado.fechaInicio } : {}),
     };
     let rutina;
@@ -28731,7 +28798,7 @@ async function guardarRutinaGenerica({ constructor, nombre, tipoAlumnoId, etique
       ejNormalizar(constructor.estado.dias[diaId].ejercicios);
       constructor.estado.dias[diaId].ejercicios.forEach((ex, j) => {
         const posicion = ejerciciosPayload.length;
-        const modoProg = modoDias === 'rotativa' ? (ex.modo_progresion || 'fijo') : 'fijo';
+        const modoProg = estadoAdmiteProg(constructor.estado) ? (ex.modo_progresion || 'fijo') : 'fijo';   // (v219)
         ejerciciosPayload.push({
           rutina_dia_id: diasCreados[i].id,
           ejercicio_id: ex.ejercicio.id,
