@@ -6022,7 +6022,7 @@ function atlIniciarAlu(){
   atlCargarVista('aluAtletismoContenido', id || '');
 }
 
-const APP_VERSION = 216;
+const APP_VERSION = 218;
 let ES_PERSONAL = false;   // (v132) cuenta personal (gimnasios.tipo = 'personal'); se calcula en perAplicar()
 // (v96) Fecha de la última actualización: se cambia junto con APP_VERSION en cada entrega. Se muestra en la
 // pantalla de inicio y en el menú de cuenta ("v94 · actualizada el 5/10/2026").
@@ -21391,6 +21391,18 @@ function ppCalcPerfil(sexo, sj, cmj){
   if (sj < c.sjBajo) return { k: 'FM', why: `SJ ${ppFx(sj)} < ${ppFx(c.sjBajo)} con CMJ/SJ ${rr} ≥ ${ppFx(C.ieMin, 2)}` };
   return { k: 'POT', why: `SJ ${ppFx(sj)} ≥ ${ppFx(c.sjBajo)}, CMJ/SJ ${rr} ≥ ${ppFx(C.ieMin, 2)} pero sin llegar a los valores altos` };
 }
+// (v218) Rutinas de uno o varios alumnos: las que tienen rutinas.alumno_id + las asignadas por rutina_asignaciones (las especiales y las copias de plantilla van por acá)
+async function ppRutinasDe(ids){
+  const sel = 'id,nombre,fecha_inicio,duracion_semanas';
+  const lista = ids.length === 1 ? `eq.${ids[0]}` : `in.(${ids.join(',')})`;
+  const [a, b] = await Promise.all([
+    sb(`rutinas?select=${sel},alumno_id&alumno_id=${lista}&activa=eq.true&limit=2000`).catch(() => []),
+    sb(`rutina_asignaciones?select=alumno_id,rutinas(${sel},activa)&alumno_id=${lista}&limit=2000`).catch(() => []),
+  ]);
+  const out = (a || []).slice(), vistos = new Set(out.map(r => r.alumno_id + '|' + r.id));
+  (b || []).forEach(x => { const r = x.rutinas; if (!r || r.activa === false || vistos.has(x.alumno_id + '|' + r.id)) return; vistos.add(x.alumno_id + '|' + r.id); out.push({ id: r.id, alumno_id: x.alumno_id, nombre: r.nombre, fecha_inicio: r.fecha_inicio, duracion_semanas: r.duracion_semanas }); });
+  return out;
+}
 function ppChunks(a, n){ const o = []; for (let i = 0; i < a.length; i += n) o.push(a.slice(i, i + n)); return o; }
 function ppMin(h){ const [a, b] = String(h || '0:0').split(':').map(Number); return (a || 0) * 60 + (b || 0); }
 function ppHoraTxt(h){ return String(h || '').slice(0, 5); }
@@ -21462,7 +21474,7 @@ async function ppCarga(silencioso){
         if (!t5[e.alumno_id] && m[T505_IZQ] > 0 && m[T505_DER] > 0) t5[e.alumno_id] = { f: e.fecha, l: m[T505_IZQ], r: m[T505_DER] };
       });
       for (const ch of ppChunks(ids, 60)){
-        const rs = await sb(`rutinas?select=id,alumno_id,nombre,fecha_inicio,duracion_semanas&alumno_id=in.(${ch.join(',')})&activa=eq.true&limit=2000`).catch(() => []);
+        const rs = await ppRutinasDe(ch);   // (v218) también las asignadas por rutina_asignaciones
         rs.forEach(r => { const p = rut[r.alumno_id]; if (!p || String(r.fecha_inicio || '') > String(p.fecha_inicio || '')) rut[r.alumno_id] = r; });
       }
     }
@@ -21752,7 +21764,7 @@ async function ppFichaCarga(a, tok){
     const hoy = dateAIso(new Date());
     const [evals, rs] = await Promise.all([
       sb(`evaluaciones?select=id,fecha&alumno_id=eq.${a.id}&order=fecha.desc&limit=60`),
-      sb(`rutinas?select=id,nombre,fecha_inicio,duracion_semanas&alumno_id=eq.${a.id}&activa=eq.true&limit=50`).catch(() => []),
+      ppRutinasDe([a.id]),   // (v218) también las asignadas por rutina_asignaciones
     ]);
     const metr = {};
     if (evals.length){
