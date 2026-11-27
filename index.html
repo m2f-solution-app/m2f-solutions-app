@@ -5620,12 +5620,20 @@ function modAccesosAbrir(gimId){
   modAccesosPantCargar(gimId);   // (v206)
 }
 async function modAccesosPantCargar(gimId){
+  // (v222) gimnasios solo se puede leer del gimnasio propio: para los demás (Axos…) se lee por una función de Martin
+  let v = null, falta = '';
   try{
-    const r = await sb(`gimnasios?select=pantalla_inicial&id=eq.${gimId}`);
-    if (!MOD_EDIT || MOD_EDIT.gimId !== gimId) return;
-    const v = (r && r[0] && r[0].pantalla_inicial) || '';
-    MOD_EDIT.pant = MOD_EDIT.pantOrig = v; MOD_EDIT.pantOk = true;
-  }catch(e){ if (!MOD_EDIT || MOD_EDIT.gimId !== gimId) return; MOD_EDIT.pantOk = false; }
+    const r = await sb('rpc/listar_pantallas_gimnasios', { method: 'POST', body: JSON.stringify({}) });
+    const f = (r || []).find(x => x.gimnasio_id === gimId);
+    v = (f && f.pantalla_inicial) || '';
+  }catch(e){
+    if (PERFIL_ACTUAL && PERFIL_ACTUAL.gimnasio_id === gimId){
+      try{ const r = await sb(`gimnasios?select=pantalla_inicial&id=eq.${gimId}`); v = (r && r[0] && r[0].pantalla_inicial) || ''; }catch(e2){ falta = 'v206-pantalla-inicial.sql'; }
+    } else falta = /pantalla_inicial|column/i.test(String((e && e.message) || e)) ? 'v206-pantalla-inicial.sql' : 'v222-pantallas-gimnasios.sql';
+  }
+  if (!MOD_EDIT || MOD_EDIT.gimId !== gimId) return;
+  if (v == null){ MOD_EDIT.pantOk = false; MOD_EDIT.pantFalta = falta || 'v206-pantalla-inicial.sql'; }
+  else { MOD_EDIT.pant = MOD_EDIT.pantOrig = v; MOD_EDIT.pantOk = true; }
   modAccesosPintar();
 }
 function modAccesosPant(v){ if (MOD_EDIT){ MOD_EDIT.pant = v; } }
@@ -5663,7 +5671,7 @@ function modAccesosPantHtml(v){
   const E = MOD_EDIT;
   const t = '<div class="x-sec">Pantalla al entrar</div>';
   if (E.pantOk === null) return `${t}<div class="x-sub">Cargando…</div>`;
-  if (E.pantOk === false) return `${t}<div class="x-sub">Para elegirla, corré <b>v206-pantalla-inicial.sql</b> en Supabase.</div>`;
+  if (E.pantOk === false) return `${t}<div class="x-sub">Para elegirla, corré <b>${E.pantFalta || 'v206-pantalla-inicial.sql'}</b> en Supabase.</div>`;
   const opts = PANT_OPCIONES.map(([k, n]) => {
     const mod = k === 'inicio' ? null : MOD_VISTAS[k], off = mod && v[mod] === false;
     return `<option value="${k === 'inicio' ? '' : k}" ${(E.pant || '') === (k === 'inicio' ? '' : k) ? 'selected' : ''} ${off ? 'disabled' : ''}>${n}${off ? ' (módulo apagado)' : ''}</option>`;
@@ -6100,7 +6108,7 @@ function atlIniciarAlu(){
   atlCargarVista('aluAtletismoContenido', id || '');
 }
 
-const APP_VERSION = 221;
+const APP_VERSION = 222;
 let ES_PERSONAL = false;   // (v132) cuenta personal (gimnasios.tipo = 'personal'); se calcula en perAplicar()
 // (v96) Fecha de la última actualización: se cambia junto con APP_VERSION en cada entrega. Se muestra en la
 // pantalla de inicio y en el menú de cuenta ("v94 · actualizada el 5/10/2026").
