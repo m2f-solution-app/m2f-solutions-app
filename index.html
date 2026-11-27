@@ -2407,6 +2407,65 @@ if ('serviceWorker' in navigator) window.addEventListener('load', function(){ tr
   #subvistaSeguimiento h2, #subvistaAlumnos h2, #subvistaProfesores h2{ font-size:17px; letter-spacing:-.01em; }
   .x-frow button, .x-tbl button{ padding:6px 14px; font-size:13px; }
 
+  /* ---- (v202) Panel de perfiles ---- */
+  #subvistaPanel{ --pp-ok:#3ddc84; --pp-warn:#ffd23d; --pp-bad:#ff5d5d; --pp-info:#6cb4ff; }
+  :root[data-tema="claro"] #subvistaPanel{ --pp-ok:#0f8a45; --pp-warn:#8a5a00; --pp-bad:#c0271d; --pp-info:#1d6fb8; }
+  .pp-sub{ color:var(--muted); margin:2px 0 14px; font-size:13px; }
+  .pp-warnbar{ background:rgba(255,210,61,.10); border:1px solid rgba(255,210,61,.45); border-radius:12px; padding:10px 14px; margin-bottom:12px; }
+  .pp-qwrap{ display:grid; grid-template-columns:1fr 240px; gap:12px; }
+  .pp-qleft{ display:grid; grid-template-columns:22px 1fr; gap:6px 8px; }
+  .pp-qy{ writing-mode:vertical-rl; transform:rotate(180deg); text-align:center; color:var(--muted); font-size:11px; letter-spacing:.06em; text-transform:uppercase; grid-row:2; }
+  .pp-qx{ grid-column:2; display:flex; justify-content:space-between; color:var(--muted); font-size:11px; letter-spacing:.06em; text-transform:uppercase; }
+  .pp-quad{ display:grid; grid-template-columns:1fr 1fr; gap:12px; grid-column:2; grid-row:2; }
+  .pp-pcard{ text-align:left; color:inherit; position:relative; overflow:hidden; min-height:158px; padding:16px; border-radius:14px; cursor:pointer; font:inherit;
+    background:linear-gradient(135deg,color-mix(in srgb,var(--c) 17%,var(--panel)),var(--panel) 68%);
+    border:1px solid color-mix(in srgb,var(--c) 38%,var(--border)); transition:.15s; }
+  .pp-pcard:hover{ transform:translateY(-2px); border-color:var(--c); box-shadow:0 8px 22px color-mix(in srgb,var(--c) 22%,transparent); }
+  .pp-pcard .wm{ position:absolute; right:-14px; bottom:-18px; width:128px; height:128px; color:var(--c); opacity:.11; pointer-events:none; }
+  .pp-pcard .top{ display:flex; align-items:center; gap:10px; }
+  .pp-pcard .ico{ width:40px; height:40px; border-radius:12px; display:grid; place-items:center; color:var(--c); background:color-mix(in srgb,var(--c) 20%,transparent); flex:none; }
+  .pp-pcard .ico svg{ width:24px; height:24px; }
+  .pp-pcard .t{ font-weight:800; font-size:15px; line-height:1.15; }
+  .pp-pcard .n{ font-size:38px; font-weight:800; line-height:1; margin:10px 0 2px; }
+  .pp-pcard .d{ color:var(--muted); font-size:12px; max-width:80%; }
+  .pp-pcard.tall{ display:flex; flex-direction:column; justify-content:center; }
+  @media(min-width:901px){ .pp-qwrap > .pp-pcard.tall{ margin-top:24px; } }
+  .pp-pcard.tall .wm{ width:170px; height:170px; }
+  .pp-flags{ display:flex; gap:6px; flex-wrap:wrap; margin:10px 0 0; }
+  .pp-chip{ display:inline-flex; align-items:center; gap:4px; border-radius:99px; padding:2px 9px; font-size:11.5px; border:1px solid var(--border); background:var(--inset); color:var(--text); white-space:nowrap; font-family:inherit; }
+  .pp-chip.ok{ border-color:var(--pp-ok); } .pp-chip.warn{ border-color:var(--pp-warn); } .pp-chip.bad{ border-color:var(--pp-bad); } .pp-chip.info{ border-color:var(--pp-info); }
+  button.pp-chip{ cursor:pointer; }
+  .pp-rbar{ display:flex; justify-content:space-between; align-items:center; width:100%; margin-top:12px; background:var(--panel); border:1px solid var(--border); border-left:4px solid #ff5d5d; border-radius:14px; padding:12px 16px; font-weight:700; cursor:pointer; color:inherit; font:inherit; }
+  .pp-rbar b{ font-size:22px; }
+  .pp-two{ display:grid; grid-template-columns:1.25fr 1fr; gap:14px; margin-top:14px; }
+  .pp-box{ background:var(--panel); border:1px solid var(--border); border-radius:14px; padding:14px; }
+  .pp-box h2{ font-size:15px; margin:0 0 10px; }
+  .pp-turno{ display:grid; grid-template-columns:62px 1fr; gap:10px; padding:10px 0; border-top:1px solid var(--border); }
+  .pp-turno:first-of-type{ border-top:0; }
+  .pp-hora{ font-weight:800; font-size:16px; } .pp-hora small{ display:block; color:var(--muted); font-weight:500; font-size:11px; }
+  .pp-turno.ahora .pp-hora{ color:var(--accent-text); }
+  .pp-pill{ display:inline-flex; align-items:center; gap:6px; border:1px solid var(--border); background:var(--inset); border-radius:99px; padding:3px 10px 3px 6px; margin:0 6px 6px 0; font-size:12.5px; cursor:pointer; color:var(--text); font-family:inherit; }
+  .pp-pill:hover{ border-color:var(--muted); }
+  .pp-dot{ width:10px; height:10px; border-radius:50%; background:var(--c); flex:none; display:inline-block; }
+  .pp-alert{ color:var(--pp-bad); font-weight:700; }
+  .pp-tools{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px; align-items:center; }
+  .pp-tools input, .pp-tools select{ background:var(--panel); border:1px solid var(--border); color:var(--text); border-radius:10px; padding:7px 10px; font:inherit; width:auto; }
+  .pp-tg{ background:var(--panel); border:1px solid var(--border); border-radius:99px; padding:6px 12px; cursor:pointer; color:inherit; font:inherit; }
+  .pp-tg.on{ background:var(--accent); color:#1a0e00; border-color:var(--accent); font-weight:700; }
+  .pp-alu{ display:grid; grid-template-columns:1.1fr 1.3fr 1.2fr; gap:14px; align-items:start; padding:14px; margin-bottom:10px; cursor:pointer; background:var(--panel); border:1px solid var(--border); border-radius:14px; }
+  .pp-alu:hover{ border-color:var(--muted); }
+  .pp-who{ display:flex; gap:10px; align-items:center; }
+  .pp-av{ width:42px; height:42px; border-radius:50%; background:var(--panel2); display:grid; place-items:center; font-weight:700; flex:none; border:2px solid var(--c); }
+  .pp-lab{ font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; margin-bottom:3px; }
+  .pp-big{ font-weight:700; } .pp-small{ font-size:12px; } .pp-muted{ color:var(--muted); }
+  .pp-empty{ border:1px dashed var(--border); border-radius:10px; padding:10px; color:var(--muted); }
+  .pp-back{ background:none; border:0; color:var(--muted); padding:0; margin-bottom:8px; cursor:pointer; font:inherit; }
+  .pp-crit input, .pp-crit select{ background:var(--inset); border:1px solid var(--border); color:var(--text); border-radius:8px; padding:5px 8px; width:84px; font:inherit; }
+  @media(max-width:900px){
+    .pp-qwrap{ grid-template-columns:1fr; } .pp-pcard.tall{ min-height:120px; }
+    .pp-two{ grid-template-columns:1fr; } .pp-alu{ grid-template-columns:1fr; }
+  }
+  #subvistaPanel > .card{ background:none; border:0; box-shadow:none; padding:0; }
 </style>
 </head>
 <body>
@@ -2603,6 +2662,7 @@ if ('serviceWorker' in navigator) window.addEventListener('load', function(){ tr
 
   <div class="top-toolbar" id="topToolbarProf">
     <button class="tt-btn active" id="ttInicio" onclick="cambiarSubvista('inicio')" title="Inicio"><span class="tt-ico">🏠</span><span class="tt-lbl">Inicio</span></button>
+    <button class="tt-btn" id="ttPanel" onclick="cambiarSubvista('panel')" style="display:none;" title="Panel de perfiles"><span class="tt-ico">🎯</span><span class="tt-lbl">Panel</span></button>
     <button class="tt-btn" id="ttDashboard" onclick="cambiarSubvista('dashboard')" style="display:none;" title="Dashboard"><span class="tt-ico">📊</span><span class="tt-lbl">Dashboard</span></button>
     <button class="tt-btn" id="ttArmador" onclick="cambiarSubvista('especiales')" title="Nueva rutina"><span class="tt-ico">🏋️</span><span class="tt-lbl">Nueva rutina</span></button>
     <button class="tt-btn" id="ttRutinas" onclick="cambiarSubvista('rutinas')" title="Rutinas"><span class="tt-ico">🗂️</span><span class="tt-lbl">Rutinas</span></button>
@@ -2666,6 +2726,7 @@ if ('serviceWorker' in navigator) window.addEventListener('load', function(){ tr
       </div>
     </div>
     <div class="side-item active" id="menuInicio" onclick="cambiarSubvista('inicio')" title="Inicio"><span class="side-ico">🏠</span><span class="side-label">Inicio</span></div>
+    <div class="side-item" id="menuPanel" onclick="cambiarSubvista('panel')" style="display:none;" title="Panel de perfiles"><span class="side-ico">🎯</span><span class="side-label">Panel de perfiles</span></div>
     <div class="side-item" id="menuDashboard" onclick="cambiarSubvista('dashboard')" style="display:none;" title="Dashboard"><span class="side-ico">📊</span><span class="side-label">Dashboard</span></div>
     <div class="side-item" id="menuArmador" onclick="cambiarSubvista('especiales')" title="Nueva rutina"><span class="side-ico">🏋️</span><span class="side-label">Nueva rutina</span></div>
     <div class="side-item" id="menuRutinas" onclick="cambiarSubvista('rutinas')" title="Rutinas"><span class="side-ico">🗂️</span><span class="side-label">Rutinas</span></div>
@@ -2883,6 +2944,17 @@ if ('serviceWorker' in navigator) window.addEventListener('load', function(){ tr
             <h2 style="margin-top:0">Llegadas de hoy · <span id="rcCnt" style="color:var(--accent-text);">0</span></h2>
             <div id="rcLog" class="muted">Cargando...</div>
           </div>
+        </div>
+      </div>
+
+      <!-- ---- SUBVISTA: PANEL DE PERFILES (v202, módulo opcional) ---- -->
+      <div id="subvistaPanel" style="display:none;">
+        <div class="card">
+          <div class="row" style="justify-content:space-between; align-items:center;">
+            <div class="vista-titulo" style="margin:0;">🎯 Panel de perfiles</div>
+            <button class="ghost" onclick="ppCarga(false)">🔄 Actualizar</button>
+          </div>
+          <div id="ppRoot" style="margin-top:12px;"></div>
         </div>
       </div>
 
@@ -4988,7 +5060,7 @@ let MOD_CAT = null;        // catálogo (solo se usa en el panel de Martin)
 let MOD_EDIT = null;       // edición en curso del modal de accesos
 const MOD_REQ = { equipo: 'evaluaciones' };   // este módulo necesita que el otro esté activo
 const MOD_VISTAS = { agenda:'agenda', horarios:'agenda', clases:'clases', recepcion:'recepcion', planes:'planes', cobranzas:'finanzas',
-  alertas:'alertas', evaluaciones:'evaluaciones', equipo:'equipo', seguimiento:'seguimiento', logros:'logros', dashboard:'dashboard', atletismo:'atletismo', servicios:'servicios' };
+  alertas:'alertas', evaluaciones:'evaluaciones', equipo:'equipo', seguimiento:'seguimiento', logros:'logros', dashboard:'dashboard', atletismo:'atletismo', servicios:'servicios', panel:'panel_perfiles' };
 const MOD_VISTAS_ALU = { turnos:'agenda', clases:'clases', atletismo:'atletismo', evolucion:'evaluaciones', seguimiento:'seguimiento', logros:'logros' };
 const MOD_IDS = {   // elementos de menú / barra / navegación inferior por módulo
   agenda:       ['menuAgenda', 'ttAgenda', 'bnavProfAgenda', 'menuHorarios', 'ttHorarios', 'menuAluTurnos', 'bnavTurnos'],
@@ -5049,6 +5121,7 @@ function modAplicarMenu(){
   try{ cvcMenu(); }catch(e){}   // (v157) cancelar clase
   try{ boscoChip(); }catch(e){}   // (v183) Bosco
   try{ cjEntrada(); }catch(e){}   // (v184) cierre de caja
+  try{ panelMenu(); }catch(e){}   // (v202) Panel de perfiles
   try{ document.body.classList.toggle('sin-wellness', !wellOn()); }catch(e){}   // (v149)
   const roles = new Set([...(typeof MENU_SOLO_ADMIN !== 'undefined' ? MENU_SOLO_ADMIN : []), ...(typeof BNAV_SOLO_ADMIN !== 'undefined' ? BNAV_SOLO_ADMIN : []), 'menuRecepcion', 'ttRecepcion']);
   Object.keys(MOD_IDS).forEach(k => {
@@ -5566,7 +5639,7 @@ function atlIniciarAlu(){
   atlCargarVista('aluAtletismoContenido', id || '');
 }
 
-const APP_VERSION = 201;
+const APP_VERSION = 202;
 let ES_PERSONAL = false;   // (v132) cuenta personal (gimnasios.tipo = 'personal'); se calcula en perAplicar()
 // (v96) Fecha de la última actualización: se cambia junto con APP_VERSION en cada entrega. Se muestra en la
 // pantalla de inicio y en el menú de cuenta ("v94 · actualizada el 5/10/2026").
@@ -13325,11 +13398,13 @@ function cambiarSubvista(v){
   clearInterval(AGENDA_AUTO_REFRESH_TIMER);
   if (v==='agenda') AGENDA_AUTO_REFRESH_TIMER = setInterval(renderAgenda, 25000);
   if (v==='inicio') AGENDA_AUTO_REFRESH_TIMER = setInterval(cargarInicioProfesor, 60000);
+  if (v==='panel') AGENDA_AUTO_REFRESH_TIMER = setInterval(ppRefrescoAuto, 60000);   // (v202)
   document.getElementById('subvistaInicio').style.display = v==='inicio' ? '' : 'none';
   document.getElementById('subvistaRecepcion').style.display = v==='recepcion' ? '' : 'none';
   document.getElementById('menuRecepcion').classList.toggle('active', v==='recepcion');
   document.getElementById('ttRecepcion').classList.toggle('active', v==='recepcion');
   document.getElementById('subvistaDashboard').style.display = v==='dashboard' ? '' : 'none';
+  document.getElementById('subvistaPanel').style.display = v==='panel' ? '' : 'none';   // (v202)
   document.getElementById('subvistaArmador').style.display = v==='armador' ? '' : 'none';
   document.getElementById('subvistaRutinas').style.display = v==='rutinas' ? '' : 'none';
   document.getElementById('subvistaEspeciales').style.display = v==='especiales' ? '' : 'none';
@@ -13352,6 +13427,7 @@ function cambiarSubvista(v){
   document.getElementById('subvistaGimnasio').style.display = v==='gimnasio' ? '' : 'none';
   document.getElementById('menuInicio').classList.toggle('active', v==='inicio');
   document.getElementById('menuDashboard').classList.toggle('active', v==='dashboard');
+  document.getElementById('menuPanel').classList.toggle('active', v==='panel');   // (v202)
   document.getElementById('menuArmador').classList.toggle('active', v==='especiales');
   document.getElementById('menuRutinas').classList.toggle('active', v==='rutinas');
   document.getElementById('menuEspeciales').classList.toggle('active', v==='especiales');
@@ -13375,6 +13451,7 @@ function cambiarSubvista(v){
   document.getElementById('menuGimnasio').classList.toggle('active', v==='gimnasio');
   document.getElementById('ttInicio').classList.toggle('active', v==='inicio');
   document.getElementById('ttDashboard').classList.toggle('active', v==='dashboard');
+  document.getElementById('ttPanel').classList.toggle('active', v==='panel');   // (v202)
   document.getElementById('ttArmador').classList.toggle('active', v==='especiales');
   document.getElementById('ttRutinas').classList.toggle('active', v==='rutinas');
   document.getElementById('ttEspeciales').classList.toggle('active', v==='especiales');
@@ -13404,6 +13481,7 @@ function cambiarSubvista(v){
   if (v==='inicio'){ cargarInicioProfesor(); guiaRenderCards(); }
   if (v==='recepcion') iniciarRecepcion();
   if (v==='dashboard') cargarDashboardAdmin();
+  if (v==='panel') panelEntrar();   // (v202)
   if (v==='rutinas') cargarGrillaRutinas();
   if (v==='especiales'){ nrInit(); nrAlAbrir(); }
   if (v==='alumnos') cargarListaAlumnos();
@@ -20874,6 +20952,301 @@ function testsFuerzaModuloHtml(alumnoId){
     <div class="muted" style="font-size:12px; margin-bottom:8px;">1RM estimado (fórmula de Epley), % de peso corporal y nivel se calculan solos${pesoCorporal ? '' : ' — cargá el peso corporal del alumno en "👤 Alumnos → ✏️ Datos" para que se puedan calcular'}.</div>
     ${filas}
   `;
+}
+
+// =====================================================================
+// (v202) PANEL DE PERFILES — solo con el módulo "panel_perfiles" prendido (panelOn()).
+// Perfil calculado por la app con SJ + CMJ de la última evaluación (no usa el Bosco) y el sexo del alumno.
+// Solo entran los alumnos marcados como deportistas. Cada profe ve sus propios turnos; el admin ve todos.
+// =====================================================================
+const PP_PERF = {
+  FM:   { n: 'Fuerza Máxima',          c: '#ff7a30', d: 'SJ bajo · elasticidad conservada' },
+  POT:  { n: 'Potencia',               c: '#b184ff', d: 'SJ ok · CMJ por debajo del objetivo' },
+  FR:   { n: 'Fuerza Reactiva',        c: '#3ddc84', d: 'SJ bueno · poca elasticidad' },
+  FP:   { n: 'Fuerza + Potencia',      c: '#6cb4ff', d: 'SJ bajo y elasticidad baja' },
+  MAN:  { n: 'Mantener',               c: '#2ec4b6', d: 'SJ y CMJ altos, elasticidad ok' },
+  READ: { n: 'Readaptación deportiva', c: '#ff5d5d', d: 'Tipo de alumno "Readaptación" · se cuenta aparte del perfil' },
+};
+const PP_ICON = {
+  FM:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 10v4M5.5 7.5v9M18.5 7.5v9M21.5 10v4M5.5 12h13"/></svg>',
+  POT:  '<svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"><path d="M13 2 4.5 13.5H11L10 22l8.5-11.5H12.5z"/></svg>',
+  FR:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21V3M6 9l6-6 6 6"/><path d="M5 21c1.5-2 2.5-2 4 0s2.5 2 4 0 2.5-2 4 0"/></svg>',
+  FP:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13.5 2 6.5 12h5l-1 7 7-10h-5z" fill="currentColor" stroke-width="1.2"/><path d="M2 21.5h20M4 19.5v4M20 19.5v4"/></svg>',
+  MAN:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 4.5 6v5.5c0 4.5 3 8 7.5 9.5 4.5-1.5 7.5-5 7.5-9.5V6z"/><path d="m8.5 12 2.5 2.5 4.5-5"/></svg>',
+  READ: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>',
+};
+const PP_TARJ = ['FM', 'POT', 'FR', 'FP'];
+// Cortes de ejemplo (a validar con el profe). Cada gimnasio puede cambiarlos: gimnasios.panel_cortes.
+const PP_CORTES_DEF = { ieMin: 1.10, H: { sjBajo: 31.5, sjMedio: 33.8, sjAlto: 37.3, cmjAlto: 40.3 }, M: { sjBajo: 23.5, sjMedio: 25.0, sjAlto: 27.9, cmjAlto: 30.0 } };
+const PP_M_SJ = 'SJ - Sin contramovimiento', PP_M_CMJ = 'CMJ - Salto vertical';
+let PP = { vista: 'panel', k: null, cargando: false, ok: false, deps: [], turnos: [], cortes: null, f: { q: '', nivel: '', alert: false, sinrut: false }, soloMios: false, propio: null, err: null, tok: 0 };
+
+function ppNum(v, def){ const n = Number(v); return isFinite(n) && n > 0 ? n : def; }
+function ppCortes(){   // defaults + lo guardado por el gimnasio (se ignora lo inválido)
+  const g = PP.cortes && typeof PP.cortes === 'object' ? PP.cortes : {};
+  const out = { ieMin: ppNum(g.ieMin, PP_CORTES_DEF.ieMin), H: {}, M: {} };
+  ['H', 'M'].forEach(s => Object.keys(PP_CORTES_DEF[s]).forEach(k => { out[s][k] = ppNum(g[s] && g[s][k], PP_CORTES_DEF[s][k]); }));
+  return out;
+}
+function ppFx(v, d){ return v == null || !isFinite(v) ? '–' : Number(v).toFixed(d == null ? 1 : d).replace('.', ','); }
+function ppCalcPerfil(sexo, sj, cmj){
+  if (!(sj > 0) || !(cmj > 0)) return { k: null, why: 'Faltan SJ y CMJ' };
+  if (sexo !== 'H' && sexo !== 'M') return { k: null, why: sexo === 'Otro' ? 'Para calcular el perfil elegí Hombre o Mujer (los cortes son por sexo)' : 'Falta cargar el sexo (los cortes son distintos para hombres y mujeres)' };
+  const C = ppCortes(), c = C[sexo], r = cmj / sj, rr = ppFx(r, 2);
+  if (sj >= c.sjAlto && cmj >= c.cmjAlto && r >= C.ieMin) return { k: 'MAN', why: `SJ ${ppFx(sj)} y CMJ ${ppFx(cmj)} altos, CMJ/SJ ${rr} ≥ ${ppFx(C.ieMin, 2)}` };
+  if (r < C.ieMin && sj < c.sjMedio) return { k: 'FP', why: `CMJ/SJ ${rr} < ${ppFx(C.ieMin, 2)} y SJ ${ppFx(sj)} < ${ppFx(c.sjMedio)}` };
+  if (r < C.ieMin) return { k: 'FR', why: `CMJ/SJ ${rr} < ${ppFx(C.ieMin, 2)} con SJ ${ppFx(sj)} ≥ ${ppFx(c.sjMedio)}` };
+  if (sj < c.sjBajo) return { k: 'FM', why: `SJ ${ppFx(sj)} < ${ppFx(c.sjBajo)} con CMJ/SJ ${rr} ≥ ${ppFx(C.ieMin, 2)}` };
+  return { k: 'POT', why: `SJ ${ppFx(sj)} ≥ ${ppFx(c.sjBajo)}, CMJ/SJ ${rr} ≥ ${ppFx(C.ieMin, 2)} pero sin llegar a los valores altos` };
+}
+function ppChunks(a, n){ const o = []; for (let i = 0; i < a.length; i += n) o.push(a.slice(i, i + n)); return o; }
+function ppMin(h){ const [a, b] = String(h || '0:0').split(':').map(Number); return (a || 0) * 60 + (b || 0); }
+function ppHoraTxt(h){ return String(h || '').slice(0, 5); }
+function ppIni(n){ return String(n || '?').split(' ').filter(Boolean).map(s => s[0]).slice(0, 2).join('').toUpperCase(); }
+function ppAsim(t5){ return t5 && t5.l > 0 && t5.r > 0 ? Math.abs(t5.l - t5.r) / Math.min(t5.l, t5.r) * 100 : null; }
+function ppEsReadapt(nombre){ return /readapt/i.test(String(nombre || '').normalize('NFD').replace(/[̀-ͯ]/g, '')); }
+function ppAlertas(d){ const a = ppAsim(d.t5); return a != null && a >= PANEL_CORTES_DEF.asim.alta ? 1 : 0; }
+const ppPorPerfil = k => k === 'READ' ? PP.deps.filter(d => d.readapt) : PP.deps.filter(d => d.perfil === k);
+
+function panelMenu(){   // el acceso solo existe con el módulo prendido y para admin / profesor
+  const ver = panelOn() && PERFIL_ACTUAL && (PERFIL_ACTUAL.rol === 'admin' || PERFIL_ACTUAL.rol === 'profesor');
+  ['menuPanel', 'ttPanel'].forEach(id => { const e = document.getElementById(id); if (e) e.style.display = ver ? '' : 'none'; });
+}
+
+async function ppCarga(silencioso){
+  const tok = ++PP.tok;
+  if (!silencioso){ PP.cargando = true; PP.err = null; ppRender(); }
+  try{
+    const gym = PERFIL_ACTUAL?.gimnasio_id;
+    const hoy = dateAIso(new Date());
+    PP.propio = (PROFESORES_CACHE || []).find(p => p.perfil_id === PERFIL_ACTUAL?.id) || null;
+    const esAdmin = PERFIL_ACTUAL?.rol === 'admin';
+    let filtroProf = '';
+    if (!esAdmin) filtroProf = PP.propio ? `&profesor_id=eq.${PP.propio.id}` : '&profesor_id=eq.00000000-0000-0000-0000-000000000000';
+    else if (PP.soloMios && PP.propio) filtroProf = `&profesor_id=eq.${PP.propio.id}`;
+    const [alumnos, gimRows, turnos] = await Promise.all([
+      sb(`alumnos?select=id,nombre,sexo,nivel,deporte_disciplina,fecha_nacimiento,tipo_alumno_id,foto_url&es_deportista=eq.true&activo=eq.true&order=nombre.asc&limit=2000`),
+      sb(`gimnasios?select=panel_cortes&id=eq.${gym}`).catch(() => []),
+      sb(`turnos?select=id,hora,profesor_id,alumno_id,alumnos(nombre),profesores(nombre)&fecha=eq.${hoy}&estado=neq.cancelado${filtroProf}&order=hora&limit=3000`).catch(() => []),
+    ]);
+    PP.cortes = (gimRows && gimRows[0] && gimRows[0].panel_cortes) || null;
+    const tipoNombre = {}; (TIPOS_ALUMNO_CACHE || []).forEach(t => { tipoNombre[t.id] = t.nombre; });
+    const ids = alumnos.map(a => a.id);
+    const ev = {}, t5 = {}, rut = {};
+    if (ids.length){
+      const evals = [];
+      for (const ch of ppChunks(ids, 60)) evals.push(...await sb(`evaluaciones?select=id,alumno_id,fecha&alumno_id=in.(${ch.join(',')})&order=fecha.desc&limit=5000`));
+      const evPorId = {}; evals.forEach(e => { evPorId[e.id] = e; });
+      const metr = {}; const nombres = encodeURIComponent('("' + [PP_M_SJ, PP_M_CMJ, T505_IZQ, T505_DER].join('","') + '")');
+      for (const ch of ppChunks(evals.map(e => e.id), 80)){
+        const ms = await sb(`evaluacion_metricas?select=evaluacion_id,metrica,valor&evaluacion_id=in.(${ch.join(',')})&metrica=in.${nombres}&limit=5000`);
+        ms.forEach(m => { (metr[m.evaluacion_id] = metr[m.evaluacion_id] || {})[m.metrica] = Number(m.valor); });
+      }
+      evals.forEach(e => {   // vienen de la más nueva a la más vieja: la primera con ambos datos es la última
+        const m = metr[e.id]; if (!m) return;
+        if (!ev[e.alumno_id] && m[PP_M_SJ] > 0 && m[PP_M_CMJ] > 0) ev[e.alumno_id] = { f: e.fecha, sj: m[PP_M_SJ], cmj: m[PP_M_CMJ] };
+        if (!t5[e.alumno_id] && m[T505_IZQ] > 0 && m[T505_DER] > 0) t5[e.alumno_id] = { f: e.fecha, l: m[T505_IZQ], r: m[T505_DER] };
+      });
+      for (const ch of ppChunks(ids, 60)){
+        const rs = await sb(`rutinas?select=id,alumno_id,nombre,fecha_inicio,duracion_semanas&alumno_id=in.(${ch.join(',')})&activa=eq.true&limit=2000`).catch(() => []);
+        rs.forEach(r => { const p = rut[r.alumno_id]; if (!p || String(r.fecha_inicio || '') > String(p.fecha_inicio || '')) rut[r.alumno_id] = r; });
+      }
+    }
+    if (tok !== PP.tok) return;
+    PP.deps = alumnos.map(a => {
+      const e = ev[a.id] || null, c = ppCalcPerfil(a.sexo, e && e.sj, e && e.cmj);
+      const r = rut[a.id] || null; let sem = null;
+      if (r && r.fecha_inicio){ sem = Math.max(1, Math.floor((new Date(hoy + 'T00:00:00') - new Date(String(r.fecha_inicio).slice(0, 10) + 'T00:00:00')) / 604800000) + 1); if (r.duracion_semanas) sem = Math.min(sem, r.duracion_semanas); }
+      return { id: a.id, nombre: a.nombre, sexo: a.sexo, nivel: a.nivel, deporte: a.deporte_disciplina, edad: edadDesdeFecha(a.fecha_nacimiento), readapt: ppEsReadapt(tipoNombre[a.tipo_alumno_id]),
+        ev: e, t5: t5[a.id] || null, perfil: c.k, why: c.why, rut: r ? { nombre: r.nombre, sem, tot: r.duracion_semanas || null } : null };
+    });
+    PP.turnos = turnos || [];
+    PP.ok = true; PP.err = null;
+  }catch(e){ if (tok !== PP.tok) return; PP.err = extraerMensajeError ? extraerMensajeError(e) : String(e.message || e); }
+  PP.cargando = false;
+  ppRender();
+}
+
+function ppRefrescoAuto(){ if (panelOn() && PP.vista === 'panel' && !PP.cargando) ppCarga(true); }   // el refresco automático no toca la lista (para no sacarle el foco al buscador)
+function panelEntrar(){
+  if (!panelOn()){ const r = document.getElementById('ppRoot'); if (r) r.innerHTML = '<div class="pp-empty">El Panel de perfiles no está habilitado en este gimnasio.</div>'; return; }
+  PP.vista = 'panel'; PP.k = null;
+  ppCarga(false);
+}
+
+// ---------- Turnos: en curso + próximas 2 horas ----------
+function ppAhoraMin(){ const d = new Date(); return d.getHours() * 60 + d.getMinutes(); }
+function ppTurnosVentana(){
+  const now = ppAhoraMin();
+  return PP.turnos.filter(t => ppMin(t.hora) + 60 > now && ppMin(t.hora) <= now + 120);
+}
+function ppProxHoras(){ const m = {}; ppTurnosVentana().forEach(t => { const h = ppHoraTxt(t.hora); if (!m[t.alumno_id] || h < m[t.alumno_id]) m[t.alumno_id] = h; }); return m; }
+
+function ppBannerSinEval(){
+  const L = PP.deps.filter(d => !d.perfil); if (!L.length) return '';
+  const px = ppProxHoras(); L.sort((a, b) => (px[a.id] ? 0 : 1) - (px[b.id] ? 0 : 1));
+  return `<div class="pp-warnbar"><div><b>⚠ ${L.length} ${L.length === 1 ? 'deportista sin evaluar' : 'deportistas sin evaluar'}</b> <span class="pp-muted">· cargales SJ y CMJ (y el sexo) para ubicarlos en su perfil.</span></div>
+    <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:6px;">${L.map(d => `<button class="pp-chip ${px[d.id] ? 'warn' : ''}" title="${xe(d.why)}" onclick="ppIrEval('${d.id}')">${xe(d.nombre)}${px[d.id] ? ' · viene a las ' + px[d.id] : ''}${d.ev && d.sexo !== 'H' && d.sexo !== 'M' ? ' · falta sexo' : ''}</button>`).join('')}</div></div>`;
+}
+function ppTarjeta(k, tall){
+  const L = ppPorPerfil(k), al = L.filter(ppAlertas).length, sr = L.filter(d => !d.rut).length, P = PP_PERF[k];
+  return `<button class="pp-pcard ${tall ? 'tall' : ''}" style="--c:${P.c}" onclick="ppAbrirPerfil('${k}')">
+    <span class="wm">${PP_ICON[k]}</span>
+    <div class="top"><span class="ico">${PP_ICON[k]}</span><div class="t">${P.n}</div></div>
+    <div class="n">${L.length}</div><div class="d">${P.d}</div>
+    <div class="pp-flags">${al ? `<span class="pp-chip bad">⚠ ${al} con alerta</span>` : '<span class="pp-chip ok">✓ sin alertas</span>'}${sr ? `<span class="pp-chip warn">${sr} sin rutina</span>` : ''}</div></button>`;
+}
+function ppChipAlumno(t){
+  const d = PP.deps.find(x => x.id === t.alumno_id);
+  const nom = (t.alumnos && t.alumnos.nombre) || (d && d.nombre) || 'Alumno';
+  const partes = nom.split(' ').filter(Boolean), corto = partes[0] + (partes[1] ? ' ' + partes[1][0] + '.' : '');
+  if (!d) return `<span class="pp-pill" style="--c:var(--border); cursor:default;" title="Socio, no deportista"><span class="pp-dot"></span>${xe(corto)} <span class="pp-muted pp-small">socio</span></span>`;
+  if (!d.perfil) return `<button class="pp-pill" style="--c:#ffd23d" onclick="ppIrEval('${d.id}')" title="${xe(d.why)}"><span class="pp-dot"></span>${xe(corto)} <span class="pp-muted pp-small">sin evaluar</span></button>`;
+  return `<button class="pp-pill" style="--c:${PP_PERF[d.perfil].c}" onclick="ppFicha('${d.id}')"><span class="pp-dot"></span>${xe(corto)}${ppAlertas(d) ? ' <span class="pp-alert" title="Tiene alertas">!</span>' : ''}${d.rut ? '' : ' <span class="pp-muted" title="Sin rutina">∅</span>'}</button>`;
+}
+function ppVistaTurnos(){
+  const now = ppAhoraMin(), L = ppTurnosVentana();
+  const esAdmin = PERFIL_ACTUAL?.rol === 'admin';
+  const sel = esAdmin && PP.propio ? `<div class="pp-tools" style="margin-bottom:6px"><select onchange="PP.soloMios=this.value==='mios'; ppCarga(true)"><option value="todos" ${PP.soloMios ? '' : 'selected'}>Ver: todos los profesores</option><option value="mios" ${PP.soloMios ? 'selected' : ''}>Ver: solo mis turnos</option></select></div>` : '';
+  if (!esAdmin && !PP.propio) return '<div class="pp-empty">Tu usuario no está vinculado a un profesor, por eso no se muestran turnos. Pedile al administrador que lo vincule.</div>';
+  if (!L.length) return sel + '<div class="pp-empty">No hay turnos en curso ni en las próximas 2 horas.</div>';
+  const hs = [...new Set(L.map(t => ppHoraTxt(t.hora)))].sort();
+  const profes = new Set(PP.turnos.map(t => t.profesor_id)); const mostrarProf = esAdmin && !PP.soloMios && profes.size > 1;
+  return sel + hs.map(h => {
+    const enCurso = ppMin(h) <= now, dif = ppMin(h) - now, grupo = L.filter(t => ppHoraTxt(t.hora) === h);
+    const porProf = {}; grupo.forEach(t => { (porProf[t.profesor_id || '-'] = porProf[t.profesor_id || '-'] || []).push(t); });
+    return `<div class="pp-turno ${enCurso ? 'ahora' : ''}"><div class="pp-hora">${h}<small>${enCurso ? 'en curso' : 'en ' + (dif >= 60 ? Math.floor(dif / 60) + ' h ' + (dif % 60 ? dif % 60 + ' min' : '') : dif + ' min')}</small></div>
+      <div>${Object.keys(porProf).map(pid => { const ts = porProf[pid]; const pn = (ts[0].profesores && ts[0].profesores.nombre) || '';
+        const sinRut = ts.filter(t => { const d = PP.deps.find(x => x.id === t.alumno_id); return d && !d.rut; }).length;
+        return `${mostrarProf && pn ? `<div class="pp-small pp-muted" style="margin:0 0 3px">${xe(pn)}</div>` : ''}<div>${ts.map(ppChipAlumno).join('')}</div>
+          <div class="pp-small pp-muted" style="margin-bottom:6px">${ts.length} anotados${sinRut ? ' · ' + sinRut + ' sin rutina' : ''}</div>`; }).join('')}</div></div>`;
+  }).join('') + `<div class="pp-small pp-muted" style="margin-top:8px">${['FM', 'POT', 'FR', 'FP', 'MAN'].map(k => `<span class="pp-dot" style="--c:${PP_PERF[k].c}"></span> ${k === 'MAN' ? 'Mantener' : k}`).join(' &nbsp;')} · <b class="pp-alert">!</b> alerta · ∅ sin rutina</div>`;
+}
+function ppVistaAlertas(){
+  const L = PP.deps.filter(ppAlertas).slice(0, 8);
+  if (!L.length) return '<div class="pp-empty">Sin alertas por ahora ✓</div>';
+  return L.map(d => { const a = ppAsim(d.t5), lento = d.t5.l > d.t5.r ? 'izquierda' : 'derecha';
+    return `<div style="padding:8px 0; border-top:1px solid var(--border); cursor:pointer;" onclick="ppFicha('${d.id}')"><span class="pp-dot" style="--c:${d.perfil ? PP_PERF[d.perfil].c : 'var(--border)'}"></span> <b>${xe(d.nombre)}</b>
+      <div style="margin-top:4px"><span class="pp-chip bad">⚠ 5-0-5: asimetría ${ppFx(a)} % · más lento hacia la ${lento}</span></div></div>`; }).join('');
+}
+
+function ppRender(){
+  const root = document.getElementById('ppRoot'); if (!root) return;
+  if (PP.cargando && !PP.ok){ root.innerHTML = '<div class="pp-empty">Cargando panel…</div>'; return; }
+  if (PP.err){ root.innerHTML = `<div class="pp-empty">No se pudo cargar el panel: ${xe(PP.err)} <button class="pp-chip" onclick="ppCarga(false)">Reintentar</button></div>`; return; }
+  if (!PP.deps.length && PP.vista === 'panel'){
+    root.innerHTML = `<div class="pp-empty"><b>Todavía no hay deportistas.</b><br>Marcá a un alumno como deportista (Alumnos → ficha → ✏️ Editar datos, o Evaluaciones → Datos personales) y cargale el sexo y una evaluación con SJ y CMJ: va a aparecer acá en su perfil.</div>`; return;
+  }
+  root.innerHTML = PP.vista === 'lista' ? ppHtmlLista() : ppHtmlPanel();
+}
+function ppHtmlPanel(){
+  return `<div class="pp-sub">Tocá un perfil para ver a sus deportistas. Abajo: los turnos en curso y de las próximas 2 horas.</div>
+  ${ppBannerSinEval()}
+  <div class="pp-qwrap"><div class="pp-qleft"><div class="pp-qx"><span>◀ SJ más bajo</span><span>SJ más alto ▶</span></div>
+    <div class="pp-qy">Elasticidad ▲ alta · baja ▼</div>
+    <div class="pp-quad">${ppTarjeta('FM')}${ppTarjeta('POT')}${ppTarjeta('FP')}${ppTarjeta('FR')}</div></div>${ppTarjeta('MAN', true)}</div>
+  <button class="pp-rbar" onclick="ppAbrirPerfil('READ')"><span style="display:flex; align-items:center; gap:10px;"><span style="width:34px; height:34px; border-radius:10px; display:grid; place-items:center; color:#ff5d5d; background:color-mix(in srgb,#ff5d5d 20%,transparent);"><span style="width:20px; height:20px; display:block;">${PP_ICON.READ}</span></span>Readaptación deportiva <span class="pp-muted pp-small">· se cuenta aparte del perfil</span></span><b>${ppPorPerfil('READ').length}</b></button>
+  <p class="pp-small" style="margin:10px 2px 0"><button class="pp-chip" onclick="ppCriterios()">⚙ Cómo se define el perfil</button></p>
+  <div class="pp-two">
+    <section class="pp-box"><h2>⏱ Turnos en curso y próximas 2 horas</h2>${ppVistaTurnos()}</section>
+    <section class="pp-box"><h2>🔔 Para mirar hoy</h2>${ppVistaAlertas()}</section>
+  </div>`;
+}
+function ppListaFiltrada(){
+  let L = PP.k ? ppPorPerfil(PP.k) : PP.deps.filter(d => !d.perfil);
+  const f = PP.f;
+  if (f.q) L = L.filter(d => d.nombre.toLowerCase().includes(f.q.toLowerCase()));
+  if (f.nivel) L = L.filter(d => d.nivel === f.nivel);
+  if (f.alert) L = L.filter(ppAlertas);
+  if (f.sinrut) L = L.filter(d => !d.rut);
+  return L;
+}
+function ppHtmlLista(){
+  const P = PP.k ? PP_PERF[PP.k] : null, total = (PP.k ? ppPorPerfil(PP.k) : PP.deps.filter(d => !d.perfil)).length;
+  return `<button class="pp-back" onclick="ppVolver()">← Panel de perfiles</button>
+  <div style="display:flex; align-items:center; gap:10px; font-size:20px; font-weight:800;">${P ? `<span style="width:34px; height:34px; border-radius:10px; display:grid; place-items:center; color:${P.c}; background:color-mix(in srgb,${P.c} 20%,transparent);"><span style="width:22px; height:22px; display:block;">${PP_ICON[PP.k]}</span></span>` : ''}${P ? P.n : 'Deportistas sin evaluar'}</div>
+  <div class="pp-sub">${P ? P.d : 'Les falta SJ y CMJ (o el sexo): el perfil se calcula solo cuando los tienen.'} · ${total} deportistas</div>
+  <div class="pp-tools">
+    <input placeholder="🔎 Buscar…" value="${xe(PP.f.q)}" oninput="PP.f.q=this.value; ppRenderLista()">
+    <select onchange="PP.f.nivel=this.value; ppRenderLista()"><option value="">Todos los niveles</option>${PANEL_NIVELES.map(n => `<option ${PP.f.nivel === n ? 'selected' : ''}>${n}</option>`).join('')}</select>
+    <button class="pp-tg ${PP.f.alert ? 'on' : ''}" onclick="PP.f.alert=!PP.f.alert; ppRender()">⚠ Solo con alertas</button>
+    <button class="pp-tg ${PP.f.sinrut ? 'on' : ''}" onclick="PP.f.sinrut=!PP.f.sinrut; ppRender()">∅ Sin rutina</button>
+  </div><div id="ppLista">${ppFilas(ppListaFiltrada())}</div>`;
+}
+function ppRenderLista(){ const e = document.getElementById('ppLista'); if (e) e.innerHTML = ppFilas(ppListaFiltrada()); }
+function ppFilas(L){
+  if (!L.length) return '<div class="pp-empty">Nadie coincide con los filtros.</div>';
+  return L.map(d => {
+    const col = d.perfil ? PP_PERF[d.perfil].c : 'var(--border)', ie = d.ev ? (d.ev.cmj - d.ev.sj) / d.ev.sj * 100 : null, a = ppAsim(d.t5);
+    const as = a == null ? null : (a >= PANEL_CORTES_DEF.asim.alta ? 'bad' : a >= PANEL_CORTES_DEF.asim.mod ? 'warn' : 'ok');
+    const f = x => x ? String(x).split('-').reverse().join('/') : '';
+    return `<div class="pp-alu" style="--c:${col}" onclick="ppFicha('${d.id}')">
+      <div class="pp-who"><div class="pp-av">${xe(ppIni(d.nombre))}</div><div><div class="pp-big">${xe(d.nombre)}</div>
+        <div class="pp-muted pp-small">${d.edad != null ? d.edad + ' años' : 'edad s/d'}${d.deporte ? ' · ' + xe(d.deporte) : ''}</div>
+        <span class="pp-chip" style="margin-top:4px">${d.nivel ? xe(d.nivel) : 'Sin nivel'}</span>${d.readapt ? ' <span class="pp-chip bad" style="margin-top:4px">Readaptación</span>' : ''}</div></div>
+      <div><div class="pp-lab">Última evaluación</div>${d.ev ? `<div class="pp-big">SJ ${ppFx(d.ev.sj)} · CMJ ${ppFx(d.ev.cmj)} cm</div><div class="pp-muted pp-small">IE ${ppFx(ie)} % · ${f(d.ev.f)}</div>` : '<div class="pp-empty pp-small">Sin SJ / CMJ</div>'}
+        ${d.t5 ? `<div class="pp-small" style="margin-top:3px">5-0-5: ${ppFx(d.t5.l, 2)} / ${ppFx(d.t5.r, 2)} s <span class="pp-chip ${as}">${ppFx(a)} %</span></div>` : ''}
+        ${!d.perfil && d.ev ? `<div class="pp-small" style="margin-top:3px; color:var(--pp-warn);">${xe(d.why)}</div>` : ''}</div>
+      <div><div class="pp-lab">Rutina</div>${d.rut ? `<div class="pp-big pp-small">${xe(d.rut.nombre)}</div>${d.rut.sem ? `<div class="pp-muted pp-small">Semana ${d.rut.sem}${d.rut.tot ? ' de ' + d.rut.tot : ''}</div>` : ''}` : '<span class="pp-chip warn">∅ Sin rutina asignada</span>'}</div>
+    </div>`;
+  }).join('');
+}
+function ppAbrirPerfil(k){ PP.vista = 'lista'; PP.k = k; PP.f = { q: '', nivel: '', alert: false, sinrut: false }; ppRender(); }
+function ppVolver(){ PP.vista = 'panel'; PP.k = null; ppRender(); }
+function ppFicha(id){ try{ abrirFichaAlumno(id); }catch(e){ toast('No se pudo abrir la ficha.', true); } }
+async function ppIrEval(id){
+  cambiarSubvista('evaluaciones');
+  for (let i = 0; i < 20; i++){
+    const sel = document.getElementById('evalAlumno');
+    if (sel && Array.from(sel.options).some(o => o.value === id)){ sel.value = id; try{ sincronizarComboBuscable('evalAlumno'); }catch(e){} onCambiarEvalAlumno(); return; }
+    await new Promise(r => setTimeout(r, 100));
+  }
+}
+
+// ---------- "Cómo se define el perfil" (cortes editables por el admin) ----------
+function ppCriterios(){
+  const C = ppCortes(), admin = PERFIL_ACTUAL?.rol === 'admin', dis = admin ? '' : 'disabled';
+  const inp = (id, v) => `<input type="number" step="0.1" id="${id}" value="${v}" ${dis}>`;
+  const box = modalSeguridadAbrir(`
+    <h3>Cómo se define el perfil</h3>
+    <p class="muted" style="margin:0 0 10px;">Se calcula solo con el <b>SJ</b> y el <b>CMJ</b> de la última evaluación y el <b>sexo</b>. Elasticidad = CMJ ÷ SJ. Reglas, en este orden:</p>
+    <ol style="margin:0 0 10px 18px; padding:0; font-size:13px; line-height:1.55;">
+      <li><b>Mantener</b>: SJ ≥ "SJ alto", CMJ ≥ "CMJ alto" y elasticidad ≥ mínima.</li>
+      <li><b>Fuerza + Potencia</b>: elasticidad baja y SJ por debajo de "SJ medio".</li>
+      <li><b>Fuerza Reactiva</b>: elasticidad baja con SJ ≥ "SJ medio".</li>
+      <li><b>Fuerza Máxima</b>: SJ por debajo de "SJ bajo" con elasticidad conservada.</li>
+      <li><b>Potencia</b>: el resto.</li>
+    </ol>
+    <div class="pp-crit" style="font-size:13px;">
+      <div style="margin-bottom:8px;">Elasticidad mínima (CMJ/SJ): ${inp('ppC_ie', C.ieMin)}</div>
+      <table style="width:100%; border-collapse:collapse; text-align:left;"><tr class="muted"><th></th><th>SJ bajo</th><th>SJ medio</th><th>SJ alto</th><th>CMJ alto</th></tr>
+        ${['H', 'M'].map(s => `<tr><td style="padding:4px 6px 4px 0;"><b>${s === 'H' ? 'Hombres' : 'Mujeres'}</b> (cm)</td>${['sjBajo', 'sjMedio', 'sjAlto', 'cmjAlto'].map(k => `<td>${inp('ppC_' + s + '_' + k, C[s][k])}</td>`).join('')}</tr>`).join('')}
+      </table>
+    </div>
+    <p class="muted" style="font-size:12px; margin:10px 0;">Son valores de ejemplo: se ajustan con el profe. ${admin ? 'Al guardar se recalculan todos los perfiles.' : 'Solo el administrador puede cambiarlos.'}</p>
+    ${admin ? '<button id="ppCrGuardar" style="width:100%;">Guardar cortes</button><button id="ppCrReset" class="ghost" style="width:100%; margin-top:8px;">Volver a los valores de ejemplo</button>' : ''}
+    <button class="ghost" style="width:100%; margin-top:8px;" onclick="modalSeguridadCerrar()">Cerrar</button>`);
+  const g = box.querySelector('#ppCrGuardar'); if (g) g.onclick = () => ppCriteriosGuardar(false);
+  const r = box.querySelector('#ppCrReset'); if (r) r.onclick = () => ppCriteriosGuardar(true);
+}
+async function ppCriteriosGuardar(reset){
+  let valor = null;
+  if (!reset){
+    const n = id => parseFloat(String(document.getElementById(id).value).replace(',', '.'));
+    valor = { ieMin: n('ppC_ie'), H: {}, M: {} };
+    for (const s of ['H', 'M']){ for (const k of ['sjBajo', 'sjMedio', 'sjAlto', 'cmjAlto']) valor[s][k] = n('ppC_' + s + '_' + k); }
+    const todos = [valor.ieMin, ...['H', 'M'].flatMap(s => Object.values(valor[s]))];
+    if (todos.some(v => !(v > 0) || v > 300)){ toast('Completá todos los cortes con números mayores a 0.', true); return; }
+    if (valor.ieMin < 0.9 || valor.ieMin > 1.6){ toast('La elasticidad mínima (CMJ/SJ) tiene que estar entre 0,9 y 1,6.', true); return; }
+    for (const s of ['H', 'M']){ const c = valor[s]; if (!(c.sjBajo < c.sjMedio && c.sjMedio < c.sjAlto)){ toast('Los cortes de SJ tienen que ir de menor a mayor: bajo < medio < alto.', true); return; } }
+  }
+  try{
+    const r = await sb(`gimnasios?id=eq.${PERFIL_ACTUAL.gimnasio_id}`, { method: 'PATCH', headers: { Prefer: 'return=representation' }, body: JSON.stringify({ panel_cortes: valor }) });
+    if (!r || !r.length) throw new Error('No tenés permiso para cambiar los cortes.');
+    modalSeguridadCerrar();
+    toast(reset ? 'Cortes de ejemplo restaurados ✓' : 'Cortes guardados ✓');
+    await ppCarga(true);
+  }catch(e){ toast('Error guardando los cortes: ' + extraerMensajeError(e), true); }
 }
 
 // ---------- (v199) Test 5-0-5 (cambio de dirección) — solo con el Panel de perfiles prendido ----------
