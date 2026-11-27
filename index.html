@@ -2407,7 +2407,7 @@ if ('serviceWorker' in navigator) window.addEventListener('load', function(){ tr
   #subvistaSeguimiento h2, #subvistaAlumnos h2, #subvistaProfesores h2{ font-size:17px; letter-spacing:-.01em; }
   .x-frow button, .x-tbl button{ padding:6px 14px; font-size:13px; }
 
-  /* ---- (v202) Panel de perfiles ---- */
+  /* ---- (v202) Panel Deportistas ---- */
   #subvistaPanel{ --pp-ok:#3ddc84; --pp-warn:#ffd23d; --pp-bad:#ff5d5d; --pp-info:#6cb4ff; }
   :root[data-tema="claro"] #subvistaPanel{ --pp-ok:#0f8a45; --pp-warn:#8a5a00; --pp-bad:#c0271d; --pp-info:#1d6fb8; }
   .pp-sub{ color:var(--muted); margin:2px 0 14px; font-size:13px; }
@@ -2662,7 +2662,7 @@ if ('serviceWorker' in navigator) window.addEventListener('load', function(){ tr
 
   <div class="top-toolbar" id="topToolbarProf">
     <button class="tt-btn active" id="ttInicio" onclick="cambiarSubvista('inicio')" title="Inicio"><span class="tt-ico">🏠</span><span class="tt-lbl">Inicio</span></button>
-    <button class="tt-btn" id="ttPanel" onclick="cambiarSubvista('panel')" style="display:none;" title="Panel de perfiles"><span class="tt-ico">🎯</span><span class="tt-lbl">Panel</span></button>
+    <button class="tt-btn" id="ttPanel" onclick="cambiarSubvista('panel')" style="display:none;" title="Panel Deportistas"><span class="tt-ico">🎯</span><span class="tt-lbl">Panel Deportistas</span></button>
     <button class="tt-btn" id="ttDashboard" onclick="cambiarSubvista('dashboard')" style="display:none;" title="Dashboard"><span class="tt-ico">📊</span><span class="tt-lbl">Dashboard</span></button>
     <button class="tt-btn" id="ttArmador" onclick="cambiarSubvista('especiales')" title="Nueva rutina"><span class="tt-ico">🏋️</span><span class="tt-lbl">Nueva rutina</span></button>
     <button class="tt-btn" id="ttRutinas" onclick="cambiarSubvista('rutinas')" title="Rutinas"><span class="tt-ico">🗂️</span><span class="tt-lbl">Rutinas</span></button>
@@ -2726,7 +2726,7 @@ if ('serviceWorker' in navigator) window.addEventListener('load', function(){ tr
       </div>
     </div>
     <div class="side-item active" id="menuInicio" onclick="cambiarSubvista('inicio')" title="Inicio"><span class="side-ico">🏠</span><span class="side-label">Inicio</span></div>
-    <div class="side-item" id="menuPanel" onclick="cambiarSubvista('panel')" style="display:none;" title="Panel de perfiles"><span class="side-ico">🎯</span><span class="side-label">Panel de perfiles</span></div>
+    <div class="side-item" id="menuPanel" onclick="cambiarSubvista('panel')" style="display:none;" title="Panel Deportistas"><span class="side-ico">🎯</span><span class="side-label">Panel Deportistas</span></div>
     <div class="side-item" id="menuDashboard" onclick="cambiarSubvista('dashboard')" style="display:none;" title="Dashboard"><span class="side-ico">📊</span><span class="side-label">Dashboard</span></div>
     <div class="side-item" id="menuArmador" onclick="cambiarSubvista('especiales')" title="Nueva rutina"><span class="side-ico">🏋️</span><span class="side-label">Nueva rutina</span></div>
     <div class="side-item" id="menuRutinas" onclick="cambiarSubvista('rutinas')" title="Rutinas"><span class="side-ico">🗂️</span><span class="side-label">Rutinas</span></div>
@@ -2785,11 +2785,11 @@ if ('serviceWorker' in navigator) window.addEventListener('load', function(){ tr
           <div class="muted" style="margin-top:6px;">
             El DNI se usa para generar el acceso a la app del alumno (usuario y contraseña inicial). Es opcional al crearlo, pero necesario para darle acceso.
           </div>
-          <div id="nuevoAlumnoPanel" style="display:none; margin-top:10px;">   <!-- (v199) solo con el módulo Panel de perfiles -->
+          <div id="nuevoAlumnoPanel" style="display:none; margin-top:10px;">   <!-- (v199) solo con el módulo Panel Deportistas -->
             <div class="row">
               <div class="field" style="min-width:150px;"><label>Sexo</label>
                 <select id="nuevoAlumnoSexo"><option value="">-- sin definir --</option><option value="H">Hombre</option><option value="M">Mujer</option><option value="Otro">Otro</option></select></div>
-              <div class="field" style="min-width:200px;"><label>🏅 Deportista (entra al Panel de perfiles)</label>
+              <div class="field" style="min-width:200px;"><label>🏅 Deportista (entra al Panel Deportistas)</label>
                 <select id="nuevoAlumnoDeportista"><option value="no">No</option><option value="si">Sí, es deportista</option></select></div>
               <div class="field" style="min-width:160px;"><label>Nivel</label>
                 <select id="nuevoAlumnoNivel"><option value="">-- sin definir --</option></select></div>
@@ -2951,7 +2951,7 @@ if ('serviceWorker' in navigator) window.addEventListener('load', function(){ tr
       <div id="subvistaPanel" style="display:none;">
         <div class="card">
           <div class="row" style="justify-content:space-between; align-items:center;">
-            <div class="vista-titulo" style="margin:0;">🎯 Panel de perfiles</div>
+            <div class="vista-titulo" style="margin:0;">🎯 Panel Deportistas</div>
             <button class="ghost" onclick="ppCarga(false)">🔄 Actualizar</button>
           </div>
           <div id="ppRoot" style="margin-top:12px;"></div>
@@ -2960,9 +2960,20 @@ if ('serviceWorker' in navigator) window.addEventListener('load', function(){ tr
 
       <!-- ---- SUBVISTA: DASHBOARD (solo admin) ---- -->
       <div id="subvistaDashboard" style="display:none;">
+        <div id="dashFinCab" style="display:none;">   <!-- (v203) con el Panel Deportistas prendido el dashboard vive dentro de Finanzas -->
+          <div class="vista-titulo">Finanzas</div>
+          <div class="card">
+            <div class="tabs" style="margin-bottom:0;">
+              <div class="tab" onclick="panelIrFinanzas('cobros')" style="flex:1; text-align:center;">Cobros</div>
+              <div class="tab" onclick="panelIrFinanzas('gastos')" style="flex:1; text-align:center;">Gastos</div>
+              <div class="tab" onclick="panelIrFinanzas('cajas')" style="flex:1; text-align:center;">Cajas</div>
+              <div class="tab active" style="flex:1; text-align:center;">📊 Resumen</div>
+            </div>
+          </div>
+        </div>
         <div class="card">
           <div class="row" style="justify-content:space-between; align-items:center;">
-            <div class="vista-titulo" style="margin:0;">Dashboard</div>
+            <div class="vista-titulo" style="margin:0;" id="dashTitulo">Dashboard</div>
             <button class="ghost" onclick="cargarDashboardAdmin()">🔄 Actualizar</button>
           </div>
           <div class="muted" id="dashboardEstado" style="margin-top:10px;">Cargando métricas...</div>
@@ -3766,6 +3777,7 @@ if ('serviceWorker' in navigator) window.addEventListener('load', function(){ tr
             <div class="tab active" id="cobTabBtnCobros" onclick="cobCambiarTab('cobros')" style="flex:1; text-align:center;">Cobros</div>
             <div class="tab" id="cobTabBtnGastos" onclick="cobCambiarTab('gastos')" style="flex:1; text-align:center;">Gastos</div>
             <div class="tab" id="cobTabBtnCajas" onclick="cobCambiarTab('cajas')" style="flex:1; text-align:center;">Cajas</div>
+            <div class="tab" id="cobTabBtnResumen" onclick="panelIrResumen()" style="flex:1; text-align:center; display:none;">📊 Resumen</div>   <!-- (v203) solo con el Panel Deportistas prendido -->
           </div>
         </div>
 
@@ -5087,7 +5099,7 @@ const MOD_PRESETS = {
 const MOD_FUERA_PRESET = ['sucursales', 'servicios', 'cuota_variable', 'bosco', 'cierre_caja', 'obras_sociales', 'panel_perfiles'];   // módulos que no entran en ningún plan: se prenden aparte, gimnasio por gimnasio
 const MOD_BLOQUEO_SERVIDOR = ['clases', 'evaluaciones', 'alertas', 'finanzas', 'recepcion', 'proyeccion_ingresos', 'servicios', 'wellness', 'cuota_variable', 'bosco', 'cierre_caja', 'obras_sociales'];   // etapa 1 (SQL) + proyección (ya la valida su RPC)
 function wellOn(){ return modOn('wellness'); }
-// (v199) Panel de perfiles: módulo OPCIONAL por gimnasio (apagado por defecto). Con MOD_MAP.panel_perfiles !== true
+// (v199) Panel Deportistas: módulo OPCIONAL por gimnasio (apagado por defecto). Con MOD_MAP.panel_perfiles !== true
 // NADA de esto aparece ni consulta la base: la app queda como antes.
 function panelOn(){ return !!(MOD_MAP && MOD_MAP.panel_perfiles === true && MOD_MAP.evaluaciones !== false); }
 const PANEL_CORTES_DEF = { asim: { mod: 5, alta: 10 } };   // 5-0-5: asimetría moderada ≥5 %, alta ≥10 % (valores de ejemplo a validar con el profe)
@@ -5121,7 +5133,7 @@ function modAplicarMenu(){
   try{ cvcMenu(); }catch(e){}   // (v157) cancelar clase
   try{ boscoChip(); }catch(e){}   // (v183) Bosco
   try{ cjEntrada(); }catch(e){}   // (v184) cierre de caja
-  try{ panelMenu(); }catch(e){}   // (v202) Panel de perfiles
+  try{ panelMenu(); }catch(e){}   // (v202) Panel Deportistas
   try{ document.body.classList.toggle('sin-wellness', !wellOn()); }catch(e){}   // (v149)
   const roles = new Set([...(typeof MENU_SOLO_ADMIN !== 'undefined' ? MENU_SOLO_ADMIN : []), ...(typeof BNAV_SOLO_ADMIN !== 'undefined' ? BNAV_SOLO_ADMIN : []), 'menuRecepcion', 'ttRecepcion']);
   Object.keys(MOD_IDS).forEach(k => {
@@ -5134,6 +5146,7 @@ function modAplicarMenu(){
   });
   try{ sedeAdminOcultar(); }catch(e){}   // (v145)
   try{ hsMenu(); }catch(e){}   // (v187) Servicios solo con el módulo prendido
+  try{ panelResumenMenu(); }catch(e){}   // (v203) dashboard dentro de Finanzas
 }
 async function modulosCargar(){
   try{
@@ -5639,7 +5652,7 @@ function atlIniciarAlu(){
   atlCargarVista('aluAtletismoContenido', id || '');
 }
 
-const APP_VERSION = 202;
+const APP_VERSION = 204;
 let ES_PERSONAL = false;   // (v132) cuenta personal (gimnasios.tipo = 'personal'); se calcula en perAplicar()
 // (v96) Fecha de la última actualización: se cambia junto con APP_VERSION en cada entrega. Se muestra en la
 // pantalla de inicio y en el menú de cuenta ("v94 · actualizada el 5/10/2026").
@@ -10971,7 +10984,7 @@ function sucTarjetaHtml(s, conMapa){
 // ---------- (v143) Sucursales parte 2: sede base del alumno + el alumno elige sede y ve dirección y mapa ----------
 // El alumno ve el selector solo con 2+ sedes activas. Arranca en su sede base; "Todas" muestra los turnos de todas.
 const SUCALU = { sel: undefined };   // undefined = todavía no eligió (arranca en su sede base) · '' = todas · id = esa sede
-function xselAlu(){ return XSEL_ALU + ((sucOn() && SUC.ok === true) ? ',sucursal_id' : '') + (panelOn() ? ',sexo,es_deportista,nivel' : ''); }   // (v200) Panel de perfiles
+function xselAlu(){ return XSEL_ALU + ((sucOn() && SUC.ok === true) ? ',sucursal_id' : '') + (panelOn() ? ',sexo,es_deportista,nivel' : ''); }   // (v200) Panel Deportistas
 function sucAluBase(alumnoId){
   const a = (typeof buscarAlumnoCache === 'function') ? buscarAlumnoCache(alumnoId) : null;
   return (a && a.sucursal_id && sucActivas().some(s => s.id === a.sucursal_id)) ? a.sucursal_id : '';
@@ -13445,7 +13458,7 @@ function cambiarSubvista(v){
   document.getElementById('menuAtletismo').classList.toggle('active', v==='atletismo');
   document.getElementById('menuCvClases').classList.toggle('active', v==='cvclases');   // (v157)
   document.getElementById('menuPlanes').classList.toggle('active', v==='planes');
-  document.getElementById('menuCobranzas').classList.toggle('active', v==='cobranzas');
+  document.getElementById('menuCobranzas').classList.toggle('active', v==='cobranzas' || (v==='dashboard' && panelOn()));   // (v203)
   document.getElementById('menuAlertas').classList.toggle('active', v==='alertas');
   document.getElementById('menuEjercicios').classList.toggle('active', v==='ejercicios');
   document.getElementById('menuGimnasio').classList.toggle('active', v==='gimnasio');
@@ -13469,7 +13482,7 @@ function cambiarSubvista(v){
   document.getElementById('ttAtletismo').classList.toggle('active', v==='atletismo');
   document.getElementById('ttCvClases').classList.toggle('active', v==='cvclases');   // (v157)
   document.getElementById('ttPlanes').classList.toggle('active', v==='planes');
-  document.getElementById('ttCobranzas').classList.toggle('active', v==='cobranzas');
+  document.getElementById('ttCobranzas').classList.toggle('active', v==='cobranzas' || (v==='dashboard' && panelOn()));   // (v203)
   document.getElementById('ttAlertas').classList.toggle('active', v==='alertas');
   document.getElementById('ttEjercicios').classList.toggle('active', v==='ejercicios');
   document.getElementById('ttGimnasio').classList.toggle('active', v==='gimnasio');
@@ -19789,7 +19802,7 @@ async function naCvGuardar(alumnoId){   // se llama justo después de crear al a
   }catch(e){ toast('El alumno se creó, pero no se pudo guardar la zona o los días: ' + extraerMensajeError(e) + ' Cargalos desde su ficha → Plan.', true); return false; }
 }
 
-function panelAltaCampos(){   // (v199) sexo / deportista / nivel del alta, solo con el Panel de perfiles prendido
+function panelAltaCampos(){   // (v199) sexo / deportista / nivel del alta, solo con el Panel Deportistas prendido
   const sexo = (document.getElementById('nuevoAlumnoSexo') || {}).value || '';
   const dep = ((document.getElementById('nuevoAlumnoDeportista') || {}).value) === 'si';
   const nivel = (document.getElementById('nuevoAlumnoNivel') || {}).value || '';
@@ -20049,7 +20062,7 @@ function renderListaAlumnos(){
 }
 
 // ---------- Alta: formulario corto en ventana emergente (el resto se completa desde la ficha) ----------
-function nuevoAlumnoPanelPintar(){   // (v199) campos del Panel de perfiles en el alta (solo con el módulo prendido)
+function nuevoAlumnoPanelPintar(){   // (v199) campos del Panel Deportistas en el alta (solo con el módulo prendido)
   const w = document.getElementById('nuevoAlumnoPanel'); if (!w) return;
   w.style.display = panelOn() ? '' : 'none';
   const n = document.getElementById('nuevoAlumnoNivel');
@@ -20172,9 +20185,9 @@ function xEditarAlumnoHtml(a){
       <div class="field" style="flex:1; min-width:200px;"><label>Email</label><input type="email" id="editEmail${a.id}" value="${xe(a.email || '')}"></div>
       <div class="field" style="flex:2; min-width:220px;"><label>Dirección</label><input id="editDireccion${a.id}" value="${xe(a.direccion || '')}"></div>
     </div>
-    ${panelOn() ? `<div class="row" style="margin-top:8px;">   <!-- (v200) Panel de perfiles -->
+    ${panelOn() ? `<div class="row" style="margin-top:8px;">   <!-- (v200) Panel Deportistas -->
       <div class="field" style="min-width:150px;"><label>Sexo</label><select id="editSexo${a.id}"><option value="">-- sin definir --</option>${[['H', 'Hombre'], ['M', 'Mujer'], ['Otro', 'Otro']].map(([v, t]) => `<option value="${v}" ${a.sexo === v ? 'selected' : ''}>${t}</option>`).join('')}</select></div>
-      <div class="field" style="min-width:200px;"><label>🏅 Deportista (entra al Panel de perfiles)</label><select id="editDeportista${a.id}"><option value="no" ${a.es_deportista ? '' : 'selected'}>No</option><option value="si" ${a.es_deportista ? 'selected' : ''}>Sí, es deportista</option></select></div>
+      <div class="field" style="min-width:200px;"><label>🏅 Deportista (entra al Panel Deportistas)</label><select id="editDeportista${a.id}"><option value="no" ${a.es_deportista ? '' : 'selected'}>No</option><option value="si" ${a.es_deportista ? 'selected' : ''}>Sí, es deportista</option></select></div>
       <div class="field" style="min-width:160px;"><label>Nivel</label><select id="editNivel${a.id}"><option value="">-- sin definir --</option>${PANEL_NIVELES.map(n => `<option value="${n}" ${a.nivel === n ? 'selected' : ''}>${n}</option>`).join('')}</select></div>
     </div>` : ''}
     <div class="row" style="margin-top:8px; align-items:flex-end;">
@@ -20840,12 +20853,12 @@ function datosPersonalesModuloHtml(alumnoId){
   `;
 }
 
-// (v199) Campos del Panel de perfiles: deportista (lo marca el profe a mano) + nivel. Solo con el módulo prendido.
+// (v199) Campos del Panel Deportistas: deportista (lo marca el profe a mano) + nivel. Solo con el módulo prendido.
 function panelDeportistaCamposHtml(a){
   return `
     <div class="row" style="margin-top:8px; align-items:flex-end;">
       <div class="field" style="min-width:200px;">
-        <label>🏅 Deportista (entra al Panel de perfiles)</label>
+        <label>🏅 Deportista (entra al Panel Deportistas)</label>
         <select id="evalDatDeportista">
           <option value="no" ${a.es_deportista ? '' : 'selected'}>No</option>
           <option value="si" ${a.es_deportista ? 'selected' : ''}>Sí, es deportista</option>
@@ -20878,7 +20891,7 @@ async function guardarDatosPersonalesEval(alumnoId){
   };
   try{
     if (panelOn()){
-      // (v199) Con el Panel de perfiles prendido, sexo/deportista/nivel los guarda una función del servidor
+      // (v199) Con el Panel Deportistas prendido, sexo/deportista/nivel los guarda una función del servidor
       // (el profe no puede escribir en alumnos directo). El resto se guarda como siempre.
       const sexoSel = body.sexo; delete body.sexo;
       await sb(`alumnos?id=eq.${alumnoId}`, { method:'PATCH', headers:{Prefer:'return=minimal'}, body: JSON.stringify(body) });
@@ -21008,6 +21021,17 @@ function ppEsReadapt(nombre){ return /readapt/i.test(String(nombre || '').normal
 function ppAlertas(d){ const a = ppAsim(d.t5); return a != null && a >= PANEL_CORTES_DEF.asim.alta ? 1 : 0; }
 const ppPorPerfil = k => k === 'READ' ? PP.deps.filter(d => d.readapt) : PP.deps.filter(d => d.perfil === k);
 
+// (v203) Con el Panel Deportistas prendido, el dashboard deja de ser un ítem del menú y pasa a ser la solapa "📊 Resumen" de Finanzas.
+function panelResumenEnFinanzas(){ return panelOn() && PERFIL_ACTUAL?.rol === 'admin' && modOn('dashboard') && modOn('finanzas'); }
+function panelResumenMenu(){
+  const en = panelResumenEnFinanzas();
+  if (en) ['menuDashboard', 'ttDashboard'].forEach(id => { const e = document.getElementById(id); if (e) e.style.display = 'none'; });
+  const b = document.getElementById('cobTabBtnResumen'); if (b) b.style.display = en ? '' : 'none';
+  const c = document.getElementById('dashFinCab'); if (c) c.style.display = en ? '' : 'none';
+  const t = document.getElementById('dashTitulo'); if (t) t.textContent = en ? '📊 Resumen' : 'Dashboard';
+}
+function panelIrResumen(){ cambiarSubvista('dashboard'); }
+function panelIrFinanzas(tab){ cambiarSubvista('cobranzas'); setTimeout(() => { try{ cobCambiarTab(tab); }catch(e){} }, 0); }
 function panelMenu(){   // el acceso solo existe con el módulo prendido y para admin / profesor
   const ver = panelOn() && PERFIL_ACTUAL && (PERFIL_ACTUAL.rol === 'admin' || PERFIL_ACTUAL.rol === 'profesor');
   ['menuPanel', 'ttPanel'].forEach(id => { const e = document.getElementById(id); if (e) e.style.display = ver ? '' : 'none'; });
@@ -21069,7 +21093,7 @@ async function ppCarga(silencioso){
 
 function ppRefrescoAuto(){ if (panelOn() && PP.vista === 'panel' && !PP.cargando) ppCarga(true); }   // el refresco automático no toca la lista (para no sacarle el foco al buscador)
 function panelEntrar(){
-  if (!panelOn()){ const r = document.getElementById('ppRoot'); if (r) r.innerHTML = '<div class="pp-empty">El Panel de perfiles no está habilitado en este gimnasio.</div>'; return; }
+  if (!panelOn()){ const r = document.getElementById('ppRoot'); if (r) r.innerHTML = '<div class="pp-empty">El Panel Deportistas no está habilitado en este gimnasio.</div>'; return; }
   PP.vista = 'panel'; PP.k = null;
   ppCarga(false);
 }
@@ -21163,7 +21187,7 @@ function ppListaFiltrada(){
 }
 function ppHtmlLista(){
   const P = PP.k ? PP_PERF[PP.k] : null, total = (PP.k ? ppPorPerfil(PP.k) : PP.deps.filter(d => !d.perfil)).length;
-  return `<button class="pp-back" onclick="ppVolver()">← Panel de perfiles</button>
+  return `<button class="pp-back" onclick="ppVolver()">← Panel Deportistas</button>
   <div style="display:flex; align-items:center; gap:10px; font-size:20px; font-weight:800;">${P ? `<span style="width:34px; height:34px; border-radius:10px; display:grid; place-items:center; color:${P.c}; background:color-mix(in srgb,${P.c} 20%,transparent);"><span style="width:22px; height:22px; display:block;">${PP_ICON[PP.k]}</span></span>` : ''}${P ? P.n : 'Deportistas sin evaluar'}</div>
   <div class="pp-sub">${P ? P.d : 'Les falta SJ y CMJ (o el sexo): el perfil se calcula solo cuando los tienen.'} · ${total} deportistas</div>
   <div class="pp-tools">
@@ -21249,7 +21273,7 @@ async function ppCriteriosGuardar(reset){
   }catch(e){ toast('Error guardando los cortes: ' + extraerMensajeError(e), true); }
 }
 
-// ---------- (v199) Test 5-0-5 (cambio de dirección) — solo con el Panel de perfiles prendido ----------
+// ---------- (v199) Test 5-0-5 (cambio de dirección) — solo con el Panel Deportistas prendido ----------
 // Se cargan los dos tiempos (giro izquierda / derecha, en segundos) como métricas comunes de "Capacidad Física";
 // la asimetría = diferencia ÷ lado más rápido × 100 se calcula sola y se guarda como tercera métrica.
 // No cambia el perfil SJ/CMJ. Las fotos de cada lado llegan junto con la Evaluación funcional.
