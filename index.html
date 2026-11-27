@@ -653,7 +653,7 @@ if ('serviceWorker' in navigator) window.addEventListener('load', function(){ tr
   .set-row input{width:100%;}
   .set-row .set-head{font-size:11px;}
   .set-row .set-sug{font-size:11px; line-height:1.2;}
-  .ex-block{border:1px solid var(--border); border-radius:10px; padding:14px; margin-bottom:14px; background:var(--panel3);}
+  .ex-block{border:1px solid var(--border); border-radius:10px; padding:14px; margin-bottom:14px; background:var(--panel3); scroll-margin-top:14px;}   /* (v198) */
   /* (24/9, pedido Martin: "se ve el nombre todo junto super mal") Antes acá también
      vivían los botones "Usar cronómetro" y "No puedo hacer este ejercicio", que le
      robaban casi todo el ancho a la columna del nombre en el celu — por eso el
@@ -5002,9 +5002,14 @@ const MOD_PRESETS = {
   pro:           { n: 'Pro',           ico: '🚀', on: '*' },
   personal:      { n: 'Personal',      ico: '💪', on: ['seguimiento', 'logros', 'wellness'] },   // (v132) entrena por su cuenta: solo rutinas + progreso
 };
-const MOD_FUERA_PRESET = ['sucursales', 'servicios', 'cuota_variable', 'bosco', 'cierre_caja', 'obras_sociales'];   // módulos que no entran en ningún plan: se prenden aparte, gimnasio por gimnasio
+const MOD_FUERA_PRESET = ['sucursales', 'servicios', 'cuota_variable', 'bosco', 'cierre_caja', 'obras_sociales', 'panel_perfiles'];   // módulos que no entran en ningún plan: se prenden aparte, gimnasio por gimnasio
 const MOD_BLOQUEO_SERVIDOR = ['clases', 'evaluaciones', 'alertas', 'finanzas', 'recepcion', 'proyeccion_ingresos', 'servicios', 'wellness', 'cuota_variable', 'bosco', 'cierre_caja', 'obras_sociales'];   // etapa 1 (SQL) + proyección (ya la valida su RPC)
-function wellOn(){ return modOn('wellness'); }   // (v149) Wellness es un módulo por gimnasio
+function wellOn(){ return modOn('wellness'); }
+// (v199) Panel de perfiles: módulo OPCIONAL por gimnasio (apagado por defecto). Con MOD_MAP.panel_perfiles !== true
+// NADA de esto aparece ni consulta la base: la app queda como antes.
+function panelOn(){ return !!(MOD_MAP && MOD_MAP.panel_perfiles === true && MOD_MAP.evaluaciones !== false); }
+const PANEL_CORTES_DEF = { asim: { mod: 5, alta: 10 } };   // 5-0-5: asimetría moderada ≥5 %, alta ≥10 % (valores de ejemplo a validar con el profe)
+const PANEL_NIVELES = ['Principiante', 'Intermedio', 'Profesional'];   // (v149) Wellness es un módulo por gimnasio
 function modOn(k){
   if (k === 'atletismo') return atlOn();
   if (!k || !MOD_MAP) return true;
@@ -5551,11 +5556,11 @@ function atlIniciarAlu(){
   atlCargarVista('aluAtletismoContenido', id || '');
 }
 
-const APP_VERSION = 197;
+const APP_VERSION = 199;
 let ES_PERSONAL = false;   // (v132) cuenta personal (gimnasios.tipo = 'personal'); se calcula en perAplicar()
 // (v96) Fecha de la última actualización: se cambia junto con APP_VERSION en cada entrega. Se muestra en la
 // pantalla de inicio y en el menú de cuenta ("v94 · actualizada el 5/10/2026").
-const APP_FECHA = '2026-11-24';
+const APP_FECHA = '2026-11-27';
 function appVersionTxt(){ const [y, m, d] = APP_FECHA.split('-'); return `v${APP_VERSION} · actualizada el ${+d}/${+m}/${y}`; }
 (function(){ const el = document.getElementById('lcVersion'); if (el) el.textContent = 'M2F Solutions · ' + appVersionTxt(); })();
 
@@ -15738,7 +15743,7 @@ async function cargarPersonas(){
   // esto devuelve listas vacías directamente desde la base (ya no hay acceso anónimo).
   const filtroGym = PERFIL_ACTUAL ? `&gimnasio_id=eq.${PERFIL_ACTUAL.gimnasio_id}` : '';
   const [alumnos, profesores] = await Promise.all([
-    sb(`alumnos?select=${sucOn() && SUC.ok === true ? 'sucursal_id,' : ''}id,nombre,tipo,tipo_alumno_id,gimnasio_id,plan_id,altura_cm,peso_kg,objetivo,telefono,email,direccion,dni,perfil_id,equipo_id,posicion,foto_url,fecha_nacimiento,sexo,deporte_disciplina,categoria_peso,equipos(nombre),alumno_categorias(categoria_id,categorias(nombre))&activo=eq.true${filtroGym}&order=nombre.asc`),
+    sb(`alumnos?select=${sucOn() && SUC.ok === true ? 'sucursal_id,' : ''}id,nombre,tipo,tipo_alumno_id,gimnasio_id,plan_id,altura_cm,peso_kg,objetivo,telefono,email,direccion,dni,perfil_id,equipo_id,posicion,foto_url,fecha_nacimiento,sexo,deporte_disciplina,categoria_peso,${panelOn() ? 'es_deportista,nivel,' : ''}equipos(nombre),alumno_categorias(categoria_id,categorias(nombre))&activo=eq.true${filtroGym}&order=nombre.asc`),
     sb(`profesores?select=id,nombre,perfil_id,gimnasio_id,dni,tarifa_hora,impuesto_pct,perfiles(rol)&activo=eq.true${filtroGym}&order=nombre.asc`),
   ]);
   const optsAlu = alumnos.map(a=>`<option value="${a.id}">${a.nombre}</option>`).join('');
@@ -20473,7 +20478,7 @@ function renderHistorialEvaluaciones(contId, evaluaciones){
           </div>`).join('')}
       </div>`).join('') || '<div class="muted" style="margin-top:8px;">Sin mediciones cargadas.</div>';
     const ant = ordenadas[i + 1];
-    const textoNuevo = (campo) => { const v = (e[campo] || '').trim(); return v && (!ant || v !== String(ant[campo] || '').trim()) ? v : ''; };
+    const textoNuevo = (campo) => { if (typeof e[campo] !== 'string') return ''; const v = (e[campo] || '').trim(); return v && (!ant || v !== String(ant[campo] || '').trim()) ? v : ''; };   // (v199) historial_contexto/plan_accion son jsonb (objeto): antes tiraba TypeError y el historial no se dibujaba
     const ctx = staff ? textoNuevo('historial_contexto') : '', plan = staff ? textoNuevo('plan_accion') : '';
     const extra = (e.notas ? `<div style="margin-top:10px; font-size:13px;">📝 ${escaparHtml(e.notas)}</div>` : '')
       + (ctx ? `<div style="margin-top:10px;"><div class="muted" style="font-size:11px; font-weight:700; text-transform:uppercase;">Historial y contexto</div><div style="white-space:pre-wrap; font-size:13px;">${escaparHtml(ctx)}</div></div>` : '')
@@ -20712,9 +20717,32 @@ function datosPersonalesModuloHtml(alumnoId){
       <div class="field" style="flex:1; min-width:180px;"><label>Deporte / disciplina</label><input id="evalDatDeporte" value="${(a.deporte_disciplina||'').replace(/"/g,'&quot;')}" placeholder="Ej: Fútbol"></div>
       <div class="field" style="min-width:160px;"><label>Categoría de peso</label><input id="evalDatCategoriaPeso" value="${(a.categoria_peso||'').replace(/"/g,'&quot;')}" placeholder="Ej: -74kg"></div>
     </div>
+    ${panelOn() ? panelDeportistaCamposHtml(a) : ''}
     <div class="muted" style="margin-top:6px; font-size:12px;">Peso y altura se cargan desde "👤 Alumnos → ✏️ Datos". Acá solo se completan los datos extra de la ficha.</div>
     <button style="margin-top:8px;" onclick="guardarDatosPersonalesEval('${alumnoId}')">Guardar datos personales</button>
   `;
+}
+
+// (v199) Campos del Panel de perfiles: deportista (lo marca el profe a mano) + nivel. Solo con el módulo prendido.
+function panelDeportistaCamposHtml(a){
+  return `
+    <div class="row" style="margin-top:8px; align-items:flex-end;">
+      <div class="field" style="min-width:200px;">
+        <label>🏅 Deportista (entra al Panel de perfiles)</label>
+        <select id="evalDatDeportista">
+          <option value="no" ${a.es_deportista ? '' : 'selected'}>No</option>
+          <option value="si" ${a.es_deportista ? 'selected' : ''}>Sí, es deportista</option>
+        </select>
+      </div>
+      <div class="field" style="min-width:160px;">
+        <label>Nivel</label>
+        <select id="evalDatNivel">
+          <option value="">-- sin definir --</option>
+          ${PANEL_NIVELES.map(n => `<option value="${n}" ${a.nivel === n ? 'selected' : ''}>${n}</option>`).join('')}
+        </select>
+      </div>
+    </div>
+    <div class="muted" style="margin-top:4px; font-size:12px;">Para calcular el perfil hace falta el <b>sexo</b> y un test de SJ y CMJ.</div>`;
 }
 
 function actualizarEdadImcEval(){
@@ -20732,6 +20760,21 @@ async function guardarDatosPersonalesEval(alumnoId){
     categoria_peso: document.getElementById('evalDatCategoriaPeso').value.trim() || null,
   };
   try{
+    if (panelOn()){
+      // (v199) Con el Panel de perfiles prendido, sexo/deportista/nivel los guarda una función del servidor
+      // (el profe no puede escribir en alumnos directo). El resto se guarda como siempre.
+      const sexoSel = body.sexo; delete body.sexo;
+      await sb(`alumnos?id=eq.${alumnoId}`, { method:'PATCH', headers:{Prefer:'return=minimal'}, body: JSON.stringify(body) });
+      await sb('rpc/alumno_marcar_deportista', { method:'POST', headers:{Prefer:'return=minimal'}, body: JSON.stringify({
+        p_alumno: alumnoId,
+        p_es_deportista: document.getElementById('evalDatDeportista').value === 'si',
+        p_nivel: document.getElementById('evalDatNivel').value || null,
+        p_sexo: sexoSel,
+      }) });
+      toast('Datos personales guardados ✓');
+      await cargarPersonas();
+      return;
+    }
     await sb(`alumnos?id=eq.${alumnoId}`, { method:'PATCH', headers:{Prefer:'return=minimal'}, body: JSON.stringify(body) });
     toast('Datos personales guardados ✓');
     await cargarPersonas();
@@ -20794,6 +20837,64 @@ function testsFuerzaModuloHtml(alumnoId){
   `;
 }
 
+// ---------- (v199) Test 5-0-5 (cambio de dirección) — solo con el Panel de perfiles prendido ----------
+// Se cargan los dos tiempos (giro izquierda / derecha, en segundos) como métricas comunes de "Capacidad Física";
+// la asimetría = diferencia ÷ lado más rápido × 100 se calcula sola y se guarda como tercera métrica.
+// No cambia el perfil SJ/CMJ. Las fotos de cada lado llegan junto con la Evaluación funcional.
+const T505_IZQ = '5-0-5 giro izquierda', T505_DER = '5-0-5 giro derecha', T505_ASIM = '5-0-5 asimetría';
+function t505Asim(izq, der){
+  if (!(izq > 0) || !(der > 0)) return null;
+  return Math.abs(izq - der) / Math.min(izq, der) * 100;
+}
+function t505Estado(a){
+  const c = PANEL_CORTES_DEF.asim;
+  if (a == null) return null;
+  if (a >= c.alta) return { txt: 'Asimetría alta', color: '#dc2626', ico: '🔴' };
+  if (a >= c.mod)  return { txt: 'Asimetría moderada', color: '#d97706', ico: '🟠' };
+  return { txt: 'Simétrico', color: '#16a34a', ico: '🟢' };
+}
+function t505UltimoPrevio(){
+  for (const e of (EVAL_CACHE_PROF || [])){   // viene ordenado por fecha desc
+    const i = (e.metricas || []).find(m => m.metrica === T505_IZQ), d = (e.metricas || []).find(m => m.metrica === T505_DER);
+    if (i && d) return { fecha: e.fecha, izq: Number(i.valor), der: Number(d.valor) };
+  }
+  return null;
+}
+function test505Html(){
+  const prev = t505UltimoPrevio();
+  const pa = prev ? t505Asim(prev.izq, prev.der) : null;
+  const f = prev ? String(prev.fecha).split('-').reverse().join('/') : '';
+  return `
+    <div style="margin-top:12px; padding-top:10px; border-top:1px dashed var(--border,#cbd5e1);">
+      <div style="font-weight:600; margin-bottom:6px;">↔️ Test 5-0-5 (cambio de dirección)</div>
+      <div class="row">
+        <div class="field" style="min-width:170px;">
+          <label>Giro a la izquierda (seg)</label>
+          <input inputmode="decimal" type="number" step="0.01" class="eval-metrica-input" id="t505Izq" data-categoria="Capacidad Física" data-metrica="${T505_IZQ}" data-unidad="seg" oninput="t505Calc()">
+        </div>
+        <div class="field" style="min-width:170px;">
+          <label>Giro a la derecha (seg)</label>
+          <input inputmode="decimal" type="number" step="0.01" class="eval-metrica-input" id="t505Der" data-categoria="Capacidad Física" data-metrica="${T505_DER}" data-unidad="seg" oninput="t505Calc()">
+        </div>
+        <div class="field" style="min-width:200px;">
+          <label>Asimetría</label>
+          <div id="t505Res" style="padding:8px 0; font-weight:600;">-</div>
+        </div>
+      </div>
+      ${prev ? `<div class="muted" style="font-size:12px; margin-top:4px;">Anterior (${f}): izq ${prev.izq.toFixed(2)} s · der ${prev.der.toFixed(2)} s${pa != null ? ` · asimetría ${pa.toFixed(1)} %` : ''}</div>` : ''}
+      <div class="muted" style="font-size:11.5px; margin-top:4px;">Asimetría = diferencia ÷ lado más rápido. Moderada ≥ ${PANEL_CORTES_DEF.asim.mod} % · alta ≥ ${PANEL_CORTES_DEF.asim.alta} % (valores de ejemplo, a validar con el profe). No cambia el perfil.</div>
+    </div>`;
+}
+function t505Calc(){
+  const izq = parseFloat((document.getElementById('t505Izq') || {}).value), der = parseFloat((document.getElementById('t505Der') || {}).value);
+  const out = document.getElementById('t505Res'); if (!out) return;
+  const a = t505Asim(izq, der), st = t505Estado(a);
+  if (a == null){ out.style.color = ''; out.textContent = '-'; return; }
+  const lento = izq > der ? 'izquierda' : (der > izq ? 'derecha' : null);
+  out.style.color = st.color;
+  out.textContent = `${st.ico} ${a.toFixed(1)} % · ${st.txt}${lento && a >= PANEL_CORTES_DEF.asim.mod ? ' (más lento a la ' + lento + ')' : ''}`;
+}
+
 function actualizarCalculoFuerza(idx){
   const alumnoId = document.getElementById('evalAlumno').value;
   const a = buscarAlumnoCache(alumnoId) || {};
@@ -20816,7 +20917,7 @@ function renderCategoriasEvaluacion(alumnoId){
     moduloEvalHtml('evalMod-comp', '⚖️', 'Composición Corporal', categoriaGenericaHtml('Composición Corporal', CATALOGO_METRICAS['Composición Corporal'])),
     moduloEvalHtml('evalMod-perfil', '⭐', 'Perfil de Rendimiento (1-10)', categoriaGenericaHtml('Perfil de Rendimiento', CATALOGO_METRICAS['Perfil de Rendimiento'])),
     moduloEvalHtml('evalMod-fuerza', '🏋️', 'Tests de Fuerza', testsFuerzaModuloHtml(alumnoId)),
-    moduloEvalHtml('evalMod-capacidad', '⚡', 'Tests de Capacidad Física', categoriaGenericaHtml('Capacidad Física', CATALOGO_METRICAS['Capacidad Física'])),
+    moduloEvalHtml('evalMod-capacidad', '⚡', 'Tests de Capacidad Física', categoriaGenericaHtml('Capacidad Física', CATALOGO_METRICAS['Capacidad Física']) + (panelOn() ? test505Html() : '')),
     moduloEvalHtml('evalMod-movilidad', '🤸', 'Movilidad (ROM)', categoriaGenericaHtml('Movilidad (ROM)', CATALOGO_METRICAS['Movilidad (ROM)'])),
     moduloEvalHtml('evalMod-plan', '📝', 'Observaciones y plan de acción', planAccionModuloHtml()),
   ].join('');
@@ -20862,6 +20963,13 @@ async function guardarEvaluacion(){
       metricas.push({ categoria: inp.dataset.categoria, metrica: inp.dataset.metrica, valor: Number(inp.value), unidad: inp.dataset.unidad || null });
     }
   });
+  // (v199) 5-0-5: con los dos tiempos cargados se guarda también la asimetría calculada (%).
+  if (panelOn()){
+    const mi = metricas.find(m => m.metrica === T505_IZQ), md = metricas.find(m => m.metrica === T505_DER);
+    const a = mi && md ? t505Asim(mi.valor, md.valor) : null;
+    if (a != null) metricas.push({ categoria: 'Capacidad Física', metrica: T505_ASIM, valor: Math.round(a * 10) / 10, unidad: '%' });
+    else if ((mi && !md) || (!mi && md)){ toast('5-0-5: cargá los dos lados (izquierda y derecha) para calcular la asimetría.', true); return; }
+  }
   // (24/9) Tests de fuerza: peso (obligatorio para que cuente) + reps (opcional).
   document.querySelectorAll('.eval-fuerza-peso').forEach(inp => {
     if (inp.value === '') return;
@@ -20928,6 +21036,7 @@ async function guardarEvaluacion(){
     document.querySelectorAll('.eval-metrica-input').forEach(i => i.value = '');
     document.querySelectorAll('.eval-fuerza-peso, .eval-fuerza-reps').forEach(i => i.value = '');
     document.getElementById('evalMetricasExtra').innerHTML = '';
+    if (panelOn()) t505Calc();
     onCambiarEvalAlumno();
   }catch(e){ toast('Error guardando la evaluación: ' + e.message, true); }
 }
@@ -29900,6 +30009,20 @@ function toggleBloqueSeccion(sIdx){
   const abierta = cont.style.display !== 'none';
   cont.style.display = abierta ? 'none' : '';
   if (caret) caret.textContent = abierta ? '▸' : '▾';
+  if (!abierta) ejecIrAPrimerPendiente(sIdx);   // (v198) al abrir un bloque, la pantalla queda en su primer ejercicio pendiente
+}
+// (v198) Baja la pantalla hasta el primer ejercicio sin terminar del bloque (sección) sIdx. Nunca rompe el entrenamiento: si algo falta, no hace nada.
+function ejecIrAPrimerPendiente(sIdx){
+  try{
+    const secs = window._seccionesOrden || [], por = window._idxsPorSeccion || {}, bl = window._bloques || [];
+    const idxs = por[secs[sIdx]] || [];
+    const idx = idxs.find(i => bl[i] && !bl[i].finalizado && !bl[i].omitido);
+    if (idx === undefined) return;
+    setTimeout(() => {
+      const el = document.getElementById('bloque-' + idx) || document.getElementById('bloqueCont-' + sIdx);
+      if (el && el.scrollIntoView) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 60);
+  }catch(e){}
 }
 
 // (24/9) Al terminar (o marcar no realizado) el ultimo ejercicio pendiente de un
@@ -29933,6 +30056,7 @@ function revisarAvanceBloques(idxTocado){
       const caretN = document.getElementById(`caret-${n}`);
       if (contN) contN.style.display = '';
       if (caretN) caretN.textContent = '▾';
+      ejecIrAPrimerPendiente(n);   // (v198)
       break;
     }
   }
