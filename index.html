@@ -3278,6 +3278,8 @@ if ('serviceWorker' in navigator) window.addEventListener('load', function(){ tr
       <!-- ---- SUBVISTA: RUTINAS ESPECIALES POR ALUMNO ---- -->
       <div id="subvistaEspeciales" style="display:none;">
 
+        <div id="espVolverFicha" class="card" style="display:none; border-color:var(--accent); background:var(--note-bg);"></div>
+
         <div id="espCopiaBanner" class="card" style="display:none; border-color:var(--accent); background:var(--note-bg);">
           <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:8px;">
             <div id="espCopiaBannerTxt" style="font-weight:700;"></div>
@@ -4147,6 +4149,8 @@ if ('serviceWorker' in navigator) window.addEventListener('load', function(){ tr
         </div></details>
 
         <details class="plegable card" data-k="gim-menu" ontoggle="if(this.open){ MENU_DRAFT = null; menuOrdenPintar(); }"><summary>Ordenar menú</summary><div class="plg-body"><div id="gimMenuBody"></div></div></details>
+
+        <details class="plegable card" data-k="gim-deportes" ontoggle="if(this.open){ DEP_DRAFT = null; depPintar(); }"><summary>Deportes</summary><div class="plg-body"><div id="gimDeportesBody"></div></div></details>
 
         <details class="plegable card" data-k="gim-colores"><summary>Colores de tu app</summary><div class="plg-body">
           <div class="muted" style="margin-bottom:10px;">Elegí los dos colores con los que van a ver la app tus alumnos y profesores (además de tu logo). Se aplican al instante en botones, destacados y avisos.</div>
@@ -5331,6 +5335,97 @@ async function menuOrdenGuardar(){
   }
 }
 
+// ---------- (v215) Deportes predefinidos por gimnasio ----------
+// gimnasios.deportes (text[]): lo arma el administrador en Mi gimnasio → Deportes. Vacío/sin SQL = campo libre como siempre.
+// Se usa en Datos personales (deporte del alumno) y en las etiquetas de rutina. Los valores escritos a mano que ya existen se conservan.
+let DEPORTES = [], DEP_DRAFT = null;
+const DEP_SUGERIDOS = ['Fútbol', 'Rugby', 'Hockey', 'Básquet', 'Vóley', 'Handball', 'Atletismo', 'Natación', 'Tenis', 'Ciclismo', 'Artes marciales', 'Otro'];
+async function deportesCargar(){
+  try{
+    const r = await sb(`gimnasios?select=deportes&id=eq.${PERFIL_ACTUAL.gimnasio_id}`);
+    const v = r && r[0] && r[0].deportes;
+    DEPORTES = Array.isArray(v) ? v.map(x => String(x || '').trim()).filter(Boolean) : [];
+  }catch(e){ DEPORTES = []; }   // SQL todavía sin correr: campo libre
+}
+function depNorm(s){ return String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim(); }
+// opciones <option> con la lista del gimnasio; si el valor actual no está en la lista (escrito a mano antes) se conserva igual
+function deporteOpcionesHtml(sel, vacio){
+  const lista = DEPORTES.slice().sort((a, b) => a.localeCompare(b, 'es'));
+  const s = String(sel || '').trim();
+  const fuera = s && !lista.some(d => depNorm(d) === depNorm(s));
+  return `<option value="">${xe(vacio)}</option>` + (fuera ? `<option value="${xe(s)}" selected>${xe(s)} (no está en la lista)</option>` : '')
+    + lista.map(d => `<option value="${xe(d)}" ${depNorm(d) === depNorm(s) ? 'selected' : ''}>${xe(d)}</option>`).join('');
+}
+// ---- Mi gimnasio → Deportes
+function depDraft(){ if (!DEP_DRAFT) DEP_DRAFT = DEPORTES.slice(); return DEP_DRAFT; }
+function depPintar(){
+  const c = document.getElementById('gimDeportesBody'); if (!c) return;
+  const d = depDraft(), cambio = JSON.stringify(d) !== JSON.stringify(DEPORTES);
+  c.innerHTML = `<div class="muted" style="margin-bottom:10px;">Armá la lista de deportes de tu gimnasio. Se eligen de una lista (en vez de escribirlos a mano) en los datos del deportista y en las etiquetas de las rutinas. Mientras la lista esté vacía, se escribe a mano como siempre.</div>
+    <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px;">${d.length ? d.map((x, i) => `<span class="chip-toggle active" style="display:inline-flex; gap:6px; align-items:center;">${xe(x)} <span style="cursor:pointer;" title="Quitar" onclick="depQuitar(${i})">✕</span></span>`).join('') : '<span class="muted">Todavía no cargaste ninguno.</span>'}</div>
+    <div class="row" style="align-items:flex-end;"><div class="field" style="flex:1; min-width:180px;"><label>Nuevo deporte</label><input id="depNuevo" maxlength="40" placeholder="Ej: Fútbol" autocomplete="off" onkeydown="if(event.key==='Enter'){ event.preventDefault(); depAgregar(); }"></div>
+      <button class="ghost" onclick="depAgregar()">＋ Agregar</button></div>
+    <div class="x-btns" style="margin-top:10px;"><button id="depGuardar" onclick="depGuardar()" ${cambio ? '' : 'disabled'}>Guardar deportes</button><button class="ghost" onclick="depSugeridos()">Agregar sugeridos</button></div>
+    <div class="x-sub" style="margin-top:8px;">Quitar un deporte de la lista no cambia lo ya cargado en alumnos y rutinas.</div>`;
+}
+function depAgregarUno(t){
+  t = String(t || '').replace(/\s+/g, ' ').trim().slice(0, 40); if (!t) return false;
+  const d = depDraft(); if (d.some(x => depNorm(x) === depNorm(t))) return false;
+  if (d.length >= 60){ toast('Máximo 60 deportes.', true); return false; }
+  d.push(t); return true;
+}
+function depAgregar(){ const i = document.getElementById('depNuevo'); const ok = depAgregarUno(i && i.value); if (i && i.value.trim() && !ok && depDraft().some(x => depNorm(x) === depNorm(i.value))) toast('Ese deporte ya está en la lista.', true); depPintar(); const n = document.getElementById('depNuevo'); if (n) n.focus(); }
+function depQuitar(i){ depDraft().splice(i, 1); depPintar(); }
+function depSugeridos(){ DEP_SUGERIDOS.forEach(depAgregarUno); depPintar(); }
+async function depGuardar(){
+  const arr = depDraft().slice().sort((a, b) => a.localeCompare(b, 'es'));
+  const btn = document.getElementById('depGuardar'); if (btn){ btn.disabled = true; btn.textContent = 'Guardando…'; }
+  try{
+    const r = await sb(`gimnasios?id=eq.${PERFIL_ACTUAL.gimnasio_id}`, { method: 'PATCH', headers: { Prefer: 'return=representation' }, body: JSON.stringify({ deportes: arr.length ? arr : null }) });
+    if (!r || !r.length) throw new Error('No tenés permiso para cambiar los deportes.');
+    DEPORTES = arr; DEP_DRAFT = null; depPintar();
+    toast(arr.length ? 'Deportes guardados ✓' : 'Lista vacía ✓ El deporte se escribe a mano como siempre.');
+  }catch(e){
+    const m = extraerMensajeError(e);
+    toast(/deportes|column|schema cache/i.test(m) ? 'Falta correr v215-deportes.sql en Supabase.' : 'No se pudieron guardar los deportes: ' + m, true);
+    if (btn){ btn.disabled = false; btn.textContent = 'Guardar deportes'; }
+  }
+}
+
+// ---------- (v215) Volver a la ficha del alumno después de asignarle una rutina ----------
+// Al tocar "Asignar rutina" en la ficha se recuerda el alumno, la solapa y la pantalla donde estabas; al guardar la rutina se vuelve ahí.
+let VOLVER_FICHA = null;
+function vistaStaffActual(){
+  const el = [...document.querySelectorAll('#profesorApp [id^="subvista"]')].find(e => e.style.display !== 'none' && !/^subvistaAlu/.test(e.id));
+  return el ? el.id.replace(/^subvista/, '').replace(/^./, c => c.toLowerCase()) : null;
+}
+function volverFichaGuardar(id){ VOLVER_FICHA = { id, tab: (FICHA_ALU && FICHA_ALU.tab) || 'res', vista: vistaStaffActual() }; }
+function volverBarraPintar(){
+  const b = document.getElementById('espVolverFicha'); if (!b) return;
+  if (!VOLVER_FICHA){ b.style.display = 'none'; return; }
+  const a = (typeof buscarAlumnoCache === 'function' && buscarAlumnoCache(VOLVER_FICHA.id)) || {};
+  b.innerHTML = `<div style="display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;"><div style="font-weight:600;">Estás asignándole una rutina a ${xe(a.nombre || 'el alumno')}. Al guardarla volvés a su ficha.</div><button type="button" class="ghost" onclick="volverAFicha(true)">↩ Volver sin guardar</button></div>`;
+  b.style.display = '';
+}
+function volverAFicha(manual){
+  const v = VOLVER_FICHA; if (!v) return;
+  if (manual){
+    const hay = typeof CONS !== 'undefined' && CONS['esp'] && Object.values(CONS['esp'].estado.dias).some(d => d.ejercicios.length);
+    if (hay && !confirm('Hay una rutina armada sin guardar. ¿Volver al alumno igual?')) return;
+  }
+  VOLVER_FICHA = null; volverBarraPintar();
+  try{ if (v.vista && v.vista !== 'especiales' && v.vista !== 'armador') cambiarSubvista(v.vista); }catch(e){}
+  abrirFichaAlumno(v.id, v.tab);
+}
+// si te vas a otra pantalla a mano, se cancela la vuelta
+function volverFichaSubvista(v){ if (VOLVER_FICHA && v !== 'especiales' && v !== 'armador'){ VOLVER_FICHA = null; volverBarraPintar(); } }
+// dentro de la ventana "Asignar rutina": armar una rutina nueva para este deportista
+function ppAsignarNueva(){
+  const id = PP_ASIG; if (!id) return;
+  PP_ASIG = null; modalSeguridadCerrar();
+  irAAsignarEspecialDesdeModal(id); volverBarraPintar();
+}
+
 // ---------- (v206) Pantalla al entrar, por gimnasio (la elige Martin en 🧩 Accesos; vacío = Inicio como siempre) ----------
 // SQL: v206-pantalla-inicial.sql. Si la columna no existe todavía, o la pantalla no está disponible para el rol/módulo, entra a Inicio.
 let MODULOS_P = null, PANT_INICIAL = null;
@@ -5872,7 +5967,7 @@ function atlIniciarAlu(){
   atlCargarVista('aluAtletismoContenido', id || '');
 }
 
-const APP_VERSION = 214;
+const APP_VERSION = 215;
 let ES_PERSONAL = false;   // (v132) cuenta personal (gimnasios.tipo = 'personal'); se calcula en perAplicar()
 // (v96) Fecha de la última actualización: se cambia junto con APP_VERSION en cada entrega. Se muestra en la
 // pantalla de inicio y en el menú de cuenta ("v94 · actualizada el 5/10/2026").
@@ -7230,7 +7325,7 @@ async function entrarComoStaff(){
   mostrarLinkCodigosSiCorresponde();
   registrarActividadGimnasio();
   sincronizarTabsRol();
-  await Promise.all([cargarPersonas(), cargarGimnasioActual(), cargarCategoriasYEquipos(), pantInicialCargar(), menuGuardCargar()]);   // (v212) menuGuardCargar
+  await Promise.all([cargarPersonas(), cargarGimnasioActual(), cargarCategoriasYEquipos(), pantInicialCargar(), menuGuardCargar(), deportesCargar()]);   // (v212) menuGuardCargar · (v215) deportesCargar
   cambiarSubvista(await pantInicialDestino());   // (v206) 'inicio' salvo que el gimnasio haya elegido otra pantalla // (v81) lo primero que ve el staff al entrar es su Inicio (agenda de hoy, Wellness, alertas), no el armador
   // (v61) El catálogo de ejercicios (~430 kB) ya no frena la entrada: solo se usa al armar/buscar rutinas.
   cargarCatalogoEjercicios().catch(e => console.error('No se pudo cargar el catálogo de ejercicios:', e));
@@ -13622,6 +13717,7 @@ function cambiarSubvista(v){
   if (!modVistaOk('staff', v)){ modAvisoBloqueada(); return; }   // (v99) sección no incluida en el plan del gimnasio
   if (v === 'cvclases' && !cvcVisible()){ modAvisoBloqueada(); return; }   // (v157)
   medOk();
+  try{ volverFichaSubvista(v); }catch(e){}   // (v215)
   try{ clCerrar(); }catch(e){}
   try{ ppEmbReset(); }catch(e){}   // (v210)
   guiaVisita('staff', v==='armador' ? 'especiales' : v);
@@ -20334,7 +20430,7 @@ function fichaWhatsApp(){
   if (url) window.open(url, '_blank'); else toast('No tiene teléfono cargado.', true);
 }
 function fichaReporte(){ const id = FICHA_ALU?.id; if (!id) return; cerrarFicha(); abrirReporteAlumno(id); }
-function fichaAsignarRutina(){ const id = FICHA_ALU?.id; if (!id) return; if (typeof panelOn === 'function' && panelOn() && FICHA_ALU.a && FICHA_ALU.a.es_deportista === true){ ppAsignarRutina(id); return; } cerrarFicha(); irAAsignarEspecialDesdeModal(id); }   // (v209) deportista: ventana con sugeridas
+function fichaAsignarRutina(){ const id = FICHA_ALU?.id; if (!id) return; volverFichaGuardar(id); if (typeof panelOn === 'function' && panelOn() && FICHA_ALU.a && FICHA_ALU.a.es_deportista === true){ ppAsignarRutina(id); return; } cerrarFicha(); irAAsignarEspecialDesdeModal(id); volverBarraPintar(); }   // (v209) deportista: ventana con sugeridas · (v215) vuelve a la ficha al guardar
 function fichaNuevaEvaluacion(){ const id = FICHA_ALU?.id; if (!id) return; cerrarFicha(); irACargarEvaluacionDesdeFicha(id); }
 function fichaCobrar(){ const id = FICHA_ALU?.id; if (!id) return; cerrarFicha(); abrirCobroAlumno(id, true); }
 function fichaRecibo(i){ const p = FICHA_PAGOS[i]; if (!p || !FICHA_ALU?.a) return; descargarReciboPago(p, FICHA_ALU.a.nombre, xPlanNombre(FICHA_ALU.a) || 'Plan'); }
@@ -21072,7 +21168,7 @@ function datosPersonalesModuloHtml(alumnoId){
       <div class="field"><label>Peso corporal (kg)</label><input value="${a.peso_kg||'-'}" disabled></div>
       <div class="field"><label>Altura (cm)</label><input value="${a.altura_cm||'-'}" disabled></div>
       <div class="field"><label>IMC</label><input value="${imc!=null?imc.toFixed(1):'-'}" disabled></div>
-      <div class="field" style="flex:1; min-width:180px;"><label>Deporte / disciplina</label><input id="evalDatDeporte" value="${(a.deporte_disciplina||'').replace(/"/g,'&quot;')}" placeholder="Ej: Fútbol"></div>
+      <div class="field" style="flex:1; min-width:180px;"><label>Deporte / disciplina</label>${DEPORTES.length ? `<select id="evalDatDeporte">${deporteOpcionesHtml(a.deporte_disciplina, '-- sin definir --')}</select>` : `<input id="evalDatDeporte" value="${(a.deporte_disciplina||'').replace(/"/g,'&quot;')}" placeholder="Ej: Fútbol">`}</div>
       <div class="field" style="min-width:160px;"><label>Categoría de peso</label><input id="evalDatCategoriaPeso" value="${(a.categoria_peso||'').replace(/"/g,'&quot;')}" placeholder="Ej: -74kg"></div>
     </div>
     ${panelOn() ? panelDeportistaCamposHtml(a) : ''}
@@ -26034,7 +26130,7 @@ function etqEditorHtml(){
   const chips = ETQ_PERF.map(k => `<span class="chip-toggle${ETQ.perfil.includes(k) ? ' active' : ''}" onclick="etqTogglePerfil('${k}')">${xe(PP_PERF[k].n)}</span>`).join('');
   return `<div class="field"><label>Perfil (podés marcar varios)</label><div style="display:flex; gap:6px; flex-wrap:wrap;">${chips}</div></div>
     <div class="field"><label>Nivel</label><select onchange="ETQ.nivel=this.value"><option value="">General (cualquier nivel)</option>${ETQ_NIVELES.map(n => `<option ${ETQ.nivel === n ? 'selected' : ''}>${n}</option>`).join('')}</select></div>
-    <div class="field"><label>Deporte</label><input value="${xe(ETQ.deporte)}" placeholder="Vacío = cualquier deporte" maxlength="60" autocomplete="off" oninput="ETQ.deporte=this.value"></div>`;
+    <div class="field"><label>Deporte</label>${DEPORTES.length ? `<select onchange="ETQ.deporte=this.value">${deporteOpcionesHtml(ETQ.deporte, 'Cualquier deporte')}</select>` : `<input value="${xe(ETQ.deporte)}" placeholder="Vacío = cualquier deporte" maxlength="60" autocomplete="off" oninput="ETQ.deporte=this.value">`}</div>`;
 }
 function etqPintar(){ const c = document.getElementById(ETQ.cont); if (c) c.innerHTML = etqEditorHtml(); }
 function etqTogglePerfil(k){ const i = ETQ.perfil.indexOf(k); if (i < 0) ETQ.perfil.push(k); else ETQ.perfil.splice(i, 1); etqPintar(); }
@@ -26116,6 +26212,7 @@ async function ppAsignarRutina(id){
   PP_ASIG = id; ETQ.verTodas = false;
   const box = modalSeguridadAbrir(`<div style="display:flex; justify-content:space-between; align-items:center; gap:8px;"><h3 style="margin:0;">＋ Asignar rutina</h3><button type="button" class="x-cerrar est" aria-label="Cerrar" title="Cerrar" onclick="modalSeguridadCerrar()">✕</button></div>
     <div class="muted" style="font-size:12px; margin:6px 0 10px;">Elegí una: se copia para este deportista y la ajustás antes de guardarla. La original no se toca.</div>
+    <button type="button" style="width:100%; margin-bottom:8px;" onclick="ppAsignarNueva()">＋ Armar una rutina nueva para este deportista</button>
     <input id="ppAsigQ" placeholder="🔎 Buscar por nombre…" autocomplete="off" oninput="ppAsignarPintar()" style="margin-bottom:8px;">
     <div id="ppAsigBody" style="max-height:55vh; overflow:auto;"><div class="muted">Cargando…</div></div>`);
   box.style.maxWidth = '560px';
@@ -26134,6 +26231,7 @@ function ppAsignarElegir(rutinaId){
   const id = PP_ASIG; if (!id) return;
   PP_ASIG = null; modalSeguridadCerrar();
   irAAsignarEspecialDesdeModal(id);   // abre Nueva rutina con el deportista elegido
+  volverBarraPintar();                // (v215)
   espCargarDesdeRutina(rutinaId);     // y le copia la rutina elegida para ajustar y guardar
 }
 // Lista agrupada para "Empezar desde una rutina existente" cuando el destino es un deportista. null = usar la lista de siempre.
@@ -26597,6 +26695,7 @@ async function guardarRutinaEspecial(){
       if (modo === 'alumno') cargarEspecialesDeAlumno();
       if (modo === 'alumno') aplicarEspecialAlTurnoSiCorresponde(res, alumnosDestino[0]);
       nrDespuesDeGuardar(modo);
+      if (modo === 'alumno' && VOLVER_FICHA && VOLVER_FICHA.id === alumnosDestino[0]) setTimeout(() => volverAFicha(false), 400);   // (v215) volver a la ficha donde estabas
     },
     msgOk,
   });
