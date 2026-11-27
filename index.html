@@ -2435,6 +2435,26 @@ if ('serviceWorker' in navigator) window.addEventListener('load', function(){ tr
   .pp-chip{ display:inline-flex; align-items:center; gap:4px; border-radius:99px; padding:2px 9px; font-size:11.5px; border:1px solid var(--border); background:var(--inset); color:var(--text); white-space:nowrap; font-family:inherit; }
   .pp-chip.ok{ border-color:var(--pp-ok); } .pp-chip.warn{ border-color:var(--pp-warn); } .pp-chip.bad{ border-color:var(--pp-bad); } .pp-chip.info{ border-color:var(--pp-info); }
   button.pp-chip{ cursor:pointer; }
+  /* (v211) Evaluación funcional */
+  .ofd{ --pp-ok:#3ddc84; --pp-warn:#ffd23d; --pp-bad:#ff5d5d; }
+  :root[data-tema="claro"] .ofd{ --pp-ok:#0f8a45; --pp-warn:#8a5a00; --pp-bad:#c0271d; }
+  .ofd-fotos{ display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:10px; margin-bottom:6px; }
+  .ofd-stage{ position:relative; width:100%; max-width:420px; margin:0 auto 10px; background:#000; border-radius:12px; overflow:hidden; touch-action:none; user-select:none; -webkit-user-select:none; }
+  .ofd-stage img{ display:block; width:100%; height:auto; pointer-events:none; }
+  .ofd-stage svg{ position:absolute; inset:0; width:100%; height:100%; pointer-events:none; }
+  .ofd-h{ position:absolute; width:34px; height:34px; margin:-17px 0 0 -17px; border-radius:50%; touch-action:none; cursor:grab; display:grid; place-items:center; }
+  .ofd-h::after{ content:''; width:14px; height:14px; border-radius:50%; background:#fff; border:2px solid #222; box-sizing:border-box; }
+  .ofd-h.r::after{ background:#ff3b30; border-color:#fff; }
+  .ofd-h.sel::before{ content:''; position:absolute; inset:3px; border-radius:50%; border:2px dashed #ffd23d; }
+  .ofd-h .lb{ position:absolute; left:26px; top:2px; font-size:10px; font-weight:700; color:#fff; background:rgba(0,0,0,.6); padding:1px 5px; border-radius:6px; white-space:nowrap; pointer-events:none; }
+  .ofd-sn{ display:inline-flex; border:1px solid var(--border); border-radius:10px; overflow:hidden; flex:none; }
+  .ofd-sn button{ border:0; border-radius:0; background:var(--panel2); color:var(--muted); padding:8px 18px; font-weight:800; font-size:13px; margin:0; width:auto; }
+  .ofd-sn button.si.on{ background:var(--pp-ok); color:#06210f; } .ofd-sn button.no.on{ background:var(--pp-bad); color:#fff; }
+  .ofd-evo{ overflow-x:auto; }
+  table.ofd-t{ border-collapse:collapse; font-size:12.5px; width:100%; }
+  .ofd-t th, .ofd-t td{ padding:6px 9px; text-align:center; border-bottom:1px solid var(--border); white-space:nowrap; }
+  .ofd-t th:first-child, .ofd-t td:first-child{ text-align:left; position:sticky; left:0; background:var(--panel); }
+  .ofd-si{ color:var(--pp-ok); font-weight:800; } .ofd-no{ color:var(--pp-bad); font-weight:800; }
   .pp-rbar{ display:flex; justify-content:space-between; align-items:center; width:100%; margin-top:12px; background:var(--panel); border:1px solid var(--border); border-left:4px solid #ff5d5d; border-radius:14px; padding:12px 16px; font-weight:700; cursor:pointer; color:inherit; font:inherit; }
   .pp-rbar b{ font-size:22px; }
   .pp-two{ display:grid; grid-template-columns:1.25fr 1fr; gap:14px; margin-top:14px; }
@@ -5740,7 +5760,7 @@ function atlIniciarAlu(){
   atlCargarVista('aluAtletismoContenido', id || '');
 }
 
-const APP_VERSION = 210;
+const APP_VERSION = 211;
 let ES_PERSONAL = false;   // (v132) cuenta personal (gimnasios.tipo = 'personal'); se calcula en perAplicar()
 // (v96) Fecha de la última actualización: se cambia junto con APP_VERSION en cada entrega. Se muestra en la
 // pantalla de inicio y en el menú de cuenta ("v94 · actualizada el 5/10/2026").
@@ -18815,7 +18835,7 @@ function cvTabsVis(){
   let t = FICHA_TABS;
   if (cvOn() && CV.ok === true && cvStaff()){ t = t.slice(); const i = t.findIndex(x => x[0] === 'pag'); t.splice(i < 0 ? t.length : i + 1, 0, ['cuo', 'Plan']); }
   if (typeof osOn === 'function' && osOn() && osRolOk()){ t = t.slice(); let j = t.findIndex(x => x[0] === 'cuo'); if (j < 0) j = t.findIndex(x => x[0] === 'pag'); t.splice(j < 0 ? t.length : j + 1, 0, ['cob', 'Cobertura']); }   // (v194)
-  if (typeof ppFichaTabOk === 'function' && ppFichaTabOk(FICHA_ALU && FICHA_ALU.a)){ t = t.slice(); t.splice(1, 0, ['dep', '🏅 Deportista']); }   // (v205)
+  if (typeof ppFichaTabOk === 'function' && ppFichaTabOk(FICHA_ALU && FICHA_ALU.a)){ t = t.slice(); t.splice(1, 0, ['dep', '🏅 Deportista'], ['ofd', '🦵 Eval. funcional']); }   // (v205, v211)
   return t;
 }
 function cvFichaIr(id){ cerrarFicha(); abrirFichaAlumno(id, 'cuo'); }
@@ -20209,7 +20229,7 @@ function fichaRecibo(i){ const p = FICHA_PAGOS[i]; if (!p || !FICHA_ALU?.a) retu
 
 function pintarFichaAlumno(){
   const F = FICHA_ALU; if (!F || !F.a) return;
-  if (F.tab === 'dep' && !ppFichaTabOk(F.a)) F.tab = 'res';   // (v205)
+  if ((F.tab === 'dep' || F.tab === 'ofd') && !ppFichaTabOk(F.a)) F.tab = 'res';   // (v205, v211)
   const a = F.a, tipo = xTipoNombre(a), plan = xPlanNombre(a);
   const pills = `<span class="pill ${a.activo === false ? '' : 'ok'}">${a.activo === false ? 'Inactivo' : 'Activo'}</span> ${tipo ? `<span class="pill">${xe(tipo)}</span>` : ''} <span class="pill" id="fichaPlanPill">${plan ? 'Plan ' + xe(plan) : 'Sin plan'}</span> ${a.equipos?.nombre ? `<span class="pill">⚽ ${xe(a.equipos.nombre)}</span>` : ''}`;
   const box = document.getElementById('fichaBox');
@@ -20228,6 +20248,7 @@ function pintarFichaAlumno(){
   else if (F.tab === 'eva'){ body.innerHTML = '<div class="muted">Cargando…</div>'; xFichaEvaluaciones(a, tok); }
   else if (F.tab === 'car') xFichaCarga(a, tok);
   else if (F.tab === 'dep') ppFichaCarga(a, tok);   // (v205)
+  else if (F.tab === 'ofd') ofdFichaCarga(a, tok);   // (v211)
   else if (F.tab === 'cuo'){ body.innerHTML = '<div class="muted">Cargando…</div>'; cvFichaCargar(a, tok); }   // (v155)
   else if (F.tab === 'cob'){ body.innerHTML = '<div class="muted">Cargando…</div>'; osFichaCargar(a, tok); }   // (v194)
 }
@@ -21588,6 +21609,331 @@ async function ppCriteriosGuardar(reset){
     toast(reset ? 'Cortes de ejemplo restaurados ✓' : 'Cortes guardados ✓');
     await ppCarga(true);
   }catch(e){ toast('Error guardando los cortes: ' + extraerMensajeError(e), true); }
+}
+
+// ---------- (v211) Evaluación funcional · sentadilla de arranque (Observación Funcional Dinámica, González Guedes) ----------
+// Solo con el Panel de perfiles prendido y deportista marcado. 2 fotos (frontal + lateral izquierda), líneas blancas de
+// referencia y rojas de desvío arrastrables a mano, 6 puntos SÍ/NO calificados por el profe. Un set cada ~15 días.
+// Fotos en el bucket PRIVADO "eval-funcional" (<gimnasio>/<alumno>/<archivo>); coordenadas guardadas como proporción 0–1.
+const OFD_PUNTOS = [
+  { k: 'pies',         n: 'Pies',           v: 'Vista frontal', q: 'Paralelos, sin rotar hacia afuera' },
+  { k: 'rodillas',     n: 'Rodillas',       v: 'Vista frontal', q: 'Alineadas: no se meten ni se abren' },
+  { k: 'cadera_muslo', n: 'Cadera y muslo', v: 'Vista lateral', q: 'Baja hasta paralelo o más abajo' },
+  { k: 'torso',        n: 'Torso',          v: 'Vista lateral', q: 'Erguido, sin pasar la línea de los pies' },
+  { k: 'brazos',       n: 'Brazos',         v: 'Vista lateral', q: 'Quedan sobre la cabeza / línea de referencia' },
+  { k: 'talones',      n: 'Talones',        v: 'Vista lateral', q: 'Apoyados todo el recorrido' },
+];
+const OFD = { aid: null, alu: null, sets: [], sel: null, cat: null, blobs: {}, ed: null };
+function ofdFch(x){ return x ? String(x).slice(0, 10).split('-').reverse().join('/') : ''; }
+function ofdTotSi(s){ return OFD_PUNTOS.filter(p => s[p.k] === true).length; }
+function ofdBadge(v){ return v === true ? '<span class="ofd-si">✔ SÍ</span>' : v === false ? '<span class="ofd-no">✖ NO</span>' : '<span class="x-sub">–</span>'; }
+function ofdAuth(){ return { apikey: ANON_KEY, Authorization: `Bearer ${(SESION_ACTUAL && SESION_ACTUAL.access_token) || ANON_KEY}` }; }
+function ofdRuta(p){ return String(p).split('/').map(encodeURIComponent).join('/'); }
+async function ofdCatalogo(){
+  if (OFD.cat) return OFD.cat;
+  const r = await sb('ofd_catalogo?select=punto,orden,titulo,observacion,ejercicios&order=orden.asc');
+  const c = {}; (r || []).forEach(x => { c[x.punto] = x; }); OFD.cat = c; return c;
+}
+async function ofdFotoUrl(path){
+  if (!path) return null;
+  if (OFD.blobs[path]) return OFD.blobs[path];
+  const r = await fetch(`${SUPABASE_URL}/storage/v1/object/authenticated/eval-funcional/${ofdRuta(path)}`, { headers: ofdAuth() });
+  if (!r.ok) throw new Error('No se pudo abrir la foto (' + r.status + ')');
+  const u = URL.createObjectURL(await r.blob()); OFD.blobs[path] = u; return u;
+}
+async function ofdPrepararFoto(file){
+  let bmp;
+  try{ bmp = await createImageBitmap(file, { imageOrientation: 'from-image' }); }catch(e){ bmp = await createImageBitmap(file); }
+  const k = Math.min(1, 1600 / Math.max(bmp.width, bmp.height));
+  const c = document.createElement('canvas'); c.width = Math.round(bmp.width * k); c.height = Math.round(bmp.height * k);
+  c.getContext('2d').drawImage(bmp, 0, 0, c.width, c.height);
+  return await new Promise((res, rej) => c.toBlob(b => b ? res(b) : rej(new Error('No se pudo procesar la foto.')), 'image/jpeg', 0.85));
+}
+async function ofdSubirFoto(path, blob){
+  const r = await fetch(`${SUPABASE_URL}/storage/v1/object/eval-funcional/${ofdRuta(path)}`, { method: 'POST', headers: Object.assign({ 'Content-Type': 'image/jpeg' }, ofdAuth()), body: blob });
+  if (!r.ok){ const t = await r.text().catch(() => ''); throw new Error('No se pudo subir la foto (' + r.status + ') ' + t.slice(0, 120)); }
+}
+async function ofdBorrarFotos(paths){
+  for (const p of (paths || []).filter(Boolean)){ try{ await fetch(`${SUPABASE_URL}/storage/v1/object/eval-funcional/${ofdRuta(p)}`, { method: 'DELETE', headers: ofdAuth() }); }catch(e){} }
+}
+function ofdSvg(L){
+  L = L || {};
+  const ln = (x1, y1, x2, y2, c, w) => `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${c}" stroke-width="${w}" vector-effect="non-scaling-stroke" stroke-linecap="round"/>`;
+  const dbl = (x1, y1, x2, y2, c, w) => ln(x1, y1, x2, y2, 'rgba(0,0,0,.45)', w + 2) + ln(x1, y1, x2, y2, c, w);
+  let s = '';
+  if (L.b) s += dbl(L.b.x, 0, L.b.x, 1, '#fff', 2) + dbl(0, L.b.y, 1, L.b.y, '#fff', 2);
+  (L.r || []).forEach(r => { s += dbl(r[0], r[1], r[2], r[3], '#ff3b30', 3); });
+  return `<svg viewBox="0 0 1 1" preserveAspectRatio="none">${s}</svg>`;
+}
+function ofdLinDef(k){ return k === 'frontal' ? { b: { x: 0.5, y: 0.58 }, r: [] } : { b: { x: 0.5, y: 0.66 }, r: [] }; }
+
+// ----- Solapa en la ficha -----
+async function ofdFichaCarga(a, tok){
+  const body = document.getElementById('fichaTabBody'); if (!body) return;
+  body.innerHTML = '<div class="muted">Cargando…</div>';
+  const vig = () => tok === FICHA_TOK && document.getElementById('fichaTabBody') === body;
+  try{
+    const [, sets] = await Promise.all([ofdCatalogo(), sb(`evaluaciones_funcionales?select=*&alumno_id=eq.${a.id}&order=fecha.desc,created_at.desc&limit=60`)]);
+    if (!vig()) return;
+    if (OFD.alu !== a.id || !sets.some(s => s.id === OFD.sel)) OFD.sel = sets[0] ? sets[0].id : null;
+    OFD.alu = a.id; OFD.aid = a.id; OFD.sets = sets;
+    ofdPintar(vig);
+  }catch(e){
+    if (!vig()) return;
+    const m = String((e && e.message) || e);
+    body.innerHTML = /evaluaciones_funcionales|ofd_catalogo|42P01|PGRST20[45]|schema cache/i.test(m)
+      ? '<div class="rpx-ban">La Evaluación funcional no está disponible. Corré <b>v211-evaluacion-funcional.sql</b> en Supabase.</div>'
+      : `<div class="empty">No se pudo cargar: ${xe(m)}</div>`;
+  }
+}
+function ofdEvoHtml(sets){
+  const cols = sets.slice(0, 8).reverse();
+  const head = cols.map(s => `<th>${ofdFch(s.fecha).slice(0, 5)}<div class="x-sub" style="font-weight:400;">${String(s.fecha).slice(2, 4)}</div></th>`).join('');
+  const celda = (s, v) => (s.prueba_nula || s.corte_dolor) ? '<td class="x-sub">·</td>' : `<td>${ofdBadge(v)}</td>`;
+  const filas = OFD_PUNTOS.map(p => `<tr><td>${p.n}</td>${cols.map(s => celda(s, s[p.k])).join('')}</tr>`).join('');
+  const tot = `<tr><td><b>Total SÍ</b></td>${cols.map(s => s.prueba_nula ? '<td><span class="pp-chip bad">Nula</span></td>' : s.corte_dolor ? '<td><span class="pp-chip bad">Dolor</span></td>' : `<td><b>${ofdTotSi(s)}/6</b></td>`).join('')}</tr>`;
+  let cmp = '';
+  const v = sets.filter(s => !s.prueba_nula && !s.corte_dolor);
+  if (v.length >= 2){ const d = ofdTotSi(v[0]) - ofdTotSi(v[1]); cmp = `<div class="x-sub" style="margin-top:6px;">Último set vs el anterior: <b style="color:${d > 0 ? 'var(--pp-ok)' : d < 0 ? 'var(--pp-bad)' : 'inherit'}">${d > 0 ? '▲ +' + d : d < 0 ? '▼ ' + d : 'igual'}</b> SÍ</div>`; }
+  return `<div class="ofd-evo"><table class="ofd-t"><thead><tr><th></th>${head}</tr></thead><tbody>${filas}${tot}</tbody></table></div>${cmp}`;
+}
+function ofdPintar(vig){
+  const body = document.getElementById('fichaTabBody'); if (!body) return;
+  const sets = OFD.sets, S = sets.find(s => s.id === OFD.sel) || null;
+  const lista = `<div style="display:flex; gap:6px; flex-wrap:wrap; margin:0 0 12px;">${sets.map(s => `<button type="button" class="x-chip ${s.id === OFD.sel ? 'on' : ''}" onclick="ofdSel('${s.id}')">${ofdFch(s.fecha)}${s.prueba_nula ? ' · nula' : ''}</button>`).join('')}</div>`;
+  body.innerHTML = `<div class="ofd">
+    <div class="x-btns" style="margin:0 0 6px;"><button onclick="ofdEditar(null)">＋ Nuevo set</button></div>
+    ${sets.length
+      ? `<div class="x-sec" style="margin-top:8px;">Evolución</div>${ofdEvoHtml(sets)}<div class="x-sec">Set del</div>${lista}<div id="ofdDet"></div>`
+      : '<div class="empty">Todavía no hay evaluaciones funcionales de este deportista.<div class="x-sub" style="margin-top:4px;">Sentadilla de arranque con bastón: 2 fotos (frontal y lateral izquierda) y 6 puntos SÍ/NO. Un set cada ~15 días.</div></div>'}</div>`;
+  if (S) ofdDetalle(S, vig);
+}
+function ofdSel(id){ OFD.sel = id; ofdPintar(() => true); }
+function ofdCorrectivosHtml(S){
+  const cat = OFD.cat || {};
+  if (S.prueba_nula) return '<div class="x-sub">Prueba nula: no hay puntos para trabajar.</div>';
+  if (S.corte_dolor) return '<div class="x-sub">Corte por dolor: la prueba se detuvo. Que lo revise un médico antes de continuar.</div>';
+  const nos = OFD_PUNTOS.map((p, i) => ({ p, i })).filter(x => S[x.p.k] === false);
+  if (!nos.length) return ofdTotSi(S) === 6 && cat.ok ? `<div class="x-sub">${xe(cat.ok.observacion)}</div>` : '<div class="x-sub">Sin puntos en NO.</div>';
+  return nos.map(({ p, i }) => {
+    const c = cat[p.k]; if (!c) return '';
+    return `<div class="card" style="margin:0 0 10px;"><div style="font-weight:800;"><span style="color:var(--pp-bad);">${i + 1}. NO</span> = ${xe(c.titulo)}</div>
+      <div class="x-sub" style="margin:4px 0 6px;">${xe(c.observacion || '')}</div>
+      ${(c.ejercicios || []).map(e => `<div style="margin-top:6px;"><b>${xe(e.nombre)}.</b> <span class="x-sub">${xe(e.descripcion)}</span></div>`).join('')}</div>`;
+  }).join('');
+}
+async function ofdDetalle(S, vig){
+  const el = document.getElementById('ofdDet'); if (!el) return;
+  const flags = [S.prueba_nula ? '<span class="pp-chip bad">Prueba nula</span>' : '', S.corte_dolor ? '<span class="pp-chip bad">⚠ Corte por dolor</span>' : '', S.permiso_fotos ? '<span class="pp-chip ok">Permiso de fotos</span>' : '<span class="pp-chip">Sin permiso de fotos</span>'].filter(Boolean).join(' ');
+  const puntos = OFD_PUNTOS.map(p => `<div class="x-item"><div><div style="font-weight:700;">${p.n}</div><div class="x-sub">${p.v} · ${p.q}</div></div>${ofdBadge(S[p.k])}</div>`).join('');
+  el.innerHTML = `<div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:10px;"><span style="font-size:18px; font-weight:800;">${(S.prueba_nula || S.corte_dolor) ? 'Sin puntaje' : ofdTotSi(S) + ' / 6 SÍ'}</span>${flags}</div>
+    <div id="ofdFotos" class="ofd-fotos">${(S.foto_frontal || S.foto_lateral) ? '<div class="muted">Cargando fotos…</div>' : '<div class="x-sub">Sin fotos en este set.</div>'}</div>
+    <div class="x-sec">Puntos</div>${puntos}
+    ${S.extras ? `<div class="x-sec">Observaciones adicionales</div><div style="white-space:pre-wrap;">${xe(S.extras)}</div>` : ''}
+    ${S.notas ? `<div class="x-sec">Notas</div><div style="white-space:pre-wrap;">${xe(S.notas)}</div>` : ''}
+    <div class="x-sec">Qué trabajar</div>${ofdCorrectivosHtml(S)}
+    <div class="x-btns"><button onclick="ofdEditar('${S.id}')">✏️ Editar</button><button class="ghost" onclick="ofdEliminar('${S.id}')">🗑 Eliminar set</button></div>`;
+  if (S.foto_frontal || S.foto_lateral){
+    const L = S.lineas || {};
+    const bloque = async (k, path, tit) => {
+      if (!path) return '';
+      try{ const u = await ofdFotoUrl(path); return `<div><div class="x-sub" style="text-align:center; margin-bottom:4px;">${tit}</div><div class="ofd-stage"><img src="${u}" alt="${tit}">${ofdSvg(L[k])}</div></div>`; }
+      catch(e){ return `<div class="x-sub">No se pudo abrir la foto ${tit.toLowerCase()}.</div>`; }
+    };
+    const html = (await bloque('frontal', S.foto_frontal, 'Frontal')) + (await bloque('lateral', S.foto_lateral, 'Lateral izquierda'));
+    const f = document.getElementById('ofdFotos'); if (f && vig() && OFD.sel === S.id) f.innerHTML = html;
+  }
+}
+
+// ----- Editor -----
+function ofdModal(html){
+  let ov = document.getElementById('modalOfd');
+  if (!ov){ ov = document.createElement('div'); ov.id = 'modalOfd'; ov.className = 'modal-overlay'; ov.style.zIndex = '1001'; ov.innerHTML = '<div class="modal-box" style="max-width:760px; max-height:92vh; overflow-y:auto; text-align:left;"></div>'; document.body.appendChild(ov); }
+  const box = ov.querySelector('.modal-box'); box.innerHTML = html; ov.classList.add('show'); return box;
+}
+function ofdCerrar(){
+  const ov = document.getElementById('modalOfd'); if (ov) ov.classList.remove('show');
+  const E = OFD.ed; if (E){ ['frontal', 'lateral'].forEach(k => { const F = E.fotos[k]; if (F.blob && F.url) URL.revokeObjectURL(F.url); }); }
+  OFD.ed = null;
+}
+async function ofdEditar(id){
+  const S = id ? OFD.sets.find(s => s.id === id) : null;
+  if (id && !S) return;
+  const E = { id: S ? S.id : idAleatorio(), nuevo: !S, fecha: S ? String(S.fecha).slice(0, 10) : dateAIso(new Date()), extras: (S && S.extras) || '', notas: (S && S.notas) || '',
+    nula: !!(S && S.prueba_nula), dolor: !!(S && S.corte_dolor), permiso: !!(S && S.permiso_fotos), tab: 'frontal', sel: { frontal: null, lateral: null },
+    fotos: { frontal: { path: (S && S.foto_frontal) || null, blob: null, url: null, viejo: null }, lateral: { path: (S && S.foto_lateral) || null, blob: null, url: null, viejo: null } },
+    lin: { frontal: null, lateral: null } };
+  OFD_PUNTOS.forEach(p => { E[p.k] = S ? S[p.k] : null; });
+  const L = (S && S.lineas) || {};
+  ['frontal', 'lateral'].forEach(k => { if (E.fotos[k].path) E.lin[k] = L[k] && L[k].b ? JSON.parse(JSON.stringify(L[k])) : ofdLinDef(k); });
+  OFD.ed = E;
+  for (const k of ['frontal', 'lateral']){ const F = E.fotos[k]; if (F.path){ try{ F.url = await ofdFotoUrl(F.path); }catch(e){ F.url = null; } } }
+  ofdEdPintar();
+}
+function ofdEdSync(){
+  const E = OFD.ed; if (!E) return; const g = id => document.getElementById(id);
+  if (g('ofdF')) E.fecha = g('ofdF').value; if (g('ofdExt')) E.extras = g('ofdExt').value; if (g('ofdNot')) E.notas = g('ofdNot').value;
+}
+function ofdFlag(k, v){ const E = OFD.ed; ofdEdSync(); E[k] = !!v; ofdEdPintar(); }
+function ofdTab(k){ ofdEdSync(); OFD.ed.tab = k; ofdEdPintar(); }
+function ofdHandlesHtml(E, k){
+  const L = E.lin[k]; if (!L) return '';
+  const h = [];
+  h.push(`<div class="ofd-h" data-h="bx" style="left:${L.b.x * 100}%; top:6%;"><span class="lb">${k === 'frontal' ? 'vertical' : 'tobillo'}</span></div>`);
+  h.push(`<div class="ofd-h" data-h="by" style="left:7%; top:${L.b.y * 100}%;"><span class="lb">${k === 'frontal' ? 'horizontal' : 'rodilla'}</span></div>`);
+  L.r.forEach((r, i) => {
+    const s = E.sel[k] === i ? ' sel' : '';
+    h.push(`<div class="ofd-h r${s}" data-h="r${i}a" style="left:${r[0] * 100}%; top:${r[1] * 100}%;"></div><div class="ofd-h r${s}" data-h="r${i}b" style="left:${r[2] * 100}%; top:${r[3] * 100}%;"></div>`);
+  });
+  h.push(`<div class="ofd-h" data-h="bc" style="left:${L.b.x * 100}%; top:${L.b.y * 100}%;"><span class="lb">${k === 'frontal' ? 'pubis' : ''}</span></div>`);
+  return h.join('');
+}
+function ofdEdPintar(){
+  const E = OFD.ed; if (!E) return;
+  const k = E.tab, F = E.fotos[k], al = (FICHA_ALU && FICHA_ALU.a) || {};
+  const tit = k === 'frontal' ? 'frontal' : 'lateral izquierda';
+  const guia = k === 'frontal'
+    ? 'De frente y de cuerpo entero, con la cámara a la altura de la cintura. El pubis tiene que verse. Foto en la posición más baja de la 3.ª flexión.'
+    : 'Desde el lado izquierdo, sin que el deportista se mueva ni se acomode. No debe verse la mano derecha. Foto en la posición más baja de la 3.ª flexión.';
+  const sn = p => `<div class="x-item" style="align-items:center;"><div><div style="font-weight:700;">${p.n}</div><div class="x-sub">${p.v} · SÍ = ${p.q.charAt(0).toLowerCase() + p.q.slice(1)}</div></div>
+    <div class="ofd-sn" data-k="${p.k}"><button type="button" class="si ${E[p.k] === true ? 'on' : ''}" onclick="ofdSN('${p.k}',true)">SÍ</button><button type="button" class="no ${E[p.k] === false ? 'on' : ''}" onclick="ofdSN('${p.k}',false)">NO</button></div></div>`;
+  let area;
+  if (!F.url){
+    area = `<div class="card" style="text-align:center; margin:0 0 10px;">${E.permiso
+      ? `<button type="button" onclick="document.getElementById('ofdFile').click()">📷 Sacar o elegir foto ${tit}</button><input type="file" id="ofdFile" accept="image/*" style="display:none;" onchange="ofdFoto('${k}', this.files[0])">`
+      : '<div class="x-sub">Marcá <b>Permiso de fotos</b> para poder cargar fotos.</div>'}<div class="x-sub" style="margin-top:8px;">${guia}</div></div>`;
+  } else {
+    area = `<div class="ofd-stage" id="ofdStage"><img src="${F.url}" alt="">${ofdSvg(E.lin[k])}${ofdHandlesHtml(E, k)}</div>
+      <div class="x-btns" style="justify-content:center;"><button type="button" class="ghost" onclick="ofdRojaAdd()">＋ Línea roja</button><button type="button" class="ghost" onclick="ofdRojaDel()">🗑 Quitar línea roja</button><button type="button" class="ghost" onclick="ofdFotoQuitar()">Cambiar foto</button></div>
+      <div class="x-sub" style="text-align:center; margin-bottom:10px;">${k === 'frontal' ? 'Blancas: vertical y horizontal por el pubis.' : 'Blancas: vertical por el tobillo (maléolo) y horizontal por la rodilla.'} Rojas: desvíos. Arrastrá los puntos.</div>`;
+  }
+  const box = ofdModal(`<div class="ofd">
+    <h3 style="margin:0 0 10px;">🦵 Evaluación funcional · ${xe(al.nombre || '')}</h3>
+    <div class="row" style="align-items:flex-end;"><div class="field"><label>Fecha</label><input type="date" id="ofdF" value="${xe(E.fecha)}"></div></div>
+    <div style="display:flex; gap:14px; flex-wrap:wrap; margin:8px 0;">
+      <label style="display:flex; gap:6px; align-items:center;"><input type="checkbox" ${E.permiso ? 'checked' : ''} onchange="ofdFlag('permiso', this.checked)"> Permiso de fotos</label>
+      <label style="display:flex; gap:6px; align-items:center;"><input type="checkbox" ${E.nula ? 'checked' : ''} onchange="ofdFlag('nula', this.checked)"> Prueba nula</label>
+      <label style="display:flex; gap:6px; align-items:center;"><input type="checkbox" ${E.dolor ? 'checked' : ''} onchange="ofdFlag('dolor', this.checked)"> Corte por dolor</label></div>
+    ${E.dolor ? '<div class="rpx-ban" style="margin-bottom:8px;">⚠ Si acusa dolor se detiene la prueba: que lo revise un médico antes de seguir.</div>' : ''}
+    ${E.nula ? '<div class="x-sub" style="margin-bottom:8px;">Prueba nula: perdió el equilibrio más de 3 veces o no mantuvo los talones apoyados tras 3 intentos. No cuenta para la evolución.</div>' : ''}
+    <div style="display:flex; gap:6px; margin:10px 0;"><button type="button" class="x-chip ${k === 'frontal' ? 'on' : ''}" onclick="ofdTab('frontal')">Foto frontal${E.fotos.frontal.url ? ' ✓' : ''}</button><button type="button" class="x-chip ${k === 'lateral' ? 'on' : ''}" onclick="ofdTab('lateral')">Foto lateral izq.${E.fotos.lateral.url ? ' ✓' : ''}</button></div>
+    ${area}
+    <div class="x-sec">Puntos · SÍ = satisfactorio · NO = insatisfactorio <span id="ofdTot" style="text-transform:none; letter-spacing:0;"></span></div>
+    ${OFD_PUNTOS.map(sn).join('')}
+    <div class="field" style="margin-top:12px;"><label>Observaciones adicionales (inclinación lateral del tronco, giro de caderas, rodillas que pasan la punta de los pies…)</label><textarea id="ofdExt" rows="2">${xe(E.extras)}</textarea></div>
+    <div class="field"><label>Notas</label><textarea id="ofdNot" rows="2">${xe(E.notas)}</textarea></div>
+    <div class="x-btns" style="margin-top:12px;"><button id="ofdGuardar" onclick="ofdGuardar()">Guardar</button><button class="ghost" onclick="ofdCerrar()">Cancelar</button></div></div>`);
+  ofdTot(); ofdStageInit();
+}
+function ofdTot(){
+  const E = OFD.ed, el = document.getElementById('ofdTot'); if (!E || !el) return;
+  el.textContent = '· ' + OFD_PUNTOS.filter(p => E[p.k] === true).length + '/6 SÍ';
+}
+function ofdSN(k, v){
+  const E = OFD.ed; E[k] = (E[k] === v) ? null : v;
+  const w = document.querySelector(`.ofd-sn[data-k="${k}"]`);
+  if (w){ w.querySelector('.si').classList.toggle('on', E[k] === true); w.querySelector('.no').classList.toggle('on', E[k] === false); }
+  ofdTot();
+}
+async function ofdFoto(k, file){
+  const E = OFD.ed; if (!file || !E) return;
+  try{
+    const blob = await ofdPrepararFoto(file);
+    const F = E.fotos[k];
+    if (F.blob && F.url) URL.revokeObjectURL(F.url);
+    if (F.path && !F.viejo) F.viejo = F.path;
+    F.blob = blob; F.url = URL.createObjectURL(blob); F.path = null;
+    E.lin[k] = ofdLinDef(k); E.sel[k] = null;
+    ofdEdSync(); ofdEdPintar();
+  }catch(e){ toast('No se pudo cargar la foto: ' + extraerMensajeError(e), true); }
+}
+function ofdFotoQuitar(){
+  const E = OFD.ed, k = E.tab, F = E.fotos[k];
+  if (F.blob && F.url) URL.revokeObjectURL(F.url);
+  if (F.path && !F.viejo) F.viejo = F.path;
+  F.blob = null; F.url = null; F.path = null; E.lin[k] = null; E.sel[k] = null;
+  ofdEdSync(); ofdEdPintar();
+}
+function ofdRojaAdd(){
+  const E = OFD.ed, k = E.tab, L = E.lin[k]; if (!L) return;
+  const y = Math.min(0.85, 0.3 + L.r.length * 0.07);
+  L.r.push([0.35, y, 0.65, y]); E.sel[k] = L.r.length - 1; ofdEdSync(); ofdEdPintar();
+}
+function ofdRojaDel(){
+  const E = OFD.ed, k = E.tab, L = E.lin[k]; if (!L || !L.r.length){ toast('No hay líneas rojas para quitar.', true); return; }
+  const i = E.sel[k] != null && L.r[E.sel[k]] ? E.sel[k] : L.r.length - 1;
+  L.r.splice(i, 1); E.sel[k] = null; ofdEdSync(); ofdEdPintar();
+}
+function ofdStageInit(){
+  const st = document.getElementById('ofdStage'); if (!st) return;
+  const E = OFD.ed, k = E.tab, L = E.lin[k]; let drag = null;
+  const pos = h => {
+    if (h === 'bx') return [L.b.x, 0.06]; if (h === 'by') return [0.07, L.b.y]; if (h === 'bc') return [L.b.x, L.b.y];
+    const m = /^r(\d+)([ab])$/.exec(h), r = L.r[+m[1]]; return m[2] === 'a' ? [r[0], r[1]] : [r[2], r[3]];
+  };
+  const upd = () => {
+    st.querySelector('svg').outerHTML = ofdSvg(L);
+    st.querySelectorAll('[data-h]').forEach(el => { const p = pos(el.dataset.h); el.style.left = (p[0] * 100) + '%'; el.style.top = (p[1] * 100) + '%'; el.classList.toggle('sel', /^r\d/.test(el.dataset.h) && E.sel[k] === +/^r(\d+)/.exec(el.dataset.h)[1]); });
+  };
+  st.onpointerdown = ev => {
+    const h = ev.target.closest('[data-h]'); if (!h) return;
+    drag = h.dataset.h; try{ st.setPointerCapture(ev.pointerId); }catch(e){}
+    const m = /^r(\d+)/.exec(drag); if (m){ E.sel[k] = +m[1]; upd(); }
+    ev.preventDefault();
+  };
+  st.onpointermove = ev => {
+    if (!drag) return;
+    const rc = st.getBoundingClientRect(), cl = v => Math.max(0, Math.min(1, v));
+    const x = cl((ev.clientX - rc.left) / rc.width), y = cl((ev.clientY - rc.top) / rc.height);
+    if (drag === 'bx') L.b.x = x; else if (drag === 'by') L.b.y = y; else if (drag === 'bc'){ L.b.x = x; L.b.y = y; }
+    else { const m = /^r(\d+)([ab])$/.exec(drag), r = L.r[+m[1]]; if (m[2] === 'a'){ r[0] = x; r[1] = y; } else { r[2] = x; r[3] = y; } }
+    upd();
+  };
+  st.onpointerup = st.onpointercancel = () => { drag = null; };
+}
+async function ofdGuardar(){
+  const E = OFD.ed; if (!E) return; ofdEdSync();
+  if (!E.fecha){ toast('Poné la fecha.', true); return; }
+  const hayFoto = ['frontal', 'lateral'].some(k => E.fotos[k].path || E.fotos[k].blob);
+  if (hayFoto && !E.permiso){ toast('Hay fotos cargadas: marcá el Permiso de fotos o quitalas.', true); return; }
+  if (!E.nula && !E.dolor && OFD_PUNTOS.some(p => E[p.k] == null)){ toast('Calificá los 6 puntos (SÍ/NO) o marcá prueba nula / corte por dolor.', true); return; }
+  const btn = document.getElementById('ofdGuardar'); if (btn){ btn.disabled = true; btn.textContent = 'Guardando…'; }
+  const gim = PERFIL_ACTUAL.gimnasio_id, aid = OFD.aid, subidas = [];
+  try{
+    const rutas = {}, lineas = {}, r4 = v => Math.round(v * 10000) / 10000;
+    for (const k of ['frontal', 'lateral']){
+      const F = E.fotos[k];
+      if (F.blob){ const p = `${gim}/${aid}/${E.id}_${k}_${Date.now().toString(36)}.jpg`; await ofdSubirFoto(p, F.blob); subidas.push(p); rutas[k] = p; }
+      else rutas[k] = F.path || null;
+      if (rutas[k] && E.lin[k]) lineas[k] = { b: { x: r4(E.lin[k].b.x), y: r4(E.lin[k].b.y) }, r: E.lin[k].r.map(r => r.map(r4)) };
+    }
+    const pid = (document.getElementById('profActual') || {}).value || null;
+    const fila = { fecha: E.fecha, extras: E.extras.trim() || null, notas: E.notas.trim() || null, prueba_nula: E.nula, corte_dolor: E.dolor, permiso_fotos: E.permiso,
+      foto_frontal: rutas.frontal, foto_lateral: rutas.lateral, lineas };
+    OFD_PUNTOS.forEach(p => { fila[p.k] = (E.nula || E.dolor) ? (E[p.k] == null ? null : E[p.k]) : E[p.k]; });
+    let r;
+    if (E.nuevo) r = await sb('evaluaciones_funcionales', { method: 'POST', headers: { Prefer: 'return=representation' }, body: JSON.stringify(Object.assign({ id: E.id, gimnasio_id: gim, alumno_id: aid, profesor_id: pid }, fila)) });
+    else r = await sb(`evaluaciones_funcionales?id=eq.${E.id}`, { method: 'PATCH', headers: { Prefer: 'return=representation' }, body: JSON.stringify(fila) });
+    if (!r || !r.length) throw new Error('No tenés permiso para guardar esta evaluación.');
+    await ofdBorrarFotos([E.fotos.frontal.viejo, E.fotos.lateral.viejo]);
+    OFD.sel = E.id; ofdCerrar(); toast('Evaluación funcional guardada ✓');
+    if (FICHA_ALU && FICHA_ALU.tab === 'ofd') ofdFichaCarga(FICHA_ALU.a, FICHA_TOK);
+  }catch(e){
+    await ofdBorrarFotos(subidas);
+    if (btn){ btn.disabled = false; btn.textContent = 'Guardar'; }
+    toast('No se pudo guardar: ' + extraerMensajeError(e), true);
+  }
+}
+async function ofdEliminar(id){
+  const S = OFD.sets.find(s => s.id === id); if (!S) return;
+  if (!confirm('¿Eliminar el set del ' + ofdFch(S.fecha) + '? Se borran también sus fotos. No se puede deshacer.')) return;
+  try{
+    const r = await sb(`evaluaciones_funcionales?id=eq.${id}`, { method: 'DELETE', headers: { Prefer: 'return=representation' } });
+    if (!r || !r.length) throw new Error('No tenés permiso para eliminar esta evaluación.');
+    await ofdBorrarFotos([S.foto_frontal, S.foto_lateral]);
+    toast('Set eliminado'); OFD.sel = null;
+    if (FICHA_ALU && FICHA_ALU.tab === 'ofd') ofdFichaCarga(FICHA_ALU.a, FICHA_TOK);
+  }catch(e){ toast('No se pudo eliminar: ' + extraerMensajeError(e), true); }
 }
 
 // ---------- (v199) Test 5-0-5 (cambio de dirección) — solo con el Panel Deportistas prendido ----------
