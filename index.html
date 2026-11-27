@@ -6082,7 +6082,7 @@ function atlIniciarAlu(){
   atlCargarVista('aluAtletismoContenido', id || '');
 }
 
-const APP_VERSION = 219;
+const APP_VERSION = 220;
 let ES_PERSONAL = false;   // (v132) cuenta personal (gimnasios.tipo = 'personal'); se calcula en perAplicar()
 // (v96) Fecha de la última actualización: se cambia junto con APP_VERSION en cada entrega. Se muestra en la
 // pantalla de inicio y en el menú de cuenta ("v94 · actualizada el 5/10/2026").
@@ -21799,7 +21799,7 @@ function ppFilas(L){
       <div><div class="pp-lab">Última evaluación</div>${d.ev ? `<div class="pp-big">SJ ${ppFx(d.ev.sj)} · CMJ ${ppFx(d.ev.cmj)} cm</div><div class="pp-muted pp-small">IE ${ppFx(ie)} % · ${f(d.ev.f)}</div>` : '<div class="pp-empty pp-small">Sin SJ / CMJ</div>'}
         ${d.t5 ? `<div class="pp-small" style="margin-top:3px">5-0-5: ${ppFx(d.t5.l, 2)} / ${ppFx(d.t5.r, 2)} s <span class="pp-chip ${as}">${ppFx(a)} %</span></div>` : ''}
         ${!d.perfil && d.ev ? `<div class="pp-small" style="margin-top:3px; color:var(--pp-warn);">${xe(d.why)}</div>` : ''}</div>
-      <div><div class="pp-lab">Rutina</div>${d.rut ? `<div class="pp-big pp-small">${xe(d.rut.nombre)}</div>${d.rut.sem ? `<div class="pp-muted pp-small">Semana ${d.rut.sem}${d.rut.tot ? ' de ' + d.rut.tot : ''}</div>` : ''}` : '<span class="pp-chip warn">∅ Sin rutina asignada</span><div style="margin-top:6px;"><button class="pp-tg" onclick="event.stopPropagation(); ppAsignarRutina(\'' + d.id + '\')">＋ Asignar rutina</button></div>'}</div>
+      <div><div class="pp-lab">Rutina</div>${d.rut ? `<div class="pp-big pp-small">${xe(d.rut.nombre)}</div>${d.rut.sem ? `<div class="pp-muted pp-small">Semana ${d.rut.sem}${d.rut.tot ? ' de ' + d.rut.tot : ''}</div>` : ''}<div style="margin-top:6px;"><button class="pp-tg" onclick="event.stopPropagation(); ppAsignarRutina('${d.id}')">↻ Cambiar rutina</button></div>` : '<span class="pp-chip warn">∅ Sin rutina asignada</span><div style="margin-top:6px;"><button class="pp-tg" onclick="event.stopPropagation(); ppAsignarRutina(\'' + d.id + '\')">＋ Asignar rutina</button></div>'}</div>
     </div>`;
   }).join('');
 }
@@ -21872,7 +21872,7 @@ async function ppFichaCarga(a, tok){
          <div class="x-kpi"><div class="k">Asimetría</div><div class="v"><span class="pp-chip ${sa}" style="font-size:14px;">${ppFx(as5)} %</span></div><div class="x-sub">${as5 < 0.05 ? '' : 'más lento a la ' + (c5.l > c5.r ? 'izquierda' : 'derecha')}${as5p != null ? ` · antes ${ppFx(as5p)} %` : ''}</div></div></div><div id="dep505Fotos"></div>`
       : '';
     const rutHtml = rut
-      ? `<div class="x-item"><div><div class="x-nm" style="font-weight:700;">${xe(rut.nombre)}</div><div class="x-sub">${sem ? 'Semana ' + sem + (rut.duracion_semanas ? ' de ' + rut.duracion_semanas : '') : 'Activa'}</div></div><button class="ghost" onclick="fichaTab('rut')">Ver rutinas</button></div>`
+      ? `<div class="x-item"><div><div class="x-nm" style="font-weight:700;">${xe(rut.nombre)}</div><div class="x-sub">${sem ? 'Semana ' + sem + (rut.duracion_semanas ? ' de ' + rut.duracion_semanas : '') : 'Activa'}</div></div><div style="display:flex; gap:6px; flex-wrap:wrap;"><button class="ghost" onclick="fichaTab('rut')">Ver rutinas</button><button onclick="fichaAsignarRutina()">↻ Cambiar rutina</button></div></div>`
       : `<div class="x-item"><div><div class="pp-chip warn">∅ Sin rutina asignada</div></div><button onclick="fichaAsignarRutina()">Asignar rutina</button></div>`;
     body.innerHTML = `${cab}${chips}${kpis}${k5}
       <div class="x-sec">Carga (ACWR)</div><div id="depCarga" class="x-sub">Calculando…</div>
