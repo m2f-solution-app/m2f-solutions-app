@@ -5872,7 +5872,7 @@ function atlIniciarAlu(){
   atlCargarVista('aluAtletismoContenido', id || '');
 }
 
-const APP_VERSION = 213;
+const APP_VERSION = 214;
 let ES_PERSONAL = false;   // (v132) cuenta personal (gimnasios.tipo = 'personal'); se calcula en perAplicar()
 // (v96) Fecha de la última actualización: se cambia junto con APP_VERSION en cada entrega. Se muestra en la
 // pantalla de inicio y en el menú de cuenta ("v94 · actualizada el 5/10/2026").
@@ -26153,12 +26153,11 @@ function etqListaHtml(ctx, terminos, modal){
   const perf = ctx.perfil ? [ctx.perfil] : []; if (ctx.readapt) perf.push('READ');
   const okPerfil = r => perf.length && (r.perfil || []).some(k => perf.includes(k));
   const okNivel = r => !r.nivel || r.nivel === ctx.nivel;
-  const okDep = r => r.deporte && ctx.deporte && norm(r.deporte) === norm(ctx.deporte);
+  // (v214) el deporte ya no entra en la comparación (se escribe a mano y casi nunca coincide): solo perfil y nivel
   const A = [], B = [], resto = [];
   todas.forEach(r => {
     if (r.especialDe) resto.push(r);
-    else if (okPerfil(r) && okNivel(r) && okDep(r)) A.push(r);
-    else if (okPerfil(r) && okNivel(r) && !r.deporte) B.push(r);
+    else if (okPerfil(r) && okNivel(r)) A.push(r);
     else resto.push(r);
   });
   const etiqueta = r => r.especialDe ? `⭐ Especial de ${escaparHtml(r.especialDe.slice(0, 2).join(', '))}${r.especialDe.length > 2 ? '…' : ''}`
@@ -26177,8 +26176,8 @@ function etqListaHtml(ctx, terminos, modal){
     h += todas.length ? todas.slice(0, 30).map(item).join('') : '<div class="empty">No encontramos rutinas con ese nombre.</div>';
     return h;
   }
-  h += sec('✅ Coinciden en perfil, nivel y deporte', A) + sec('👍 Mismo perfil y nivel (sin deporte)', B);
-  if (!A.length && !B.length) h += terminos.length ? '<div class="empty">Ninguna rutina sugerida coincide con la búsqueda.</div>' : '<div class="empty">Todavía no hay rutinas etiquetadas para este perfil y nivel. Etiquetalas desde Rutinas → 🏷️ Etiquetas.</div>';
+  h += sec('✅ Coinciden en perfil y nivel', A);
+  if (!A.length) h += terminos.length ? '<div class="empty">Ninguna rutina sugerida coincide con la búsqueda.</div>' : '<div class="empty">Todavía no hay rutinas etiquetadas para este perfil y nivel. Etiquetalas desde Rutinas → 🏷️ Etiquetas.</div>';
   if (resto.length){
     h += `<div style="margin-top:8px;"><button type="button" class="ghost" onclick="etqVerTodas(${modal})">${ETQ.verTodas ? '▾ Ocultar las demás' : '▸ Ver todas las demás (' + resto.length + ')'}</button></div>`;
     if (ETQ.verTodas) h += resto.slice(0, 30).map(item).join('');
