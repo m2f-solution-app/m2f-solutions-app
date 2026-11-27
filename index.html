@@ -2465,6 +2465,41 @@ if ('serviceWorker' in navigator) window.addEventListener('load', function(){ tr
     .pp-qwrap{ grid-template-columns:1fr; } .pp-pcard.tall{ min-height:120px; }
     .pp-two{ grid-template-columns:1fr; } .pp-alu{ grid-template-columns:1fr; }
   }
+  /* (v208) Panel rediseñado: accesos, indicadores, perfil de trabajo + alertas (colores pastel que siguen el tema) */
+  .pp-acc{ display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:12px; margin-bottom:14px; }
+  .pp-acc button{ display:flex; align-items:center; gap:12px; padding:20px 16px; border-radius:14px; border:1px solid #2b303c; background:#1f2430; color:#fff; font:inherit; font-weight:700; font-size:15px; line-height:1.2; text-align:left; cursor:pointer; }
+  .pp-acc button svg{ width:22px; height:22px; flex:none; }
+  .pp-acc button.luz{ background:var(--panel); color:var(--text); border-color:var(--border); }
+  .pp-acc button:hover{ filter:brightness(1.18); }
+  .pp-kpis{ display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; margin-bottom:14px; }
+  .pp-kpi{ display:flex; align-items:center; gap:14px; background:var(--panel); border:1px solid var(--border); border-radius:14px; padding:16px; }
+  .pp-kpi .ic{ width:54px; height:54px; border-radius:12px; display:grid; place-items:center; flex:none; background:color-mix(in srgb,var(--c) 18%,var(--panel)); color:var(--c); }
+  .pp-kpi .ic svg{ width:26px; height:26px; }
+  .pp-kpi .v{ font-size:30px; font-weight:800; line-height:1; }
+  .pp-kpi .l{ color:var(--muted); font-size:13.5px; margin-top:4px; }
+  .pp-top{ display:grid; grid-template-columns:1.75fr 1fr; gap:14px; align-items:start; }
+  .pp-grid{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); grid-template-areas:"FM POT MAN" "FR FP MAN"; gap:12px; }
+  .pp-tile{ display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; min-height:128px; padding:14px 10px; border:0; border-radius:14px; cursor:pointer; font:inherit; text-align:center;
+    background:color-mix(in srgb,var(--c) 17%,var(--panel)); color:color-mix(in srgb,var(--c) 72%,var(--text)); transition:.15s; }
+  .pp-tile:hover{ transform:translateY(-2px); box-shadow:0 8px 22px color-mix(in srgb,var(--c) 22%,transparent); }
+  .pp-tile .tt{ display:flex; align-items:center; gap:8px; font-weight:700; font-size:15px; }
+  .pp-tile .ic{ width:18px; height:18px; display:block; } .pp-tile .ic svg{ width:18px; height:18px; }
+  .pp-tile .n{ font-size:42px; font-weight:800; line-height:1.05; }
+  .pp-tile .fl{ font-size:11.5px; opacity:.85; }
+  .pp-tile.tall{ min-height:100%; }
+  .pp-rb{ display:flex; justify-content:space-between; align-items:center; width:100%; margin-top:12px; padding:14px 16px; border:0; border-radius:14px; cursor:pointer; font:inherit; font-weight:700;
+    background:color-mix(in srgb,var(--c) 15%,var(--panel)); color:color-mix(in srgb,var(--c) 72%,var(--text)); }
+  .pp-rb b{ font-size:22px; }
+  .pp-al{ padding:9px 0; border-top:1px solid var(--border); cursor:pointer; }
+  .pp-al:first-of-type{ border-top:0; }
+  .pp-box + .pp-box{ margin-top:14px; }
+  .pp-top > .pp-box + .pp-box{ margin-top:0; }
+  @media(max-width:900px){
+    .pp-acc{ grid-template-columns:repeat(2,minmax(0,1fr)); } .pp-acc button{ padding:16px 12px; font-size:14px; }
+    .pp-kpis{ grid-template-columns:repeat(2,minmax(0,1fr)); } .pp-kpi{ padding:12px; gap:10px; } .pp-kpi .ic{ width:42px; height:42px; } .pp-kpi .v{ font-size:24px; } .pp-kpi .l{ font-size:12px; }
+    .pp-top{ grid-template-columns:1fr; }
+    .pp-grid{ grid-template-columns:repeat(2,minmax(0,1fr)); grid-template-areas:"FM POT" "FR FP" "MAN MAN"; } .pp-tile.tall{ min-height:110px; }
+  }
   #subvistaPanel > .card{ background:none; border:0; box-shadow:none; padding:0; }
 </style>
 </head>
@@ -5702,7 +5737,7 @@ function atlIniciarAlu(){
   atlCargarVista('aluAtletismoContenido', id || '');
 }
 
-const APP_VERSION = 207;
+const APP_VERSION = 208;
 let ES_PERSONAL = false;   // (v132) cuenta personal (gimnasios.tipo = 'personal'); se calcula en perAplicar()
 // (v96) Fecha de la última actualización: se cambia junto con APP_VERSION en cada entrega. Se muestra en la
 // pantalla de inicio y en el menú de cuenta ("v94 · actualizada el 5/10/2026").
@@ -19905,6 +19940,7 @@ async function crearAlumno(){
     await naCvGuardar(nuevoId); naCvReset();   // (v167)
     toast('Alumno agregado ✓' + (planId ? ' con plan asignado (falta registrar el primer pago en Finanzas).' : '.'));
     cerrarModalNuevoAlumno();
+    try{ if (typeof panelOn === 'function' && panelOn() && PP.ok) ppCarga(true); }catch(e){}   // (v208)
     await cargarPersonas();
     cargarListaAlumnos();
     // (v117) Enlace rápido: recién dado de alta, a un toque el WhatsApp de bienvenida con el link de la app.
@@ -21026,12 +21062,12 @@ function testsFuerzaModuloHtml(alumnoId){
 // Solo entran los alumnos marcados como deportistas. Cada profe ve sus propios turnos; el admin ve todos.
 // =====================================================================
 const PP_PERF = {
-  FM:   { n: 'Fuerza Máxima',          c: '#ff7a30', d: 'SJ bajo · elasticidad conservada' },
-  POT:  { n: 'Potencia',               c: '#b184ff', d: 'SJ ok · CMJ por debajo del objetivo' },
-  FR:   { n: 'Fuerza Reactiva',        c: '#3ddc84', d: 'SJ bueno · poca elasticidad' },
-  FP:   { n: 'Fuerza + Potencia',      c: '#6cb4ff', d: 'SJ bajo y elasticidad baja' },
-  MAN:  { n: 'Mantener',               c: '#2ec4b6', d: 'SJ y CMJ altos, elasticidad ok' },
-  READ: { n: 'Readaptación deportiva', c: '#ff5d5d', d: 'Tipo de alumno "Readaptación" · se cuenta aparte del perfil' },
+  FM:   { n: 'Fuerza Máxima',          c: '#4f86d6', d: 'SJ bajo · elasticidad conservada' },
+  POT:  { n: 'Potencia',               c: '#34a96c', d: 'SJ ok · CMJ por debajo del objetivo' },
+  FR:   { n: 'Fuerza Reactiva',        c: '#8d6bd6', d: 'SJ bueno · poca elasticidad' },
+  FP:   { n: 'Fuerza + Potencia',      c: '#e08a3c', d: 'SJ bajo y elasticidad baja' },
+  MAN:  { n: 'Mantener',               c: '#c9a227', d: 'SJ y CMJ altos, elasticidad ok' },
+  READ: { n: 'Readaptación deportiva', c: '#3b8fcf', d: 'Tipo de alumno "Readaptación" · se cuenta aparte del perfil' },
 };
 const PP_ICON = {
   FM:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 10v4M5.5 7.5v9M18.5 7.5v9M21.5 10v4M5.5 12h13"/></svg>',
@@ -21043,14 +21079,14 @@ const PP_ICON = {
 };
 const PP_TARJ = ['FM', 'POT', 'FR', 'FP'];
 // Cortes de ejemplo (a validar con el profe). Cada gimnasio puede cambiarlos: gimnasios.panel_cortes.
-const PP_CORTES_DEF = { ieMin: 1.10, H: { sjBajo: 31.5, sjMedio: 33.8, sjAlto: 37.3, cmjAlto: 40.3 }, M: { sjBajo: 23.5, sjMedio: 25.0, sjAlto: 27.9, cmjAlto: 30.0 } };
+const PP_CORTES_DEF = { reevDias: 90, rutSem: 5, ieMin: 1.10, H: { sjBajo: 31.5, sjMedio: 33.8, sjAlto: 37.3, cmjAlto: 40.3 }, M: { sjBajo: 23.5, sjMedio: 25.0, sjAlto: 27.9, cmjAlto: 30.0 } };
 const PP_M_SJ = 'SJ - Sin contramovimiento', PP_M_CMJ = 'CMJ - Salto vertical';
-let PP = { vista: 'panel', k: null, cargando: false, ok: false, deps: [], turnos: [], cortes: null, f: { q: '', nivel: '', alert: false, sinrut: false }, soloMios: false, propio: null, err: null, tok: 0 };
+let PP = { vista: 'panel', k: null, cargando: false, ok: false, deps: [], turnos: [], cortes: null, f: { q: '', nivel: '', alert: false, sinrut: false }, soloMios: false, propio: null, err: null, tok: 0, acwr: {}, acwrPend: 0, alertasTodas: false, tok2: 0 };
 
 function ppNum(v, def){ const n = Number(v); return isFinite(n) && n > 0 ? n : def; }
 function ppCortes(){   // defaults + lo guardado por el gimnasio (se ignora lo inválido)
   const g = PP.cortes && typeof PP.cortes === 'object' ? PP.cortes : {};
-  const out = { ieMin: ppNum(g.ieMin, PP_CORTES_DEF.ieMin), H: {}, M: {} };
+  const out = { ieMin: ppNum(g.ieMin, PP_CORTES_DEF.ieMin), reevDias: Math.round(ppNum(g.reevDias, PP_CORTES_DEF.reevDias)), rutSem: Math.round(ppNum(g.rutSem, PP_CORTES_DEF.rutSem)), H: {}, M: {} };
   ['H', 'M'].forEach(s => Object.keys(PP_CORTES_DEF[s]).forEach(k => { out[s][k] = ppNum(g[s] && g[s][k], PP_CORTES_DEF[s][k]); }));
   return out;
 }
@@ -21071,7 +21107,18 @@ function ppHoraTxt(h){ return String(h || '').slice(0, 5); }
 function ppIni(n){ return String(n || '?').split(' ').filter(Boolean).map(s => s[0]).slice(0, 2).join('').toUpperCase(); }
 function ppAsim(t5){ return t5 && t5.l > 0 && t5.r > 0 ? Math.abs(t5.l - t5.r) / Math.min(t5.l, t5.r) * 100 : null; }
 function ppEsReadapt(nombre){ return /readapt/i.test(String(nombre || '').normalize('NFD').replace(/[̀-ͯ]/g, '')); }
-function ppAlertas(d){ const a = ppAsim(d.t5); return a != null && a >= PANEL_CORTES_DEF.asim.alta ? 1 : 0; }
+function ppDiasDesde(f){ return f ? Math.floor((new Date(dateAIso(new Date()) + 'T00:00:00') - new Date(String(f).slice(0, 10) + 'T00:00:00')) / 86400000) : null; }
+function ppReeval(d){ const n = d.ev ? ppDiasDesde(d.ev.f) : null; return n != null && n > ppCortes().reevDias ? n : 0; }
+function ppRutVigente(d){ const r = d.rut; if (!r) return false; if (r.antig == null) return true; return r.antig <= ppCortes().rutSem && !(r.tot && r.antig > r.tot); }
+// motivos de alerta de un deportista (sin contar "sin evaluación", que se muestra aparte)
+function ppMotivos(d){
+  const m = [], a = ppAsim(d.t5), c = PP.acwr[d.id], n = ppReeval(d);
+  if (c && c.v != null && c.v > 1.3) m.push({ cl: c.v > 1.5 ? 'bad' : 'warn', t: `Carga ACWR ${ppFx(c.v, 2)} · ${c.v > 1.5 ? 'Riesgo' : 'Precaución'}`, w: c.v > 1.5 ? 4 : 2 });
+  if (a != null && a >= PANEL_CORTES_DEF.asim.alta) m.push({ cl: 'bad', t: `5-0-5 asimetría ${ppFx(a)} % · más lento a la ${d.t5.l > d.t5.r ? 'izquierda' : 'derecha'}`, w: 3 });
+  if (n) m.push({ cl: 'warn', t: `Reevaluar · última hace ${n} días`, w: 1 });
+  return m;
+}
+function ppAlertas(d){ return ppMotivos(d).length ? 1 : 0; }
 const ppPorPerfil = k => k === 'READ' ? PP.deps.filter(d => d.readapt) : PP.deps.filter(d => d.perfil === k);
 
 // (v203) Con el Panel Deportistas prendido, el dashboard deja de ser un ítem del menú y pasa a ser la solapa "📊 Resumen" de Finanzas.
@@ -21132,16 +21179,17 @@ async function ppCarga(silencioso){
     if (tok !== PP.tok) return;
     PP.deps = alumnos.map(a => {
       const e = ev[a.id] || null, c = ppCalcPerfil(a.sexo, e && e.sj, e && e.cmj);
-      const r = rut[a.id] || null; let sem = null;
-      if (r && r.fecha_inicio){ sem = Math.max(1, Math.floor((new Date(hoy + 'T00:00:00') - new Date(String(r.fecha_inicio).slice(0, 10) + 'T00:00:00')) / 604800000) + 1); if (r.duracion_semanas) sem = Math.min(sem, r.duracion_semanas); }
+      const r = rut[a.id] || null; let sem = null, antig = null;
+      if (r && r.fecha_inicio){ sem = Math.max(1, Math.floor((new Date(hoy + 'T00:00:00') - new Date(String(r.fecha_inicio).slice(0, 10) + 'T00:00:00')) / 604800000) + 1); antig = sem; if (r.duracion_semanas) sem = Math.min(sem, r.duracion_semanas); }
       return { id: a.id, nombre: a.nombre, sexo: a.sexo, nivel: a.nivel, deporte: a.deporte_disciplina, edad: edadDesdeFecha(a.fecha_nacimiento), readapt: ppEsReadapt(tipoNombre[a.tipo_alumno_id]),
-        ev: e, t5: t5[a.id] || null, perfil: c.k, why: c.why, rut: r ? { nombre: r.nombre, sem, tot: r.duracion_semanas || null } : null };
+        ev: e, t5: t5[a.id] || null, perfil: c.k, why: c.why, rut: r ? { nombre: r.nombre, sem, tot: r.duracion_semanas || null, antig } : null };
     });
     PP.turnos = turnos || [];
     PP.ok = true; PP.err = null;
   }catch(e){ if (tok !== PP.tok) return; PP.err = extraerMensajeError ? extraerMensajeError(e) : String(e.message || e); }
   PP.cargando = false;
   ppRender();
+  if (PP.ok) ppAcwrCargar().catch(() => {});   // (v208) carga ACWR de cada deportista en segundo plano → alertas
 }
 
 function ppRefrescoAuto(){ if (panelOn() && PP.vista === 'panel' && !PP.cargando) ppCarga(true); }   // el refresco automático no toca la lista (para no sacarle el foco al buscador)
@@ -21167,11 +21215,10 @@ function ppBannerSinEval(){
 }
 function ppTarjeta(k, tall){
   const L = ppPorPerfil(k), al = L.filter(ppAlertas).length, sr = L.filter(d => !d.rut).length, P = PP_PERF[k];
-  return `<button class="pp-pcard ${tall ? 'tall' : ''}" style="--c:${P.c}" onclick="ppAbrirPerfil('${k}')">
-    <span class="wm">${PP_ICON[k]}</span>
-    <div class="top"><span class="ico">${PP_ICON[k]}</span><div class="t">${P.n}</div></div>
-    <div class="n">${L.length}</div><div class="d">${P.d}</div>
-    <div class="pp-flags">${al ? `<span class="pp-chip bad">⚠ ${al} con alerta</span>` : '<span class="pp-chip ok">✓ sin alertas</span>'}${sr ? `<span class="pp-chip warn">${sr} sin rutina</span>` : ''}</div></button>`;
+  return `<button class="pp-tile ${tall ? 'tall' : ''}" style="--c:${P.c}; grid-area:${k}" onclick="ppAbrirPerfil('${k}')" title="${xe(P.d)}">
+    <div class="tt"><span class="ic">${PP_ICON[k]}</span>${P.n}</div>
+    <div class="n">${L.length}</div>
+    ${al || sr ? `<div class="fl">${al ? '⚠ ' + al + ' con alerta' : ''}${al && sr ? ' · ' : ''}${sr ? '∅ ' + sr + ' sin rutina' : ''}</div>` : ''}</button>`;
 }
 function ppChipAlumno(t){
   const d = PP.deps.find(x => x.id === t.alumno_id);
@@ -21214,20 +21261,104 @@ function ppRender(){
   if (!PP.deps.length && PP.vista === 'panel'){
     root.innerHTML = `<div class="pp-empty"><b>Todavía no hay deportistas.</b><br>Marcá a un alumno como deportista (Alumnos → ficha → ✏️ Editar datos, o Evaluaciones → Datos personales) y cargale el sexo y una evaluación con SJ y CMJ: va a aparecer acá en su perfil.</div>`; return;
   }
-  root.innerHTML = PP.vista === 'lista' ? ppHtmlLista() : ppHtmlPanel();
+  root.innerHTML = PP.vista === 'lista' ? ppHtmlLista() : PP.vista === 'informes' ? ppHtmlInformes() : ppHtmlPanel();
+}
+const PP_SVG = {
+  plus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.6-3.6 3.2-5.5 6.5-5.5s5.9 1.9 6.5 5.5M19 8v6M16 11h6"/></svg>',
+  clip: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V3h6v1M9 10h6M9 14h6M9 18h4"/></svg>',
+  doc: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h6"/></svg>',
+  bars: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 3v17h17M9 17v-6M14 17V8M19 17v-4"/></svg>',
+  users: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.6-3.6 3.2-5.5 6.5-5.5s5.9 1.9 6.5 5.5"/><circle cx="17.5" cy="9" r="2.5"/><path d="M17.5 14.2c2.2.2 3.6 1.7 4 4.3"/></svg>',
+  sync: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11a8 8 0 0 0-14.5-3.5L4 9M4 4v5h5M4 13a8 8 0 0 0 14.5 3.5L20 15M20 20v-5h-5"/></svg>',
+  bell: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9a6 6 0 0 1 12 0c0 6 2.5 7.5 2.5 7.5h-17S6 15 6 9zM10 20a2 2 0 0 0 4 0"/></svg>',
+};
+function ppAccOk(v, menuId){ try{ if (!modVistaOk('staff', v)) return false; const e = document.getElementById(menuId); return !(e && e.style.display === 'none'); }catch(e){ return true; } }
+function ppIr(v){ cambiarSubvista(v); }
+function ppNuevoDeportista(){
+  try{ toggleFormNuevoAlumno(); const d = document.getElementById('nuevoAlumnoDeportista'); if (d) d.value = 'si'; }
+  catch(e){ toast('No se pudo abrir el alta.', true); }
+}
+function ppAbrirInformes(){ PP.vista = 'informes'; PP.f = { q: '', nivel: '', alert: false, sinrut: false }; ppRender(); }
+function ppHtmlAcc(){
+  const admin = PERFIL_ACTUAL?.rol === 'admin', b = [];
+  if (admin) b.push(`<button onclick="ppNuevoDeportista()">${PP_SVG.plus}<span>Nuevo deportista</span></button>`);
+  if (ppAccOk('evaluaciones', 'menuEvaluaciones')) b.push(`<button onclick="ppIr('evaluaciones')">${PP_SVG.clip}<span>Evaluaciones</span></button>`);
+  if (ppAccOk('rutinas', 'menuRutinas')) b.push(`<button onclick="ppIr('rutinas')"><span style="width:22px;height:22px;flex:none;display:block;">${PP_ICON.FM}</span><span>Rutinas / Entrenamientos</span></button>`);
+  b.push(`<button onclick="ppAbrirInformes()">${PP_SVG.doc}<span>Informes</span></button>`);
+  if (ppAccOk('seguimiento', 'menuSeguimiento')) b.push(`<button class="luz" onclick="ppIr('seguimiento')">${PP_SVG.bars}<span>Planillas / Seguimiento</span></button>`);
+  return `<div class="pp-acc">${b.join('')}</div>`;
+}
+function ppKpi(ic, c, v, l){ return `<div class="pp-kpi" style="--c:${c}"><span class="ic">${ic}</span><div><div class="v">${v}</div><div class="l">${l}</div></div></div>`; }
+function ppHtmlKpis(){
+  const C = ppCortes(), D = PP.deps;
+  return `<div class="pp-kpis">${ppKpi(PP_SVG.users, '#4f86d6', D.length, 'Deportistas activos')}
+    ${ppKpi(PP_SVG.clip, '#e08a3c', D.filter(d => !d.perfil).length, 'Sin evaluación')}
+    ${ppKpi(`<span style="width:26px;height:26px;display:block;">${PP_ICON.FM}</span>`, '#34a96c', D.filter(ppRutVigente).length, `Con rutina vigente (≤ ${C.rutSem} sem.)`)}
+    ${ppKpi(PP_SVG.sync, '#c9a227', D.filter(ppReeval).length, `Para reevaluación (> ${C.reevDias} días)`)}</div>`;
+}
+// Lista de alertas (se vuelve a pintar sola cuando termina de calcularse la carga de cada deportista)
+function ppAlertasHtml(){
+  if (!PP.deps.length) return '<div class="pp-sub" style="margin:0">Cuando cargues deportistas, acá vas a ver quién necesita evaluación o tiene la carga fuera de rango.</div>';
+  const sinEv = PP.deps.filter(d => !d.perfil).length;
+  const L = PP.deps.map(d => ({ d, m: ppMotivos(d) })).filter(x => x.m.length)
+    .sort((a, b) => Math.max(...b.m.map(z => z.w)) - Math.max(...a.m.map(z => z.w)) || a.d.nombre.localeCompare(b.d.nombre));
+  const ver = PP.alertasTodas ? L : L.slice(0, 6);
+  let h = '';
+  if (sinEv) h += `<button class="pp-chip warn" style="margin-bottom:8px;" onclick="ppAbrirPerfil(null)">⚠ ${sinEv} sin evaluación · ver quiénes</button>`;
+  h += ver.map(x => `<div class="pp-al" onclick="ppFicha('${x.d.id}')"><span class="pp-dot" style="--c:${x.d.perfil ? PP_PERF[x.d.perfil].c : 'var(--border)'}"></span> <b>${xe(x.d.nombre)}</b>
+      <div style="margin-top:4px; display:flex; gap:4px; flex-wrap:wrap;">${x.m.map(z => `<span class="pp-chip ${z.cl}">${xe(z.t)}</span>`).join('')}</div></div>`).join('');
+  if (L.length > 6) h += `<button class="pp-chip" style="margin-top:8px;" onclick="PP.alertasTodas=!PP.alertasTodas; ppAlertasRender()">${PP.alertasTodas ? '▾ Ver menos' : '▸ Ver las ' + L.length + ' alertas'}</button>`;
+  if (!L.length && !sinEv) h = '<div class="pp-empty">Sin alertas por ahora ✓</div>';
+  else if (!L.length) h += '<div class="pp-small pp-muted">Sin otras alertas.</div>';
+  if (PP.acwrPend > 0) h += `<div class="pp-small pp-muted" style="margin-top:8px;">Calculando la carga de ${PP.acwrPend} deportista${PP.acwrPend === 1 ? '' : 's'}…</div>`;
+  return h;
+}
+function ppAlertasRender(){ const e = document.getElementById('ppAlertasBox'); if (e && PP.vista === 'panel') e.innerHTML = ppAlertasHtml(); }
+async function ppAcwrCargar(){
+  const tok = ++PP.tok2, ahora = Date.now();
+  const pend = PP.deps.filter(d => { const c = PP.acwr[d.id]; return !c || ahora - c.t > 600000; });
+  PP.acwrPend = pend.length; ppAlertasRender();
+  if (!pend.length) return;
+  let i = 0;
+  const worker = async () => {
+    while (i < pend.length){
+      const d = pend[i++]; if (tok !== PP.tok2) return;
+      try{ const D = await caCargar(d.id); PP.acwr[d.id] = { t: Date.now(), v: (D && D.hay && D.zona) ? D.acwr : null }; }
+      catch(e){ PP.acwr[d.id] = { t: Date.now(), v: null }; }
+      if (tok !== PP.tok2) return;
+      PP.acwrPend = Math.max(0, PP.acwrPend - 1); ppAlertasRender();
+    }
+  };
+  await Promise.all([worker(), worker(), worker()]);
 }
 function ppHtmlPanel(){
-  return `<div class="pp-sub">Tocá un perfil para ver a sus deportistas. Abajo: los turnos en curso y de las próximas 2 horas.</div>
-  ${ppBannerSinEval()}
-  <div class="pp-qwrap"><div class="pp-qleft"><div class="pp-qx"><span>◀ SJ más bajo</span><span>SJ más alto ▶</span></div>
-    <div class="pp-qy">Elasticidad ▲ alta · baja ▼</div>
-    <div class="pp-quad">${ppTarjeta('FM')}${ppTarjeta('POT')}${ppTarjeta('FP')}${ppTarjeta('FR')}</div></div>${ppTarjeta('MAN', true)}</div>
-  <button class="pp-rbar" onclick="ppAbrirPerfil('READ')"><span style="display:flex; align-items:center; gap:10px;"><span style="width:34px; height:34px; border-radius:10px; display:grid; place-items:center; color:#ff5d5d; background:color-mix(in srgb,#ff5d5d 20%,transparent);"><span style="width:20px; height:20px; display:block;">${PP_ICON.READ}</span></span>Readaptación deportiva <span class="pp-muted pp-small">· se cuenta aparte del perfil</span></span><b>${ppPorPerfil('READ').length}</b></button>
-  <p class="pp-small" style="margin:10px 2px 0"><button class="pp-chip" onclick="ppCriterios()">⚙ Cómo se define el perfil</button></p>
-  <div class="pp-two">
-    <section class="pp-box"><h2>⏱ Turnos en curso y próximas 2 horas</h2>${ppVistaTurnos()}</section>
-    <section class="pp-box"><h2>🔔 Para mirar hoy</h2>${ppVistaAlertas()}</section>
-  </div>`;
+  return `${ppHtmlAcc()}${ppHtmlKpis()}
+  <div class="pp-top">
+    <section class="pp-box"><div style="display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:12px;"><h2 style="margin:0; display:flex; align-items:center; gap:8px;"><span style="width:20px;height:20px;display:block;">${PP_ICON.MAN}</span>Perfil de trabajo actual</h2>
+      <span class="pp-small pp-muted">Deportistas activos por perfil <button class="pp-chip" onclick="ppCriterios()" title="Cómo se define el perfil y los avisos">⚙</button></span></div>
+      <div class="pp-grid">${ppTarjeta('FM')}${ppTarjeta('POT')}${ppTarjeta('MAN', true)}${ppTarjeta('FR')}${ppTarjeta('FP')}</div>
+      <button class="pp-rb" style="--c:${PP_PERF.READ.c}" onclick="ppAbrirPerfil('READ')"><span style="display:flex; align-items:center; gap:10px;"><span style="width:20px;height:20px;display:block;">${PP_ICON.READ}</span>Readaptación deportiva <span class="pp-small" style="font-weight:500; opacity:.8">· se cuenta aparte del perfil</span></span><b>${ppPorPerfil('READ').length}</b></button>
+    </section>
+    <section class="pp-box"><h2 style="display:flex; align-items:center; gap:8px;"><span style="width:20px;height:20px;display:block;">${PP_SVG.bell}</span>Alertas</h2><div id="ppAlertasBox">${ppAlertasHtml()}</div></section>
+  </div>
+  <div style="margin-top:14px;">${ppBannerSinEval()}</div>
+  <section class="pp-box"><h2>⏱ Turnos en curso y próximas 2 horas</h2>${ppVistaTurnos()}</section>`;
+}
+function ppHtmlInformes(){
+  const q = (PP.f.q || '').toLowerCase();
+  return `<button class="pp-back" onclick="ppVolver()">← Panel Deportistas</button>
+  <div style="font-size:20px; font-weight:800;">Informes</div>
+  <div class="pp-sub">Elegí al deportista para ver o descargar su reporte de evolución (PDF).</div>
+  <div class="pp-tools"><input placeholder="🔎 Buscar…" value="${xe(PP.f.q)}" oninput="PP.f.q=this.value; ppRenderInformes()"></div>
+  <div id="ppLista">${ppFilasInformes(q)}</div>`;
+}
+function ppRenderInformes(){ const e = document.getElementById('ppLista'); if (e) e.innerHTML = ppFilasInformes((PP.f.q || '').toLowerCase()); }
+function ppFilasInformes(q){
+  const L = PP.deps.filter(d => !q || d.nombre.toLowerCase().includes(q));
+  if (!L.length) return '<div class="pp-empty">Nadie coincide con la búsqueda.</div>';
+  return L.map(d => `<div class="pp-alu" style="--c:${d.perfil ? PP_PERF[d.perfil].c : 'var(--border)'}; grid-template-columns:1fr auto; align-items:center; cursor:default;">
+    <div class="pp-who"><div class="pp-av">${xe(ppIni(d.nombre))}</div><div><div class="pp-big">${xe(d.nombre)}</div><div class="pp-muted pp-small">${d.perfil ? xe(PP_PERF[d.perfil].n) : 'Sin perfil todavía'}${d.nivel ? ' · ' + xe(d.nivel) : ''}</div></div></div>
+    <button class="pp-tg" onclick="abrirReporteAlumno('${d.id}')">📄 Reporte</button></div>`).join('');
 }
 function ppListaFiltrada(){
   let L = PP.k ? ppPorPerfil(PP.k) : PP.deps.filter(d => !d.perfil);
@@ -21379,6 +21510,8 @@ function ppCriterios(){
     </ol>
     <div class="pp-crit" style="font-size:13px;">
       <div style="margin-bottom:8px;">Elasticidad mínima (CMJ/SJ): ${inp('ppC_ie', C.ieMin)}</div>
+      <div style="margin-bottom:8px;">Reevaluar si la última evaluación tiene más de <input type="number" step="1" id="ppC_ree" value="${C.reevDias}" ${dis}> días</div>
+      <div style="margin-bottom:8px;">Rutina vigente: hasta <input type="number" step="1" id="ppC_rut" value="${C.rutSem}" ${dis}> semanas desde que arrancó (y sin pasarse de su duración)</div>
       <table style="width:100%; border-collapse:collapse; text-align:left;"><tr class="muted"><th></th><th>SJ bajo</th><th>SJ medio</th><th>SJ alto</th><th>CMJ alto</th></tr>
         ${['H', 'M'].map(s => `<tr><td style="padding:4px 6px 4px 0;"><b>${s === 'H' ? 'Hombres' : 'Mujeres'}</b> (cm)</td>${['sjBajo', 'sjMedio', 'sjAlto', 'cmjAlto'].map(k => `<td>${inp('ppC_' + s + '_' + k, C[s][k])}</td>`).join('')}</tr>`).join('')}
       </table>
@@ -21393,7 +21526,9 @@ async function ppCriteriosGuardar(reset){
   let valor = null;
   if (!reset){
     const n = id => parseFloat(String(document.getElementById(id).value).replace(',', '.'));
-    valor = { ieMin: n('ppC_ie'), H: {}, M: {} };
+    valor = { ieMin: n('ppC_ie'), reevDias: Math.round(n('ppC_ree')), rutSem: Math.round(n('ppC_rut')), H: {}, M: {} };
+    if (!(valor.reevDias >= 7 && valor.reevDias <= 730)){ toast('Reevaluación: poné entre 7 y 730 días.', true); return; }
+    if (!(valor.rutSem >= 1 && valor.rutSem <= 26)){ toast('Rutina vigente: poné entre 1 y 26 semanas.', true); return; }
     for (const s of ['H', 'M']){ for (const k of ['sjBajo', 'sjMedio', 'sjAlto', 'cmjAlto']) valor[s][k] = n('ppC_' + s + '_' + k); }
     const todos = [valor.ieMin, ...['H', 'M'].flatMap(s => Object.values(valor[s]))];
     if (todos.some(v => !(v > 0) || v > 300)){ toast('Completá todos los cortes con números mayores a 0.', true); return; }
