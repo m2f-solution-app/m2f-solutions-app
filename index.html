@@ -2724,6 +2724,16 @@ if ('serviceWorker' in navigator) window.addEventListener('load', function(){ tr
           <div class="muted" style="margin-top:6px;">
             El DNI se usa para generar el acceso a la app del alumno (usuario y contraseña inicial). Es opcional al crearlo, pero necesario para darle acceso.
           </div>
+          <div id="nuevoAlumnoPanel" style="display:none; margin-top:10px;">   <!-- (v199) solo con el módulo Panel de perfiles -->
+            <div class="row">
+              <div class="field" style="min-width:150px;"><label>Sexo</label>
+                <select id="nuevoAlumnoSexo"><option value="">-- sin definir --</option><option value="H">Hombre</option><option value="M">Mujer</option><option value="Otro">Otro</option></select></div>
+              <div class="field" style="min-width:200px;"><label>🏅 Deportista (entra al Panel de perfiles)</label>
+                <select id="nuevoAlumnoDeportista"><option value="no">No</option><option value="si">Sí, es deportista</option></select></div>
+              <div class="field" style="min-width:160px;"><label>Nivel</label>
+                <select id="nuevoAlumnoNivel"><option value="">-- sin definir --</option></select></div>
+            </div>
+          </div>
 
           <div id="nuevoAlumnoPlanBloque" style="margin-top:10px;">
             <div class="row">
@@ -5556,7 +5566,7 @@ function atlIniciarAlu(){
   atlCargarVista('aluAtletismoContenido', id || '');
 }
 
-const APP_VERSION = 199;
+const APP_VERSION = 201;
 let ES_PERSONAL = false;   // (v132) cuenta personal (gimnasios.tipo = 'personal'); se calcula en perAplicar()
 // (v96) Fecha de la última actualización: se cambia junto con APP_VERSION en cada entrega. Se muestra en la
 // pantalla de inicio y en el menú de cuenta ("v94 · actualizada el 5/10/2026").
@@ -10888,7 +10898,7 @@ function sucTarjetaHtml(s, conMapa){
 // ---------- (v143) Sucursales parte 2: sede base del alumno + el alumno elige sede y ve dirección y mapa ----------
 // El alumno ve el selector solo con 2+ sedes activas. Arranca en su sede base; "Todas" muestra los turnos de todas.
 const SUCALU = { sel: undefined };   // undefined = todavía no eligió (arranca en su sede base) · '' = todas · id = esa sede
-function xselAlu(){ return XSEL_ALU + ((sucOn() && SUC.ok === true) ? ',sucursal_id' : ''); }
+function xselAlu(){ return XSEL_ALU + ((sucOn() && SUC.ok === true) ? ',sucursal_id' : '') + (panelOn() ? ',sexo,es_deportista,nivel' : ''); }   // (v200) Panel de perfiles
 function sucAluBase(alumnoId){
   const a = (typeof buscarAlumnoCache === 'function') ? buscarAlumnoCache(alumnoId) : null;
   return (a && a.sucursal_id && sucActivas().some(s => s.id === a.sucursal_id)) ? a.sucursal_id : '';
@@ -19701,6 +19711,12 @@ async function naCvGuardar(alumnoId){   // se llama justo después de crear al a
   }catch(e){ toast('El alumno se creó, pero no se pudo guardar la zona o los días: ' + extraerMensajeError(e) + ' Cargalos desde su ficha → Plan.', true); return false; }
 }
 
+function panelAltaCampos(){   // (v199) sexo / deportista / nivel del alta, solo con el Panel de perfiles prendido
+  const sexo = (document.getElementById('nuevoAlumnoSexo') || {}).value || '';
+  const dep = ((document.getElementById('nuevoAlumnoDeportista') || {}).value) === 'si';
+  const nivel = (document.getElementById('nuevoAlumnoNivel') || {}).value || '';
+  return { ...(sexo ? { sexo } : {}), ...(dep ? { es_deportista: true } : {}), ...(nivel ? { nivel } : {}) };
+}
 async function crearAlumno(){
   const nombre = document.getElementById('nuevoAlumnoNombre').value.trim();
   const dni = document.getElementById('nuevoAlumnoDni').value.trim() || null;
@@ -19727,7 +19743,8 @@ async function crearAlumno(){
         altura_cm, peso_kg, objetivo: objetivo || null, telefono, email, direccion,
         plan_id: planId, dni,
         ...(fecha_nacimiento ? { fecha_nacimiento } : {}),
-        ...(sucursal_id ? { sucursal_id } : {})
+        ...(sucursal_id ? { sucursal_id } : {}),
+        ...(panelOn() ? panelAltaCampos() : {})   // (v199)
       }])
     });
     document.getElementById('nuevoAlumnoNombre').value = '';
@@ -19954,7 +19971,15 @@ function renderListaAlumnos(){
 }
 
 // ---------- Alta: formulario corto en ventana emergente (el resto se completa desde la ficha) ----------
-function toggleFormNuevoAlumno(){ try{ sucAltaAlumnoPintar(); }catch(e){} try{ naCvReset(); naCvPintar(); if (naCvVisible()) cargarPlanesEnSelectAlumno(); }catch(e){} xAbrirModal('modalNuevoAlumno'); setTimeout(() => document.getElementById('nuevoAlumnoNombre')?.focus(), 60); }
+function nuevoAlumnoPanelPintar(){   // (v199) campos del Panel de perfiles en el alta (solo con el módulo prendido)
+  const w = document.getElementById('nuevoAlumnoPanel'); if (!w) return;
+  w.style.display = panelOn() ? '' : 'none';
+  const n = document.getElementById('nuevoAlumnoNivel');
+  if (n && n.options.length <= 1) PANEL_NIVELES.forEach(v => n.add(new Option(v, v)));
+  ['nuevoAlumnoSexo', 'nuevoAlumnoNivel'].forEach(id => { const e = document.getElementById(id); if (e) e.value = ''; });
+  const d = document.getElementById('nuevoAlumnoDeportista'); if (d) d.value = 'no';
+}
+function toggleFormNuevoAlumno(){ try{ nuevoAlumnoPanelPintar(); }catch(e){} try{ sucAltaAlumnoPintar(); }catch(e){} try{ naCvReset(); naCvPintar(); if (naCvVisible()) cargarPlanesEnSelectAlumno(); }catch(e){} xAbrirModal('modalNuevoAlumno'); setTimeout(() => document.getElementById('nuevoAlumnoNombre')?.focus(), 60); }
 function cerrarModalNuevoAlumno(){ xCerrarModal('modalNuevoAlumno'); }
 function toggleFormNuevoProfesor(){ xAbrirModal('modalNuevoProfesor'); setTimeout(() => document.getElementById('nuevoProfesorNombre')?.focus(), 60); }
 function cerrarModalNuevoProfesor(){ xCerrarModal('modalNuevoProfesor'); }
@@ -20069,6 +20094,11 @@ function xEditarAlumnoHtml(a){
       <div class="field" style="flex:1; min-width:200px;"><label>Email</label><input type="email" id="editEmail${a.id}" value="${xe(a.email || '')}"></div>
       <div class="field" style="flex:2; min-width:220px;"><label>Dirección</label><input id="editDireccion${a.id}" value="${xe(a.direccion || '')}"></div>
     </div>
+    ${panelOn() ? `<div class="row" style="margin-top:8px;">   <!-- (v200) Panel de perfiles -->
+      <div class="field" style="min-width:150px;"><label>Sexo</label><select id="editSexo${a.id}"><option value="">-- sin definir --</option>${[['H', 'Hombre'], ['M', 'Mujer'], ['Otro', 'Otro']].map(([v, t]) => `<option value="${v}" ${a.sexo === v ? 'selected' : ''}>${t}</option>`).join('')}</select></div>
+      <div class="field" style="min-width:200px;"><label>🏅 Deportista (entra al Panel de perfiles)</label><select id="editDeportista${a.id}"><option value="no" ${a.es_deportista ? '' : 'selected'}>No</option><option value="si" ${a.es_deportista ? 'selected' : ''}>Sí, es deportista</option></select></div>
+      <div class="field" style="min-width:160px;"><label>Nivel</label><select id="editNivel${a.id}"><option value="">-- sin definir --</option>${PANEL_NIVELES.map(n => `<option value="${n}" ${a.nivel === n ? 'selected' : ''}>${n}</option>`).join('')}</select></div>
+    </div>` : ''}
     <div class="row" style="margin-top:8px; align-items:flex-end;">
       <div class="field"><label>Foto de perfil (opcional)</label><input type="file" accept="image/*" onchange="subirFotoAlumno('${a.id}', this.files[0])"></div>
       <input type="hidden" id="editFotoUrl${a.id}" value="${xe(a.foto_url || '')}">
@@ -20092,6 +20122,7 @@ function xFichaDat(a){
     ['Altura', a.altura_cm ? a.altura_cm + ' cm' : '—'], ['Peso', a.peso_kg ? a.peso_kg + ' kg' : '—'], ['Objetivo', a.objetivo || '—'],
     ['Equipo · posición', [a.equipos?.nombre, a.posicion].filter(Boolean).join(' · ') || '—'], ['Categorías', cats || '—']];
   if (sucMulti()) dl.push(['Sede base', sucNombre(a.sucursal_id) || '—']);
+  if (panelOn()) dl.push(['Sexo', ({ H: 'Hombre', M: 'Mujer', Otro: 'Otro' })[a.sexo] || '—'], ['Deportista · nivel', a.es_deportista ? '🏅 Sí' + (a.nivel ? ' · ' + a.nivel : '') : 'No' + (a.nivel ? ' · ' + a.nivel : '')]);   // (v200)
   const acceso = a.perfil_id
     ? `<span class="pill ok">🔑 Tiene cuenta</span> <button class="ghost" onclick="abrirGestionAccesoAlumno('${a.id}')">🔁 Acceso</button>`
     : (a.dni ? `<button class="ghost" onclick="generarAccesoAlumno('${a.id}')">🔑 Generar acceso</button>` : `<span class="pill" title="Cargale el DNI para poder generarle acceso">🔒 Sin DNI</span>`);
@@ -20253,6 +20284,14 @@ async function guardarDatosAlumno(alumnoId){
   ).map(el => el.value);
   try{
     await sb(`alumnos?id=eq.${alumnoId}`, { method:'PATCH', headers:{Prefer:'return=minimal'}, body: JSON.stringify(body) });
+    if (panelOn() && document.getElementById(`editDeportista${alumnoId}`)){   // (v200) sexo / deportista / nivel por la función del servidor
+      await sb('rpc/alumno_marcar_deportista', { method:'POST', headers:{Prefer:'return=minimal'}, body: JSON.stringify({
+        p_alumno: alumnoId,
+        p_es_deportista: document.getElementById(`editDeportista${alumnoId}`).value === 'si',
+        p_nivel: document.getElementById(`editNivel${alumnoId}`).value || null,
+        p_sexo: document.getElementById(`editSexo${alumnoId}`).value || null,
+      }) });
+    }
     // Sincronizar categorías: se borran todas las que tenía y se vuelven a insertar las tildadas
     // (más simple que comparar diffs, y son pocas filas por alumno).
     await sb(`alumno_categorias?alumno_id=eq.${alumnoId}`, { method:'DELETE', headers:{Prefer:'return=minimal'} });
