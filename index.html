@@ -2435,6 +2435,18 @@ if ('serviceWorker' in navigator) window.addEventListener('load', function(){ tr
   .pp-chip{ display:inline-flex; align-items:center; gap:4px; border-radius:99px; padding:2px 9px; font-size:11.5px; border:1px solid var(--border); background:var(--inset); color:var(--text); white-space:nowrap; font-family:inherit; }
   .pp-chip.ok{ border-color:var(--pp-ok); } .pp-chip.warn{ border-color:var(--pp-warn); } .pp-chip.bad{ border-color:var(--pp-bad); } .pp-chip.info{ border-color:var(--pp-info); }
   button.pp-chip{ cursor:pointer; }
+  /* (v212) Menú: ⋯ Más */
+  #menuMasLista{ display:none; padding-left:10px; }
+  #menuMasWrap.abierto #menuMasLista{ display:block; }
+  #menuMasBtn .side-caret{ margin-left:auto; font-size:12px; transition:transform .15s; }
+  #menuMasWrap.abierto #menuMasBtn .side-caret{ transform:rotate(180deg); }
+  #menuProfDrawer.modo-iconos .side-caret{ display:none; }
+  #menuProfDrawer.modo-iconos #menuMasLista{ padding-left:0; }
+  .tt-mas{ display:none; position:absolute; top:calc(100% + 6px); left:0; z-index:70; background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:8px; gap:8px; box-shadow:0 12px 30px rgba(0,0,0,.4); width:max-content; max-width:92vw; }
+  #ttMasWrap.abierto .tt-mas{ display:grid; grid-template-columns:repeat(3,76px); }
+  .mo-sn{ display:inline-flex; border:1px solid var(--border); border-radius:10px; overflow:hidden; flex:none; }
+  .mo-sn button{ border:0; border-radius:0; background:var(--panel2); color:var(--muted); padding:7px 12px; font-weight:700; font-size:12.5px; margin:0; width:auto; }
+  .mo-sn button.on{ background:var(--accent); color:#1a1000; }
   /* (v211) Evaluación funcional */
   .ofd{ --pp-ok:#3ddc84; --pp-warn:#ffd23d; --pp-bad:#ff5d5d; }
   :root[data-tema="claro"] .ofd{ --pp-ok:#0f8a45; --pp-warn:#8a5a00; --pp-bad:#c0271d; }
@@ -2742,6 +2754,7 @@ if ('serviceWorker' in navigator) window.addEventListener('load', function(){ tr
     <button class="tt-btn" id="ttAlertas" onclick="cambiarSubvista('alertas')" style="display:none;" title="Alertas"><span class="tt-ico">🔔</span><span class="tt-lbl">Alertas</span></button>
     <button class="tt-btn" id="ttEjercicios" onclick="cambiarSubvista('ejercicios')" title="Ejercicios"><span class="tt-ico">🆕</span><span class="tt-lbl">Ejercicios</span></button>
     <button class="tt-btn" id="ttGimnasio" onclick="cambiarSubvista('gimnasio')" style="display:none;" title="Mi gimnasio"><span class="tt-ico">🏢</span><span class="tt-lbl">Mi gimnasio</span></button>
+    <span id="ttMasWrap" style="display:none; position:relative;"><button class="tt-btn" id="ttMasBtn" onclick="ttMasToggle(event)" title="Más"><span class="tt-ico">⋯</span><span class="tt-lbl">Más</span></button><div class="tt-mas" id="ttMasLista"></div></span>   <!-- (v212) -->
   </div>
 
   <!-- (v96) Ventana movible de clases -->
@@ -2806,6 +2819,7 @@ if ('serviceWorker' in navigator) window.addEventListener('load', function(){ tr
     <div class="side-item" id="menuAlertas" onclick="cambiarSubvista('alertas')" title="Alertas"><span class="side-ico">🔔</span><span class="side-label">Alertas</span></div>
     <div class="side-item" id="menuEjercicios" onclick="cambiarSubvista('ejercicios')" title="Ejercicios"><span class="side-ico">🆕</span><span class="side-label">Ejercicios</span></div>
     <div class="side-item" id="menuGimnasio" onclick="cambiarSubvista('gimnasio')" title="Mi gimnasio"><span class="side-ico">🏢</span><span class="side-label">Mi gimnasio</span></div>
+    <div id="menuMasWrap" style="display:none;"><div class="side-item" id="menuMasBtn" onclick="menuMasToggle()" title="Más"><span class="side-ico">⋯</span><span class="side-label">Más</span><span class="side-caret">▾</span></div><div id="menuMasLista"></div></div>   <!-- (v212) -->
     <div class="side-item" id="menuGuia" onclick="guiaAbrir()" title="Guía"><span class="side-ico">❓</span><span class="side-label">Guía</span></div>
   </div>
 
@@ -4132,6 +4146,8 @@ if ('serviceWorker' in navigator) window.addEventListener('load', function(){ tr
           </div>
         </div></details>
 
+        <details class="plegable card" data-k="gim-menu" ontoggle="if(this.open){ MENU_DRAFT = null; menuOrdenPintar(); }"><summary>Ordenar menú</summary><div class="plg-body"><div id="gimMenuBody"></div></div></details>
+
         <details class="plegable card" data-k="gim-colores"><summary>Colores de tu app</summary><div class="plg-body">
           <div class="muted" style="margin-bottom:10px;">Elegí los dos colores con los que van a ver la app tus alumnos y profesores (además de tu logo). Se aplican al instante en botones, destacados y avisos.</div>
           <div class="row">
@@ -5219,6 +5235,102 @@ async function modulosCargar(){
   try{ aplicarPermisosPorRol(); }catch(e){ modAplicarMenu(); }
 }
 
+// ---------- (v212) Menú: ítems "a la vista" y "guardados" en ⋯ Más ----------
+// El administrador elige en Mi gimnasio → Ordenar menú (vale para todo el gimnasio). Columna gimnasios.menu_guardado (SQL v212).
+// Sin SQL o sin nada guardado el menú queda exactamente como antes. Los ítems guardados se MUEVEN (mismo elemento, mismos permisos
+// y módulos) a la lista "⋯ Más"; el botón Más solo aparece si hay algún ítem guardado que la persona pueda ver.
+// Inicio, Mi gimnasio y Guía siempre quedan a la vista. La barra de abajo del celu no cambia.
+const MENU_FIJOS = ['Inicio', 'Gimnasio', 'Guia', 'MasBtn', 'MasWrap'];
+let MENU_GUARD = [], MENU_ORIG = null, MENU_OBS = null, MENU_DRAFT = null;
+async function menuGuardCargar(){
+  try{
+    const r = await sb(`gimnasios?select=menu_guardado&id=eq.${PERFIL_ACTUAL.gimnasio_id}`);
+    const v = r && r[0] && r[0].menu_guardado;
+    MENU_GUARD = Array.isArray(v) ? v.filter(k => /^[A-Za-z]+$/.test(k) && !MENU_FIJOS.includes(k)) : [];
+  }catch(e){ MENU_GUARD = []; }   // SQL todavía sin correr: todo a la vista
+  menuOrdenAplicar();
+}
+function menuOrdenAplicar(){
+  const D = document.getElementById('menuProfDrawer'), T = document.getElementById('topToolbarProf');
+  const LD = document.getElementById('menuMasLista'), LT = document.getElementById('ttMasLista');
+  const wM = document.getElementById('menuMasWrap'), wT = document.getElementById('ttMasWrap');
+  if (!D || !T || !LD || !LT || !wM || !wT) return;
+  if (!MENU_ORIG) MENU_ORIG = { m: [...D.querySelectorAll(':scope > .side-item')].map(e => e.id).filter(i => i && i !== 'menuGuia'), t: [...T.querySelectorAll(':scope > .tt-btn')].map(e => e.id) };
+  const g = new Set(MENU_GUARD);
+  MENU_ORIG.m.forEach(id => { const e = document.getElementById(id); if (!e) return; if (g.has(id.slice(4))) LD.appendChild(e); else D.insertBefore(e, wM); });
+  MENU_ORIG.t.forEach(id => { const e = document.getElementById(id); if (!e) return; if (g.has(id.slice(2))) LT.appendChild(e); else T.insertBefore(e, wT); });
+  if (!MENU_OBS){
+    let t = null; const f = () => { clearTimeout(t); t = setTimeout(menuMasRefrescar, 30); };
+    MENU_OBS = new MutationObserver(f);
+    [LD, LT].forEach(n => MENU_OBS.observe(n, { attributes: true, attributeFilter: ['style', 'class'], subtree: true, childList: true }));
+    document.addEventListener('click', ev => { if (!ev.target.closest('#ttMasWrap')) wT.classList.remove('abierto'); });
+    LT.addEventListener('click', () => wT.classList.remove('abierto'));
+  }
+  menuMasRefrescar();
+}
+function menuMasRefrescar(){
+  const LD = document.getElementById('menuMasLista'), LT = document.getElementById('ttMasLista');
+  const wM = document.getElementById('menuMasWrap'), wT = document.getElementById('ttMasWrap');
+  if (!LD || !LT || !wM || !wT) return;
+  const vis = e => getComputedStyle(e).display !== 'none', act = e => e.classList.contains('active');
+  const kd = [...LD.children], kt = [...LT.children];
+  wM.style.display = kd.some(vis) ? '' : 'none'; wT.style.display = kt.some(vis) ? '' : 'none';
+  const aD = kd.some(act), aT = kt.some(act);
+  document.getElementById('menuMasBtn').classList.toggle('active', aD); document.getElementById('ttMasBtn').classList.toggle('active', aT);
+  if (aD) wM.classList.add('abierto');
+}
+function menuMasToggle(){ document.getElementById('menuMasWrap').classList.toggle('abierto'); }
+function ttMasToggle(ev){
+  if (ev) ev.stopPropagation();
+  const w = document.getElementById('ttMasWrap'), p = document.getElementById('ttMasLista');
+  const abrir = !w.classList.contains('abierto'); w.classList.toggle('abierto', abrir);
+  if (abrir){ p.style.left = '0'; p.style.right = 'auto'; const r = p.getBoundingClientRect(); if (r.right > window.innerWidth - 8){ p.style.left = 'auto'; p.style.right = '0'; } }
+}
+// ----- Mi gimnasio → Ordenar menú (solo administrador) -----
+function menuOrdenItems(){
+  if (!MENU_ORIG) menuOrdenAplicar();
+  const salida = [];
+  (MENU_ORIG ? MENU_ORIG.m : []).forEach(id => {
+    const k = id.slice(4); if (MENU_FIJOS.includes(k)) return;
+    const e = document.getElementById(id); if (!e) return;
+    const quedo = MENU_GUARD.includes(k);
+    if (getComputedStyle(e).display === 'none' && !quedo) return;   // no disponible para este gimnasio/rol
+    const ic = e.querySelector('.side-ico'), lb = e.querySelector('.side-label');
+    salida.push({ k, ic: ic ? ic.textContent : '', n: lb ? lb.textContent : k });
+  });
+  return salida;
+}
+function menuOrdenPintar(){
+  const b = document.getElementById('gimMenuBody'); if (!b) return;
+  if (!MENU_DRAFT) MENU_DRAFT = new Set(MENU_GUARD);
+  const it = menuOrdenItems();
+  b.innerHTML = `<div class="x-sub" style="margin-bottom:10px;">Elegí qué queda <b>a la vista</b> y qué queda <b>guardado</b> dentro de <b>⋯ Más</b>. Vale para todo el gimnasio. Inicio, Mi gimnasio y Guía siempre quedan a la vista.</div>
+    ${it.map(x => `<div class="x-item" style="align-items:center;"><div style="font-weight:600;">${xe(x.ic)} ${xe(x.n)}</div>
+      <div class="mo-sn" data-k="${x.k}"><button type="button" class="${MENU_DRAFT.has(x.k) ? '' : 'on'}" onclick="menuOrdenSet('${x.k}',false)">A la vista</button><button type="button" class="${MENU_DRAFT.has(x.k) ? 'on' : ''}" onclick="menuOrdenSet('${x.k}',true)">Guardado</button></div></div>`).join('')}
+    <div class="x-btns" style="margin-top:10px;"><button id="menuOrdenGuardar" onclick="menuOrdenGuardar()">Guardar menú</button><button class="ghost" onclick="menuOrdenTodo()">Todo a la vista</button></div>`;
+}
+function menuOrdenSet(k, guardar){
+  if (!MENU_DRAFT) MENU_DRAFT = new Set(MENU_GUARD);
+  if (guardar) MENU_DRAFT.add(k); else MENU_DRAFT.delete(k);
+  const w = document.querySelector(`.mo-sn[data-k="${k}"]`);
+  if (w){ const [a, g] = w.querySelectorAll('button'); a.classList.toggle('on', !guardar); g.classList.toggle('on', !!guardar); }
+}
+function menuOrdenTodo(){ MENU_DRAFT = new Set(); menuOrdenPintar(); }
+async function menuOrdenGuardar(){
+  const arr = [...(MENU_DRAFT || [])].filter(k => /^[A-Za-z]+$/.test(k) && !MENU_FIJOS.includes(k));
+  const btn = document.getElementById('menuOrdenGuardar'); if (btn){ btn.disabled = true; btn.textContent = 'Guardando…'; }
+  try{
+    const r = await sb(`gimnasios?id=eq.${PERFIL_ACTUAL.gimnasio_id}`, { method: 'PATCH', headers: { Prefer: 'return=representation' }, body: JSON.stringify({ menu_guardado: arr.length ? arr : null }) });
+    if (!r || !r.length) throw new Error('No tenés permiso para cambiar el menú.');
+    MENU_GUARD = arr; MENU_DRAFT = null; menuOrdenAplicar(); menuOrdenPintar();
+    toast(arr.length ? 'Menú guardado ✓ Lo guardado quedó dentro de ⋯ Más.' : 'Menú guardado ✓ Todo a la vista.');
+  }catch(e){
+    const m = extraerMensajeError(e);
+    toast(/menu_guardado|column|schema cache/i.test(m) ? 'Falta correr v212-menu-guardado.sql en Supabase.' : 'No se pudo guardar el menú: ' + m, true);
+    if (btn){ btn.disabled = false; btn.textContent = 'Guardar menú'; }
+  }
+}
+
 // ---------- (v206) Pantalla al entrar, por gimnasio (la elige Martin en 🧩 Accesos; vacío = Inicio como siempre) ----------
 // SQL: v206-pantalla-inicial.sql. Si la columna no existe todavía, o la pantalla no está disponible para el rol/módulo, entra a Inicio.
 let MODULOS_P = null, PANT_INICIAL = null;
@@ -5760,7 +5872,7 @@ function atlIniciarAlu(){
   atlCargarVista('aluAtletismoContenido', id || '');
 }
 
-const APP_VERSION = 211;
+const APP_VERSION = 212;
 let ES_PERSONAL = false;   // (v132) cuenta personal (gimnasios.tipo = 'personal'); se calcula en perAplicar()
 // (v96) Fecha de la última actualización: se cambia junto con APP_VERSION en cada entrega. Se muestra en la
 // pantalla de inicio y en el menú de cuenta ("v94 · actualizada el 5/10/2026").
@@ -7118,7 +7230,7 @@ async function entrarComoStaff(){
   mostrarLinkCodigosSiCorresponde();
   registrarActividadGimnasio();
   sincronizarTabsRol();
-  await Promise.all([cargarPersonas(), cargarGimnasioActual(), cargarCategoriasYEquipos(), pantInicialCargar()]);
+  await Promise.all([cargarPersonas(), cargarGimnasioActual(), cargarCategoriasYEquipos(), pantInicialCargar(), menuGuardCargar()]);   // (v212) menuGuardCargar
   cambiarSubvista(await pantInicialDestino());   // (v206) 'inicio' salvo que el gimnasio haya elegido otra pantalla // (v81) lo primero que ve el staff al entrar es su Inicio (agenda de hoy, Wellness, alertas), no el armador
   // (v61) El catálogo de ejercicios (~430 kB) ya no frena la entrada: solo se usa al armar/buscar rutinas.
   cargarCatalogoEjercicios().catch(e => console.error('No se pudo cargar el catálogo de ejercicios:', e));
