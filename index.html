@@ -5161,6 +5161,31 @@ async function modulosCargar(){
   try{ aplicarPermisosPorRol(); }catch(e){ modAplicarMenu(); }
 }
 
+// ---------- (v206) Pantalla al entrar, por gimnasio (la elige Martin en 🧩 Accesos; vacío = Inicio como siempre) ----------
+// SQL: v206-pantalla-inicial.sql. Si la columna no existe todavía, o la pantalla no está disponible para el rol/módulo, entra a Inicio.
+let MODULOS_P = null, PANT_INICIAL = null;
+const PANT_OPCIONES = [['inicio', '🏠 Inicio (por defecto)'], ['panel', '🎯 Panel Deportistas'], ['agenda', '📋 Agenda'], ['clases', '📆 Clases'], ['alumnos', '👤 Alumnos'], ['evaluaciones', '📏 Evaluaciones'], ['seguimiento', '📈 Seguimiento'], ['cobranzas', '💰 Finanzas'], ['alertas', '🔔 Alertas']];
+const PANT_MENU = { panel: 'menuPanel', agenda: 'menuAgenda', clases: 'menuClases', alumnos: 'menuAlumnos', evaluaciones: 'menuEvaluaciones', seguimiento: 'menuSeguimiento', cobranzas: 'menuCobranzas', alertas: 'menuAlertas' };
+async function pantInicialCargar(){
+  PANT_INICIAL = null;
+  try{
+    const r = await sb(`gimnasios?select=pantalla_inicial&id=eq.${PERFIL_ACTUAL.gimnasio_id}`);
+    const v = r && r[0] && r[0].pantalla_inicial;
+    PANT_INICIAL = (v && PANT_MENU[v]) ? v : null;
+  }catch(e){ PANT_INICIAL = null; }   // SQL todavía sin correr
+}
+async function pantInicialDestino(){
+  if (!PANT_INICIAL) return 'inicio';
+  try{
+    if (MODULOS_P) await MODULOS_P;
+    const d = PANT_INICIAL, el = document.getElementById(PANT_MENU[d]);
+    if (!el || el.style.display === 'none') return 'inicio';          // no la ve este rol / está apagada
+    if (!modVistaOk('staff', d)) return 'inicio';
+    if (typeof sucAdminSede === 'function' && sucAdminSede() && typeof SEDE_ADMIN_VISTAS_NO !== 'undefined' && SEDE_ADMIN_VISTAS_NO.includes(d)) return 'inicio';
+    return d;
+  }catch(e){ return 'inicio'; }
+}
+
 // ----- Panel de Martin: modal "🧩 Accesos" por gimnasio -----
 function modEfectivoGim(gimId, c){
   if (c.nucleo) return true;
@@ -5191,10 +5216,21 @@ function modAccesosAbrir(gimId){
   if (!f || !MOD_CAT || !MOD_CAT.length){ toast('Primero corré accesos-modulos.sql en Supabase.', true); return; }
   const vals = {};
   MOD_CAT.filter(c => !c.nucleo).forEach(c => { vals[c.modulo] = modEfectivoGim(gimId, c); });
-  MOD_EDIT = { gimId, nombre: f.nombre, vals };
+  MOD_EDIT = { gimId, nombre: f.nombre, vals, pant: undefined, pantOrig: undefined, pantOk: null };
   modAccesosPintar();
   document.getElementById('modalAccesos').classList.add('show');
+  modAccesosPantCargar(gimId);   // (v206)
 }
+async function modAccesosPantCargar(gimId){
+  try{
+    const r = await sb(`gimnasios?select=pantalla_inicial&id=eq.${gimId}`);
+    if (!MOD_EDIT || MOD_EDIT.gimId !== gimId) return;
+    const v = (r && r[0] && r[0].pantalla_inicial) || '';
+    MOD_EDIT.pant = MOD_EDIT.pantOrig = v; MOD_EDIT.pantOk = true;
+  }catch(e){ if (!MOD_EDIT || MOD_EDIT.gimId !== gimId) return; MOD_EDIT.pantOk = false; }
+  modAccesosPintar();
+}
+function modAccesosPant(v){ if (MOD_EDIT){ MOD_EDIT.pant = v; } }
 function modAccesosCerrar(){ const m = document.getElementById('modalAccesos'); if (m) m.classList.remove('show'); MOD_EDIT = null; }
 function modAccesosPreset(k){
   if (!MOD_EDIT) return;
@@ -5222,15 +5258,29 @@ function modAccesosPintar(){
     <div class="x-sub" style="margin-bottom:10px;">Lo que apagues deja de verse en la app (staff y alumnos) y se saca de la Guía. Los datos no se borran: al volver a activarlo, reaparece todo.</div>
     <div class="mo-presets">${Object.keys(MOD_PRESETS).map(k => `<button type="button" class="ghost${preset === MOD_PRESETS[k].n ? ' active' : ''}" onclick="modAccesosPreset('${k}')">${MOD_PRESETS[k].ico} ${MOD_PRESETS[k].n}</button>`).join('')}<span class="muted" style="font-size:12px;">${preset ? 'Plan: ' + escaparHtml(preset) : 'Personalizado'} · ${n} módulos opcionales</span></div>
     <div class="mo-lista">${filas}</div>
+    ${modAccesosPantHtml(v)}
     <div class="x-btns"><button class="ghost" onclick="modAccesosCerrar()">Cancelar</button><button id="btnModAccesosGuardar" onclick="modAccesosGuardar()">Guardar accesos</button></div>`;
+}
+function modAccesosPantHtml(v){
+  const E = MOD_EDIT;
+  const t = '<div class="x-sec">Pantalla al entrar</div>';
+  if (E.pantOk === null) return `${t}<div class="x-sub">Cargando…</div>`;
+  if (E.pantOk === false) return `${t}<div class="x-sub">Para elegirla, corré <b>v206-pantalla-inicial.sql</b> en Supabase.</div>`;
+  const opts = PANT_OPCIONES.map(([k, n]) => {
+    const mod = k === 'inicio' ? null : MOD_VISTAS[k], off = mod && v[mod] === false;
+    return `<option value="${k === 'inicio' ? '' : k}" ${(E.pant || '') === (k === 'inicio' ? '' : k) ? 'selected' : ''} ${off ? 'disabled' : ''}>${n}${off ? ' (módulo apagado)' : ''}</option>`;
+  }).join('');
+  return `${t}<select onchange="modAccesosPant(this.value)" style="max-width:100%;">${opts}</select><div class="x-sub" style="margin-top:4px;">Es lo primero que ve el staff (admin y profesores) al entrar. Si alguien no tiene acceso a esa pantalla, entra a Inicio.</div>`;
 }
 async function modAccesosGuardar(){
   if (!MOD_EDIT) return;
   const { gimId } = MOD_EDIT, body = {};
+  const pantCambio = MOD_EDIT.pantOk === true && (MOD_EDIT.pant || '') !== (MOD_EDIT.pantOrig || ''), pantNueva = MOD_EDIT.pant || null;
   MOD_CAT.filter(c => !c.nucleo).forEach(c => { body[c.modulo] = !!MOD_EDIT.vals[c.modulo]; });
   const btn = document.getElementById('btnModAccesosGuardar'); if (btn){ btn.disabled = true; btn.textContent = 'Guardando...'; }
   try{
     await sb('rpc/configurar_modulos_gimnasio', { method: 'POST', body: JSON.stringify({ p_gimnasio_id: gimId, p_modulos: body }) });
+    if (pantCambio) await sb('rpc/configurar_pantalla_inicial', { method: 'POST', body: JSON.stringify({ p_gimnasio_id: gimId, p_pantalla: pantNueva }) });   // (v206)
     toast('Accesos guardados ✓');
     modAccesosCerrar();
     await cargarGimnasiosAdmin();
@@ -5652,7 +5702,7 @@ function atlIniciarAlu(){
   atlCargarVista('aluAtletismoContenido', id || '');
 }
 
-const APP_VERSION = 205;
+const APP_VERSION = 206;
 let ES_PERSONAL = false;   // (v132) cuenta personal (gimnasios.tipo = 'personal'); se calcula en perAplicar()
 // (v96) Fecha de la última actualización: se cambia junto con APP_VERSION en cada entrega. Se muestra en la
 // pantalla de inicio y en el menú de cuenta ("v94 · actualizada el 5/10/2026").
@@ -7010,8 +7060,8 @@ async function entrarComoStaff(){
   mostrarLinkCodigosSiCorresponde();
   registrarActividadGimnasio();
   sincronizarTabsRol();
-  await Promise.all([cargarPersonas(), cargarGimnasioActual(), cargarCategoriasYEquipos()]);
-  cambiarSubvista('inicio'); // (v81) lo primero que ve el staff al entrar es su Inicio (agenda de hoy, Wellness, alertas), no el armador
+  await Promise.all([cargarPersonas(), cargarGimnasioActual(), cargarCategoriasYEquipos(), pantInicialCargar()]);
+  cambiarSubvista(await pantInicialDestino());   // (v206) 'inicio' salvo que el gimnasio haya elegido otra pantalla // (v81) lo primero que ve el staff al entrar es su Inicio (agenda de hoy, Wellness, alertas), no el armador
   // (v61) El catálogo de ejercicios (~430 kB) ya no frena la entrada: solo se usa al armar/buscar rutinas.
   cargarCatalogoEjercicios().catch(e => console.error('No se pudo cargar el catálogo de ejercicios:', e));
   if (PERFIL_ACTUAL.rol === 'admin') revisarNotificacionesStaff();
@@ -15183,7 +15233,7 @@ async function cargarGimnasioActual(){
   clCfgCargar().catch(() => {});   // (v103) reglas de reservas de clases (Mi gimnasio)
   rpxCfgCargar().catch(() => {});   // (v111) link público de reservas (Mi gimnasio)
   salaCargar().catch(() => {});   // (v105) turnos por profesor o por horario
-  modulosCargar().catch(() => {});   // (v99) qué secciones tiene este gimnasio
+  MODULOS_P = modulosCargar().catch(() => {});   // (v99) qué secciones tiene este gimnasio
   prCargar().catch(() => {});   // (v128) ¿los profesores pueden usar Recepción?
   atlRefrescar().catch(() => {});   // (v98) módulo Atletismo: muestra u oculta su menú
 }
