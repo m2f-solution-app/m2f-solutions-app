@@ -3333,6 +3333,7 @@ if ('serviceWorker' in navigator) window.addEventListener('load', function(){ tr
         <div id="nrRes2" class="nr-res" style="display:none;"></div>
         <div class="card" id="nrPaso2" style="display:none;">
           <h2 style="margin-top:0">2 · ¿Cómo se repite?</h2>
+          <div id="nrPaso2Plant" class="muted" style="display:none; font-size:12.5px; margin:-4px 0 10px;">Es para cuando le asignes esta plantilla a un alumno. La plantilla en sí no lleva fechas y se sigue eligiendo desde la Agenda ("Cambiar por otra sesión").</div>
           <div class="nr-opts two">
             <div class="nr-opt" id="nrOptM-fecha_fija" onclick="nrSetModo('fecha_fija')"><div class="ic">📅</div><div class="t">Fecha fija</div><div class="d">Cada día va con su fecha del calendario. Ej: la semana del 12 al 18.</div></div>
             <div class="nr-opt" id="nrOptM-rotativa" onclick="nrSetModo('rotativa')"><div class="ic">🔁</div><div class="t">Mensual</div><div class="d">Los días se repiten solos (A → B → C → A), sin fechas. Permite progresión semanal.</div></div>
@@ -5392,6 +5393,60 @@ async function depGuardar(){
   }
 }
 
+// ---------- (v216) Plantilla: se elige cómo se repite y se asigna directo a un alumno ----------
+// rutinas.plantilla_repeticion ('fecha_fija' | 'rotativa' | null = preguntar). modo_dias sigue siendo 'plantilla'.
+let PLANT_REP_OK = null;   // null = todavía no se sabe; false = falta correr v216-plantilla-repeticion.sql
+let PP_PLANT = null;
+async function ppAsignarPlantilla(r){
+  const id = PP_ASIG; if (!id) return;
+  let dias = [];
+  try{ dias = await sb(`rutina_dias?select=nombre_dia,orden&rutina_id=eq.${r.id}&order=orden.asc`); }catch(e){ toast('No se pudo leer la plantilla: ' + extraerMensajeError(e), true); return; }
+  PP_PLANT = { r, rep: (r.plantilla_repeticion === 'fecha_fija' || r.plantilla_repeticion === 'rotativa') ? r.plantilla_repeticion : null, dias: dias || [], fechas: [], ini: '' };
+  ppPlantPintar();
+}
+function ppPlantPintar(){
+  const P = PP_PLANT, id = PP_ASIG; if (!P || !id) return;
+  const ctx = ETQ.ctx[id], nom = ctx && ctx.a ? ctx.a.nombre : 'el alumno';
+  const box = modalSeguridadAbrir(`<div style="display:flex; justify-content:space-between; align-items:center; gap:8px;"><h3 style="margin:0;">🧩 ${escaparHtml(P.r.nombre)}</h3><button type="button" class="x-cerrar est" aria-label="Cerrar" title="Cerrar" onclick="modalSeguridadCerrar()">✕</button></div>
+    <div class="muted" style="font-size:12px; margin:6px 0 10px;">Se le asigna a <b>${escaparHtml(nom)}</b> como una copia propia (la plantilla no cambia). ${P.dias.length} día${P.dias.length === 1 ? '' : 's'}.</div>
+    <div id="ppPlBody"></div>`);
+  box.style.maxWidth = '480px';
+  const b = document.getElementById('ppPlBody');
+  const opt = (m, ic, t, d) => `<button type="button" class="ghost" style="width:100%; text-align:left; display:block; margin-bottom:6px;${P.rep === m ? ' border-color:var(--accent);' : ''}" onclick="ppPlantRep('${m}')"><b>${ic} ${t}</b><div class="muted" style="font-size:11.5px;">${d}</div></button>`;
+  let h = '';
+  if (!P.rep){
+    h += `<div style="font-weight:700; margin-bottom:6px;">¿Cómo se repite?</div>`
+      + opt('rotativa', '🔁', 'Mensual', 'Los días se repiten solos (A → B → A…), sin fechas.')
+      + opt('fecha_fija', '📅', 'Fecha fija', 'Le ponés la fecha a cada día.');
+  } else {
+    h += `<div class="x-sub" style="margin-bottom:8px;">${P.rep === 'rotativa' ? '🔁 Mensual: los días se repiten solos, sin fechas.' : '📅 Fecha fija: elegí la fecha de cada día.'} <a href="#" onclick="event.preventDefault(); ppPlantRep(null)">Cambiar</a></div>`;
+    if (P.rep === 'fecha_fija'){
+      h += P.dias.map((d, i) => `<div class="field" style="margin-bottom:6px;"><label>${escaparHtml(d.nombre_dia || 'Día ' + (i + 1))}</label><input type="date" value="${escaparHtml(P.fechas[i] || '')}" onchange="PP_PLANT.fechas[${i}]=this.value"></div>`).join('');
+    } else {
+      h += `<div class="field"><label>Empieza el (opcional)</label><input type="date" value="${escaparHtml(P.ini || '')}" onchange="PP_PLANT.ini=this.value"><div class="x-sub">Vacío = arranca apenas se asigna, en el día 1.</div></div>`;
+    }
+    h += `<div class="x-btns" style="margin-top:12px;"><button onclick="ppPlantAsignar(true)">✓ Asignar${ctx && ctx.a ? ' a ' + escaparHtml(nom) : ''}</button><button class="ghost" onclick="ppPlantAsignar(false)">Abrir para ajustar</button></div>`;
+  }
+  h += `<div style="margin-top:8px;"><button type="button" class="ghost" onclick="PP_PLANT=null; ppAsignarPintar_volver()">← Volver a la lista</button></div>`;
+  b.innerHTML = h;
+}
+function ppPlantRep(m){ if (!PP_PLANT) return; PP_PLANT.rep = m; ppPlantPintar(); }
+function ppAsignarPintar_volver(){ const id = PP_ASIG; if (id) ppAsignarRutina(id); }
+async function ppPlantAsignar(directo){
+  const P = PP_PLANT, id = PP_ASIG; if (!P || !id || !P.rep) return;
+  if (directo && P.rep === 'fecha_fija' && P.dias.some((d, i) => !P.fechas[i])){ toast('Elegí la fecha de cada día.', true); return; }
+  PP_ASIG = null; PP_PLANT = null; modalSeguridadCerrar();
+  irAAsignarEspecialDesdeModal(id); volverBarraPintar();
+  const ok = await espCargarDesdeRutina(P.r.id, { sinScroll: true, modo: P.rep });
+  if (!ok) return;
+  const cons = CONS['esp'];
+  if (P.rep === 'fecha_fija'){ Object.keys(cons.estado.dias).forEach((k, i) => { if (P.fechas[i]) cons.estado.dias[k].fecha = P.fechas[i]; }); cons.render(); }
+  else if (P.ini){ cons.estado.fechaInicio = P.ini; const fi = document.getElementById('espFechaInicio'); if (fi) fi.value = P.ini; }
+  nrRender();
+  if (directo) await guardarRutinaEspecial();
+  else document.getElementById('diasContainerEsp')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
 // ---------- (v215) Volver a la ficha del alumno después de asignarle una rutina ----------
 // Al tocar "Asignar rutina" en la ficha se recuerda el alumno, la solapa y la pantalla donde estabas; al guardar la rutina se vuelve ahí.
 let VOLVER_FICHA = null;
@@ -5967,7 +6022,7 @@ function atlIniciarAlu(){
   atlCargarVista('aluAtletismoContenido', id || '');
 }
 
-const APP_VERSION = 215;
+const APP_VERSION = 216;
 let ES_PERSONAL = false;   // (v132) cuenta personal (gimnasios.tipo = 'personal'); se calcula en perAplicar()
 // (v96) Fecha de la última actualización: se cambia junto con APP_VERSION en cada entrega. Se muestra en la
 // pantalla de inicio y en el menú de cuenta ("v94 · actualizada el 5/10/2026").
@@ -25757,7 +25812,7 @@ function agregarDiaEsp(){ CONS['esp'].agregarDia(); }
 // Reusa por completo el motor de Especiales (CONS['esp'], espModoDestino/espAlumno/espEquipo/espModoDias,
 // espCargarDesdeRutina, copiar rutina, turno→rutina nueva): el asistente solo ordena la pantalla en pasos
 // y suma los destinos "Un tipo de entrenamiento" y "Plantilla" (que antes vivían en el Armador).
-const NR = { paraTocado:false, modoTocado:false, edit:0, baseTocada:false, baseTxt:'', autoUsado:null };
+const NR = { paraTocado:false, modoTocado:false, edit:0, baseTocada:false, baseTxt:'', autoUsado:null, plantRep:null };   // (v216) plantRep: cómo se repite la plantilla al asignarla
 const nrEl = id => document.getElementById(id);
 const nrValDestino = () => (nrEl('espModoDestino') || {}).value || 'alumno';
 
@@ -25784,7 +25839,7 @@ function nrCantDias(){ return Object.keys(CONS['esp'].estado.dias).length; }
 function nrCantEj(){ return Object.values(CONS['esp'].estado.dias).reduce((a, d) => a + d.ejercicios.length, 0); }
 function nrBaseOk(){ return NR.baseTocada || nrCantDias() > 0; }   // (v161) paso 3: ya eligió desde dónde empieza
 function nrBaseTxt(){ return NR.baseTxt || (nrCantDias() ? '📝 Lo que ya cargaste' : '✏️ Desde cero'); }
-function nrModoOk(){ const p = nrPara(); return !!p && nrPaso1Ok() && (p === 'plantilla' || NR.modoTocado || nrCantDias() > 0); }
+function nrModoOk(){ const p = nrPara(); return !!p && nrPaso1Ok() && (p === 'plantilla' ? !!NR.plantRep : (NR.modoTocado || nrCantDias() > 0)); }   // (v216) la plantilla también elige cómo se repite
 
 function nrDestinoTxt(){
   const d = nrValDestino();
@@ -25795,7 +25850,8 @@ function nrDestinoTxt(){
 }
 function nrModoTxt(){
   const m = CONS['esp'].estado.modoDias;
-  return m === 'rotativa' ? '🔁 Mensual' : m === 'plantilla' ? '🧩 Plantilla' : '📅 Fecha fija';
+  if (m === 'plantilla') return '🧩 Plantilla' + (NR.plantRep === 'rotativa' ? ' · 🔁 mensual' : NR.plantRep === 'fecha_fija' ? ' · 📅 fecha fija' : '');
+  return m === 'rotativa' ? '🔁 Mensual' : '📅 Fecha fija';
 }
 function nrExplicaTxt(){
   const d = nrValDestino(), rot = CONS['esp'].estado.modoDias === 'rotativa';
@@ -25827,14 +25883,15 @@ function nrRender(){
   r1.style.display = abre1 ? 'none' : '';
   r1.innerHTML = `<div class="l"><b>1 · Para quién:</b><span class="pill">${escaparHtml(nrDestinoTxt())}</span></div><button type="button" class="ghost" style="padding:4px 12px; font-size:12px;" onclick="nrCambiar(1)">Cambiar</button>`;
   nrEl('nrMantener').style.display = (abre1 && ok1 && modoOk) ? '' : 'none';
-  // paso 2 (no aplica a plantilla)
-  const hay2 = ok1 && !plant;
+  // paso 2 (v216: también en la plantilla: es cómo se repite cuando se la asignes a un alumno)
+  const hay2 = ok1;
+  const pp2 = nrEl('nrPaso2Plant'); if (pp2) pp2.style.display = plant ? '' : 'none';
   const abre2 = hay2 && (!modoOk || NR.edit === 2);
   nrEl('nrPaso2').style.display = abre2 ? '' : 'none';
   const r2 = nrEl('nrRes2');
   r2.style.display = (hay2 && !abre2) ? '' : 'none';
   r2.innerHTML = `<div class="l"><b>2 · Cómo se repite:</b><span class="pill">${nrModoTxt()}</span></div><button type="button" class="ghost" style="padding:4px 12px; font-size:12px;" onclick="nrCambiar(2)">Cambiar</button>`;
-  ['fecha_fija', 'rotativa'].forEach(m => nrEl('nrOptM-' + m).classList.toggle('on', modoOk && modoMotor === m));
+  ['fecha_fija', 'rotativa'].forEach(m => nrEl('nrOptM-' + m).classList.toggle('on', modoOk && (plant ? NR.plantRep === m : modoMotor === m)));
   nrEl('nrVolver2').style.display = nrCantDias() ? '' : 'none';
   // (v161) paso 3 = desde dónde empieza; paso 4 = días y ejercicios (solo cuando ya eligió); ajustes del ciclo mensual al final
   const ver34 = ok1 && modoOk;
@@ -25879,7 +25936,7 @@ function nrIrPaso(i){
 function nrAtras(){
   if (NR.edit === 2) return nrCambiar(1);
   if (NR.edit === 1) return;
-  if (NR.edit === 3) return nrPara() === 'plantilla' ? nrCambiar(1) : nrCambiar(2);
+  if (NR.edit === 3) return nrCambiar(2);
   if (nrBaseOk() && nrModoOk()) return nrCambiar(3);
   if (nrModoOk() && nrPara() !== 'plantilla') return nrCambiar(2);
   if (nrPara()) return nrCambiar(1);
@@ -25892,6 +25949,7 @@ function nrSetPara(k){
   nrRender();
 }
 function nrSetModo(m){
+  if (nrPara() === 'plantilla'){ NR.plantRep = m; NR.modoTocado = true; NR.edit = 0; nrRender(); return; }   // (v216) la plantilla sigue siendo plantilla: solo se guarda cómo se repite
   NR.modoTocado = true; NR.edit = 0;
   nrEl('espModoDias').value = m;
   CONS['esp'].setModoDias(m);
@@ -25899,7 +25957,7 @@ function nrSetModo(m){
 }
 // después de guardar: alumno se queda (para ver sus rutinas); el resto vuelve a empezar
 function nrDespuesDeGuardar(destino){
-  NR.modoTocado = false; NR.edit = 0; NR.baseTocada = false; NR.baseTxt = ''; NR.autoUsado = null;
+  NR.modoTocado = false; NR.edit = 0; NR.baseTocada = false; NR.baseTxt = ''; NR.autoUsado = null; NR.plantRep = null;
   const inp = nrEl('espNombreRutina'); if (inp) delete inp.dataset.nrTocado;
   if (destino !== 'alumno'){
     NR.paraTocado = false;
@@ -26229,6 +26287,7 @@ async function ppAsignarPintar(){
 }
 function ppAsignarElegir(rutinaId){
   const id = PP_ASIG; if (!id) return;
+  { const rp = (ESP_BASE_LISTA || []).find(x => x.id === rutinaId); if (rp && rp.modo_dias === 'plantilla'){ ppAsignarPlantilla(rp); return; } }   // (v216) plantilla: cómo se repite + asignar directo
   PP_ASIG = null; modalSeguridadCerrar();
   irAAsignarEspecialDesdeModal(id);   // abre Nueva rutina con el deportista elegido
   volverBarraPintar();                // (v215)
@@ -26296,8 +26355,14 @@ async function espBaseAsegurarLista(){
   return ESP_BASE_CARGANDO = (async () => {
   try{
     const filtroGym = PERFIL_ACTUAL ? `&gimnasio_id=eq.${PERFIL_ACTUAL.gimnasio_id}` : '';
+    const selRut = rep => `rutinas?select=id,nombre,modo_dias,es_ajuste,tipos_alumno(nombre),rutina_dias(id)${panelOn() ? ',perfil,nivel,deporte' : ''}${rep ? ',plantilla_repeticion' : ''}&activa=eq.true${filtroGym}&order=nombre.asc`;
+    const pedirRut = async () => {   // (v216) si todavía no se corrió v216-plantilla-repeticion.sql, se pide sin esa columna
+      if (PLANT_REP_OK === false) return sb(selRut(false));
+      try{ const r = await sb(selRut(true)); PLANT_REP_OK = true; return r; }
+      catch(e){ if (/plantilla_repeticion|column|schema cache/i.test(String(e && e.message || e))){ PLANT_REP_OK = false; return sb(selRut(false)); } throw e; }
+    };
     const [rutinas, asig] = await Promise.all([
-      sb(`rutinas?select=id,nombre,modo_dias,es_ajuste,tipos_alumno(nombre),rutina_dias(id)${panelOn() ? ',perfil,nivel,deporte' : ''}&activa=eq.true${filtroGym}&order=nombre.asc`),
+      pedirRut(),
       sb('rutina_asignaciones?select=rutina_id,alumnos(nombre)'),
     ]);
     const deAlumno = {};
@@ -26356,7 +26421,7 @@ async function espCargarDesdeRutina(rutinaId, opts){
     dias.sort((a, b) => (a.orden ?? 0) - (b.orden ?? 0));
 
     // Una especial es para una persona: plantilla se copia como fecha fija (hay que darle fecha a cada día).
-    const modo = document.getElementById('espModoDestino').value === 'plantilla' ? 'plantilla' : (rutina.modo_dias === 'rotativa' ? 'rotativa' : 'fecha_fija');
+    const modo = document.getElementById('espModoDestino').value === 'plantilla' ? 'plantilla' : (rutina.modo_dias === 'plantilla' && opts && (opts.modo === 'rotativa' || opts.modo === 'fecha_fija') ? opts.modo : (rutina.modo_dias === 'rotativa' ? 'rotativa' : 'fecha_fija'));   // (v216) la plantilla se copia con la repetición elegida
     cons.limpiar();
     document.getElementById('espModoDias').value = modo;
     cons.setModoDias(modo);
@@ -26407,7 +26472,7 @@ async function espCargarDesdeRutina(rutinaId, opts){
     const avisos = [];
     if (document.getElementById('espModoDestino').value === 'alumno' && !document.getElementById('espAlumno').value) avisos.unshift('elegí arriba el alumno al que se la asignás');
     if (modo === 'fecha_fija') avisos.push('poné la fecha de cada día');
-    if (rutina.modo_dias === 'plantilla') avisos.push('la plantilla se copió como fecha fija');
+    if (rutina.modo_dias === 'plantilla') avisos.push(modo === 'rotativa' ? 'la plantilla se copió como mensual (sin fechas)' : 'la plantilla se copió como fecha fija');
     if (sinEjercicio) avisos.push(`${sinEjercicio} ejercicio${sinEjercicio === 1 ? '' : 's'} ya no existe${sinEjercicio === 1 ? '' : 'n'} en el catálogo y no se copiaron`);
     est.style.display = '';
     est.textContent = `✓ Copiada "${rutina.nombre}" (${dias.length} día${dias.length === 1 ? '' : 's'}). Ajustala abajo` + (avisos.length ? ' — ' + avisos.join('; ') : '') + '. La original no cambia.';
@@ -28610,18 +28675,25 @@ async function guardarRutinaGenerica({ constructor, nombre, tipoAlumnoId, etique
   const btn = document.getElementById(btnId);
   btn.disabled = true;
   try{
-    const [rutina] = await sb('rutinas', {
-      method:'POST', headers:{Prefer:'return=representation'},
-      body: JSON.stringify([{
+    const cuerpoRut = {
         nombre, gimnasio_id: PERFIL_ACTUAL?.gimnasio_id || null, tipo_alumno_id: tipoAlumnoId || null,
         modo_dias: modoDias,
         ...etqPostBody(),   // (v207)
+        ...(modoDias === 'plantilla' && NR.plantRep && PLANT_REP_OK !== false ? { plantilla_repeticion: NR.plantRep } : {}),   // (v216)
         etiqueta: modoDias === 'plantilla' ? (etiqueta || null) : null,
         dias_por_semana_objetivo: modoDias === 'rotativa' ? (constructor.estado.diasPorSemanaObjetivo || null) : null,
         duracion_semanas: modoDias === 'rotativa' ? (constructor.estado.duracionSemanas || null) : null,
         ...(modoDias === 'rotativa' && constructor.estado.fechaInicio ? { fecha_inicio: constructor.estado.fechaInicio } : {}),
-      }])
-    });
+    };
+    let rutina;
+    try{ [rutina] = await sb('rutinas', { method:'POST', headers:{Prefer:'return=representation'}, body: JSON.stringify([cuerpoRut]) }); }
+    catch(e1){
+      if (cuerpoRut.plantilla_repeticion && /plantilla_repeticion|column|schema cache/i.test(String(e1 && e1.message || e1))){   // (v216) falta el SQL: se guarda igual, sin la repetición
+        PLANT_REP_OK = false; delete cuerpoRut.plantilla_repeticion;
+        toast('Falta correr v216-plantilla-repeticion.sql: la plantilla se guardó sin la repetición (se va a preguntar al asignarla).', true);
+        [rutina] = await sb('rutinas', { method:'POST', headers:{Prefer:'return=representation'}, body: JSON.stringify([cuerpoRut]) });
+      } else throw e1;
+    }
 
     const diasPayload = idsDias.map((diaId, i) => {
       const dia = constructor.estado.dias[diaId];
