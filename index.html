@@ -2408,8 +2408,8 @@ if ('serviceWorker' in navigator) window.addEventListener('load', function(){ tr
   .x-frow button, .x-tbl button{ padding:6px 14px; font-size:13px; }
 
   /* ---- (v202) Panel Deportistas ---- */
-  #subvistaPanel{ --pp-ok:#3ddc84; --pp-warn:#ffd23d; --pp-bad:#ff5d5d; --pp-info:#6cb4ff; }
-  :root[data-tema="claro"] #subvistaPanel{ --pp-ok:#0f8a45; --pp-warn:#8a5a00; --pp-bad:#c0271d; --pp-info:#1d6fb8; }
+  #subvistaPanel, #fichaBox{ --pp-ok:#3ddc84; --pp-warn:#ffd23d; --pp-bad:#ff5d5d; --pp-info:#6cb4ff; }
+  :root[data-tema="claro"] #subvistaPanel, :root[data-tema="claro"] #fichaBox{ --pp-ok:#0f8a45; --pp-warn:#8a5a00; --pp-bad:#c0271d; --pp-info:#1d6fb8; }
   .pp-sub{ color:var(--muted); margin:2px 0 14px; font-size:13px; }
   .pp-warnbar{ background:rgba(255,210,61,.10); border:1px solid rgba(255,210,61,.45); border-radius:12px; padding:10px 14px; margin-bottom:12px; }
   .pp-qwrap{ display:grid; grid-template-columns:1fr 240px; gap:12px; }
@@ -5652,7 +5652,7 @@ function atlIniciarAlu(){
   atlCargarVista('aluAtletismoContenido', id || '');
 }
 
-const APP_VERSION = 204;
+const APP_VERSION = 205;
 let ES_PERSONAL = false;   // (v132) cuenta personal (gimnasios.tipo = 'personal'); se calcula en perAplicar()
 // (v96) Fecha de la última actualización: se cambia junto con APP_VERSION en cada entrega. Se muestra en la
 // pantalla de inicio y en el menú de cuenta ("v94 · actualizada el 5/10/2026").
@@ -10984,7 +10984,7 @@ function sucTarjetaHtml(s, conMapa){
 // ---------- (v143) Sucursales parte 2: sede base del alumno + el alumno elige sede y ve dirección y mapa ----------
 // El alumno ve el selector solo con 2+ sedes activas. Arranca en su sede base; "Todas" muestra los turnos de todas.
 const SUCALU = { sel: undefined };   // undefined = todavía no eligió (arranca en su sede base) · '' = todas · id = esa sede
-function xselAlu(){ return XSEL_ALU + ((sucOn() && SUC.ok === true) ? ',sucursal_id' : '') + (panelOn() ? ',sexo,es_deportista,nivel' : ''); }   // (v200) Panel Deportistas
+function xselAlu(){ return XSEL_ALU + ((sucOn() && SUC.ok === true) ? ',sucursal_id' : '') + (panelOn() ? ',sexo,es_deportista,nivel,deporte_disciplina' : ''); }   // (v200) Panel Deportistas
 function sucAluBase(alumnoId){
   const a = (typeof buscarAlumnoCache === 'function') ? buscarAlumnoCache(alumnoId) : null;
   return (a && a.sucursal_id && sucActivas().some(s => s.id === a.sucursal_id)) ? a.sucursal_id : '';
@@ -18726,6 +18726,7 @@ function cvTabsVis(){
   let t = FICHA_TABS;
   if (cvOn() && CV.ok === true && cvStaff()){ t = t.slice(); const i = t.findIndex(x => x[0] === 'pag'); t.splice(i < 0 ? t.length : i + 1, 0, ['cuo', 'Plan']); }
   if (typeof osOn === 'function' && osOn() && osRolOk()){ t = t.slice(); let j = t.findIndex(x => x[0] === 'cuo'); if (j < 0) j = t.findIndex(x => x[0] === 'pag'); t.splice(j < 0 ? t.length : j + 1, 0, ['cob', 'Cobertura']); }   // (v194)
+  if (typeof ppFichaTabOk === 'function' && ppFichaTabOk(FICHA_ALU && FICHA_ALU.a)){ t = t.slice(); t.splice(1, 0, ['dep', '🏅 Deportista']); }   // (v205)
   return t;
 }
 function cvFichaIr(id){ cerrarFicha(); abrirFichaAlumno(id, 'cuo'); }
@@ -20118,6 +20119,7 @@ function fichaRecibo(i){ const p = FICHA_PAGOS[i]; if (!p || !FICHA_ALU?.a) retu
 
 function pintarFichaAlumno(){
   const F = FICHA_ALU; if (!F || !F.a) return;
+  if (F.tab === 'dep' && !ppFichaTabOk(F.a)) F.tab = 'res';   // (v205)
   const a = F.a, tipo = xTipoNombre(a), plan = xPlanNombre(a);
   const pills = `<span class="pill ${a.activo === false ? '' : 'ok'}">${a.activo === false ? 'Inactivo' : 'Activo'}</span> ${tipo ? `<span class="pill">${xe(tipo)}</span>` : ''} <span class="pill" id="fichaPlanPill">${plan ? 'Plan ' + xe(plan) : 'Sin plan'}</span> ${a.equipos?.nombre ? `<span class="pill">⚽ ${xe(a.equipos.nombre)}</span>` : ''}`;
   const box = document.getElementById('fichaBox');
@@ -20135,6 +20137,7 @@ function pintarFichaAlumno(){
   else if (F.tab === 'asi'){ body.innerHTML = '<div class="muted">Cargando…</div>'; xFichaAsistencia(a, tok); }
   else if (F.tab === 'eva'){ body.innerHTML = '<div class="muted">Cargando…</div>'; xFichaEvaluaciones(a, tok); }
   else if (F.tab === 'car') xFichaCarga(a, tok);
+  else if (F.tab === 'dep') ppFichaCarga(a, tok);   // (v205)
   else if (F.tab === 'cuo'){ body.innerHTML = '<div class="muted">Cargando…</div>'; cvFichaCargar(a, tok); }   // (v155)
   else if (F.tab === 'cob'){ body.innerHTML = '<div class="muted">Cargando…</div>'; osFichaCargar(a, tok); }   // (v194)
 }
@@ -21217,7 +21220,90 @@ function ppFilas(L){
 }
 function ppAbrirPerfil(k){ PP.vista = 'lista'; PP.k = k; PP.f = { q: '', nivel: '', alert: false, sinrut: false }; ppRender(); }
 function ppVolver(){ PP.vista = 'panel'; PP.k = null; ppRender(); }
-function ppFicha(id){ try{ abrirFichaAlumno(id); }catch(e){ toast('No se pudo abrir la ficha.', true); } }
+function ppFicha(id){ try{ abrirFichaAlumno(id, 'dep'); }catch(e){ toast('No se pudo abrir la ficha.', true); } }
+
+// ---------- (v205) Ficha del deportista: pestaña "🏅 Deportista" dentro de la ficha del alumno ----------
+function ppFichaTabOk(a){ return !!(a && a.es_deportista === true && panelOn() && PERFIL_ACTUAL && (PERFIL_ACTUAL.rol === 'admin' || PERFIL_ACTUAL.rol === 'profesor')); }
+function ppDelta(cur, prev, u, d){
+  if (cur == null || prev == null) return '';
+  const x = cur - prev; if (Math.abs(x) < 0.05) return '<span class="x-sub"> = igual que antes</span>';
+  return `<span class="x-sub" style="color:${x > 0 ? 'var(--pp-ok)' : 'var(--pp-bad)'}"> ${x > 0 ? '▲ +' : '▼ '}${ppFx(x, d == null ? 1 : d).replace('-', '')}${u || ''}</span>`;
+}
+function ppSemAsim(v){ return v == null ? null : (v >= PANEL_CORTES_DEF.asim.alta ? 'bad' : v >= PANEL_CORTES_DEF.asim.mod ? 'warn' : 'ok'); }
+async function ppFichaCarga(a, tok){
+  const body = document.getElementById('fichaTabBody'); if (!body) return;
+  body.innerHTML = '<div class="muted">Cargando…</div>';
+  const vig = () => tok === FICHA_TOK && document.getElementById('fichaTabBody') === body;
+  try{
+    if (!PP.ok && PP.cortes == null){ try{ const g = await sb(`gimnasios?select=panel_cortes&id=eq.${PERFIL_ACTUAL.gimnasio_id}`); PP.cortes = (g && g[0] && g[0].panel_cortes) || null; }catch(e){} }
+    const hoy = dateAIso(new Date());
+    const [evals, rs] = await Promise.all([
+      sb(`evaluaciones?select=id,fecha&alumno_id=eq.${a.id}&order=fecha.desc&limit=60`),
+      sb(`rutinas?select=id,nombre,fecha_inicio,duracion_semanas&alumno_id=eq.${a.id}&activa=eq.true&limit=50`).catch(() => []),
+    ]);
+    const metr = {};
+    if (evals.length){
+      const nombres = encodeURIComponent('("' + [PP_M_SJ, PP_M_CMJ, T505_IZQ, T505_DER].join('","') + '")');
+      const ms = await sb(`evaluacion_metricas?select=evaluacion_id,metrica,valor&evaluacion_id=in.(${evals.map(e => e.id).join(',')})&metrica=in.${nombres}&limit=2000`);
+      ms.forEach(m => { (metr[m.evaluacion_id] = metr[m.evaluacion_id] || {})[m.metrica] = Number(m.valor); });
+    }
+    if (!vig()) return;
+    const sjs = [], t5s = [];
+    evals.forEach(e => {
+      const m = metr[e.id]; if (!m) return;
+      if (m[PP_M_SJ] > 0 && m[PP_M_CMJ] > 0) sjs.push({ f: e.fecha, sj: m[PP_M_SJ], cmj: m[PP_M_CMJ] });
+      if (m[T505_IZQ] > 0 && m[T505_DER] > 0) t5s.push({ f: e.fecha, l: m[T505_IZQ], r: m[T505_DER] });
+    });
+    const cur = sjs[0] || null, pre = sjs[1] || null, c5 = t5s[0] || null, p5 = t5s[1] || null;
+    const pf = ppCalcPerfil(a.sexo, cur && cur.sj, cur && cur.cmj), pfPre = pre ? ppCalcPerfil(a.sexo, pre.sj, pre.cmj) : null;
+    const P = pf.k ? PP_PERF[pf.k] : null;
+    const rut = (rs || []).reduce((m, r) => (!m || String(r.fecha_inicio || '') > String(m.fecha_inicio || '')) ? r : m, null);
+    let sem = null;
+    if (rut && rut.fecha_inicio){ sem = Math.max(1, Math.floor((new Date(hoy + 'T00:00:00') - new Date(String(rut.fecha_inicio).slice(0, 10) + 'T00:00:00')) / 604800000) + 1); if (rut.duracion_semanas) sem = Math.min(sem, rut.duracion_semanas); }
+    const fch = x => x ? String(x).slice(0, 10).split('-').reverse().join('/') : '';
+    const ie = r => r ? (r.cmj - r.sj) / r.sj * 100 : null;
+    const as5 = ppAsim(c5), as5p = ppAsim(p5), sa = ppSemAsim(as5);
+    const readapt = ppEsReadapt(xTipoNombre(a));
+    const edad = edadDesdeFecha(a.fecha_nacimiento);
+    const cab = P
+      ? `<div style="display:flex; gap:12px; align-items:center; padding:14px; border-radius:14px; border:1px solid var(--border); border-left:5px solid ${P.c}; background:var(--panel); margin-bottom:12px;">
+          <span style="width:44px; height:44px; border-radius:12px; display:grid; place-items:center; color:${P.c}; background:var(--panel2); flex:none;"><span style="width:26px; height:26px; display:block;">${PP_ICON[pf.k]}</span></span>
+          <div style="min-width:0"><div style="font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; font-weight:700;">Perfil actual</div>
+          <div style="font-size:19px; font-weight:800;">${P.n}</div>
+          <div class="x-sub">${xe(pf.why)}</div>
+          ${pfPre && pfPre.k && pfPre.k !== pf.k ? `<div class="x-sub" style="margin-top:3px;">Antes (${fch(pre.f)}): <b>${PP_PERF[pfPre.k].n}</b></div>` : ''}</div></div>`
+      : `<div class="pp-warnbar"><b>⚠ Sin perfil todavía</b> <span class="pp-muted">· ${xe(pf.why)}</span><div class="x-btns" style="margin-top:8px;"><button onclick="fichaNuevaEvaluacion()">Cargar evaluación</button></div></div>`;
+    const chips = `<div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:12px;"><span class="pp-chip">${a.nivel ? xe(a.nivel) : 'Sin nivel'}</span>${a.deporte_disciplina ? `<span class="pp-chip">${xe(a.deporte_disciplina)}</span>` : ''}${edad != null ? `<span class="pp-chip">${edad} años</span>` : ''}${a.sexo === 'H' ? '<span class="pp-chip">Hombre</span>' : a.sexo === 'M' ? '<span class="pp-chip">Mujer</span>' : '<span class="pp-chip warn">Sin sexo cargado</span>'}${readapt ? '<span class="pp-chip bad">Readaptación</span>' : ''}</div>`;
+    const kpis = cur
+      ? `<div class="x-sec" style="margin-top:4px;">Saltos · ${fch(cur.f)}${pre ? ` <span style="text-transform:none; letter-spacing:0; font-weight:500;">(vs ${fch(pre.f)})</span>` : ''}</div>
+         <div class="x-kpis"><div class="x-kpi"><div class="k">SJ</div><div class="v">${ppFx(cur.sj)} cm</div>${ppDelta(cur.sj, pre && pre.sj, ' cm')}</div>
+         <div class="x-kpi"><div class="k">CMJ</div><div class="v">${ppFx(cur.cmj)} cm</div>${ppDelta(cur.cmj, pre && pre.cmj, ' cm')}</div>
+         <div class="x-kpi"><div class="k">Elasticidad (IE)</div><div class="v">${ppFx(ie(cur))} %</div>${ppDelta(ie(cur), pre && ie(pre), ' pts')}</div></div>`
+      : '';
+    const k5 = c5
+      ? `<div class="x-sec">5-0-5 · ${fch(c5.f)}</div>
+         <div class="x-kpis"><div class="x-kpi"><div class="k">Giro izquierda</div><div class="v">${ppFx(c5.l, 2)} s</div></div>
+         <div class="x-kpi"><div class="k">Giro derecha</div><div class="v">${ppFx(c5.r, 2)} s</div></div>
+         <div class="x-kpi"><div class="k">Asimetría</div><div class="v"><span class="pp-chip ${sa}" style="font-size:14px;">${ppFx(as5)} %</span></div><div class="x-sub">${as5 < 0.05 ? '' : 'más lento a la ' + (c5.l > c5.r ? 'izquierda' : 'derecha')}${as5p != null ? ` · antes ${ppFx(as5p)} %` : ''}</div></div></div>`
+      : '';
+    const rutHtml = rut
+      ? `<div class="x-item"><div><div class="x-nm" style="font-weight:700;">${xe(rut.nombre)}</div><div class="x-sub">${sem ? 'Semana ' + sem + (rut.duracion_semanas ? ' de ' + rut.duracion_semanas : '') : 'Activa'}</div></div><button class="ghost" onclick="fichaTab('rut')">Ver rutinas</button></div>`
+      : `<div class="x-item"><div><div class="pp-chip warn">∅ Sin rutina asignada</div></div><button onclick="fichaAsignarRutina()">Asignar rutina</button></div>`;
+    body.innerHTML = `${cab}${chips}${kpis}${k5}
+      <div class="x-sec">Carga (ACWR)</div><div id="depCarga" class="x-sub">Calculando…</div>
+      <div class="x-sec">Rutina activa</div>${rutHtml}
+      <div class="x-btns"><button onclick="fichaNuevaEvaluacion()">＋ Nueva evaluación</button><button class="ghost" onclick="fichaTab('eva')">Historial de evaluaciones</button></div>`;
+    ppFichaCargaAcwr(a, vig);
+  }catch(e){ if (tok === FICHA_TOK) body.innerHTML = `<div class="empty">No se pudo cargar: ${xe(e.message || e)}</div>`; }
+}
+async function ppFichaCargaAcwr(a, vig){
+  try{
+    const D = await caCargar(a.id), el = document.getElementById('depCarga'); if (!vig() || !el) return;
+    if (!D.hay){ el.innerHTML = 'Todavía no hay sesiones finalizadas con RPE.'; return; }
+    const z = D.zona;
+    el.innerHTML = `<div style="display:flex; gap:14px; flex-wrap:wrap; align-items:baseline;"><span style="font-weight:800; font-size:16px; color:var(--text);">ACWR ${caNum(D.acwr, 2)}</span>${z ? `<span style="color:${z.c}; font-weight:800;">${z.ic} ${z.t}</span>` : '<span class="x-sub">calibrando (faltan ' + D.faltan + ' sem.)</span>'}<span class="x-sub">Semana: ${Math.round(D.act.ua)} UA</span></div>${caCruce(D)}<div class="x-btns"><button class="ghost" onclick="fichaTab('car')">Ver detalle de carga</button></div>`;
+  }catch(e){ const el = document.getElementById('depCarga'); if (el && vig()) el.textContent = 'No se pudo calcular la carga.'; }
+}
 async function ppIrEval(id){
   cambiarSubvista('evaluaciones');
   for (let i = 0; i < 20; i++){
