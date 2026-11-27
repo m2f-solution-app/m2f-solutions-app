@@ -5394,6 +5394,24 @@ async function depGuardar(){
   }
 }
 
+// (v221) Al asignarle una mensual nueva a un alumno, las mensuales anteriores que son solo suyas se cierran:
+// terminan la semana en que arranca la nueva. No se borra nada (quedan en el historial como "Terminó el …").
+async function mensualCerrarAnteriores(alumnoId, nuevaId, nuevoIni){
+  const hoy = fechaLocalISO(), cerradas = [];
+  const asig = await sb(`rutina_asignaciones?select=rutina_id,rutinas(id,nombre,modo_dias,activa,fecha_inicio,duracion_semanas)&alumno_id=eq.${alumnoId}&limit=200`);
+  const cand = (asig || []).map(x => x.rutinas).filter(r => r && r.id !== nuevaId && r.modo_dias === 'rotativa' && r.activa !== false && r.fecha_inicio && String(r.fecha_inicio).slice(0, 10) < nuevoIni);
+  if (!cand.length) return cerradas;
+  const todas = await sb(`rutina_asignaciones?select=rutina_id,alumno_id&rutina_id=in.(${cand.map(r => r.id).join(',')})&limit=2000`);
+  for (const r of cand){
+    if ((todas || []).some(a => a.rutina_id === r.id && a.alumno_id !== alumnoId)) continue;   // la comparte con otros alumnos: no se toca
+    const dias = diasEntreISO(String(r.fecha_inicio).slice(0, 10), nuevoIni);
+    const dur = nuevoIni > hoy ? Math.ceil(dias / 7) : Math.max(1, Math.floor(dias / 7));
+    if (r.duracion_semanas && r.duracion_semanas <= dur) continue;   // ya termina antes
+    await sb(`rutinas?id=eq.${r.id}`, { method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: JSON.stringify({ duracion_semanas: dur }) });
+    cerradas.push(r.nombre);
+  }
+  return cerradas;
+}
 // (v219) ¿Este armador admite progresión por semana? Mensual, o plantilla que se repite como mensual.
 function estadoAdmiteProg(e){ return !!e && (e.modoDias === 'rotativa' || (e.modoDias === 'plantilla' && e.plantRep === 'rotativa')); }
 function consMaxSemProg(e){ let m = 0; Object.values((e && e.dias) || {}).forEach(d => (d.ejercicios || []).forEach(x => { if (x.modo_progresion === 'por_semana') (x.semanas || []).forEach(s => { if ((s.semana || 0) > m) m = s.semana; }); })); return m; }
@@ -6082,7 +6100,7 @@ function atlIniciarAlu(){
   atlCargarVista('aluAtletismoContenido', id || '');
 }
 
-const APP_VERSION = 220;
+const APP_VERSION = 221;
 let ES_PERSONAL = false;   // (v132) cuenta personal (gimnasios.tipo = 'personal'); se calcula en perAplicar()
 // (v96) Fecha de la última actualización: se cambia junto con APP_VERSION en cada entrega. Se muestra en la
 // pantalla de inicio y en el menú de cuenta ("v94 · actualizada el 5/10/2026").
@@ -28762,7 +28780,7 @@ async function guardarRutinaGenerica({ constructor, nombre, tipoAlumnoId, etique
         etiqueta: modoDias === 'plantilla' ? (etiqueta || null) : null,
         dias_por_semana_objetivo: estadoAdmiteProg(constructor.estado) ? (constructor.estado.diasPorSemanaObjetivo || null) : null,   // (v219) también la plantilla mensual
         duracion_semanas: estadoAdmiteProg(constructor.estado) ? (constructor.estado.duracionSemanas || null) : null,
-        ...(modoDias === 'rotativa' && constructor.estado.fechaInicio ? { fecha_inicio: constructor.estado.fechaInicio } : {}),
+        ...(modoDias === 'rotativa' && (constructor.estado.fechaInicio || (alumnosDestino && alumnosDestino.length)) ? { fecha_inicio: constructor.estado.fechaInicio || fechaLocalISO() } : {}),   // (v221) una mensual para alumnos siempre lleva inicio (sin inicio no reemplaza a la anterior)
     };
     let rutina;
     try{ [rutina] = await sb('rutinas', { method:'POST', headers:{Prefer:'return=representation'}, body: JSON.stringify([cuerpoRut]) }); }
@@ -28859,7 +28877,11 @@ async function guardarRutinaGenerica({ constructor, nombre, tipoAlumnoId, etique
       });
     }
 
-    toast(msgOk);
+    let cerradas = [];
+    if (modoDias === 'rotativa' && alumnosDestino && alumnosDestino.length === 1 && cuerpoRut.fecha_inicio){
+      try{ cerradas = await mensualCerrarAnteriores(alumnosDestino[0], rutina.id, cuerpoRut.fecha_inicio); }catch(e){ console.error('No se pudo cerrar la mensual anterior:', e); }
+    }
+    toast(msgOk + (cerradas.length ? ` Se cerró la mensual anterior: ${cerradas.join(', ')}.` : ''));
     constructor.limpiar();
     onOk && onOk({ rutina, diasCreados });
   }catch(e){
