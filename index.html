@@ -490,6 +490,18 @@ if ('serviceWorker' in navigator) window.addEventListener('load', function(){ tr
   .cv-sumar{ margin:0 0 12px; padding:10px 12px; border-radius:12px; border:1px dashed var(--note-bd); background:var(--note-bg); font-size:13.5px; }
   /* (v153) Cuota: desde cuándo cuenta */
   .cuo-vig{ margin-top:12px; padding:12px; border:1px solid var(--border); border-radius:12px; background:var(--panel2); }
+  .promo-dd{ border:1px solid var(--border); border-radius:10px; background:var(--panel2); min-width:230px; }
+  .promo-dd > summary{ padding:10px 12px; cursor:pointer; font-size:14px; list-style:none; }
+  .promo-dd > summary::-webkit-details-marker{ display:none; }
+  .promo-dd > summary:after{ content:'▾'; float:right; opacity:.6; }
+  .promo-list{ padding:6px 12px 10px; border-top:1px solid var(--border); }
+  .promo-opt, .promo-chk label{ text-transform:none; letter-spacing:normal; color:var(--text); margin-bottom:0; }
+  .promo-opt{ display:flex; gap:8px; align-items:flex-start; padding:6px 0; font-size:14px; cursor:pointer; }
+  .promo-opt input{ width:auto; margin-top:3px; }
+  .promo-opt small{ display:block; opacity:.7; font-size:12px; }
+  .promo-chk{ display:flex; flex-wrap:wrap; gap:6px 16px; margin-top:4px; }
+  .promo-chk label{ display:flex; gap:6px; align-items:center; font-size:13px; }
+  .promo-chk input{ width:auto; }
   .cuo-line{ font-size:14.5px; margin-bottom:6px; }
   .cuo-warn{ font-size:13px; color:var(--warn-text); margin:6px 0; }
   .cuo-ctl{ display:flex; gap:8px; align-items:flex-end; flex-wrap:wrap; margin-top:8px; }
@@ -4170,7 +4182,18 @@ if ('serviceWorker' in navigator) window.addEventListener('load', function(){ tr
           </div>
         </div></details>
 
-        <details class="plegable card" data-k="gim-facturacion"><summary>Facturación</summary><div class="plg-body">
+        <details class="plegable card" data-k="gim-promos" id="secGimPromos" style="display:none;"><summary>🏷️ Promociones vigentes</summary><div class="plg-body">
+          <div class="muted" style="margin-bottom:10px;">Cargá acá todas las promociones del gimnasio (efectivo, pago adelantado, descuentos por temporada…). Al cobrar, las que corresponden al medio de pago vienen tildadas y podés destildarlas o sumar otras. Los porcentajes se suman (15% + 10% = 25%) hasta el tope.</div>
+          <div class="row">
+            <div class="field" style="width:230px;"><label>Tope de descuento acumulado (%)</label><input inputmode="decimal" type="number" min="1" max="100" step="0.1" id="promoTope" placeholder="Sin tope"></div>
+            <button class="ghost" onclick="promoTopeGuardar()" style="align-self:end;">Guardar tope</button>
+          </div>
+          <div id="listaPromos" style="margin-top:12px;"></div>
+          <div id="promoEditor"></div>
+          <div class="x-btns"><button onclick="promoEditar(null)">+ Nueva promoción</button></div>
+        </div></details>
+
+        <details class="plegable card" data-k="gim-facturacion" id="secGimFact"><summary>Facturación</summary><div class="plg-body">
           <div class="row">
             <div class="field">
               <label>Descuento por pago en efectivo (%)</label>
@@ -4181,7 +4204,7 @@ if ('serviceWorker' in navigator) window.addEventListener('load', function(){ tr
           <div class="muted" style="margin-top:6px;">Se aplica a todos los planes del gimnasio cuando el alumno paga en efectivo.</div>
         </div></details>
 
-        <details class="plegable card" data-k="gim-prepago"><summary>Planes de pago adelantado</summary><div class="plg-body">
+        <details class="plegable card" data-k="gim-prepago" id="secGimPrepago"><summary>Planes de pago adelantado</summary><div class="plg-body">
           <div class="muted" style="margin-bottom:10px;">Opciones para cobrarle a un alumno varios meses juntos con descuento (ej: "3 meses -10%"). Aparecen como alternativa al mes normal en el botón "💰 Cobrar" de Cobranzas.</div>
           <div class="row">
             <div class="field" style="width:110px;"><label>Meses</label><input inputmode="numeric" type="number" min="2" step="1" id="nuevoPrepagoMeses" placeholder="Ej: 3"></div>
@@ -6108,7 +6131,7 @@ function atlIniciarAlu(){
   atlCargarVista('aluAtletismoContenido', id || '');
 }
 
-const APP_VERSION = 222;
+const APP_VERSION = 223;
 let ES_PERSONAL = false;   // (v132) cuenta personal (gimnasios.tipo = 'personal'); se calcula en perAplicar()
 // (v96) Fecha de la última actualización: se cambia junto con APP_VERSION en cada entrega. Se muestra en la
 // pantalla de inicio y en el menú de cuenta ("v94 · actualizada el 5/10/2026").
@@ -13982,6 +14005,7 @@ function cambiarSubvista(v){
     actualizarPreviewLogo();
     cargarCategoriasYEquipos();
     telPintarCampo();   // (v102)
+    try{ promosPintarConfig(); }catch(e){}   // (v223)
   }
   cerrarMenuProf();
 }
@@ -15637,6 +15661,7 @@ async function cargarGimnasioActual(){
   renderBannerSuscripcion();
   try{ perAplicar(); }catch(e){ console.error(e); }   // (v132) modo personal
   cargarPlanesPrepago();
+  promosCargar().catch(() => {});   // (v223) promociones vigentes
   telCargar().catch(() => {});   // (v102) WhatsApp de contacto del gimnasio
   clCfgCargar().catch(() => {});   // (v103) reglas de reservas de clases (Mi gimnasio)
   rpxCfgCargar().catch(() => {});   // (v111) link público de reservas (Mi gimnasio)
@@ -15837,7 +15862,7 @@ async function guardarGimnasio(){
     if (GIMNASIO_ACTUAL){
       await sb(`gimnasios?id=eq.${GIMNASIO_ACTUAL.id}`, {
         method:'PATCH', headers:{Prefer:'return=minimal'},
-        body: JSON.stringify({ nombre, logo_url: logoUrl || null, descuento_efectivo_pct: isNaN(descuentoEfectivo) ? 10 : descuentoEfectivo, color_primario: colorPrimario, color_secundario: colorSecundario })
+        body: JSON.stringify(Object.assign({ nombre, logo_url: logoUrl || null, color_primario: colorPrimario, color_secundario: colorSecundario }, PROMOS_OK === true ? {} : { descuento_efectivo_pct: isNaN(descuentoEfectivo) ? 10 : descuentoEfectivo }))   // (v223) con promos, el % de efectivo es una promo del catálogo
       });
     } else {
       await sb('gimnasios', { method:'POST', headers:{Prefer:'return=minimal'}, body: JSON.stringify([{ nombre, logo_url: logoUrl || null, descuento_efectivo_pct: isNaN(descuentoEfectivo) ? 10 : descuentoEfectivo, color_primario: colorPrimario, color_secundario: colorSecundario }]) });
@@ -15902,6 +15927,218 @@ async function borrarPlanPrepago(id){
     await sb(`gimnasios_planes_prepago?id=eq.${id}`, { method:'DELETE' });
     await cargarPlanesPrepago();
   }catch(e){ toast('Error: ' + extraerMensajeError(e), true); }
+}
+
+// =====================================================================
+// (v223) 🏷️ Promociones vigentes: catálogo por gimnasio + cobro con promos acumulables y tope
+// Si las tablas/funciones de v223-promociones.sql no están, PROMOS_OK queda en false y todo sigue como antes.
+// =====================================================================
+let PROMOS_CACHE = [], PROMOS_OK = null, PROMOS_TOPE = null, PROMO_SEL = {}, PROMO_ED = null;
+const PROMO_MEDIOS = [['efectivo', '💵 Efectivo'], ['transferencia', '🏦 Transferencia'], ['mercado_pago', '💳 Mercado Pago'], ['tarjeta_credito', '💳 Tarjeta de crédito'], ['tarjeta_debito', '💳 Tarjeta de débito']];
+function promoMedioTxt(m){ const f = PROMO_MEDIOS.find(x => x[0] === m); return f ? f[1] : m; }
+function promoValorTxt(p){ return p.tipo === 'monto' ? formatearMonto(Number(p.valor)) : (Number(p.valor) + '%'); }
+function promoNoComb(p){ return !p.combinable || (p.meses || 1) > 1; }
+function promoEstado(p){
+  const hoy = fechaLocalISO(new Date());
+  if (!p.activa) return ['Inactiva', ''];
+  if (p.vigente_desde && hoy < p.vigente_desde) return ['Empieza el ' + formatearFechaCorta(p.vigente_desde), 'warn'];
+  if (p.vigente_hasta && hoy > p.vigente_hasta) return ['Vencida', 'bad'];
+  return ['Vigente', 'ok'];
+}
+function promoResumen(p){
+  const a = [];
+  if ((p.meses || 1) > 1) a.push('Pago adelantado: ' + p.meses + ' meses juntos');
+  if (p.auto_medios && p.auto_medios.length) a.push('Se tilda sola con ' + p.auto_medios.map(promoMedioTxt).join(', '));
+  if (p.medios && p.medios.length) a.push('Solo con ' + p.medios.map(promoMedioTxt).join(', '));
+  if (p.planes && p.planes.length) a.push(p.planes.length + (p.planes.length === 1 ? ' plan' : ' planes'));
+  if (p.vigente_desde || p.vigente_hasta) a.push((p.vigente_desde ? 'desde ' + formatearFechaCorta(p.vigente_desde) : '') + (p.vigente_desde && p.vigente_hasta ? ' ' : '') + (p.vigente_hasta ? 'hasta ' + formatearFechaCorta(p.vigente_hasta) : ''));
+  a.push(promoNoComb(p) ? 'No se suma con otras' : 'Se suma con otras');
+  return a.join(' · ');
+}
+async function promosCargar(){
+  if (!(PERFIL_ACTUAL && PERFIL_ACTUAL.rol === 'admin') || !GIMNASIO_ACTUAL){ PROMOS_OK = false; return; }
+  try{
+    const [ps, g] = await Promise.all([
+      sb(`promociones?gimnasio_id=eq.${GIMNASIO_ACTUAL.id}&order=orden.asc,nombre.asc`),
+      sb(`gimnasios?select=promo_tope_pct&id=eq.${GIMNASIO_ACTUAL.id}`)
+    ]);
+    PROMOS_CACHE = ps || [];
+    PROMOS_TOPE = (g && g[0] && g[0].promo_tope_pct != null) ? Number(g[0].promo_tope_pct) : null;
+    PROMOS_OK = true;
+  }catch(e){ PROMOS_OK = false; PROMOS_CACHE = []; PROMOS_TOPE = null; }
+  try{ promosPintarConfig(); }catch(e){}
+}
+function promosPintarConfig(){
+  const sec = document.getElementById('secGimPromos'); if (!sec) return;
+  const on = PROMOS_OK === true;
+  sec.style.display = on ? '' : 'none';
+  const f = document.getElementById('secGimFact'), pp = document.getElementById('secGimPrepago');
+  if (f) f.style.display = on ? 'none' : '';
+  if (pp) pp.style.display = on ? 'none' : '';
+  if (!on) return;
+  const t = document.getElementById('promoTope'); if (t && document.activeElement !== t) t.value = PROMOS_TOPE == null ? '' : PROMOS_TOPE;
+  const box = document.getElementById('listaPromos'); if (!box) return;
+  box.innerHTML = PROMOS_CACHE.length ? PROMOS_CACHE.map(p => {
+    const e = promoEstado(p);
+    return `<div class="x-item" style="align-items:flex-start;gap:10px;flex-wrap:wrap;">
+      <div style="flex:1;min-width:200px;"><div style="font-weight:700;">${xe(p.nombre)} <span class="pill ${e[1]}">${xe(e[0])}</span></div>
+      <div class="x-sub">${xe(promoValorTxt(p))} de descuento · ${xe(promoResumen(p))}</div></div>
+      <div class="row" style="gap:6px;">
+        <button class="ghost" onclick="promoEditar('${p.id}')">Editar</button>
+        <button class="ghost" onclick="promoToggle('${p.id}', ${!p.activa})">${p.activa ? 'Desactivar' : 'Activar'}</button>
+        <button class="ghost" onclick="promoBorrar('${p.id}')">Eliminar</button>
+      </div></div>`;
+  }).join('') : '<div class="muted">Todavía no cargaste ninguna promoción.</div>';
+  promoEditorPintar();
+}
+async function promoRecargar(){ await cargarGimnasioActual(); }   // refresca el gimnasio (el % de efectivo se sincroniza solo) y las promos
+async function promoTopeGuardar(){
+  const raw = document.getElementById('promoTope').value.trim();
+  const v = raw === '' ? null : parseFloat(raw);
+  if (v !== null && (isNaN(v) || v <= 0 || v > 100)){ toast('El tope tiene que ser un % entre 0 y 100 (o dejalo vacío para no poner tope).', true); return; }
+  try{
+    await sb(`gimnasios?id=eq.${GIMNASIO_ACTUAL.id}`, { method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: JSON.stringify({ promo_tope_pct: v }) });
+    PROMOS_TOPE = v; toast(v === null ? 'Sin tope de descuento ✓' : 'Tope guardado ✓');
+  }catch(e){ toast('Error guardando el tope: ' + extraerMensajeError(e), true); }
+}
+async function promoToggle(id, activa){
+  try{ await sb(`promociones?id=eq.${id}`, { method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: JSON.stringify({ activa }) }); await promoRecargar(); }
+  catch(e){ toast('Error: ' + extraerMensajeError(e), true); }
+}
+async function promoBorrar(id){
+  const p = PROMOS_CACHE.find(x => x.id === id); if (!p) return;
+  if (!confirm(`¿Eliminar la promoción "${p.nombre}"? Los pagos que ya la usaron conservan su detalle.`)) return;
+  try{ await sb(`promociones?id=eq.${id}`, { method: 'DELETE' }); await promoRecargar(); toast('Promoción eliminada'); }
+  catch(e){ toast('Error: ' + extraerMensajeError(e), true); }
+}
+async function promoEditar(id){
+  const p = id ? PROMOS_CACHE.find(x => x.id === id) : null;
+  let planes = (typeof PLANES_CACHE !== 'undefined' && PLANES_CACHE) || [];
+  try{ planes = await sb(`planes?select=id,nombre&gimnasio_id=eq.${GIMNASIO_ACTUAL.id}&activo=eq.true&order=nombre.asc`); }catch(e){}
+  PROMO_ED = { id: p ? p.id : null, planesLista: planes, p: p || { nombre: '', tipo: 'porcentaje', valor: '', meses: 1, vigente_desde: '', vigente_hasta: '', planes: null, medios: null, auto_medios: null, combinable: true } };
+  promoEditorPintar();
+  const el = document.getElementById('promoEditor'); if (el && el.scrollIntoView) el.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+}
+function promoEditorPintar(){
+  const box = document.getElementById('promoEditor'); if (!box) return;
+  if (!PROMO_ED){ box.innerHTML = ''; return; }
+  const p = PROMO_ED.p, med = p.medios || [], aut = p.auto_medios || [], pl = p.planes || [];
+  const chk = (cls, lista, sel) => `<div class="promo-chk">${lista.map(([k, t]) => `<label><input type="checkbox" class="${cls}" value="${xe(k)}" ${sel.includes(k) ? 'checked' : ''}> ${xe(t)}</label>`).join('')}</div>`;
+  box.innerHTML = `<div class="card" style="margin:14px 0 0;border:1px solid var(--border);">
+    <div style="font-weight:800;margin-bottom:10px;">${PROMO_ED.id ? 'Editar promoción' : 'Nueva promoción'}</div>
+    <div class="row">
+      <div class="field" style="flex:2;min-width:180px;"><label>Nombre</label><input id="pe_nombre" maxlength="80" placeholder="Ej: Efectivo, Mes de bienvenida, 3 meses" value="${xe(p.nombre)}"></div>
+      <div class="field" style="width:130px;"><label>Tipo</label><select id="pe_tipo"><option value="porcentaje" ${p.tipo === 'porcentaje' ? 'selected' : ''}>Porcentaje (%)</option><option value="monto" ${p.tipo === 'monto' ? 'selected' : ''}>Monto fijo ($)</option></select></div>
+      <div class="field" style="width:110px;"><label>Valor</label><input id="pe_valor" inputmode="decimal" type="number" min="0" step="0.01" value="${xe(p.valor)}"></div>
+      <div class="field" style="width:150px;"><label>Meses que cubre</label><input id="pe_meses" inputmode="numeric" type="number" min="1" max="24" step="1" value="${xe(p.meses || 1)}" onchange="promoEdMeses()"></div>
+    </div>
+    <div class="muted" style="margin:-4px 0 10px;">Meses = 1 es una promo sobre el mes normal. Con 2 o más es un pago adelantado (se cobran esos meses juntos) y no se suma con otras promos.</div>
+    <div class="row">
+      <div class="field"><label>Vigente desde (opcional)</label><input id="pe_desde" type="date" value="${xe(p.vigente_desde || '')}"></div>
+      <div class="field"><label>Vigente hasta (opcional)</label><input id="pe_hasta" type="date" value="${xe(p.vigente_hasta || '')}"></div>
+    </div>
+    <div class="field"><label>Aplica a estos medios de pago (ninguno tildado = todos)</label>${chk('pe-med', PROMO_MEDIOS, med)}</div>
+    <div class="field"><label>Se tilda sola al cobrar con (se puede destildar en el cobro)</label>${chk('pe-aut', PROMO_MEDIOS, aut)}</div>
+    <div class="field"><label>Aplica a estos planes (ninguno tildado = todos)</label>${PROMO_ED.planesLista.length ? chk('pe-plan', PROMO_ED.planesLista.map(x => [x.id, x.nombre]), pl) : '<div class="muted">Sin planes cargados.</div>'}</div>
+    <div class="field"><label class="promo-opt" style="padding:0;"><input type="checkbox" id="pe_comb" ${p.combinable && (p.meses || 1) <= 1 ? 'checked' : ''} ${(p.meses || 1) > 1 ? 'disabled' : ''}> <span>Se puede sumar con otras promociones</span></label></div>
+    <div class="row" style="gap:8px;"><button onclick="promoGuardar()">Guardar promoción</button><button class="ghost" onclick="PROMO_ED=null;promoEditorPintar()">Cancelar</button></div>
+  </div>`;
+}
+function promoEdMeses(){
+  const m = parseInt(document.getElementById('pe_meses').value, 10) || 1, c = document.getElementById('pe_comb');
+  if (m > 1){ c.checked = false; c.disabled = true; } else c.disabled = false;
+}
+async function promoGuardar(){
+  if (!PROMO_ED) return;
+  const g = i => document.getElementById(i), marc = c => Array.from(document.querySelectorAll('.' + c + ':checked')).map(x => x.value);
+  const nombre = g('pe_nombre').value.trim(), tipo = g('pe_tipo').value, valor = parseFloat(g('pe_valor').value), meses = parseInt(g('pe_meses').value, 10);
+  const desde = g('pe_desde').value || null, hasta = g('pe_hasta').value || null;
+  const medios = marc('pe-med'), auto = marc('pe-aut'), planes = marc('pe-plan');
+  if (!nombre){ toast('Ponele un nombre a la promoción.', true); return; }
+  if (isNaN(valor) || valor < 0 || (tipo === 'porcentaje' && valor > 100)){ toast(tipo === 'porcentaje' ? 'El porcentaje tiene que estar entre 0 y 100.' : 'Poné un monto válido.', true); return; }
+  if (!meses || meses < 1 || meses > 24){ toast('Los meses tienen que estar entre 1 y 24.', true); return; }
+  if (desde && hasta && hasta < desde){ toast('La fecha "hasta" no puede ser anterior a "desde".', true); return; }
+  if (medios.length && auto.some(a => !medios.includes(a))){ toast('Una promo no puede tildarse sola con un medio al que no aplica.', true); return; }
+  if (meses > 1 && auto.length){ toast('Un pago adelantado no se tilda solo: se elige a mano al cobrar.', true); return; }
+  const body = { nombre, tipo, valor, meses, vigente_desde: desde, vigente_hasta: hasta, planes: planes.length ? planes : null, medios: medios.length ? medios : null, auto_medios: auto.length ? auto : null, combinable: meses > 1 ? false : g('pe_comb').checked };
+  try{
+    if (PROMO_ED.id) await sb(`promociones?id=eq.${PROMO_ED.id}`, { method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: JSON.stringify(body) });
+    else await sb('promociones', { method: 'POST', headers: { Prefer: 'return=minimal' }, body: JSON.stringify(Object.assign({ gimnasio_id: GIMNASIO_ACTUAL.id, orden: PROMOS_CACHE.reduce((m, x) => Math.max(m, x.orden || 0), 0) + 1 }, body)) });
+    PROMO_ED = null; await promoRecargar(); toast('Promoción guardada ✓');
+  }catch(e){ toast('Error guardando la promoción: ' + extraerMensajeError(e), true); }
+}
+
+// ----- Cobro: selector de promociones (se arma igual que el cálculo del servidor) -----
+function promosEst(id){ return PROMO_SEL[id] || (PROMO_SEL[id] = { sel: new Set(), auto: new Set(), off: new Set(), metodo: null }); }
+function promosAplicables(id, metodo){
+  const hoy = fechaLocalISO(new Date()), plan = (COBRANZAS_CACHE[id] || {}).plan_id;
+  return PROMOS_CACHE.filter(p => p.activa && !(p.vigente_desde && hoy < p.vigente_desde) && !(p.vigente_hasta && hoy > p.vigente_hasta)
+    && (!p.planes || !p.planes.length || p.planes.includes(plan)) && (!p.medios || !p.medios.length || p.medios.includes(metodo)));
+}
+function promosSync(id, metodo){
+  const st = promosEst(id), ap = promosAplicables(id, metodo);
+  if (st.metodo !== metodo){ st.off.clear(); st.auto.forEach(x => st.sel.delete(x)); st.auto.clear(); st.metodo = metodo; }
+  const ids = new Set(ap.map(p => p.id));
+  Array.from(st.sel).forEach(x => { if (!ids.has(x)){ st.sel.delete(x); st.auto.delete(x); } });
+  const hayNoComb = ap.some(p => st.sel.has(p.id) && promoNoComb(p));
+  if (!hayNoComb) ap.forEach(p => { if ((p.auto_medios || []).includes(metodo) && (p.meses || 1) <= 1 && !st.off.has(p.id) && !st.sel.has(p.id)){ st.sel.add(p.id); st.auto.add(p.id); } });
+  return { st, ap };
+}
+function promosToggle(id, pid, on){
+  const st = promosEst(id), p = PROMOS_CACHE.find(x => x.id === pid); if (!p) return;
+  if (on){
+    st.off.delete(pid); st.auto.delete(pid);
+    if (promoNoComb(p)){ st.sel.clear(); st.auto.clear(); }
+    else PROMOS_CACHE.forEach(x => { if (promoNoComb(x)) { st.sel.delete(x.id); st.auto.delete(x.id); } });
+    st.sel.add(pid);
+  } else {
+    st.sel.delete(pid);
+    if (st.auto.has(pid)){ st.auto.delete(pid); st.off.add(pid); }
+    else if ((p.auto_medios || []).includes(st.metodo)) st.off.add(pid);
+  }
+  previewMontoCobro(id);
+}
+function promosCalc(precio, lista, tope){
+  const meses = lista.reduce((m, p) => Math.max(m, p.meses || 1), 1), base = precio * meses;
+  let pct = 0, monto = 0; lista.forEach(p => { if (p.tipo === 'porcentaje') pct += Number(p.valor); else monto += Number(p.valor); });
+  const t = tope == null ? 100 : tope, ef = Math.min(pct, t), piso = Math.round(base * (1 - t / 100) * 100) / 100;
+  let total = Math.round((base * (1 - ef / 100) - monto) * 100) / 100; total = Math.max(total, piso, 0);
+  return { base, meses, pct, ef, monto, total, desc: base - total, topeAplicado: pct > t || (total === piso && monto > 0 && tope != null) };
+}
+function promosCobroCampo(id){
+  delete PROMO_SEL[id];
+  return `<div class="field"><label>Promociones</label><details class="promo-dd" id="cobrarPromosDD${id}"><summary id="cobrarPromosSum${id}">Sin promociones</summary><div class="promo-list" id="cobrarPromosList${id}"></div></details></div>`;
+}
+function promosCobroPintar(id, ap, st){
+  const s = document.getElementById('cobrarPromosSum' + id), l = document.getElementById('cobrarPromosList' + id); if (!s || !l) return;
+  const nombres = ap.filter(p => st.sel.has(p.id)).map(p => p.nombre);
+  s.textContent = nombres.length ? nombres.join(' + ') : 'Sin promociones';
+  l.innerHTML = ap.length ? ap.map(p => `<label class="promo-opt"><input type="checkbox" ${st.sel.has(p.id) ? 'checked' : ''} onchange="promosToggle('${id}','${p.id}',this.checked)"><span><b>${xe(p.nombre)}</b> · −${xe(promoValorTxt(p))}<small>${(p.meses || 1) > 1 ? xe(p.meses + ' meses juntos · ') : ''}${promoNoComb(p) ? 'No se suma con otras' : 'Se suma con otras'}</small></span></label>`).join('')
+    : '<div class="muted">No hay promociones aplicables para este plan y medio de pago.</div>';
+}
+function promosCobroMonto(id, plan, metodo){
+  const { st, ap } = promosSync(id, metodo), lista = ap.filter(p => st.sel.has(p.id));
+  const c = promosCalc(Number(plan.precio_transferencia) || 0, lista, PROMOS_TOPE);
+  promosCobroPintar(id, ap, st);
+  const det = [];
+  if (lista.length){ if (c.pct) det.push('−' + c.ef + '%'); if (c.monto) det.push('−' + formatearMonto(c.monto)); if (c.topeAplicado) det.push('tope ' + PROMOS_TOPE + '%'); if (c.meses > 1) det.push(c.meses + ' meses'); }
+  return `$${c.total.toFixed(2)}${det.length ? ' (' + det.join(' · ') + ')' : ''}`;
+}
+async function pagoPromosCargar(pago){
+  if (!pago || pago._promos !== undefined) return pago;
+  pago._promos = [];
+  if (PROMOS_OK === true && pago.id){ try{ pago._promos = (await sb(`pagos_promociones?select=nombre,tipo,valor,meses,descuento&pago_id=eq.${pago.id}&order=creado_en.asc`)) || []; }catch(e){} }
+  return pago;
+}
+function promoLineasWa(pago){
+  const l = (pago && pago._promos) || []; if (!l.length) return [];
+  const tot = l.reduce((s, x) => s + Number(x.descuento || 0), 0);
+  return [`• Promociones: ${l.map(x => x.nombre + ' (−' + (x.tipo === 'monto' ? formatearMonto(Number(x.valor)) : Number(x.valor) + '%') + ')').join(' + ')}`, `• Descuento total: ${formatearMonto(tot)}`];
+}
+function promoFilasPdf(pago){
+  const l = (pago && pago._promos) || []; if (!l.length) return [];
+  const tot = l.reduce((s, x) => s + Number(x.descuento || 0), 0), t = l.map(x => x.nombre).join(' + ');
+  return [['Promociones', t.length > 40 ? t.slice(0, 39) + '…' : t], ['Descuento total', '$' + tot.toFixed(2)]];
 }
 
 // ---------- Mercado Pago (26/9, pedido de Martin) ----------
@@ -18271,7 +18508,8 @@ async function abrirCobroAlumno(id, abrirForm){
         <div class="row">
           <div class="field"><label>Forma de pago</label><select id="cobrarMetodo${id}" onchange="previewMontoCobro('${id}')"><option value="transferencia">Transferencia</option><option value="efectivo">Efectivo (con descuento)</option><option value="mercado_pago">Mercado Pago (transferencia a MP)</option>${caj2On() ? '<option value="tarjeta_credito">Tarjeta de crédito</option><option value="tarjeta_debito">Tarjeta de débito</option>' : ''}</select></div>
           <div class="field" id="cobrarCajaWrap${id}" style="display:none;"><label id="cobrarCajaLbl${id}">Cuenta</label><select id="cobrarCaja${id}"></select></div>
-          <div class="field"><label>Meses a pagar</label><select id="cobrarMeses${id}" onchange="previewMontoCobro('${id}')"><option value="">1 mes</option>${PLANES_PREPAGO_CACHE.filter(x => x.activo).map(x => `<option value="${x.id}">${xe(x.nombre)}</option>`).join('')}</select></div>
+          ${PROMOS_OK === true ? promosCobroCampo(id) : ''}
+          <div class="field" ${PROMOS_OK === true ? 'style="display:none;"' : ''}><label>Meses a pagar</label><select id="cobrarMeses${id}" onchange="previewMontoCobro('${id}')"><option value="">1 mes</option>${PLANES_PREPAGO_CACHE.filter(x => x.activo).map(x => `<option value="${x.id}">${xe(x.nombre)}</option>`).join('')}</select></div>
           <div class="field"><label>Monto a pagar</label><input disabled id="cobrarMonto${id}"></div>
           <button style="align-self:end;" onclick="confirmarCobro('${id}')">Confirmar pago</button>
         </div>
@@ -18662,7 +18900,7 @@ function toggleCobrar(alumnoId){
   const div = document.getElementById(`cobrarForm${alumnoId}`);
   const abrir = div.style.display === 'none';
   div.style.display = abrir ? '' : 'none';
-  if (abrir){ cuoReset(alumnoId); previewMontoCobro(alumnoId); }
+  if (abrir){ cuoReset(alumnoId); delete PROMO_SEL[alumnoId]; previewMontoCobro(alumnoId); }
 }
 
 // ----- (v153) Cuota: desde cuándo empieza a contar + corregir vencimiento -----
@@ -18677,7 +18915,9 @@ async function cuoPreview(id){
   const sel = document.getElementById('cobrarMeses' + id);
   let r;
   try{
-    r = await sb('rpc/pago_vigencia_preview', { method: 'POST', body: JSON.stringify({ p_alumno_id: id, p_forma_pago_id: (sel && sel.value) || null, p_desde: CUO.desde[id] || null }) });
+    const mt = document.getElementById('cobrarMetodo' + id);
+    if (PROMOS_OK === true && mt) r = await sb('rpc/pago_vigencia_preview_promos', { method: 'POST', body: JSON.stringify({ p_alumno_id: id, p_promos: Array.from(promosSync(id, mt.value).st.sel), p_desde: CUO.desde[id] || null }) });   // (v223)
+    else r = await sb('rpc/pago_vigencia_preview', { method: 'POST', body: JSON.stringify({ p_alumno_id: id, p_forma_pago_id: (sel && sel.value) || null, p_desde: CUO.desde[id] || null }) });
     CUO.ok = true;
   }catch(e){
     if (cuoSinSql(e)) CUO.ok = false;
@@ -19923,6 +20163,12 @@ function previewMontoCobro(alumnoId){
   const plan = COBRANZAS_CACHE[alumnoId];
   if (!plan) return;
   const metodo = document.getElementById(`cobrarMetodo${alumnoId}`).value;
+  if (PROMOS_OK === true){   // (v223) promociones: el monto sale de las promos tildadas
+    document.getElementById(`cobrarMonto${alumnoId}`).value = promosCobroMonto(alumnoId, plan, metodo);
+    try{ cuoPreview(alumnoId); }catch(e){}
+    try{ cobrarCajaPintar(alumnoId); }catch(e){}
+    return;
+  }
   const formaPagoId = document.getElementById(`cobrarMeses${alumnoId}`).value;
   const prepago = formaPagoId ? PLANES_PREPAGO_CACHE.find(p => p.id === formaPagoId) : null;
   let monto, etiqueta;
@@ -19961,18 +20207,21 @@ function cobrarCajaPintar(id){
 
 async function confirmarCobro(alumnoId){
   const metodo = document.getElementById(`cobrarMetodo${alumnoId}`).value;
-  const formaPagoId = document.getElementById(`cobrarMeses${alumnoId}`).value || null;
+  const usaPromos = PROMOS_OK === true;   // (v223)
+  const promosIds = usaPromos ? Array.from(promosSync(alumnoId, metodo).st.sel) : [];
+  const formaPagoId = usaPromos ? null : (document.getElementById(`cobrarMeses${alumnoId}`).value || null);
   const alumnoNombre = ALUMNOS_CACHE.find(a => a.id === alumnoId)?.nombre || 'Alumno';
   const planNombre = COBRANZAS_CACHE[alumnoId]?.plan_nombre || 'Plan';
   const wCaja = document.getElementById(`cobrarCajaWrap${alumnoId}`), sCaja = document.getElementById(`cobrarCaja${alumnoId}`);
   const cajaElegida = (wCaja && wCaja.style.display !== 'none' && sCaja && sCaja.value) ? sCaja.value : null;   // (v185)
   try{
-    const resp = await sb('rpc/registrar_pago', {
+    const resp = await sb(usaPromos ? 'rpc/registrar_pago_promos' : 'rpc/registrar_pago', {
       method: 'POST',
-      body: JSON.stringify(Object.assign({ p_alumno_id: alumnoId, p_metodo_pago: metodo, p_forma_pago_id: formaPagoId }, CUO.desde[alumnoId] ? { p_desde: CUO.desde[alumnoId] } : {}))   // (v153) inicio elegido
+      body: JSON.stringify(Object.assign(usaPromos ? { p_alumno_id: alumnoId, p_metodo_pago: metodo, p_promos: promosIds } : { p_alumno_id: alumnoId, p_metodo_pago: metodo, p_forma_pago_id: formaPagoId }, CUO.desde[alumnoId] ? { p_desde: CUO.desde[alumnoId] } : {}))   // (v153) inicio elegido
     });
     cuoReset(alumnoId);
     const pago = Array.isArray(resp) ? resp[0] : resp;
+    if (usaPromos && pago){ await pagoPromosCargar(pago); (pago._promos || []).forEach(x => { x.nombre = String(x.nombre || '').replace(/'/g, '’'); }); delete PROMO_SEL[alumnoId]; }   // (v223) detalle para el recibo
     if (cajaElegida && pago && pago.id && pago.caja_id !== cajaElegida){   // (v185) mover el cobro a la cuenta elegida
       try{ await sb('rpc/pago_asignar_caja', { method: 'POST', body: JSON.stringify({ p_pago_id: pago.id, p_caja_id: cajaElegida }) }); pago.caja_id = cajaElegida; }
       catch(e){ toast('El pago se registró, pero no se pudo asignar la cuenta elegida: ' + extraerMensajeError(e), true); }
@@ -20098,6 +20347,7 @@ function reciboTextoWa(pago, alumnoNombre, planNombre){
     '',
     `• Plan: ${planNombre || 'Plan'}`,
     `• Monto: ${formatearMonto(pago.monto)}`,
+    ...promoLineasWa(pago),   // (v223)
     `• Medio de pago: ${met[pago.metodo_pago] || pago.metodo_pago || '—'}`,
     `• Fecha: ${formatearFechaCorta((pago.creado_en || '').slice(0, 10))}`,
     `• Período cubierto: ${formatearFechaCorta(pago.vigencia_desde)} al ${formatearFechaCorta(pago.vigencia_hasta)}`,
@@ -20108,6 +20358,7 @@ async function reciboWhatsApp(pago, alumnoId, alumnoNombre, planNombre){
   if (!pago) return;
   let tel = ((typeof ALUMNOS_CACHE !== 'undefined' && ALUMNOS_CACHE || []).find(a => a.id === alumnoId) || {}).telefono
          || ((typeof FICHA_ALU !== 'undefined' && FICHA_ALU && FICHA_ALU.a && FICHA_ALU.a.id === alumnoId) ? FICHA_ALU.a.telefono : null);
+  await pagoPromosCargar(pago);   // (v223)
   const msg = reciboTextoWa(pago, alumnoNombre, planNombre);
   if (!tel){ try{ const r = await sb(`alumnos?select=telefono&id=eq.${alumnoId}`); tel = r && r[0] && r[0].telefono; }catch(e){} }
   const url = whatsappUrlAlumno(tel, msg);
@@ -20150,6 +20401,7 @@ function armarDocRecibo(pago, alumnoNombre, planNombre){
     ['Plan', planNombre],
     ['Método de pago', etiquetaMetodoRecibo[pago.metodo_pago] || 'Transferencia'],
     ['Monto pagado', `$${Number(pago.monto).toFixed(2)}`],
+    ...promoFilasPdf(pago),   // (v223)
     ['Período cubierto', `${formatearFechaCorta(pago.vigencia_desde)} al ${formatearFechaCorta(pago.vigencia_hasta)}`],
     ['Próximo vencimiento', formatearFechaCorta(pago.vigencia_hasta)],
   ];
@@ -20177,8 +20429,9 @@ function nombreArchivoRecibo(pago, alumnoNombre){
   return `recibo-${slug}-${(pago.creado_en||'').slice(0,10)}.pdf`;
 }
 
-function descargarReciboPago(pago, alumnoNombre, planNombre){
+async function descargarReciboPago(pago, alumnoNombre, planNombre){
   if (!window.jspdf){ toast('No se pudo cargar el generador de PDF (revisá tu conexión a internet).', true); return; }
+  await pagoPromosCargar(pago);   // (v223)
   const doc = armarDocRecibo(pago, alumnoNombre, planNombre);
   doc.save(nombreArchivoRecibo(pago, alumnoNombre));
 }
@@ -20186,6 +20439,7 @@ function descargarReciboPago(pago, alumnoNombre, planNombre){
 async function compartirReciboPago(pago, alumnoNombre, planNombre){
   if (!window.jspdf){ toast('No se pudo cargar el generador de PDF (revisá tu conexión a internet).', true); return; }
   try{
+    await pagoPromosCargar(pago);   // (v223)
     const doc = armarDocRecibo(pago, alumnoNombre, planNombre);
     const blob = doc.output('blob');
     const archivo = new File([blob], nombreArchivoRecibo(pago, alumnoNombre), { type: 'application/pdf' });
