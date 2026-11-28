@@ -6136,7 +6136,7 @@ function atlIniciarAlu(){
   atlCargarVista('aluAtletismoContenido', id || '');
 }
 
-const APP_VERSION = 224;
+const APP_VERSION = 225;
 let ES_PERSONAL = false;   // (v132) cuenta personal (gimnasios.tipo = 'personal'); se calcula en perAplicar()
 // (v96) Fecha de la última actualización: se cambia junto con APP_VERSION en cada entrega. Se muestra en la
 // pantalla de inicio y en el menú de cuenta ("v94 · actualizada el 5/10/2026").
@@ -16131,20 +16131,22 @@ function promosCobroMonto(id, plan, metodo){
   return `$${c.total.toFixed(2)}${det.length ? ' (' + det.join(' · ') + ')' : ''}`;
 }
 async function pagoPromosCargar(pago){
-  if (!pago || pago._promos !== undefined) return pago;
+  if (!pago) return pago;
+  try{ await cmPagoCargar(pago); }catch(e){}   // (v225)
+  if (pago._promos !== undefined) return pago;
   pago._promos = [];
   if (PROMOS_OK === true && pago.id){ try{ pago._promos = (await sb(`pagos_promociones?select=nombre,tipo,valor,meses,descuento&pago_id=eq.${pago.id}&order=creado_en.asc`)) || []; }catch(e){} }
   return pago;
 }
 function promoLineasWa(pago){
-  const l = (pago && pago._promos) || []; if (!l.length) return [];
+  const l = (pago && pago._promos) || [], cmL = cmLineasWa(pago); if (!l.length) return cmL;
   const tot = l.reduce((s, x) => s + Number(x.descuento || 0), 0);
-  return [`• Promociones: ${l.map(x => x.nombre + ' (−' + (x.tipo === 'monto' ? formatearMonto(Number(x.valor)) : Number(x.valor) + '%') + ')').join(' + ')}`, `• Descuento total: ${formatearMonto(tot)}`];
+  return [...cmL, `• Promociones: ${l.map(x => x.nombre + ' (−' + (x.tipo === 'monto' ? formatearMonto(Number(x.valor)) : Number(x.valor) + '%') + ')').join(' + ')}`, `• Descuento total: ${formatearMonto(tot)}`];
 }
 function promoFilasPdf(pago){
-  const l = (pago && pago._promos) || []; if (!l.length) return [];
+  const l = (pago && pago._promos) || [], cmF = cmFilasPdf(pago); if (!l.length) return cmF;
   const tot = l.reduce((s, x) => s + Number(x.descuento || 0), 0), t = l.map(x => x.nombre).join(' + ');
-  return [['Promociones', t.length > 40 ? t.slice(0, 39) + '…' : t], ['Descuento total', '$' + tot.toFixed(2)]];
+  return [...cmF, ['Promociones', t.length > 40 ? t.slice(0, 39) + '…' : t], ['Descuento total', '$' + tot.toFixed(2)]];
 }
 
 // =====================================================================
@@ -16205,7 +16207,7 @@ function cmGimPintar(){
     </div>
     <div class="field"><label class="promo-opt" style="padding:0;"><input type="checkbox" id="cmProp" ${c.proporcional ? 'checked' : ''} ${adm ? '' : 'disabled'}> <span>Cobrar proporcional si se anota después del día límite</span></label></div>
     ${adm ? '<div class="x-btns" style="margin-top:0;"><button onclick="cmCfgGuardar()">Guardar reglas</button></div>' : ''}
-    <div class="x-sub" style="margin:6px 0 14px;">El día límite se usa ya para la alerta de Recepción. El recargo, el proporcional y las semanas base se aplican en el cobro (próxima versión): por ahora solo quedan guardados.</div>
+    <div class="x-sub" style="margin:6px 0 14px;">El día límite también dispara la alerta de Recepción. Después de ese día, el cobro suma el recargo; y si es la primera cuota, cobra proporcional (según las semanas base y los turnos fijos del alumno).</div>
     <div class="x-sec">📅 Feriados <span class="muted" style="font-weight:400;">(de hoy en adelante)</span></div>
     <div class="x-sub" style="margin-bottom:8px;">"No abre": no se reservan clases fijas ese día. Si cambiás uno, las reservas de este mes y del que viene se ajustan solas.</div>
     ${fer}
@@ -16280,7 +16282,7 @@ async function cmPendCargar(){
     box.className = '';
     box.innerHTML = p.map(x => `<div class="x-item" style="align-items:center;gap:10px;flex-wrap:wrap;">
       <div style="flex:1;min-width:200px;"><b>${xe(x.alumno)}</b><div class="x-sub">${x.tipo === 'sin_cupo' ? '🚫 ' : '💰 '}${xe(x.detalle)}${x.fecha ? ' · ' + xe(cmDiaTxt(x.fecha)) : ''}</div></div>
-      <div class="row" style="gap:6px;"><button class="ghost" onclick="abrirFichaAlumno('${x.alumno_id}')">Ver ficha</button>${x.tipo === 'sin_pago' && cmEsAdmin() ? `<button class="ghost" onclick="abrirCobroAlumno('${x.alumno_id}', true)">💰 Cobrar</button>` : ''}</div></div>`).join('');
+      <div class="row" style="gap:6px;"><button class="ghost" onclick="abrirFichaAlumno('${x.alumno_id}')">Ver ficha</button>${x.tipo === 'sin_pago' && cmEsAdmin() ? `<button class="ghost" onclick="abrirCobroAlumno('${x.alumno_id}', true)">💰 Cobrar</button>` : ''}${x.tipo === 'sin_pago' ? `<button class="ghost" onclick="cmLiberar('${x.alumno_id}', '${String(x.alumno || '').replace(/['"\\<>]/g, '')}')">🗑️ Liberar lugares</button>` : ''}</div></div>`).join('');
   }catch(e){ box.textContent = 'No se pudo cargar los pendientes.'; }
 }
 
@@ -16304,7 +16306,7 @@ async function cmTurnosCargar(id, planId){
     box.innerHTML = (t.length ? `<div class="srv-chips" style="margin-bottom:8px;">${t.map(x => `<span class="srv-chip">${xe(CM_DIAS[x.dia].slice(0, 3))} ${xe(cmHora(x.clases && x.clases.hora_inicio))} · ${xe((x.clases && x.clases.nombre) || 'Clase')}</span>`).join('')}</div>
       <div class="x-sub">Desde hoy: ${cnt.anotado || 0} reservadas${cnt.feriado ? ' · ' + cnt.feriado + ' en feriado' : ''}${cnt.suspendida ? ' · ' + cnt.suspendida + ' con clase suspendida' : ''}${cnt.sin_cupo ? ' · <b style="color:var(--danger-text);">' + cnt.sin_cupo + ' sin cupo</b>' : ''}.${pl && pl.dias_por_semana ? ' Plan: ' + pl.dias_por_semana + ' por semana.' : ''}</div>`
       : '<div class="muted" style="margin-bottom:8px;">Todavía no tiene turnos fijos. Al definirlos se reserva solo su lugar todo el mes.</div>')
-      + `<div class="x-btns" style="margin-top:8px;"><button class="ghost" onclick="cmTurnosEditar('${id}', '${planId || ''}')">✏️ ${t.length ? 'Cambiar turnos fijos' : 'Definir turnos fijos'}</button></div>`;
+      + `<div class="x-btns" style="margin-top:8px;"><button class="ghost" onclick="cmTurnosEditar('${id}', '${planId || ''}')">✏️ ${t.length ? 'Cambiar turnos fijos' : 'Definir turnos fijos'}</button>${t.length ? `<button class="ghost" onclick="cmLiberar('${id}')">🗑️ Liberar lugares</button>` : ''}</div>`;
   }catch(e){ box.className = 'muted'; box.textContent = 'No se pudieron cargar los turnos fijos.'; }
 }
 async function cmTurnosEditar(id, planId){
@@ -16356,6 +16358,113 @@ async function cmTurnosGuardar(forzar){
     const id = E.id, pid = E.planId; CM.edit = null; CM.busy = false;
     await cmTurnosCargar(id, pid);
   }catch(e){ toast('Error: ' + extraerMensajeError(e), true); CM.busy = false; }
+}
+
+// ---------- (v225) Cuota mensual: cobro con proporcional y recargo + liberar lugares ----------
+CM.cob = {};   // por alumno: { r: último cálculo, per: '', prueba: '', seq: 0 }
+function cmCobroAplica(){ return cmOn() && cmEsAdmin(); }
+function cmMesIni(delta){ const d = new Date(); d.setDate(1); d.setMonth(d.getMonth() + (delta || 0)); return fechaLocalISO(d); }
+function cmMesNombre(iso){ const m = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre']; const d = new Date(iso + 'T12:00:00'); return m[d.getMonth()] + ' ' + d.getFullYear(); }
+function cmCobroCampos(id){
+  if (!cmCobroAplica()) return '';
+  CM.cob[id] = { r: null, per: '', prueba: '', seq: 0 };
+  return `<div class="field"><label>Período a cobrar</label><select id="cmCobPer${id}" onchange="cmCobroCambio('${id}')"><option value="">Automático</option><option value="${cmMesIni(0)}">Este mes (${xe(cmMesNombre(cmMesIni(0)))})</option><option value="${cmMesIni(1)}">El mes que viene (${xe(cmMesNombre(cmMesIni(1)))})</option></select></div>
+    <div class="field" id="cmCobPruebaW${id}" style="display:none;"><label>Clase de prueba (gratis)</label><input type="date" id="cmCobPrueba${id}" onchange="cmCobroCambio('${id}')"></div>
+    <div id="cmCobDesg${id}" class="cuo-vig" style="display:none;flex-basis:100%;"></div>`;
+}
+function cmCobroCambio(id){
+  const c = CM.cob[id] || (CM.cob[id] = { r: null, per: '', prueba: '', seq: 0 });
+  c.per = (document.getElementById('cmCobPer' + id) || {}).value || '';
+  c.prueba = (document.getElementById('cmCobPrueba' + id) || {}).value || '';
+  previewMontoCobro(id);
+}
+function cmCobroPreview(id){
+  const plan = COBRANZAS_CACHE[id]; if (!plan) return;
+  const metodo = document.getElementById('cobrarMetodo' + id).value;
+  const c = CM.cob[id] || (CM.cob[id] = { r: null, per: '', prueba: '', seq: 0 });
+  let ids = [];
+  if (PROMOS_OK === true){
+    const { st, ap } = promosSync(id, metodo), ap1 = ap.filter(p => (p.meses || 1) <= 1);
+    Array.from(st.sel).forEach(x => { if (!ap1.some(p => p.id === x)){ st.sel.delete(x); st.auto.delete(x); } });
+    promosCobroPintar(id, ap1, st);
+    ids = Array.from(st.sel);
+  }
+  const mon = document.getElementById('cobrarMonto' + id), box = document.getElementById('cmCobDesg' + id);
+  const seq = ++c.seq; mon.value = 'Calculando…';
+  sb('rpc/cm_cobro_calcular', { method: 'POST', body: JSON.stringify({ p_alumno_id: id, p_periodo: c.per || null, p_metodo_pago: metodo, p_promos: ids, p_fecha_prueba: c.prueba || null }) }).then(r => {
+    if (seq !== c.seq) return;
+    c.r = r; cmCobroPintar(id);
+  }).catch(e => { if (seq !== c.seq) return; c.r = { error: 'x', mensaje: extraerMensajeError(e) }; cmCobroPintar(id); });
+  try{ cobrarCajaPintar(id); }catch(e){}
+}
+function cmCobroPintar(id){
+  const c = CM.cob[id], r = c && c.r, mon = document.getElementById('cobrarMonto' + id), box = document.getElementById('cmCobDesg' + id), pw = document.getElementById('cmCobPruebaW' + id);
+  if (!mon || !box) return;
+  const m = x => formatearMonto(Number(x) || 0);
+  if (!r){ mon.value = ''; box.style.display = 'none'; return; }
+  if (r.error){
+    mon.value = '—'; box.style.display = '';
+    if (r.error === 'sin_turnos'){
+      box.innerHTML = `<b>Primero cargá los turnos fijos del alumno.</b><div class="x-sub">Sin turnos no se puede calcular la cuota. Se reservan solos sus lugares del mes.</div><div class="x-btns" style="margin-top:8px;"><button onclick="cerrarFicha();abrirFichaAlumno('${id}')">📌 Ir a turnos fijos</button></div>`;
+    } else box.innerHTML = `<b style="color:var(--danger-text);">${xe(r.mensaje || r.error)}</b>`;
+    return;
+  }
+  if (pw) pw.style.display = (r.tipo === 'proporcional' || c.prueba) ? '' : 'none';
+  mon.value = m(r.total);
+  if (r.tipo === 'proporcional'){ const pi = document.getElementById('cmCobPrueba' + id); if (pi && !pi.value) pi.value = r.fecha_prueba; }
+  const f = [];
+  f.push(`<div><b>Cuota de ${xe(cmMesNombre(r.periodo))}</b> · del ${xe(formatearFechaCorta(r.desde))} al ${xe(formatearFechaCorta(r.hasta))}</div>`);
+  if (r.tipo === 'proporcional'){
+    f.push(`<div class="x-sub">Plan del mes: ${m(r.precio_mes)} → proporcional: <b>${r.clases} clase${r.clases === 1 ? '' : 's'}</b> × ${m(r.precio_clase)} desde la prueba del ${xe(formatearFechaCorta(r.fecha_prueba))} (la clase de prueba no se cobra)</div>`);
+  } else f.push(`<div class="x-sub">Mes completo: ${m(r.precio_mes)}</div>`);
+  if (Number(r.recargo_monto) > 0) f.push(`<div class="x-sub" style="color:var(--danger-text);">+ Recargo por pago tardío (pasó el día ${r.dia_limite}): ${r.recargo_pct}% = ${m(r.recargo_monto)}</div>`);
+  (r.lineas || []).forEach(l => f.push(`<div class="x-sub">− ${xe(l.nombre)}: ${m(l.descuento)}</div>`));
+  if (r.tope_aplicado) f.push(`<div class="x-sub">Se aplicó el tope de descuento (${r.tope}%).</div>`);
+  f.push(`<div style="margin-top:4px;"><b>Total: ${m(r.total)}</b></div>`);
+  box.innerHTML = f.join(''); box.style.display = '';
+}
+// recibo: el detalle sale de cm_cobros (se carga junto con las promos)
+async function cmPagoCargar(pago){
+  if (!pago || pago._cm !== undefined) return pago;
+  pago._cm = null;
+  if (cmOn() && pago.id){ try{ const r = await sb(`cm_cobros?select=tipo,precio_mes,clases,precio_clase,fecha_prueba,recargo_pct,recargo_monto,periodo&pago_id=eq.${pago.id}`); pago._cm = (r && r[0]) || null; }catch(e){} }
+  return pago;
+}
+function cmLineasWa(pago){
+  const c = pago && pago._cm; if (!c) return [];
+  const m = formatearMonto, o = [];
+  if (c.tipo === 'proporcional') o.push(`• Cuota proporcional: ${c.clases} clase${c.clases === 1 ? '' : 's'} × ${m(Number(c.precio_clase))} (clase de prueba el ${formatearFechaCorta(c.fecha_prueba)}, sin cargo)`);
+  else o.push(`• Cuota de ${cmMesNombre(c.periodo)}: ${m(Number(c.precio_mes))}`);
+  if (Number(c.recargo_monto) > 0) o.push(`• Recargo por pago tardío (${Number(c.recargo_pct)}%): ${m(Number(c.recargo_monto))}`);
+  return o;
+}
+function cmFilasPdf(pago){
+  const c = pago && pago._cm; if (!c) return [];
+  const o = [];
+  if (c.tipo === 'proporcional') o.push(['Cuota proporcional', `${c.clases} clase${c.clases === 1 ? '' : 's'} x $${Number(c.precio_clase).toFixed(2)}`]);
+  else o.push(['Cuota del mes', `$${Number(c.precio_mes).toFixed(2)}`]);
+  if (Number(c.recargo_monto) > 0) o.push(['Recargo por pago tardío', `${Number(c.recargo_pct)}% = $${Number(c.recargo_monto).toFixed(2)}`]);
+  return o;
+}
+// ----- Liberar lugares (baja, o ya no viene más): saca los turnos fijos y suelta las reservas de hoy en adelante -----
+async function cmLiberar(id, nombre, silencioso){
+  if (CM.busy) return false;
+  if (!silencioso && !confirm(`¿Liberar los lugares de ${nombre || 'este alumno'}? Se quitan sus turnos fijos y se sueltan sus reservas de hoy en adelante (este mes y el que viene). No toca pagos ni el historial de asistencia.`)) return false;
+  CM.busy = true;
+  try{
+    await sb('rpc/cm_turnos_asignar', { method: 'POST', body: JSON.stringify({ p_alumno_id: id, p_turnos: [], p_forzar: false }) });
+    CM.busy = false; toast('Lugares liberados ✓');
+    try{ const al = (ALUMNOS_CACHE || []).find(a => a.id === id); if (document.getElementById('cmTurnosBox' + id)) await cmTurnosCargar(id, al && al.plan_id); }catch(e){}
+    try{ cmPendCargar(); }catch(e){}
+    return true;
+  }catch(e){ CM.busy = false; toast('No se pudieron liberar los lugares: ' + extraerMensajeError(e), true); return false; }
+}
+async function cmBajaLiberar(alumnoId, nombre){
+  if (!cmOn()) return;
+  try{
+    const t = await sb(`cm_turnos_fijos?select=id&alumno_id=eq.${alumnoId}&limit=1`);
+    if (t && t.length && confirm(`${nombre || 'El alumno'} tiene turnos fijos reservados. ¿Liberar sus lugares ahora (hoy en adelante)? Si no, siguen ocupando cupo.`)) await cmLiberar(alumnoId, nombre, true);
+  }catch(e){}
 }
 
 // ---------- Mercado Pago (26/9, pedido de Martin) ----------
@@ -18726,7 +18835,8 @@ async function abrirCobroAlumno(id, abrirForm){
           <div class="field"><label>Forma de pago</label><select id="cobrarMetodo${id}" onchange="previewMontoCobro('${id}')"><option value="transferencia">Transferencia</option><option value="efectivo">Efectivo (con descuento)</option><option value="mercado_pago">Mercado Pago (transferencia a MP)</option>${caj2On() ? '<option value="tarjeta_credito">Tarjeta de crédito</option><option value="tarjeta_debito">Tarjeta de débito</option>' : ''}</select></div>
           <div class="field" id="cobrarCajaWrap${id}" style="display:none;"><label id="cobrarCajaLbl${id}">Cuenta</label><select id="cobrarCaja${id}"></select></div>
           ${PROMOS_OK === true ? promosCobroCampo(id) : ''}
-          <div class="field" ${PROMOS_OK === true ? 'style="display:none;"' : ''}><label>Meses a pagar</label><select id="cobrarMeses${id}" onchange="previewMontoCobro('${id}')"><option value="">1 mes</option>${PLANES_PREPAGO_CACHE.filter(x => x.activo).map(x => `<option value="${x.id}">${xe(x.nombre)}</option>`).join('')}</select></div>
+          ${cmCobroCampos(id)}
+          <div class="field" ${(PROMOS_OK === true || cmCobroAplica()) ? 'style="display:none;"' : ''}><label>Meses a pagar</label><select id="cobrarMeses${id}" onchange="previewMontoCobro('${id}')"><option value="">1 mes</option>${PLANES_PREPAGO_CACHE.filter(x => x.activo).map(x => `<option value="${x.id}">${xe(x.nombre)}</option>`).join('')}</select></div>
           <div class="field"><label>Monto a pagar</label><input disabled id="cobrarMonto${id}"></div>
           <button style="align-self:end;" onclick="confirmarCobro('${id}')">Confirmar pago</button>
         </div>
@@ -20380,6 +20490,7 @@ function previewMontoCobro(alumnoId){
   const plan = COBRANZAS_CACHE[alumnoId];
   if (!plan) return;
   const metodo = document.getElementById(`cobrarMetodo${alumnoId}`).value;
+  if (cmCobroAplica() && document.getElementById('cmCobDesg' + alumnoId)){ cmCobroPreview(alumnoId); return; }   // (v225) cuota mensual
   if (PROMOS_OK === true){   // (v223) promociones: el monto sale de las promos tildadas
     document.getElementById(`cobrarMonto${alumnoId}`).value = promosCobroMonto(alumnoId, plan, metodo);
     try{ cuoPreview(alumnoId); }catch(e){}
@@ -20424,20 +20535,24 @@ function cobrarCajaPintar(id){
 
 async function confirmarCobro(alumnoId){
   const metodo = document.getElementById(`cobrarMetodo${alumnoId}`).value;
+  const usaCm = cmCobroAplica() && !!document.getElementById('cmCobDesg' + alumnoId);   // (v225)
+  const cmc = usaCm ? (CM.cob[alumnoId] || {}) : null;
+  if (usaCm && (!cmc.r || cmc.r.error)){ toast(cmc && cmc.r && cmc.r.error === 'sin_turnos' ? 'Primero cargá los turnos fijos del alumno.' : 'Revisá el detalle del cobro antes de confirmar.', true); return; }
   const usaPromos = PROMOS_OK === true;   // (v223)
-  const promosIds = usaPromos ? Array.from(promosSync(alumnoId, metodo).st.sel) : [];
+  const promosIds = usaPromos ? Array.from(promosSync(alumnoId, metodo).st.sel).filter(x => !usaCm || (PROMOS_CACHE.find(p => p.id === x) || {}).meses <= 1 || !(PROMOS_CACHE.find(p => p.id === x) || {}).meses) : [];
   const formaPagoId = usaPromos ? null : (document.getElementById(`cobrarMeses${alumnoId}`).value || null);
   const alumnoNombre = ALUMNOS_CACHE.find(a => a.id === alumnoId)?.nombre || 'Alumno';
   const planNombre = COBRANZAS_CACHE[alumnoId]?.plan_nombre || 'Plan';
   const wCaja = document.getElementById(`cobrarCajaWrap${alumnoId}`), sCaja = document.getElementById(`cobrarCaja${alumnoId}`);
   const cajaElegida = (wCaja && wCaja.style.display !== 'none' && sCaja && sCaja.value) ? sCaja.value : null;   // (v185)
   try{
-    const resp = await sb(usaPromos ? 'rpc/registrar_pago_promos' : 'rpc/registrar_pago', {
+    const resp = await sb(usaCm ? 'rpc/cm_cobrar' : usaPromos ? 'rpc/registrar_pago_promos' : 'rpc/registrar_pago', {
       method: 'POST',
-      body: JSON.stringify(Object.assign(usaPromos ? { p_alumno_id: alumnoId, p_metodo_pago: metodo, p_promos: promosIds } : { p_alumno_id: alumnoId, p_metodo_pago: metodo, p_forma_pago_id: formaPagoId }, CUO.desde[alumnoId] ? { p_desde: CUO.desde[alumnoId] } : {}))   // (v153) inicio elegido
+      body: JSON.stringify(usaCm ? { p_alumno_id: alumnoId, p_periodo: cmc.per || null, p_metodo_pago: metodo, p_promos: promosIds, p_fecha_prueba: cmc.prueba || null } : Object.assign(usaPromos ? { p_alumno_id: alumnoId, p_metodo_pago: metodo, p_promos: promosIds } : { p_alumno_id: alumnoId, p_metodo_pago: metodo, p_forma_pago_id: formaPagoId }, CUO.desde[alumnoId] ? { p_desde: CUO.desde[alumnoId] } : {}))   // (v153) inicio elegido
     });
     cuoReset(alumnoId);
     const pago = Array.isArray(resp) ? resp[0] : resp;
+    if (usaCm && pago){ await cmPagoCargar(pago); delete CM.cob[alumnoId]; }   // (v225)
     if (usaPromos && pago){ await pagoPromosCargar(pago); (pago._promos || []).forEach(x => { x.nombre = String(x.nombre || '').replace(/'/g, '’'); }); delete PROMO_SEL[alumnoId]; }   // (v223) detalle para el recibo
     if (cajaElegida && pago && pago.id && pago.caja_id !== cajaElegida){   // (v185) mover el cobro a la cuenta elegida
       try{ await sb('rpc/pago_asignar_caja', { method: 'POST', body: JSON.stringify({ p_pago_id: pago.id, p_caja_id: cajaElegida }) }); pago.caja_id = cajaElegida; }
@@ -21255,6 +21370,7 @@ async function toggleActivoAlumno(alumnoId, nuevoActivo, nombre){
       body: JSON.stringify({ p_alumno_id: alumnoId, p_activo: nuevoActivo })
     });
     toast(nuevoActivo ? 'Alumno reactivado ✓' : 'Alumno dado de baja ✓');
+    if (!nuevoActivo){ try{ await cmBajaLiberar(alumnoId, nombre); }catch(e){} }   // (v225) ofrece liberar sus lugares
     await cargarPersonas();
     cargarListaAlumnos();
     if (document.getElementById('subvistaDashboard')?.style.display !== 'none') cargarDashboardAdmin();
