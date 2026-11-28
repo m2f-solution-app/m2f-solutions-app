@@ -4218,6 +4218,11 @@ if ('serviceWorker' in navigator) window.addEventListener('load', function(){ tr
           <div id="cobrosOnlineGimnasio" class="muted">Cargando...</div>
         </div></details>
 
+        <details class="plegable card" data-k="gim-cuota-mensual" id="secGimCM" style="display:none;"><summary>💳 Cuota mensual</summary><div class="plg-body">
+          <div class="muted" style="margin-bottom:10px;">Turnos fijos por alumno con reserva automática del mes, feriados y reglas de la cuota mensual. Se prende en 🧩 Accesos.</div>
+          <div id="cmGimBox" class="muted">Cargando…</div>
+        </div></details>
+
         <details class="plegable card" data-k="gim-tipos"><summary>Tipos de entrenamiento</summary><div class="plg-body">
           <div class="muted" style="margin-bottom:10px;">Ej: Fitness, Rendimiento específico, Readaptación, Salud. Reemplaza a "Estándar/Especial": cada alumno tiene un tipo de entrenamiento, y en el Armador elegís para qué tipo (y en qué día, por la fecha del día planificado) es cada rutina — se asigna sola al reservar turno.</div>
           <div class="row">
@@ -5199,8 +5204,8 @@ const MOD_PRESETS = {
   pro:           { n: 'Pro',           ico: '🚀', on: '*' },
   personal:      { n: 'Personal',      ico: '💪', on: ['seguimiento', 'logros', 'wellness'] },   // (v132) entrena por su cuenta: solo rutinas + progreso
 };
-const MOD_FUERA_PRESET = ['sucursales', 'servicios', 'cuota_variable', 'bosco', 'cierre_caja', 'obras_sociales', 'panel_perfiles'];   // módulos que no entran en ningún plan: se prenden aparte, gimnasio por gimnasio
-const MOD_BLOQUEO_SERVIDOR = ['clases', 'evaluaciones', 'alertas', 'finanzas', 'recepcion', 'proyeccion_ingresos', 'servicios', 'wellness', 'cuota_variable', 'bosco', 'cierre_caja', 'obras_sociales'];   // etapa 1 (SQL) + proyección (ya la valida su RPC)
+const MOD_FUERA_PRESET = ['sucursales', 'servicios', 'cuota_variable', 'cuota_mensual', 'bosco', 'cierre_caja', 'obras_sociales', 'panel_perfiles'];   // módulos que no entran en ningún plan: se prenden aparte, gimnasio por gimnasio
+const MOD_BLOQUEO_SERVIDOR = ['clases', 'evaluaciones', 'alertas', 'finanzas', 'recepcion', 'proyeccion_ingresos', 'servicios', 'wellness', 'cuota_variable', 'cuota_mensual', 'bosco', 'cierre_caja', 'obras_sociales'];   // etapa 1 (SQL) + proyección (ya la valida su RPC)
 function wellOn(){ return modOn('wellness'); }
 // (v199) Panel Deportistas: módulo OPCIONAL por gimnasio (apagado por defecto). Con MOD_MAP.panel_perfiles !== true
 // NADA de esto aparece ni consulta la base: la app queda como antes.
@@ -6131,7 +6136,7 @@ function atlIniciarAlu(){
   atlCargarVista('aluAtletismoContenido', id || '');
 }
 
-const APP_VERSION = 223;
+const APP_VERSION = 224;
 let ES_PERSONAL = false;   // (v132) cuenta personal (gimnasios.tipo = 'personal'); se calcula en perAplicar()
 // (v96) Fecha de la última actualización: se cambia junto con APP_VERSION en cada entrega. Se muestra en la
 // pantalla de inicio y en el menú de cuenta ("v94 · actualizada el 5/10/2026").
@@ -14006,6 +14011,7 @@ function cambiarSubvista(v){
     cargarCategoriasYEquipos();
     telPintarCampo();   // (v102)
     try{ promosPintarConfig(); }catch(e){}   // (v223)
+    try{ cmGimEntrar(); }catch(e){}   // (v224) cuota mensual
   }
   cerrarMenuProf();
 }
@@ -16139,6 +16145,217 @@ function promoFilasPdf(pago){
   const l = (pago && pago._promos) || []; if (!l.length) return [];
   const tot = l.reduce((s, x) => s + Number(x.descuento || 0), 0), t = l.map(x => x.nombre).join(' + ');
   return [['Promociones', t.length > 40 ? t.slice(0, 39) + '…' : t], ['Descuento total', '$' + tot.toFixed(2)]];
+}
+
+// =====================================================================
+// (v224) 💳 Cuota mensual · etapa 2a: configuración, feriados, turnos fijos y reservas del mes
+// SQL: v224-cuota-mensual.sql. Módulo 'cuota_mensual' (apagado por defecto: se prende en 🧩 Accesos, gimnasio por gimnasio).
+// Con el módulo apagado NADA de esto aparece ni consulta la base: la app queda como antes.
+// =====================================================================
+const CM = { cfg: null, fer: [], ok: null, edit: null, busy: false };
+const CM_DIAS = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+function cmOn(){ return !!(MOD_MAP && MOD_MAP.cuota_mensual === true && modOn('clases')); }
+function cmEsAdmin(){ return !!(PERFIL_ACTUAL && PERFIL_ACTUAL.rol === 'admin'); }
+function cmHoy(){ return fechaLocalISO(new Date()); }
+function cmMes(desfase){ const d = new Date(); d.setDate(1); d.setMonth(d.getMonth() + (desfase || 0)); return fechaLocalISO(d).slice(0, 8) + '01'; }
+function cmDiaTxt(iso){ const d = new Date(iso + 'T12:00:00'); return CM_DIAS[(d.getDay() + 6) % 7].slice(0, 3) + ' ' + formatearFechaCorta(iso); }
+function cmHora(h){ return String(h || '').slice(0, 5); }
+function cmResumenTxt(r){
+  if (!r) return '';
+  const a = [];
+  if (r.anotadas) a.push(r.anotadas + ' clase' + (r.anotadas === 1 ? '' : 's') + ' reservada' + (r.anotadas === 1 ? '' : 's'));
+  if (r.canceladas) a.push(r.canceladas + ' liberada' + (r.canceladas === 1 ? '' : 's'));
+  if (r.feriados) a.push(r.feriados + ' en feriado');
+  if (r.suspendidas) a.push(r.suspendidas + ' con clase suspendida');
+  if (r.sin_cupo) a.push(r.sin_cupo + ' sin cupo');
+  return a.join(' · ') || 'sin cambios';
+}
+
+// ----- Mi gimnasio → Cuota mensual -----
+async function cmGimEntrar(){
+  const sec = document.getElementById('secGimCM'); if (!sec) return;
+  sec.style.display = cmOn() ? '' : 'none';
+  if (!cmOn()) return;
+  const gid = PERFIL_ACTUAL && PERFIL_ACTUAL.gimnasio_id;
+  try{
+    const [c, f] = await Promise.all([
+      sb(`cm_config?select=*&gimnasio_id=eq.${gid}`),
+      sb(`cm_feriados?select=fecha,nombre,abre,origen&fecha=gte.${cmHoy()}&order=fecha.asc&limit=200`)
+    ]);
+    CM.cfg = (c && c[0]) || { dia_limite: 10, recargo_pct: 5, proporcional: true, semanas_base: 4 };
+    CM.fer = f || []; CM.ok = true;
+  }catch(e){ CM.ok = false; }
+  cmGimPintar();
+  cmPendCargar();
+}
+function cmGimPintar(){
+  const box = document.getElementById('cmGimBox'); if (!box) return;
+  if (CM.ok === false){ box.innerHTML = '<div class="muted">No se pudo cargar. ¿Corriste v224-cuota-mensual.sql?</div>'; return; }
+  const c = CM.cfg || {}, adm = cmEsAdmin();
+  const fer = CM.fer.length ? CM.fer.map(f => `<div class="x-item" style="align-items:center;gap:10px;flex-wrap:wrap;">
+      <div style="flex:1;min-width:180px;"><b>${xe(cmDiaTxt(f.fecha))}</b> · ${xe(f.nombre)} <span class="pill ${f.abre ? 'ok' : 'warn'}">${f.abre ? 'Abre' : 'No abre'}</span></div>
+      ${adm ? `<div class="row" style="gap:6px;"><button class="ghost" onclick="cmFerToggle('${f.fecha}', ${!f.abre})">${f.abre ? 'Marcar "no abre"' : 'Marcar "abre"'}</button><button class="ghost" onclick="cmFerBorrar('${f.fecha}')">Quitar</button></div>` : ''}</div>`).join('')
+    : '<div class="muted">No hay feriados cargados de hoy en adelante.</div>';
+  box.innerHTML = `
+    <div class="x-sec">Reglas</div>
+    <div class="row">
+      <div class="field" style="width:150px;"><label>Día límite del mes</label><input id="cmDiaLimite" inputmode="numeric" type="number" min="1" max="28" value="${xe(c.dia_limite)}" ${adm ? '' : 'disabled'}></div>
+      <div class="field" style="width:170px;"><label>Recargo por pago tardío (%)</label><input id="cmRecargo" inputmode="decimal" type="number" min="0" max="100" step="0.1" value="${xe(c.recargo_pct)}" ${adm ? '' : 'disabled'}></div>
+      <div class="field" style="width:150px;"><label>Semanas base</label><input id="cmSemanas" inputmode="numeric" type="number" min="1" max="6" value="${xe(c.semanas_base)}" ${adm ? '' : 'disabled'}></div>
+    </div>
+    <div class="field"><label class="promo-opt" style="padding:0;"><input type="checkbox" id="cmProp" ${c.proporcional ? 'checked' : ''} ${adm ? '' : 'disabled'}> <span>Cobrar proporcional si se anota después del día límite</span></label></div>
+    ${adm ? '<div class="x-btns" style="margin-top:0;"><button onclick="cmCfgGuardar()">Guardar reglas</button></div>' : ''}
+    <div class="x-sub" style="margin:6px 0 14px;">El día límite se usa ya para la alerta de Recepción. El recargo, el proporcional y las semanas base se aplican en el cobro (próxima versión): por ahora solo quedan guardados.</div>
+    <div class="x-sec">📅 Feriados <span class="muted" style="font-weight:400;">(de hoy en adelante)</span></div>
+    <div class="x-sub" style="margin-bottom:8px;">"No abre": no se reservan clases fijas ese día. Si cambiás uno, las reservas de este mes y del que viene se ajustan solas.</div>
+    ${fer}
+    ${adm ? `<div class="row" style="margin-top:10px;align-items:flex-end;">
+      <div class="field"><label>Fecha</label><input type="date" id="cmFerFecha"></div>
+      <div class="field" style="flex:1;min-width:160px;"><label>Nombre</label><input id="cmFerNombre" maxlength="80" placeholder="Ej: Puente, cierre por refacción"></div>
+      <button onclick="cmFerAgregar()">+ Agregar</button>
+      <button class="ghost" onclick="cmFerSembrar()">🇦🇷 Cargar feriados nacionales sugeridos</button></div>` : ''}
+    <div class="x-sec">📌 Reservas del mes</div>
+    <div class="x-sub" style="margin-bottom:8px;">Cada día 1 se reservan solas las clases fijas de los socios activos. Estos botones lo hacen ahora (no duplican nada).</div>
+    <div class="x-btns" style="margin-top:0;"><button class="ghost" onclick="cmReservarMes(0)">Reservar el mes actual</button><button class="ghost" onclick="cmReservarMes(1)">Reservar el mes que viene</button></div>
+    <div class="x-sec">⚠️ Pendientes para Recepción</div>
+    <div id="cmPendBox" class="muted">Cargando…</div>`;
+}
+async function cmCfgGuardar(){
+  const dia = parseInt(document.getElementById('cmDiaLimite').value, 10), rec = parseFloat(document.getElementById('cmRecargo').value), sem = parseInt(document.getElementById('cmSemanas').value, 10);
+  if (!(dia >= 1 && dia <= 28)){ toast('El día límite tiene que estar entre 1 y 28.', true); return; }
+  if (isNaN(rec) || rec < 0 || rec > 100){ toast('El recargo tiene que estar entre 0 y 100 %.', true); return; }
+  if (!(sem >= 1 && sem <= 6)){ toast('Las semanas base van de 1 a 6.', true); return; }
+  try{
+    await cvUpsert('cm_config', 'gimnasio_id', { gimnasio_id: PERFIL_ACTUAL.gimnasio_id, dia_limite: dia, recargo_pct: rec, proporcional: document.getElementById('cmProp').checked, semanas_base: sem });
+    CM.cfg = { dia_limite: dia, recargo_pct: rec, proporcional: document.getElementById('cmProp').checked, semanas_base: sem };
+    toast('Reglas guardadas ✓'); cmPendCargar();
+  }catch(e){ toast('Error guardando: ' + extraerMensajeError(e), true); }
+}
+async function cmRecargarFer(){
+  try{ CM.fer = (await sb(`cm_feriados?select=fecha,nombre,abre,origen&fecha=gte.${cmHoy()}&order=fecha.asc&limit=200`)) || []; }catch(e){}
+  cmGimPintar(); cmPendCargar();
+}
+async function cmReconciliar(){   // después de tocar feriados: ajusta las reservas de este mes y del que viene
+  const tot = { anotadas: 0, canceladas: 0, feriados: 0, suspendidas: 0, sin_cupo: 0 };
+  for (const m of [cmMes(0), cmMes(1)]){
+    try{ const r = await sb('rpc/cm_generar_mes', { method: 'POST', body: JSON.stringify({ p_mes: m }) }); Object.keys(tot).forEach(k => { tot[k] += Number((r || {})[k] || 0); }); }
+    catch(e){ toast('Se guardó el feriado, pero no se pudieron ajustar las reservas: ' + extraerMensajeError(e), true); return null; }
+  }
+  return tot;
+}
+async function cmFerAgregar(){
+  const f = document.getElementById('cmFerFecha').value, n = document.getElementById('cmFerNombre').value.trim() || 'Feriado';
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(f)){ toast('Elegí la fecha.', true); return; }
+  try{ await cvUpsert('cm_feriados', 'gimnasio_id,fecha', { gimnasio_id: PERFIL_ACTUAL.gimnasio_id, fecha: f, nombre: n, abre: false, origen: 'propio' }); }
+  catch(e){ toast('Error: ' + extraerMensajeError(e), true); return; }
+  const r = await cmReconciliar(); await cmRecargarFer(); if (r) toast('Feriado cargado ✓ · Reservas: ' + cmResumenTxt(r));
+}
+async function cmFerToggle(f, abre){
+  try{ await sb(`cm_feriados?gimnasio_id=eq.${PERFIL_ACTUAL.gimnasio_id}&fecha=eq.${f}`, { method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: JSON.stringify({ abre }) }); }
+  catch(e){ toast('Error: ' + extraerMensajeError(e), true); return; }
+  const r = await cmReconciliar(); await cmRecargarFer(); if (r) toast('Listo ✓ · Reservas: ' + cmResumenTxt(r));
+}
+async function cmFerBorrar(f){
+  if (!confirm('¿Quitar este feriado? Ese día se vuelve un día normal de clases.')) return;
+  try{ await sb(`cm_feriados?gimnasio_id=eq.${PERFIL_ACTUAL.gimnasio_id}&fecha=eq.${f}`, { method: 'DELETE', headers: { Prefer: 'return=minimal' } }); }
+  catch(e){ toast('Error: ' + extraerMensajeError(e), true); return; }
+  const r = await cmReconciliar(); await cmRecargarFer(); if (r) toast('Feriado quitado ✓ · Reservas: ' + cmResumenTxt(r));
+}
+async function cmFerSembrar(){
+  try{ const n = await sb('rpc/cm_feriados_sembrar', { method: 'POST', body: JSON.stringify({}) }); toast(Number(n) ? Number(n) + ' feriados cargados. Revisalos con el calendario oficial ✓' : 'Ya estaban todos cargados.'); }
+  catch(e){ toast('Error: ' + extraerMensajeError(e), true); return; }
+  const r = await cmReconciliar(); await cmRecargarFer(); if (r && (r.canceladas || r.feriados)) toast('Reservas ajustadas: ' + cmResumenTxt(r));
+}
+async function cmReservarMes(desfase){
+  if (CM.busy) return; CM.busy = true;
+  try{ const r = await sb('rpc/cm_generar_mes', { method: 'POST', body: JSON.stringify({ p_mes: cmMes(desfase) }) }); toast(`Listo (${Number((r || {}).alumnos || 0)} socios) · ` + cmResumenTxt(r)); cmPendCargar(); }
+  catch(e){ toast('Error: ' + extraerMensajeError(e), true); }
+  CM.busy = false;
+}
+async function cmPendCargar(){
+  const box = document.getElementById('cmPendBox'); if (!box) return;
+  try{
+    const p = (await sb('rpc/cm_pendientes', { method: 'POST', body: JSON.stringify({}) })) || [];
+    if (!p.length){ box.innerHTML = '<div class="muted">Nada pendiente ✓</div>'; return; }
+    box.className = '';
+    box.innerHTML = p.map(x => `<div class="x-item" style="align-items:center;gap:10px;flex-wrap:wrap;">
+      <div style="flex:1;min-width:200px;"><b>${xe(x.alumno)}</b><div class="x-sub">${x.tipo === 'sin_cupo' ? '🚫 ' : '💰 '}${xe(x.detalle)}${x.fecha ? ' · ' + xe(cmDiaTxt(x.fecha)) : ''}</div></div>
+      <div class="row" style="gap:6px;"><button class="ghost" onclick="abrirFichaAlumno('${x.alumno_id}')">Ver ficha</button>${x.tipo === 'sin_pago' && cmEsAdmin() ? `<button class="ghost" onclick="abrirCobroAlumno('${x.alumno_id}', true)">💰 Cobrar</button>` : ''}</div></div>`).join('');
+  }catch(e){ box.textContent = 'No se pudo cargar los pendientes.'; }
+}
+
+// ----- Ficha del alumno → Turnos fijos -----
+function cmTurnosBloque(a){
+  if (!cmOn()) return '';
+  setTimeout(() => { try{ cmTurnosCargar(a.id, a.plan_id); }catch(e){} }, 30);
+  return `<div class="x-sec">📌 Turnos fijos</div><div id="cmTurnosBox${a.id}" class="muted">Cargando…</div>`;
+}
+async function cmTurnosCargar(id, planId){
+  const box = document.getElementById('cmTurnosBox' + id); if (!box) return;
+  try{
+    const [tf, rf] = await Promise.all([
+      sb(`cm_turnos_fijos?select=clase_id,dia,clases(nombre,hora_inicio,hora_fin)&alumno_id=eq.${id}&order=dia.asc`),
+      sb(`cm_reservas_fijas?select=estado&alumno_id=eq.${id}&fecha=gte.${cmHoy()}`)
+    ]);
+    const t = (tf || []).slice().sort((p, q) => p.dia - q.dia || cmHora(p.clases && p.clases.hora_inicio).localeCompare(cmHora(q.clases && q.clases.hora_inicio)));
+    const cnt = {}; (rf || []).forEach(x => { cnt[x.estado] = (cnt[x.estado] || 0) + 1; });
+    const pl = (typeof PLANES_CACHE !== 'undefined' ? PLANES_CACHE : []).find(p => p.id === planId);
+    box.className = '';
+    box.innerHTML = (t.length ? `<div class="srv-chips" style="margin-bottom:8px;">${t.map(x => `<span class="srv-chip">${xe(CM_DIAS[x.dia].slice(0, 3))} ${xe(cmHora(x.clases && x.clases.hora_inicio))} · ${xe((x.clases && x.clases.nombre) || 'Clase')}</span>`).join('')}</div>
+      <div class="x-sub">Desde hoy: ${cnt.anotado || 0} reservadas${cnt.feriado ? ' · ' + cnt.feriado + ' en feriado' : ''}${cnt.suspendida ? ' · ' + cnt.suspendida + ' con clase suspendida' : ''}${cnt.sin_cupo ? ' · <b style="color:var(--danger-text);">' + cnt.sin_cupo + ' sin cupo</b>' : ''}.${pl && pl.dias_por_semana ? ' Plan: ' + pl.dias_por_semana + ' por semana.' : ''}</div>`
+      : '<div class="muted" style="margin-bottom:8px;">Todavía no tiene turnos fijos. Al definirlos se reserva solo su lugar todo el mes.</div>')
+      + `<div class="x-btns" style="margin-top:8px;"><button class="ghost" onclick="cmTurnosEditar('${id}', '${planId || ''}')">✏️ ${t.length ? 'Cambiar turnos fijos' : 'Definir turnos fijos'}</button></div>`;
+  }catch(e){ box.className = 'muted'; box.textContent = 'No se pudieron cargar los turnos fijos.'; }
+}
+async function cmTurnosEditar(id, planId){
+  const box = document.getElementById('cmTurnosBox' + id); if (!box) return;
+  box.innerHTML = '<div class="muted">Cargando clases…</div>';
+  try{
+    const [cl, tf] = await Promise.all([
+      sb('clases?select=id,nombre,dias,hora_inicio,hora_fin,cupo&order=hora_inicio.asc'),
+      sb(`cm_turnos_fijos?select=clase_id,dia&alumno_id=eq.${id}`)
+    ]);
+    const pl = (typeof PLANES_CACHE !== 'undefined' ? PLANES_CACHE : []).find(p => p.id === planId);
+    CM.edit = { id, planId, clases: cl || [], sel: new Set((tf || []).map(x => x.clase_id + '|' + x.dia)), max: pl && pl.dias_por_semana ? pl.dias_por_semana : null, conf: null };
+    cmTurnosEditorPintar();
+  }catch(e){ box.textContent = 'No se pudieron cargar las clases.'; }
+}
+function cmTurnosEditorPintar(){
+  const E = CM.edit; if (!E) return;
+  const box = document.getElementById('cmTurnosBox' + E.id); if (!box) return;
+  const dias = [0, 1, 2, 3, 4, 5, 6].map(d => {
+    const cs = E.clases.filter(c => (c.dias || []).includes(d)).sort((p, q) => cmHora(p.hora_inicio).localeCompare(cmHora(q.hora_inicio)));
+    if (!cs.length) return '';
+    return `<div style="margin-top:8px;"><b>${CM_DIAS[d]}</b>${cs.map(c => {
+      const k = c.id + '|' + d, sinCupo = c.cupo == null;
+      return `<label class="promo-opt"><input type="checkbox" ${E.sel.has(k) ? 'checked' : ''} ${sinCupo ? 'disabled' : ''} onchange="cmTurnoTilde('${c.id}', ${d}, this.checked)"><span><b>${xe(cmHora(c.hora_inicio))}–${xe(cmHora(c.hora_fin))} · ${xe(c.nombre)}</b><small>${sinCupo ? 'Sin cupo cargado: no admite reservas' : 'Cupo ' + c.cupo}</small></span></label>`;
+    }).join('')}</div>`;
+  }).join('') || '<div class="muted">No hay clases cargadas. Creá las clases primero (menú Clases).</div>';
+  const n = E.sel.size, pasa = E.max && n > E.max;
+  const conf = E.conf ? `<div class="cuo-vig" style="border-color:var(--danger-text);"><b>Hay fechas sin cupo</b> y no se cambió nada:
+    ${E.conf.map(c => `<div class="x-sub">• ${xe(c.clase)} · ${xe(cmDiaTxt(c.fecha))} · ${c.anotados}/${c.cupo} lugares</div>`).join('')}
+    <div class="x-btns" style="margin-top:8px;"><button onclick="cmTurnosGuardar(true)">Forzar sobrecupo y guardar</button><button class="ghost" onclick="CM.edit.conf=null;cmTurnosEditorPintar()">Cambiar turnos</button></div></div>` : '';
+  box.innerHTML = `<div class="x-sub">Tildá los días y horarios fijos. Al guardar se reservan solas todas las fechas que quedan del mes (sin feriados).</div>${dias}
+    <div class="x-sub" style="margin-top:10px;${pasa ? 'color:var(--danger-text);font-weight:700;' : ''}">Elegidos: ${n}${E.max ? ' de ' + E.max + ' por semana que permite su plan' : ''}</div>${conf}
+    <div class="x-btns" style="margin-top:8px;"><button onclick="cmTurnosGuardar(false)">Guardar turnos</button><button class="ghost" onclick="cmTurnosCargar('${E.id}', '${E.planId || ''}')">Cancelar</button></div>`;
+}
+function cmTurnoTilde(cid, d, on){
+  const E = CM.edit; if (!E) return; const k = cid + '|' + d;
+  if (on) E.sel.add(k); else E.sel.delete(k);
+  E.conf = null; cmTurnosEditorPintar();
+}
+async function cmTurnosGuardar(forzar){
+  const E = CM.edit; if (!E || CM.busy) return;
+  if (!E.sel.size && !confirm('Se van a quitar todos los turnos fijos y sus reservas futuras. ¿Seguro?')) return;
+  CM.busy = true;
+  try{
+    const turnos = Array.from(E.sel).map(k => { const p = k.split('|'); return { clase_id: p[0], dia: parseInt(p[1], 10) }; });
+    const r = await sb('rpc/cm_turnos_asignar', { method: 'POST', body: JSON.stringify({ p_alumno_id: E.id, p_turnos: turnos, p_forzar: !!forzar }) });
+    if (r && r.ok === false){ E.conf = r.conflictos || []; cmTurnosEditorPintar(); CM.busy = false; return; }
+    toast('Turnos guardados ✓ · ' + cmResumenTxt(r && r.resumen) + (r && r.forzado ? ' (con sobrecupo)' : ''));
+    const id = E.id, pid = E.planId; CM.edit = null; CM.busy = false;
+    await cmTurnosCargar(id, pid);
+  }catch(e){ toast('Error: ' + extraerMensajeError(e), true); CM.busy = false; }
 }
 
 // ---------- Mercado Pago (26/9, pedido de Martin) ----------
@@ -20946,6 +21163,7 @@ function xFichaDat(a){
       <div class="field"><label>Tipo de entrenamiento</label><select onchange="cambiarTipoAlumno('${a.id}', this.value)"><option value="">-- sin tipo --</option>${TIPOS_ALUMNO_CACHE.map(t => `<option value="${t.id}" ${a.tipo_alumno_id === t.id ? 'selected' : ''}>${xe(t.nombre)}</option>`).join('')}</select></div>
       <div class="field"><label>Plan</label><select onchange="cambiarPlanAlumno('${a.id}', this.value)"><option value="">-- sin plan --</option>${PLANES_CACHE.map(p => `<option value="${p.id}" ${a.plan_id === p.id ? 'selected' : ''}>${xe(p.nombre)}</option>`).join('')}</select></div>
     </div>
+    ${cmTurnosBloque(a)}
     ${sucMulti() ? `<div class="x-sec">📍 Sede</div><div class="x-fi-two"><div class="field"><label>Sede base</label><select onchange="sucCambiarSedeAlumno('${a.id}', this.value)"><option value="">-- sin sede --</option>${sucOptsExacto(a.sucursal_id || '')}</select></div></div><div class="x-sub">Puede reservar turnos en cualquier sede; esta es la que ve primero.</div>` : ''}
     <div class="x-sec">Acceso a la app y estado</div>
     <div class="x-btns" style="margin-top:0; align-items:center;">${acceso} ${btnEstado}</div>
